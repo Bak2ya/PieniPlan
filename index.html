@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#17191d" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>PieniPlan</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="appShell" class="app-shell">
+    <header class="topbar">
+      <div class="brand-block" aria-label="PieniPlan">
+        <div class="brand-name">PieniPlan</div>
+        <div class="brand-subtitle">Small Web Floor Plan Editor</div>
+      </div>
+
+      <div class="topbar-actions topbar-actions-left">
+        <button id="newBtn" class="toolbar-button">New</button>
+        <button id="openRefBtn" class="toolbar-button primary">Open Reference</button>
+        <input id="referenceFileInput" type="file" accept=".dxf,image/*" hidden />
+        <button id="fitBtn" class="toolbar-button">Fit</button>
+      </div>
+
+      <div class="topbar-spacer"></div>
+
+      <div class="topbar-actions">
+        <button id="undoBtn" class="icon-button" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↶</button>
+        <button id="redoBtn" class="icon-button" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">↷</button>
+        <button id="exportFacmapBtn" class="toolbar-button" disabled title="Planned for a later build">FACMAP</button>
+      </div>
+    </header>
+
+    <div class="contextbar" id="contextBar">
+      <div class="context-title-wrap">
+        <span class="context-label">Tool</span>
+        <strong id="contextToolName">Select</strong>
+      </div>
+      <div id="contextFields" class="context-fields"></div>
+      <div id="contextHint" class="context-hint">Click an object to inspect it.</div>
+    </div>
+
+    <main class="workspace">
+      <aside class="tool-rail" aria-label="Drawing tools">
+        <button class="tool-category active" data-category="select" title="Select">
+          <span class="tool-icon">↖</span><span class="tool-text">Select</span>
+        </button>
+        <button class="tool-category" data-category="draw" title="Draw">
+          <span class="tool-icon">✎</span><span class="tool-text">Draw</span>
+        </button>
+        <button class="tool-category" data-category="architecture" title="Architecture">
+          <span class="tool-icon">⌂</span><span class="tool-text">Arch</span>
+        </button>
+        <button class="tool-category" data-category="dimension" title="Dimension">
+          <span class="tool-icon">↔</span><span class="tool-text">Dim</span>
+        </button>
+        <button class="tool-category" data-category="modify" title="Modify">
+          <span class="tool-icon">⌘</span><span class="tool-text">Modify</span>
+        </button>
+      </aside>
+
+      <div id="toolPopover" class="tool-popover" hidden></div>
+
+      <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas">
+        <canvas id="drawingCanvas"></canvas>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-title">Start with a reference or draw from scratch.</div>
+          <div class="empty-copy">Open a DXF or image, then trace it using real-world coordinates.</div>
+          <button id="emptyOpenBtn" class="toolbar-button primary">Open Reference</button>
+        </div>
+        <div id="progressToast" class="progress-toast" hidden>
+          <div class="progress-title" id="progressTitle">Reading DXF…</div>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          <div class="progress-detail" id="progressDetail"></div>
+        </div>
+      </section>
+
+      <aside class="inspector">
+        <div class="inspector-tabs" role="tablist">
+          <button class="inspector-tab active" data-tab="layers" role="tab">Layers</button>
+          <button class="inspector-tab" data-tab="reference" role="tab">Reference</button>
+          <button class="inspector-tab" data-tab="properties" role="tab">Properties</button>
+        </div>
+        <div class="inspector-body">
+          <section class="inspector-panel active" data-panel="layers">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Drawing layers</div>
+                <div class="panel-subtitle">Objects created in PieniPlan</div>
+              </div>
+            </div>
+            <div id="layerList" class="panel-list"></div>
+          </section>
+
+          <section class="inspector-panel" data-panel="reference">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">References</div>
+                <div class="panel-subtitle">DXF and image underlays</div>
+              </div>
+              <button id="addReferenceBtn" class="small-button">Add</button>
+            </div>
+            <div id="referenceList" class="panel-list"></div>
+            <div class="panel-section muted-section">
+              <div class="section-heading">PDF</div>
+              <div class="section-copy">PDF reference tracing is planned after the Build 1 workspace and coordinate model are validated.</div>
+            </div>
+          </section>
+
+          <section class="inspector-panel" data-panel="properties">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Properties</div>
+                <div class="panel-subtitle">Selected object or active tool</div>
+              </div>
+            </div>
+            <div id="propertiesPanel" class="properties-panel"></div>
+          </section>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="statusbar">
+      <div class="status-group coord-group">
+        <span id="statusX">X 0</span>
+        <span id="statusY">Y 0</span>
+        <span class="status-divider"></span>
+        <span id="statusUnits">mm</span>
+      </div>
+      <div class="status-spacer"></div>
+      <button id="gridToggle" class="status-toggle active">GRID</button>
+      <button id="snapToggle" class="status-toggle active">SNAP</button>
+      <button id="orthoToggle" class="status-toggle">ORTHO</button>
+      <span class="status-divider"></span>
+      <span id="statusZoom">100%</span>
+    </footer>
+  </div>
+
+  <div id="dialogBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+      <div class="dialog-title" id="dialogTitle">Calibrate reference</div>
+      <div class="dialog-copy" id="dialogCopy"></div>
+      <label class="field-label" for="dialogInput">Actual distance (mm)</label>
+      <input id="dialogInput" class="text-input" type="number" step="0.01" min="0.0001" />
+      <div class="dialog-actions">
+        <button id="dialogCancelBtn" class="toolbar-button">Cancel</button>
+        <button id="dialogApplyBtn" class="toolbar-button primary">Apply scale</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="drawing-studio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

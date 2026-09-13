@@ -1,0 +1,9 @@
+{
+  "name": "PieniPlan",
+  "short_name": "PieniPlan",
+  "description": "Small Web Floor Plan Editor",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#111316",
+  "theme_color": "#17191d"
+}
