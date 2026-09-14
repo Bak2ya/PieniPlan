@@ -10,14 +10,24 @@ Icon license: Creative Commons Attribution 4.0 International (CC BY 4.0)
 
 Included SVGs:
 - `arrow-pointer.svg`
-- `pen-ruler.svg`
+- `door-open.svg`
+- `draw-polygon.svg`
+- `eye-slash.svg`
+- `eye.svg`
+- `file-export.svg`
+- `file-import.svg`
 - `house.svg`
-- `ruler-combined.svg`
-- `screwdriver-wrench.svg`
+- `layer-group.svg`
+- `lines-leaning.svg`
+- `pen-ruler.svg`
 - `rotate-left.svg`
 - `rotate-right.svg`
-- `eye.svg`
-- `eye-slash.svg`
+- `ruler-combined.svg`
+- `ruler-horizontal.svg`
+- `screwdriver-wrench.svg`
+- `terminal.svg`
+- `vector-square.svg`
+- `window-maximize.svg`
 
 The original Font Awesome Free license text is included at:
 `vendor/fontawesome/LICENSE.txt`

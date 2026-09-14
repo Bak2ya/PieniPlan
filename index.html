@@ -9,17 +9,30 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="appShell" class="app-shell">
+  <div id="appShell" class="app-shell plan-tools" aria-hidden="true">
     <header class="topbar">
       <div class="brand-block" aria-label="PieniPlan">
         <div class="brand-name">PieniPlan</div>
         <div class="brand-subtitle">Small Web Floor Plan Editor</div>
       </div>
 
+      <div class="toolset-switch" role="group" aria-label="Tool set" data-i18n-aria="aria.toolset">
+        <button id="planToolsBtn" class="toolset-button active" data-toolset="plan">
+          <span class="ui-icon icon-house" aria-hidden="true"></span>
+          <span>Plan Tools</span>
+        </button>
+        <button id="cadToolsBtn" class="toolset-button" data-toolset="cad">
+          <span class="ui-icon icon-pen-ruler" aria-hidden="true"></span>
+          <span>CAD Tools</span>
+        </button>
+      </div>
+
       <div class="topbar-actions topbar-actions-left">
         <button id="newBtn" class="toolbar-button" data-i18n="action.new">New</button>
+        <button id="openDxfBtn" class="toolbar-button cad-only" data-i18n="action.openDxfEdit">Open DXF</button>
+        <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
         <button id="openRefBtn" class="toolbar-button primary" data-i18n="action.openReference">Open Reference</button>
-        <input id="referenceFileInput" type="file" accept=".dxf,image/*" hidden />
+        <input id="referenceFileInput" type="file" accept=".dxf,image/*,.pdf" hidden />
         <button id="fitBtn" class="toolbar-button" data-i18n="action.fit">Fit</button>
       </div>
 
@@ -36,7 +49,7 @@
                 data-tooltip-key="tooltip.redo" data-shortcut="Ctrl/Cmd+Shift+Z">
           <span class="ui-icon icon-redo" aria-hidden="true"></span>
         </button>
-        <button id="exportFacmapBtn" class="toolbar-button" disabled>FACMAP</button>
+        <button id="exportDxfBtn" class="toolbar-button" data-i18n="action.exportDxf">Export DXF</button>
       </div>
     </header>
 
@@ -50,37 +63,19 @@
     </div>
 
     <main class="workspace">
-      <aside class="tool-rail" aria-label="Drawing tools" data-i18n-aria="aria.drawingTools">
-        <button class="tool-category active" data-category="select" data-category-key="category.select">
-          <span class="tool-icon ui-icon icon-select" aria-hidden="true"></span>
-          <span class="tool-text" data-i18n="category.select">Select</span>
-        </button>
-        <button class="tool-category" data-category="draw" data-category-key="category.draw">
-          <span class="tool-icon ui-icon icon-draw" aria-hidden="true"></span>
-          <span class="tool-text" data-i18n="category.draw">Draw</span>
-        </button>
-        <button class="tool-category" data-category="architecture" data-category-key="category.architecture">
-          <span class="tool-icon ui-icon icon-architecture" aria-hidden="true"></span>
-          <span class="tool-text" data-i18n="category.architecture">Architecture</span>
-        </button>
-        <button class="tool-category" data-category="dimension" data-category-key="category.dimension">
-          <span class="tool-icon ui-icon icon-dimension" aria-hidden="true"></span>
-          <span class="tool-text" data-i18n="category.dimension">Dimension</span>
-        </button>
-        <button class="tool-category" data-category="modify" data-category-key="category.modify">
-          <span class="tool-icon ui-icon icon-modify" aria-hidden="true"></span>
-          <span class="tool-text" data-i18n="category.modify">Modify</span>
-        </button>
-      </aside>
-
+      <aside id="toolRail" class="tool-rail" aria-label="Drawing tools" data-i18n-aria="aria.drawingTools"></aside>
       <div id="toolPopover" class="tool-popover" hidden></div>
 
       <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas" data-i18n-aria="aria.canvas">
         <canvas id="drawingCanvas"></canvas>
         <div id="emptyState" class="empty-state">
-          <div class="empty-title" data-i18n="empty.title">Start with a reference or draw from scratch.</div>
-          <div class="empty-copy" data-i18n="empty.copy">Open a DXF or image, then trace it using real-world coordinates.</div>
-          <button id="emptyOpenBtn" class="toolbar-button primary" data-i18n="action.openReference">Open Reference</button>
+          <div class="empty-kicker" id="emptyKicker">Plan Tools</div>
+          <div class="empty-title" id="emptyTitle" data-i18n="empty.planTitle">Draw a real-size floor plan without CAD complexity.</div>
+          <div class="empty-copy" id="emptyCopy" data-i18n="empty.planCopy">Use walls, doors and windows directly, or add a DXF/image reference and trace it with exact dimensions.</div>
+          <div class="empty-actions">
+            <button id="emptyPrimaryBtn" class="toolbar-button primary" data-i18n="action.drawWall">Draw Wall</button>
+            <button id="emptyOpenBtn" class="toolbar-button" data-i18n="action.openReference">Open Reference</button>
+          </div>
         </div>
         <div id="progressToast" class="progress-toast" hidden>
           <div class="progress-title" id="progressTitle" data-i18n="progress.readingDxf">Reading DXF…</div>
@@ -91,33 +86,34 @@
 
       <aside class="inspector">
         <div class="inspector-tabs" role="tablist">
-          <button class="inspector-tab active" data-tab="layers" role="tab" data-i18n="tab.layers">Layers</button>
+          <button id="primaryInspectorTab" class="inspector-tab active" data-tab="primary" role="tab">Objects</button>
           <button class="inspector-tab" data-tab="reference" role="tab" data-i18n="tab.reference">Reference</button>
           <button class="inspector-tab" data-tab="properties" role="tab" data-i18n="tab.properties">Properties</button>
         </div>
         <div class="inspector-body">
-          <section class="inspector-panel active" data-panel="layers">
+          <section class="inspector-panel active" data-panel="primary">
             <div class="panel-header">
               <div>
-                <div class="panel-title" data-i18n="panel.drawingLayers">Drawing layers</div>
-                <div class="panel-subtitle" data-i18n="panel.drawingLayersSub">Objects created in PieniPlan</div>
+                <div id="primaryPanelTitle" class="panel-title">Objects</div>
+                <div id="primaryPanelSubtitle" class="panel-subtitle">Floor-plan objects</div>
               </div>
+              <button id="mappingSettingsBtn" class="small-button cad-only" data-i18n="action.cadMapping">CAD mapping</button>
             </div>
-            <div id="layerList" class="panel-list"></div>
+            <div id="primaryList" class="panel-list"></div>
           </section>
 
           <section class="inspector-panel" data-panel="reference">
             <div class="panel-header">
               <div>
                 <div class="panel-title" data-i18n="panel.references">References</div>
-                <div class="panel-subtitle" data-i18n="panel.referencesSub">DXF and image underlays</div>
+                <div class="panel-subtitle" data-i18n="panel.referencesSub">DXF, PDF and image underlays</div>
               </div>
               <button id="addReferenceBtn" class="small-button" data-i18n="action.add">Add</button>
             </div>
             <div id="referenceList" class="panel-list"></div>
-            <div class="panel-section muted-section">
-              <div class="section-heading">PDF</div>
-              <div class="section-copy" data-i18n="panel.pdfPlanned">PDF reference tracing is planned after the workspace and coordinate model are validated.</div>
+            <div id="referenceHelp" class="panel-section muted-section">
+              <div class="section-heading" data-i18n="panel.referenceRuleTitle">Reference ≠ Drawing</div>
+              <div class="section-copy" data-i18n="panel.referenceRuleCopy">References stay underneath the drawing. They can be calibrated and traced without changing the source.</div>
             </div>
           </section>
 
@@ -133,6 +129,13 @@
         </div>
       </aside>
     </main>
+
+    <div id="commandBar" class="commandbar" hidden>
+      <div class="command-label">Command:</div>
+      <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="L, E, DI, Z …" aria-label="Command" />
+      <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
+    </div>
 
     <footer class="statusbar">
       <div class="status-group coord-group">
@@ -153,6 +156,39 @@
     </footer>
   </div>
 
+  <section id="startScreen" class="start-screen" aria-labelledby="startTitle">
+    <div class="start-panel">
+      <div class="start-brand">PieniPlan</div>
+      <div class="start-subtitle">Small Web Floor Plan Editor</div>
+      <h1 id="startTitle" data-i18n="start.title">One drawing. Choose the tools you need.</h1>
+      <p class="start-intro" data-i18n="start.intro">Both paths use the same real-world coordinates and can end as the same DXF. You can switch tools later without starting over.</p>
+
+      <div class="start-cards">
+        <button id="startPlanBtn" class="start-card plan-card">
+          <span class="start-card-icon ui-icon icon-house" aria-hidden="true"></span>
+          <span class="start-card-kicker">Plan Tools</span>
+          <strong data-i18n="start.planTitle">Quick floor plan</strong>
+          <span data-i18n="start.planCopy">Draw with walls, doors and windows while keeping exact dimensions. CAD structure stays out of the way.</span>
+          <span class="start-card-action" data-i18n="start.planAction">Start with Plan Tools →</span>
+        </button>
+
+        <button id="startCadBtn" class="start-card cad-card">
+          <span class="start-card-icon ui-icon icon-pen-ruler" aria-hidden="true"></span>
+          <span class="start-card-kicker">CAD Tools</span>
+          <strong data-i18n="start.cadTitle">DXF drawing</strong>
+          <span data-i18n="start.cadCopy">Open or create DXF geometry with layers, precise drawing tools and a command line for experienced CAD users.</span>
+          <span class="start-card-action" data-i18n="start.cadAction">Start with CAD Tools →</span>
+        </button>
+      </div>
+
+      <div class="start-secondary">
+        <button id="startSampleBtn" class="toolbar-button" data-i18n="start.sample">Open sample and look around</button>
+      </div>
+
+      <div class="start-note" data-i18n="start.note">This choice only selects the first toolbox. It does not lock the project into a separate format.</div>
+    </div>
+  </section>
+
   <div id="dialogBackdrop" class="dialog-backdrop" hidden>
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
       <div class="dialog-title" id="dialogTitle" data-i18n="dialog.calibrate">Calibrate reference</div>
@@ -162,6 +198,40 @@
       <div class="dialog-actions">
         <button id="dialogCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
         <button id="dialogApplyBtn" class="toolbar-button primary" data-i18n="action.applyScale">Apply scale</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mappingBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog mapping-dialog" role="dialog" aria-modal="true" aria-labelledby="mappingTitle">
+      <div class="dialog-title" id="mappingTitle" data-i18n="mapping.title">Define CAD representation</div>
+      <div class="dialog-copy" data-i18n="mapping.copy">Plan objects keep their meaning. Choose how they should appear in CAD and DXF. You can change this later.</div>
+
+      <div class="mapping-grid">
+        <label class="field-label" for="wallRepresentation" data-i18n="mapping.wallRepresentation">Walls</label>
+        <select id="wallRepresentation" class="select-input">
+          <option value="outline" data-i18n="mapping.outline">Outer lines</option>
+          <option value="centerline" data-i18n="mapping.centerline">Centerline</option>
+          <option value="both" data-i18n="mapping.both">Outer lines + centerline</option>
+        </select>
+
+        <label class="field-label" for="wallLayerInput" data-i18n="mapping.wallLayer">Wall layer</label>
+        <input id="wallLayerInput" class="text-input" value="WALL" />
+
+        <label class="field-label" for="doorLayerInput" data-i18n="mapping.doorLayer">Door layer</label>
+        <input id="doorLayerInput" class="text-input" value="DOOR" />
+
+        <label class="field-label" for="windowLayerInput" data-i18n="mapping.windowLayer">Window layer</label>
+        <input id="windowLayerInput" class="text-input" value="WINDOW" />
+
+        <label class="field-label" for="dimensionLayerInput" data-i18n="mapping.dimensionLayer">Dimension layer</label>
+        <input id="dimensionLayerInput" class="text-input" value="DIM" />
+      </div>
+
+      <div class="mapping-note" data-i18n="mapping.note">Switching back to Plan Tools does not discard CAD information; it simply hides the low-level CAD details.</div>
+      <div class="dialog-actions">
+        <button id="mappingCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="mappingApplyBtn" class="toolbar-button primary" data-i18n="mapping.apply">Apply and open CAD Tools</button>
       </div>
     </div>
   </div>
