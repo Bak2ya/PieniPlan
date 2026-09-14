@@ -1,5 +1,38 @@
 'use strict';
 
+let activeLang = 'en';
+const workerMessages = {
+  en: {
+    binary: 'Binary DXF is not supported. Save the file as ASCII DXF and try again.',
+    structureStage: 'Structure', structureDetail: 'Checking DXF sections.',
+    blocksStage: 'Blocks', blocksDetail: '{count} block definitions found',
+    entitiesMissing: 'ENTITIES section was not found.',
+    entitiesStage: 'Entities', entitiesDetail: '{count} entities checked',
+    noEntities: 'No supported line entities were found.',
+    unspecified: 'unspecified',
+    readingStage: 'Reading', readingDetail: 'Reading the DXF file.',
+    regionStage: 'Drawing region', regionDetail: 'Finding the main drawing region and external entities.',
+    doneStage: 'Done', doneDetail: '{count} entities analyzed'
+  },
+  ko: {
+    binary: '바이너리 DXF는 지원하지 않습니다. ASCII DXF로 저장해 주세요.',
+    structureStage: '구조 분석', structureDetail: 'DXF 섹션을 확인하고 있습니다.',
+    blocksStage: '블록 분석', blocksDetail: '{count}개 블록 정의 확인',
+    entitiesMissing: 'ENTITIES 섹션을 찾지 못했습니다.',
+    entitiesStage: '요소 분석', entitiesDetail: '{count}개 요소 확인',
+    noEntities: '가져올 수 있는 선 요소가 없습니다.',
+    unspecified: '미지정',
+    readingStage: '읽기', readingDetail: 'DXF 파일을 읽고 있습니다.',
+    regionStage: '도면 영역 분석', regionDetail: '주요 도면 영역과 외부 요소를 찾고 있습니다.',
+    doneStage: '완료', doneDetail: '{count}개 요소 분석 완료'
+  }
+};
+function wm(key, vars={}){
+  let v=(workerMessages[activeLang]||workerMessages.en)[key]||workerMessages.en[key]||key;
+  for(const [k,val] of Object.entries(vars))v=v.replaceAll(`{${k}}`,String(val));
+  return v;
+}
+
 function send(id, data){ postMessage({id, ...data}); }
 function progress(id, stage, ratio, detail=''){ send(id,{progress:{stage,ratio,detail}}); }
 
@@ -72,7 +105,7 @@ function dxfHeaderUnits(text){
   for(let i=0;i+3<lines.length;i+=2){if(lines[i].trim()==='9'&&lines[i+1].trim()==='$INSUNITS'){for(let j=i+2;j<Math.min(lines.length,i+14);j+=2){if(lines[j].trim()==='70'){const n=Number(lines[j+1].trim());if(Number.isFinite(n))return n}}}}
   return 0;
 }
-function dxfUnitInfo(code){const map={1:['inch',.0254],2:['ft',.3048],4:['mm',.001],5:['cm',.01],6:['m',1]};const v=map[code];return v?{code,label:v[0],metersPerUnit:v[1]}:{code:code||0,label:'미지정',metersPerUnit:null}}
+function dxfUnitInfo(code){const map={1:['inch',.0254],2:['ft',.3048],4:['mm',.001],5:['cm',.01],6:['m',1]};const v=map[code];return v?{code,label:v[0],metersPerUnit:v[1]}:{code:code||0,label:wm('unspecified'),metersPerUnit:null}}
 function toPairs(text){const lines=text.replace(/\r/g,'').split('\n'),pairs=[];for(let i=0;i+1<lines.length;i+=2){const code=Number(lines[i].trim());if(Number.isFinite(code))pairs.push({code,value:lines[i+1].trim()})}return pairs}
 function sectionRange(pairs,name){for(let i=0;i<pairs.length-1;i++){if(pairs[i].code===0&&pairs[i].value==='SECTION'&&pairs[i+1].code===2&&pairs[i+1].value===name){const s=i+2;for(let j=s;j<pairs.length;j++)if(pairs[j].code===0&&pairs[j].value==='ENDSEC')return[s,j]}}return[-1,-1]}
 const num=(a,c,d=0)=>{const p=a.find(x=>x.code===c);const n=p?Number(p.value):d;return Number.isFinite(n)?n:d}, str=(a,c,d='')=>{const p=a.find(x=>x.code===c);return p?p.value:d};
@@ -100,10 +133,10 @@ function transformEntity(e,base,ins){const sx=ins.sx,sy=ins.sy,rot=ins.rot,layer
 }
 function parseBlocks(pairs){const [s,e]=sectionRange(pairs,'BLOCKS'),blocks=new Map();if(s<0)return blocks;let i=s;while(i<e){const r=readRecord(pairs,i,e);if(!r){i++;continue}i=r.next;if(r.type!=='BLOCK')continue;const name=str(r.a,2)||str(r.a,3);const base={x:num(r.a,10),y:num(r.a,20)},ents=[];while(i<e){const rr=readRecord(pairs,i,e);if(!rr){i++;continue}i=rr.next;if(rr.type==='ENDBLK')break;ents.push(...primitiveFromRecord(rr,'0'))}if(name)blocks.set(name,{base,entities:ents})}return blocks}
 function parseDxf(text,id){
-  if(/^AutoCAD Binary DXF/i.test(text.trim()))throw new Error('바이너리 DXF는 지원하지 않습니다. ASCII DXF로 저장해 주세요.');
-  const pairs=toPairs(text);progress(id,'구조 분석',.08,'DXF 섹션을 확인하고 있습니다.');
-  const blocks=parseBlocks(pairs);progress(id,'블록 분석',.20,`${blocks.size}개 블록 정의 확인`);
-  const [s,e]=sectionRange(pairs,'ENTITIES');if(s<0)throw new Error('ENTITIES 섹션을 찾지 못했습니다.');
+  if(/^AutoCAD Binary DXF/i.test(text.trim()))throw new Error(wm('binary'));
+  const pairs=toPairs(text);progress(id,wm('structureStage'),.08,wm('structureDetail'));
+  const blocks=parseBlocks(pairs);progress(id,wm('blocksStage'),.20,wm('blocksDetail',{count:blocks.size.toLocaleString()}));
+  const [s,e]=sectionRange(pairs,'ENTITIES');if(s<0)throw new Error(wm('entitiesMissing'));
   const entities=[];let ignored=0,expandedInserts=0,unresolvedInserts=0,i=s,seen=0;
   while(i<e){const r=readRecord(pairs,i,e);if(!r){i++;continue}i=r.next;seen++;
     if(r.type==='INSERT'){
@@ -112,23 +145,24 @@ function parseDxf(text,id){
       for(const be of b.entities)entities.push(transformEntity(be,b.base,ins));expandedInserts++;continue;
     }
     const prim=primitiveFromRecord(r,'0');if(prim.length)entities.push(...prim);else if(!['SEQEND','ENDBLK'].includes(r.type))ignored++;
-    if(seen%5000===0)progress(id,'요소 분석',Math.min(.65,.20+seen/50000*.45),`${seen.toLocaleString()}개 요소 확인`);
+    if(seen%5000===0)progress(id,wm('entitiesStage'),Math.min(.65,.20+seen/50000*.45),wm('entitiesDetail',{count:seen.toLocaleString()}));
   }
-  if(!entities.length)throw new Error('가져올 수 있는 선 요소가 없습니다.');
-  const unit=dxfUnitInfo(dxfHeaderUnits(text)),layers=[...new Set(entities.map(x=>x.layer||'0'))].sort((a,b)=>a.localeCompare(b,'ko'));
+  if(!entities.length)throw new Error(wm('noEntities'));
+  const unit=dxfUnitInfo(dxfHeaderUnits(text)),layers=[...new Set(entities.map(x=>x.layer||'0'))].sort((a,b)=>a.localeCompare(b,activeLang==='ko'?'ko':'en'));
   return{entities,ignored,unit,layers,stats:{blocks:blocks.size,expandedInserts,unresolvedInserts,sourceRecords:seen}};
 }
 
 onmessage = (e) => {
-  const {id,type,text}=e.data||{};
+  const {id,type,text,lang}=e.data||{};
+  activeLang=String(lang||'en').toLowerCase().startsWith('ko')?'ko':'en';
   if(type!=='parseAndAnalyze')return;
   try{
-    progress(id,'읽기',.02,'DXF 파일을 읽고 있습니다.');
+    progress(id,wm('readingStage'),.02,wm('readingDetail'));
     const raw=parseDxf(text,id);
-    progress(id,'도면 영역 분석',.78,'주요 도면 영역과 외부 요소를 찾고 있습니다.');
+    progress(id,wm('regionStage'),.78,wm('regionDetail'));
     const analysis=detectRegions(raw.entities);
     raw.analysis=analysis;
-    progress(id,'완료',1,`${raw.entities.length.toLocaleString()}개 요소 분석 완료`);
+    progress(id,wm('doneStage'),1,wm('doneDetail',{count:raw.entities.length.toLocaleString()}));
     send(id,{ok:true,result:raw});
   }catch(err){send(id,{ok:false,error:String(err?.message||err)})}
 };

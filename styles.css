@@ -165,3 +165,51 @@ button:disabled { opacity:.42; cursor:default; }
   .brand-subtitle { display:none; }
   .brand-block { min-width:auto; }
 }
+
+/* Build 2: hidden must always win over component display declarations. */
+[hidden] { display: none !important; }
+
+/* Font Awesome Free SVG subset, used locally as masks so all UI icons share one visual grammar. */
+.ui-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+  mask: var(--icon-url) center / contain no-repeat;
+}
+.icon-select { --icon-url: url('vendor/fontawesome/arrow-pointer.svg'); }
+.icon-draw { --icon-url: url('vendor/fontawesome/pen-ruler.svg'); }
+.icon-architecture { --icon-url: url('vendor/fontawesome/house.svg'); }
+.icon-dimension { --icon-url: url('vendor/fontawesome/ruler-combined.svg'); }
+.icon-modify { --icon-url: url('vendor/fontawesome/screwdriver-wrench.svg'); }
+.icon-undo { --icon-url: url('vendor/fontawesome/rotate-left.svg'); }
+.icon-redo { --icon-url: url('vendor/fontawesome/rotate-right.svg'); }
+.icon-eye { --icon-url: url('vendor/fontawesome/eye.svg'); }
+.icon-eye-slash { --icon-url: url('vendor/fontawesome/eye-slash.svg'); }
+
+.tool-icon { width: 17px; height: 17px; font-size: 17px; }
+.icon-button .ui-icon { width: 14px; height: 14px; }
+.eye-button { display: grid; place-items: center; }
+.eye-button .ui-icon { width: 12px; height: 12px; }
+
+/* Delayed contextual tooltip. Only controls that explicitly opt in receive one. */
+.ui-tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: 270px;
+  padding: 8px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-2) 98%, transparent);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0,0,0,.28);
+  pointer-events: none;
+  user-select: none;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.tooltip-title { font-weight: 700; }
+.tooltip-copy { margin-top: 3px; color: var(--text-2); }
+.tooltip-shortcut { margin-top: 5px; color: var(--text-3); font-size: 9px; }

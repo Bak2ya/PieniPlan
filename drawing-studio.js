@@ -31,7 +31,7 @@
     return new Promise((resolve, reject) => {
       const id = ++seq;
       pending.set(id, { resolve, reject, onProgress });
-      ensureWorker().postMessage({ id, type: 'parseAndAnalyze', text });
+      ensureWorker().postMessage({ id, type: 'parseAndAnalyze', text, lang: document.documentElement.lang || 'en' });
     });
   }
 

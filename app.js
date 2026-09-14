@@ -2,8 +2,11 @@
   'use strict';
 
   const VERSION = '0.1.0';
-  const BUILD = 1;
+  const BUILD = 2;
   const INTERNAL_UNIT = 'mm';
+  const i18n = window.PieniPlanI18n;
+  const t = (key, vars) => i18n.t(key, vars);
+  i18n.apply(document);
 
   const $ = (id) => document.getElementById(id);
   const canvas = $('drawingCanvas');
@@ -18,43 +21,44 @@
     propertiesPanel: $('propertiesPanel'), statusX: $('statusX'), statusY: $('statusY'), statusUnits: $('statusUnits'), statusZoom: $('statusZoom'),
     gridToggle: $('gridToggle'), snapToggle: $('snapToggle'), orthoToggle: $('orthoToggle'),
     progressToast: $('progressToast'), progressTitle: $('progressTitle'), progressBar: $('progressBar'), progressDetail: $('progressDetail'),
-    dialogBackdrop: $('dialogBackdrop'), dialogCopy: $('dialogCopy'), dialogInput: $('dialogInput'), dialogCancelBtn: $('dialogCancelBtn'), dialogApplyBtn: $('dialogApplyBtn')
+    dialogBackdrop: $('dialogBackdrop'), dialogCopy: $('dialogCopy'), dialogInput: $('dialogInput'), dialogCancelBtn: $('dialogCancelBtn'), dialogApplyBtn: $('dialogApplyBtn'),
+    uiTooltip: $('uiTooltip')
   };
 
   const layers = [
-    { id: 'drawing', name: 'Drawing', visible: true, kind: 'line' },
-    { id: 'walls', name: 'Walls', visible: true, kind: 'wall' },
-    { id: 'dimensions', name: 'Dimensions', visible: true, kind: 'dimension' }
+    { id: 'drawing', nameKey: 'layer.drawing', visible: true, kind: 'line' },
+    { id: 'walls', nameKey: 'layer.walls', visible: true, kind: 'wall' },
+    { id: 'dimensions', nameKey: 'layer.dimensions', visible: true, kind: 'dimension' }
   ];
 
   const toolCatalog = {
     select: [
-      { id: 'select', label: 'Select', ready: true, note: 'V' }
+      { id: 'select', labelKey: 'tool.select', ready: true }
     ],
     draw: [
-      { id: 'line', label: 'Line', ready: true, note: 'L' },
-      { id: 'polyline', label: 'Polyline', ready: false, note: 'planned' },
-      { id: 'rectangle', label: 'Rectangle', ready: false, note: 'planned' },
-      { id: 'circle', label: 'Circle / Arc', ready: false, note: 'planned' }
+      { id: 'line', labelKey: 'tool.line', ready: true },
+      { id: 'polyline', labelKey: 'tool.polyline', ready: false },
+      { id: 'rectangle', labelKey: 'tool.rectangle', ready: false },
+      { id: 'circle', labelKey: 'tool.circle', ready: false }
     ],
     architecture: [
-      { id: 'wall', label: 'Wall', ready: true, note: 'W' },
-      { id: 'door', label: 'Door', ready: false, note: 'planned' },
-      { id: 'window', label: 'Window', ready: false, note: 'planned' },
-      { id: 'space', label: 'Room / Space', ready: false, note: 'planned' }
+      { id: 'wall', labelKey: 'tool.wall', ready: true },
+      { id: 'door', labelKey: 'tool.door', ready: false },
+      { id: 'window', labelKey: 'tool.window', ready: false },
+      { id: 'space', labelKey: 'tool.space', ready: false }
     ],
     dimension: [
-      { id: 'measure', label: 'Distance', ready: true, note: 'D' },
-      { id: 'aligned-dim', label: 'Aligned Dimension', ready: false, note: 'planned' },
-      { id: 'angle-dim', label: 'Angle', ready: false, note: 'planned' }
+      { id: 'measure', labelKey: 'tool.measure', ready: true },
+      { id: 'aligned-dim', labelKey: 'tool.alignedDim', ready: false },
+      { id: 'angle-dim', labelKey: 'tool.angleDim', ready: false }
     ],
     modify: [
-      { id: 'move', label: 'Move', ready: false, note: 'planned' },
-      { id: 'copy', label: 'Copy', ready: false, note: 'planned' },
-      { id: 'rotate', label: 'Rotate', ready: false, note: 'planned' },
-      { id: 'trim', label: 'Trim / Extend', ready: false, note: 'planned' },
-      { id: 'offset', label: 'Offset', ready: false, note: 'planned' },
-      { id: 'delete', label: 'Delete', ready: true, note: 'Del' }
+      { id: 'move', labelKey: 'tool.move', ready: false },
+      { id: 'copy', labelKey: 'tool.copy', ready: false },
+      { id: 'rotate', labelKey: 'tool.rotate', ready: false },
+      { id: 'trim', labelKey: 'tool.trim', ready: false },
+      { id: 'offset', labelKey: 'tool.offset', ready: false },
+      { id: 'delete', labelKey: 'tool.delete', ready: true, note: 'Del' }
     ]
   };
 
@@ -319,27 +323,29 @@
   }
 
   function updateContextBar() {
-    const toolNames = { select:'Select', line:'Line', wall:'Wall', measure:'Distance', delete:'Delete' };
-    dom.contextToolName.textContent = toolNames[state.activeTool] || state.activeTool;
+    const toolNameKeys = {
+      select:'context.select', line:'context.line', wall:'context.wall', measure:'context.measure', delete:'context.delete'
+    };
+    dom.contextToolName.textContent = t(toolNameKeys[state.activeTool] || `tool.${state.activeTool}`);
     dom.contextFields.innerHTML = '';
-    let hint = 'Click an object to inspect it.';
+    let hint = t('hint.select');
 
     if (state.calibration) {
-      dom.contextToolName.textContent = 'Scale calibration';
-      hint = state.calibration.p1 ? 'Click the second point on the reference.' : 'Click the first point of a known distance.';
+      dom.contextToolName.textContent = t('context.calibration');
+      hint = state.calibration.p1 ? t('hint.calibrationSecond') : t('hint.calibrationFirst');
       dom.contextHint.textContent = hint;
       return;
     }
 
     if (state.activeTool === 'line' || state.activeTool === 'wall') {
-      dom.contextFields.appendChild(contextNumberField('Length', 'length', '', 'mm'));
-      dom.contextFields.appendChild(contextNumberField('Angle', 'angle', '', '°'));
-      if (state.activeTool === 'wall') dom.contextFields.appendChild(contextNumberField('Thickness', 'thickness', String(state.toolSettings.wallThickness), 'mm'));
-      hint = state.drawStart ? 'Click to place the endpoint, or type length/angle and press Enter.' : 'Click the start point.';
+      dom.contextFields.appendChild(contextNumberField(t('context.length'), 'length', '', 'mm'));
+      dom.contextFields.appendChild(contextNumberField(t('context.angle'), 'angle', '', '°'));
+      if (state.activeTool === 'wall') dom.contextFields.appendChild(contextNumberField(t('context.thickness'), 'thickness', String(state.toolSettings.wallThickness), 'mm'));
+      hint = state.drawStart ? t('hint.segmentEnd') : t('hint.segmentStart');
     } else if (state.activeTool === 'measure') {
-      hint = state.measureStart ? 'Click the second point to create a persistent measurement.' : 'Click the first point.';
+      hint = state.measureStart ? t('hint.measureSecond') : t('hint.measureFirst');
     } else if (state.activeTool === 'delete') {
-      hint = 'Click an object to delete it.';
+      hint = t('hint.delete');
     }
     dom.contextHint.textContent = hint;
   }
@@ -391,12 +397,13 @@
     state.activeCategory = category;
     document.querySelectorAll('.tool-category').forEach(b => b.classList.toggle('active', b.dataset.category === category));
     const items = toolCatalog[category] || [];
-    dom.toolPopover.innerHTML = `<div class="tool-popover-title">${button.title}</div>`;
+    dom.toolPopover.innerHTML = `<div class="tool-popover-title">${escapeHtml(t(button.dataset.categoryKey))}</div>`;
     for (const item of items) {
       const b = document.createElement('button');
       b.className = `tool-item ${state.activeTool === item.id ? 'active' : ''}`;
       b.disabled = !item.ready;
-      b.innerHTML = `<span>${item.label}</span><span class="tool-item-note">${item.note || ''}</span>`;
+      const note = item.ready ? (item.note || '') : t('tool.planned');
+      b.innerHTML = `<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;
       b.addEventListener('click', () => setTool(item.id, category));
       dom.toolPopover.appendChild(b);
     }
@@ -621,14 +628,14 @@
     try {
       if (lower.endsWith('.dxf')) await addDxfReference(file);
       else if (file.type.startsWith('image/')) await addImageReference(file);
-      else alert('Build 1 supports DXF and image references. PDF tracing will be added after the workspace model is validated.');
+      else alert(t('alert.unsupportedReference'));
     } finally { dom.fileInput.value=''; }
   }
 
   async function addDxfReference(file) {
-    showProgress('Reading DXF…', 0, file.name);
+    showProgress(t('progress.readingDxf'), 0, file.name);
     const text = await file.text();
-    const parsed = await window.PieniPlanDXF.parseAndAnalyze(text, (p) => showProgress(p.stage || 'Reading DXF…', p.ratio || 0, p.detail || ''));
+    const parsed = await window.PieniPlanDXF.parseAndAnalyze(text, (p) => showProgress(p.stage || t('progress.readingDxf'), p.ratio || 0, p.detail || ''));
     const factor = unitFactorToMm(parsed.unit);
     const entities = parsed.entities.map(e => normalizeEntityToMm(e, factor));
     const b = boundsEntities(entities);
@@ -733,7 +740,7 @@
   function openCalibrationDialog() {
     const c=state.calibration; if(!c?.p1||!c?.p2)return;
     const measured=distance(c.p1,c.p2);
-    dom.dialogCopy.textContent=`The two picked points are currently ${formatNumber(measured,2)} mm apart. Enter the real-world distance; the reference will scale while the first picked point stays fixed.`;
+    dom.dialogCopy.textContent = t('dialog.calibrationCopy', { distance: formatNumber(measured, 2) });
     dom.dialogInput.value=String(Math.round(measured*100)/100);
     dom.dialogBackdrop.hidden=false; setTimeout(()=>{dom.dialogInput.focus();dom.dialogInput.select()},0);
   }
@@ -750,37 +757,55 @@
     updateAll();
   }
 
+  function iconMarkup(name) {
+    return `<span class="ui-icon icon-${name}" aria-hidden="true"></span>`;
+  }
+
+  function configureVisibilityButton(button, visible, kind) {
+    const showKey = kind === 'reference' ? 'tooltip.showReference' : 'tooltip.showLayer';
+    const hideKey = kind === 'reference' ? 'tooltip.hideReference' : 'tooltip.hideLayer';
+    button.innerHTML = iconMarkup(visible ? 'eye' : 'eye-slash');
+    button.setAttribute('aria-label', t(visible ? hideKey : showKey));
+    button.dataset.tooltipTitleKey = visible ? hideKey : showKey;
+    delete button.dataset.tooltipKey;
+    delete button.dataset.shortcut;
+  }
+
   function renderLayers() {
     dom.layerList.innerHTML='';
     for(const l of layers){
       const row=document.createElement('div');row.className='list-row';
-      const eye=document.createElement('button');eye.className='eye-button';eye.textContent=l.visible?'◉':'○';eye.title=l.visible?'Hide layer':'Show layer';
+      const eye=document.createElement('button');eye.className='eye-button';configureVisibilityButton(eye,l.visible,'layer');
       eye.addEventListener('click',()=>{l.visible=!l.visible;renderLayers();render()});
-      const main=document.createElement('div');main.className='row-main';main.innerHTML=`<div class="row-title">${l.name}</div><div class="row-meta">${state.objects.filter(o=>o.layerId===l.id).length} objects</div>`;
-      const count=document.createElement('span');count.className='row-meta';count.textContent=l.id===state.activeLayer?'Active':'';
+      const main=document.createElement('div');main.className='row-main';
+      main.innerHTML=`<div class="row-title">${escapeHtml(t(l.nameKey))}</div><div class="row-meta">${escapeHtml(t('panel.objects',{count:state.objects.filter(o=>o.layerId===l.id).length}))}</div>`;
+      const count=document.createElement('span');count.className='row-meta';count.textContent=l.id===state.activeLayer?t('panel.active'):'';
       row.append(eye,main,count);dom.layerList.appendChild(row);
     }
   }
 
   function renderReferences() {
     dom.referenceList.innerHTML='';
-    if(!state.references.length){dom.referenceList.innerHTML='<div class="section-copy">No references yet. Add a DXF or image.</div>';return;}
+    if(!state.references.length){dom.referenceList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noReferences'))}</div>`;return;}
     for(const r of state.references){
       const row=document.createElement('div');row.className=`list-row ${state.selectedReferenceId===r.id?'selected':''}`;
-      const eye=document.createElement('button');eye.className='eye-button';eye.textContent=r.visible?'◉':'○';eye.addEventListener('click',(e)=>{e.stopPropagation();r.visible=!r.visible;renderReferences();render()});
+      const eye=document.createElement('button');eye.className='eye-button';configureVisibilityButton(eye,r.visible,'reference');
+      eye.addEventListener('click',(e)=>{e.stopPropagation();r.visible=!r.visible;renderReferences();render()});
       const main=document.createElement('div');main.className='row-main';
-      const meta=r.type==='dxf'?`${r.entities.length.toLocaleString()} entities · ${r.sourceUnitSpecified?r.sourceUnit:'unit unspecified → mm'}`:`${r.width}×${r.height}px`;
-      main.innerHTML=`<div class="row-title">${escapeHtml(r.name)}</div><div class="row-meta">${meta}</div>`;
+      const meta=r.type==='dxf'
+        ?`${t('panel.entities',{count:r.entities.length.toLocaleString()})} · ${r.sourceUnitSpecified?r.sourceUnit:t('panel.unitUnspecified')}`
+        :`${r.width}×${r.height}px`;
+      main.innerHTML=`<div class="row-title">${escapeHtml(r.name)}</div><div class="row-meta">${escapeHtml(meta)}</div>`;
       const actions=document.createElement('div');actions.className='row-actions';
-      const calibrate=document.createElement('button');calibrate.className='mini-action';calibrate.textContent='Scale';calibrate.title='Set scale from a known distance';calibrate.addEventListener('click',(e)=>{e.stopPropagation();beginCalibration(r.id)});
-      const fit=document.createElement('button');fit.className='mini-action';fit.textContent='Fit';fit.addEventListener('click',(e)=>{e.stopPropagation();fitReference(r)});
+      const calibrate=document.createElement('button');calibrate.className='mini-action';calibrate.textContent=t('action.scale');calibrate.dataset.tooltipTitle=t('action.scale');calibrate.dataset.tooltipKey='tooltip.scaleReference';calibrate.addEventListener('click',(e)=>{e.stopPropagation();beginCalibration(r.id)});
+      const fit=document.createElement('button');fit.className='mini-action';fit.textContent=t('action.fit');fit.addEventListener('click',(e)=>{e.stopPropagation();fitReference(r)});
       actions.append(calibrate,fit); row.append(eye,main,actions);
       row.addEventListener('click',()=>{state.selectedReferenceId=r.id;renderReferences();renderProperties()});
       dom.referenceList.appendChild(row);
 
       if(state.selectedReferenceId===r.id){
         const control=document.createElement('div');control.className='panel-section';
-        control.innerHTML=`<div class="section-heading">Opacity</div><input data-opacity="${r.id}" type="range" min="0.08" max="1" step="0.01" value="${r.opacity}" style="width:100%;margin-top:7px">`;
+        control.innerHTML=`<div class="section-heading">${escapeHtml(t('panel.opacity'))}</div><input data-opacity="${r.id}" type="range" min="0.08" max="1" step="0.01" value="${r.opacity}" style="width:100%;margin-top:7px">`;
         control.querySelector('input').addEventListener('input',(e)=>{r.opacity=Number(e.target.value);render()});
         dom.referenceList.appendChild(control);
         if (r.type === 'dxf' && r.layers.length) renderReferenceLayerControls(r);
@@ -793,12 +818,12 @@
     section.className = 'panel-section';
     const summary = document.createElement('summary');
     summary.className = 'section-heading';
-    summary.textContent = `DXF layers (${ref.layers.length})`;
+    summary.textContent = t('panel.dxfLayers',{count:ref.layers.length});
     section.appendChild(summary);
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:5px;margin:8px 0;';
-    const all = document.createElement('button'); all.className='mini-action'; all.textContent='All';
-    const none = document.createElement('button'); none.className='mini-action'; none.textContent='None';
+    const all = document.createElement('button'); all.className='mini-action'; all.textContent=t('action.all');
+    const none = document.createElement('button'); none.className='mini-action'; none.textContent=t('action.none');
     all.addEventListener('click',()=>{ref.visibleLayers=new Set(ref.layers);renderReferences();render()});
     none.addEventListener('click',()=>{ref.visibleLayers=new Set();renderReferences();render()});
     actions.append(all,none); section.appendChild(actions);
@@ -817,39 +842,127 @@
   function fitReference(ref){const b=referenceBounds(ref);fitBounds(b)}
   function fitBounds(b){const {w,h}=cssCanvasSize();const bw=Math.max(100,b.maxx-b.minx),bh=Math.max(100,b.maxy-b.miny);state.camera.cx=(b.minx+b.maxx)/2;state.camera.cy=(b.miny+b.maxy)/2;state.camera.zoom=Math.max(.002,Math.min(8,Math.min((w-80)/bw,(h-80)/bh)));render()}
 
+  function localizedObjectType(type) {
+    return t(`value.${type}`);
+  }
+
+  function localizedToolName(tool) {
+    const keys = { select:'tool.select', line:'tool.line', wall:'tool.wall', measure:'tool.measure', delete:'tool.delete' };
+    return t(keys[tool] || `tool.${tool}`);
+  }
+
   function renderProperties() {
     dom.propertiesPanel.innerHTML='';
     const obj=state.objects.find(o=>o.id===state.selectedObjectId);
     if(obj){
-      propertyText('Type',obj.type);
-      propertyText('Layer',layers.find(l=>l.id===obj.layerId)?.name||obj.layerId);
-      propertyText('Length',`${formatNumber(distance(obj.a,obj.b),2)} mm`);
-      propertyText('Angle',`${formatNumber(angleDeg(obj.a,obj.b),2)}°`);
-      if(obj.type==='wall')propertyNumber('Thickness',obj.thickness,(v)=>{if(v>0){pushHistory();obj.thickness=v;updateAll()}});
-      propertyText('Start',`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);
-      propertyText('End',`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);
+      propertyText(t('property.type'),localizedObjectType(obj.type));
+      const layer=layers.find(l=>l.id===obj.layerId);
+      propertyText(t('property.layer'),layer?t(layer.nameKey):obj.layerId);
+      propertyText(t('property.length'),`${formatNumber(distance(obj.a,obj.b),2)} mm`);
+      propertyText(t('property.angle'),`${formatNumber(angleDeg(obj.a,obj.b),2)}°`);
+      if(obj.type==='wall')propertyNumber(t('property.thickness'),obj.thickness,(v)=>{if(v>0){pushHistory();obj.thickness=v;updateAll()}});
+      propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);
+      propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);
       return;
     }
     const ref=state.references.find(r=>r.id===state.selectedReferenceId);
     if(ref){
-      propertyText('Reference',ref.name); propertyText('Type',ref.type.toUpperCase()); propertyText('Scale',`${formatNumber(ref.scale,6)}×`);
-      propertyText('Origin',`${formatNumber(ref.origin.x,1)}, ${formatNumber(ref.origin.y,1)}`);
-      propertyText('Opacity',`${Math.round(ref.opacity*100)}%`);
+      propertyText(t('property.reference'),ref.name);
+      propertyText(t('property.type'),ref.type==='dxf'?'DXF':t('value.image'));
+      propertyText(t('property.scale'),`${formatNumber(ref.scale,6)}×`);
+      propertyText(t('property.origin'),`${formatNumber(ref.origin.x,1)}, ${formatNumber(ref.origin.y,1)}`);
+      propertyText(t('property.opacity'),`${Math.round(ref.opacity*100)}%`);
       return;
     }
-    propertyText('Version',`v${VERSION} · Build ${BUILD}`); propertyText('Units',INTERNAL_UNIT); propertyText('Tool',state.activeTool);
+    propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);
+    propertyText(t('property.units'),INTERNAL_UNIT);
+    propertyText(t('property.tool'),localizedToolName(state.activeTool));
   }
 
   function propertyText(label,value){const row=document.createElement('div');row.className='property-row';row.innerHTML=`<div class="property-label">${escapeHtml(label)}</div><div class="property-value">${escapeHtml(String(value))}</div>`;dom.propertiesPanel.appendChild(row)}
   function propertyNumber(label,value,onChange){const row=document.createElement('div');row.className='property-row';const l=document.createElement('div');l.className='property-label';l.textContent=label;const v=document.createElement('div');v.className='property-value';const input=document.createElement('input');input.type='number';input.value=String(value);input.addEventListener('change',()=>onChange(Number(input.value)));v.appendChild(input);row.append(l,v);dom.propertiesPanel.appendChild(row)}
-  function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
   function switchInspector(tab){document.querySelectorAll('.inspector-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.inspector-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===tab))}
   function updateAll(){updateUndoRedo();updateContextBar();renderLayers();renderReferences();renderProperties();render()}
 
   function resetProject(){
-    if((state.references.length||state.objects.length)&&!confirm('Start a new drawing? Current unsaved drawing objects and references will be cleared.'))return;
+    if((state.references.length||state.objects.length)&&!confirm(t('confirm.newDrawing')))return;
     state.references=[];state.objects=[];state.selectedReferenceId=null;state.selectedObjectId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};setTool('select','select');updateAll();
+  }
+
+  let tooltipTimer = null;
+  let tooltipOwner = null;
+
+  function tooltipTargetFrom(node) {
+    return node instanceof Element ? node.closest('[data-tooltip-key],[data-tooltip-title-key],[data-tooltip-title]') : null;
+  }
+
+  function hideTooltip() {
+    clearTimeout(tooltipTimer);
+    tooltipTimer = null;
+    tooltipOwner = null;
+    dom.uiTooltip.hidden = true;
+    dom.uiTooltip.innerHTML = '';
+  }
+
+  function showTooltip(owner) {
+    if (!owner?.isConnected) return;
+    const title = owner.dataset.tooltipTitleKey ? t(owner.dataset.tooltipTitleKey) : (owner.dataset.tooltipTitle || '');
+    const copy = owner.dataset.tooltipKey ? t(owner.dataset.tooltipKey) : '';
+    const shortcut = owner.dataset.shortcut || '';
+    if (!title && !copy && !shortcut) return;
+
+    const parts = [];
+    if (title) parts.push(`<div class="tooltip-title">${escapeHtml(title)}</div>`);
+    if (copy) parts.push(`<div class="tooltip-copy">${escapeHtml(copy)}</div>`);
+    if (shortcut) parts.push(`<div class="tooltip-shortcut">${escapeHtml(t('tooltip.shortcut'))} · ${escapeHtml(shortcut)}</div>`);
+    dom.uiTooltip.innerHTML = parts.join('');
+    dom.uiTooltip.hidden = false;
+
+    const rect = owner.getBoundingClientRect();
+    const tip = dom.uiTooltip.getBoundingClientRect();
+    const margin = 8;
+    let left = rect.left + rect.width / 2 - tip.width / 2;
+    left = Math.max(margin, Math.min(window.innerWidth - tip.width - margin, left));
+    let top = rect.top - tip.height - margin;
+    if (top < margin) top = rect.bottom + margin;
+    top = Math.max(margin, Math.min(window.innerHeight - tip.height - margin, top));
+    dom.uiTooltip.style.left = `${Math.round(left)}px`;
+    dom.uiTooltip.style.top = `${Math.round(top)}px`;
+  }
+
+  function scheduleTooltip(owner, delay) {
+    clearTimeout(tooltipTimer);
+    tooltipOwner = owner;
+    tooltipTimer = setTimeout(() => {
+      if (tooltipOwner === owner) showTooltip(owner);
+    }, delay);
+  }
+
+  function installTooltips() {
+    document.addEventListener('pointerover', (e) => {
+      const owner = tooltipTargetFrom(e.target);
+      if (!owner || owner.contains(e.relatedTarget)) return;
+      scheduleTooltip(owner, 650);
+    });
+    document.addEventListener('pointerout', (e) => {
+      const owner = tooltipTargetFrom(e.target);
+      if (!owner || owner.contains(e.relatedTarget)) return;
+      hideTooltip();
+    });
+    document.addEventListener('focusin', (e) => {
+      const owner = tooltipTargetFrom(e.target);
+      if (owner) scheduleTooltip(owner, 450);
+    });
+    document.addEventListener('focusout', (e) => {
+      const owner = tooltipTargetFrom(e.target);
+      if (owner) hideTooltip();
+    });
+    document.addEventListener('pointerdown', hideTooltip, true);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideTooltip();
+    }, true);
   }
 
   document.querySelectorAll('.tool-category').forEach(b=>b.addEventListener('click',(e)=>openCategory(b.dataset.category,b)));
@@ -876,9 +989,6 @@
       state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.calibration=null;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;updateContextBar();render();
     }
     if((e.key==='Delete'||e.key==='Backspace')&&!isTyping()&&state.selectedObjectId){e.preventDefault();pushHistory();state.objects=state.objects.filter(o=>o.id!==state.selectedObjectId);state.selectedObjectId=null;updateAll()}
-    if(!isTyping()&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
-      const key=e.key.toLowerCase(); if(key==='v')setTool('select','select'); else if(key==='l')setTool('line','draw'); else if(key==='w')setTool('wall','architecture'); else if(key==='d')setTool('measure','dimension');
-    }
   });
   window.addEventListener('keyup',(e)=>{if(e.code==='Space'){state.spaceDown=false;if(!state.pan)host.dataset.pan='false'}});
   window.addEventListener('beforeunload',(e)=>{if(state.objects.length||state.references.length){e.preventDefault();e.returnValue='';}});
@@ -886,6 +996,9 @@
 
   function isTyping(){const a=document.activeElement;return a&&(['INPUT','TEXTAREA','SELECT'].includes(a.tagName)||a.isContentEditable)}
 
+  dom.dialogBackdrop.hidden = true;
+  i18n.apply(document);
+  installTooltips();
   resizeCanvas(); updateAll(); host.dataset.tool='select';
   console.info(`PieniPlan v${VERSION} Build ${BUILD}`);
 })();

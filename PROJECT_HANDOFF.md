@@ -1,6 +1,6 @@
 # PieniPlan PROJECT HANDOFF
 
-Current version: **v0.1.0 · Build 1**
+Current version: **v0.1.0 · Build 2**
 
 Product subtitle: **Small Web Floor Plan Editor**
 
@@ -10,7 +10,7 @@ PieniPlan is an independent web app for opening existing drawing material and pr
 
 Primary reference inputs:
 - DXF
-- PDF (planned after Build 1)
+- PDF (planned)
 - image / scanned plan
 
 DWG is outside the editor itself and may be converted to DXF through the separate DWG → DXF web tool.
@@ -57,7 +57,7 @@ Do not turn PieniPlan into a giant general-purpose CAD program unless a feature 
 
 This is a foundational requirement, not a later add-on.
 
-- Internal working unit is millimetres for Build 1.
+- Internal working unit is millimetres in the current baseline.
 - Screen pixels and drawing coordinates are separate.
 - DXF units are converted to millimetres when `$INSUNITS` is available.
 - DXF with unspecified units is provisionally treated as mm and can be calibrated.
@@ -107,7 +107,7 @@ Important principle: tool position should follow established CAD expectations wh
 
 A reference is source material used to create a new accurate PieniPlan drawing.
 
-Build 1:
+Implemented:
 - DXF reference
 - Image reference
 
@@ -129,9 +129,13 @@ PieniPlan Drawing contains the actual newly created geometry.
 
 Future direction may allow selected DXF reference entities to be converted into editable PieniPlan objects.
 
-## 7. Build 1 implemented
+## 7. Current implemented baseline
 
 - static GitHub Pages-ready structure
+- Korean / English localization with browser/OS auto-detection and English fallback
+- intentional English CAD terms in Korean UI: GRID / SNAP / ORTHO / DXF
+- coherent standard SVG icon family (local Font Awesome Free subset), no improvised Unicode glyphs
+- selective delayed hover/focus tooltips only where explanation is useful
 - local browser processing, no backend
 - FacilityManager-derived DXF Worker separated from FacilityManager business logic
 - Canvas/Path2D DXF rendering
@@ -149,7 +153,7 @@ Future direction may allow selected DXF reference entities to be converted into 
 - Undo/Redo for drawing objects
 - drag & drop reference import
 
-## 8. Build 1 intentionally pending
+## 8. Intentionally pending
 
 - PDF
 - persistent project save/load
@@ -162,6 +166,8 @@ Future direction may allow selected DXF reference entities to be converted into 
 - FACMAP export
 - stable room UUID UI/logic
 - automatic closed-space recognition
+- Information/Help area with fuller CAD terminology explanations
+- final CAD/browser shortcut map
 
 ## 9. Performance baseline
 
@@ -171,13 +177,13 @@ FacilityManager Build 11 taught an important rule:
 - reference DXF should use Canvas/Path2D-style rendering
 - pointer-move snapping must not scan every DXF entity on every event
 
-Build 1 therefore caches DXF paths and builds a 64×64 endpoint snap index.
+The current baseline therefore caches DXF paths and builds a 64×64 endpoint snap index.
 
 The previous FacilityManager real-world regression file was approximately 37k elements / 67 layers. PieniPlan should eventually be tested with similarly large drawings.
 
 ## 10. Next recommended validation
 
-Before adding many tools, visually and interactively validate Build 1 in a real browser:
+Before adding many tools, visually and interactively validate Build 2 in a real browser:
 
 1. overall workspace density
 2. left category positions and popover interaction
@@ -190,7 +196,46 @@ Before adding many tools, visually and interactively validate Build 1 in a real 
 9. dark/light appearance
 10. whether PieniPlan feels familiar without feeling like a heavy CAD clone
 
-## 11. Do not casually change
+
+## 11. Localization / terminology / icon / tooltip rules
+
+These are current project decisions and should not be casually reverted.
+
+### Localization
+- Korean and English are currently supported.
+- Default language follows browser/OS language.
+- Unsupported languages fall back to English.
+- `?lang=ko` and `?lang=en` exist only as convenient test overrides.
+
+### CAD terms
+The Korean UI intentionally keeps these established working terms in English:
+- GRID
+- SNAP
+- ORTHO
+- DXF
+
+A future Information/Help area should explain them in more detail. The main editor should stay concise.
+
+### Icons
+- Do not use improvised Unicode characters as UI icons.
+- Use one coherent established icon family.
+- Build 2 uses a local subset of Font Awesome Free SVG icons.
+- Do not add an icon merely for decoration; labeled controls can remain text-only when that is clearer.
+
+### Tooltips
+- Tooltips are selective delayed help, not a permanent explanation system.
+- Use them for unfamiliar CAD terms, ambiguous/icon-only controls, or controls where a short local explanation meaningfully reduces confusion.
+- Do not add tooltips to every button for consistency.
+- Important warnings or required information must be visible without hover.
+- Current delay: pointer hover 650 ms; keyboard focus 450 ms.
+- If a real shortcut exists, a tooltip may show it. If no shortcut exists, do not invent one just to fill the tooltip.
+
+### Shortcuts
+- Standard OS/browser-safe shortcuts and established editor behavior are preferred.
+- Build 1's arbitrary V/L/W/D tool-selection shortcuts were removed in Build 2.
+- Future CAD shortcuts should be checked against AutoCAD/LibreCAD conventions and browser/OS conflicts before adoption.
+
+## 12. Do not casually change
 
 - PieniPlan name and current subtitle without a new user decision
 - Select / Draw / Architecture / Dimension / Modify top-level tool categories

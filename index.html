@@ -17,24 +17,32 @@
       </div>
 
       <div class="topbar-actions topbar-actions-left">
-        <button id="newBtn" class="toolbar-button">New</button>
-        <button id="openRefBtn" class="toolbar-button primary">Open Reference</button>
+        <button id="newBtn" class="toolbar-button" data-i18n="action.new">New</button>
+        <button id="openRefBtn" class="toolbar-button primary" data-i18n="action.openReference">Open Reference</button>
         <input id="referenceFileInput" type="file" accept=".dxf,image/*" hidden />
-        <button id="fitBtn" class="toolbar-button">Fit</button>
+        <button id="fitBtn" class="toolbar-button" data-i18n="action.fit">Fit</button>
       </div>
 
       <div class="topbar-spacer"></div>
 
       <div class="topbar-actions">
-        <button id="undoBtn" class="icon-button" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↶</button>
-        <button id="redoBtn" class="icon-button" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">↷</button>
-        <button id="exportFacmapBtn" class="toolbar-button" disabled title="Planned for a later build">FACMAP</button>
+        <button id="undoBtn" class="icon-button" aria-label="Undo"
+                data-i18n-aria="action.undo" data-tooltip-title-key="action.undo"
+                data-tooltip-key="tooltip.undo" data-shortcut="Ctrl/Cmd+Z">
+          <span class="ui-icon icon-undo" aria-hidden="true"></span>
+        </button>
+        <button id="redoBtn" class="icon-button" aria-label="Redo"
+                data-i18n-aria="action.redo" data-tooltip-title-key="action.redo"
+                data-tooltip-key="tooltip.redo" data-shortcut="Ctrl/Cmd+Shift+Z">
+          <span class="ui-icon icon-redo" aria-hidden="true"></span>
+        </button>
+        <button id="exportFacmapBtn" class="toolbar-button" disabled>FACMAP</button>
       </div>
     </header>
 
     <div class="contextbar" id="contextBar">
       <div class="context-title-wrap">
-        <span class="context-label">Tool</span>
+        <span class="context-label" data-i18n="context.tool">Tool</span>
         <strong id="contextToolName">Select</strong>
       </div>
       <div id="contextFields" class="context-fields"></div>
@@ -42,35 +50,40 @@
     </div>
 
     <main class="workspace">
-      <aside class="tool-rail" aria-label="Drawing tools">
-        <button class="tool-category active" data-category="select" title="Select">
-          <span class="tool-icon">↖</span><span class="tool-text">Select</span>
+      <aside class="tool-rail" aria-label="Drawing tools" data-i18n-aria="aria.drawingTools">
+        <button class="tool-category active" data-category="select" data-category-key="category.select">
+          <span class="tool-icon ui-icon icon-select" aria-hidden="true"></span>
+          <span class="tool-text" data-i18n="category.select">Select</span>
         </button>
-        <button class="tool-category" data-category="draw" title="Draw">
-          <span class="tool-icon">✎</span><span class="tool-text">Draw</span>
+        <button class="tool-category" data-category="draw" data-category-key="category.draw">
+          <span class="tool-icon ui-icon icon-draw" aria-hidden="true"></span>
+          <span class="tool-text" data-i18n="category.draw">Draw</span>
         </button>
-        <button class="tool-category" data-category="architecture" title="Architecture">
-          <span class="tool-icon">⌂</span><span class="tool-text">Arch</span>
+        <button class="tool-category" data-category="architecture" data-category-key="category.architecture">
+          <span class="tool-icon ui-icon icon-architecture" aria-hidden="true"></span>
+          <span class="tool-text" data-i18n="category.architecture">Architecture</span>
         </button>
-        <button class="tool-category" data-category="dimension" title="Dimension">
-          <span class="tool-icon">↔</span><span class="tool-text">Dim</span>
+        <button class="tool-category" data-category="dimension" data-category-key="category.dimension">
+          <span class="tool-icon ui-icon icon-dimension" aria-hidden="true"></span>
+          <span class="tool-text" data-i18n="category.dimension">Dimension</span>
         </button>
-        <button class="tool-category" data-category="modify" title="Modify">
-          <span class="tool-icon">⌘</span><span class="tool-text">Modify</span>
+        <button class="tool-category" data-category="modify" data-category-key="category.modify">
+          <span class="tool-icon ui-icon icon-modify" aria-hidden="true"></span>
+          <span class="tool-text" data-i18n="category.modify">Modify</span>
         </button>
       </aside>
 
       <div id="toolPopover" class="tool-popover" hidden></div>
 
-      <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas">
+      <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas" data-i18n-aria="aria.canvas">
         <canvas id="drawingCanvas"></canvas>
         <div id="emptyState" class="empty-state">
-          <div class="empty-title">Start with a reference or draw from scratch.</div>
-          <div class="empty-copy">Open a DXF or image, then trace it using real-world coordinates.</div>
-          <button id="emptyOpenBtn" class="toolbar-button primary">Open Reference</button>
+          <div class="empty-title" data-i18n="empty.title">Start with a reference or draw from scratch.</div>
+          <div class="empty-copy" data-i18n="empty.copy">Open a DXF or image, then trace it using real-world coordinates.</div>
+          <button id="emptyOpenBtn" class="toolbar-button primary" data-i18n="action.openReference">Open Reference</button>
         </div>
         <div id="progressToast" class="progress-toast" hidden>
-          <div class="progress-title" id="progressTitle">Reading DXF…</div>
+          <div class="progress-title" id="progressTitle" data-i18n="progress.readingDxf">Reading DXF…</div>
           <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
           <div class="progress-detail" id="progressDetail"></div>
         </div>
@@ -78,16 +91,16 @@
 
       <aside class="inspector">
         <div class="inspector-tabs" role="tablist">
-          <button class="inspector-tab active" data-tab="layers" role="tab">Layers</button>
-          <button class="inspector-tab" data-tab="reference" role="tab">Reference</button>
-          <button class="inspector-tab" data-tab="properties" role="tab">Properties</button>
+          <button class="inspector-tab active" data-tab="layers" role="tab" data-i18n="tab.layers">Layers</button>
+          <button class="inspector-tab" data-tab="reference" role="tab" data-i18n="tab.reference">Reference</button>
+          <button class="inspector-tab" data-tab="properties" role="tab" data-i18n="tab.properties">Properties</button>
         </div>
         <div class="inspector-body">
           <section class="inspector-panel active" data-panel="layers">
             <div class="panel-header">
               <div>
-                <div class="panel-title">Drawing layers</div>
-                <div class="panel-subtitle">Objects created in PieniPlan</div>
+                <div class="panel-title" data-i18n="panel.drawingLayers">Drawing layers</div>
+                <div class="panel-subtitle" data-i18n="panel.drawingLayersSub">Objects created in PieniPlan</div>
               </div>
             </div>
             <div id="layerList" class="panel-list"></div>
@@ -96,23 +109,23 @@
           <section class="inspector-panel" data-panel="reference">
             <div class="panel-header">
               <div>
-                <div class="panel-title">References</div>
-                <div class="panel-subtitle">DXF and image underlays</div>
+                <div class="panel-title" data-i18n="panel.references">References</div>
+                <div class="panel-subtitle" data-i18n="panel.referencesSub">DXF and image underlays</div>
               </div>
-              <button id="addReferenceBtn" class="small-button">Add</button>
+              <button id="addReferenceBtn" class="small-button" data-i18n="action.add">Add</button>
             </div>
             <div id="referenceList" class="panel-list"></div>
             <div class="panel-section muted-section">
               <div class="section-heading">PDF</div>
-              <div class="section-copy">PDF reference tracing is planned after the Build 1 workspace and coordinate model are validated.</div>
+              <div class="section-copy" data-i18n="panel.pdfPlanned">PDF reference tracing is planned after the workspace and coordinate model are validated.</div>
             </div>
           </section>
 
           <section class="inspector-panel" data-panel="properties">
             <div class="panel-header">
               <div>
-                <div class="panel-title">Properties</div>
-                <div class="panel-subtitle">Selected object or active tool</div>
+                <div class="panel-title" data-i18n="panel.properties">Properties</div>
+                <div class="panel-subtitle" data-i18n="panel.propertiesSub">Selected object or active tool</div>
               </div>
             </div>
             <div id="propertiesPanel" class="properties-panel"></div>
@@ -129,9 +142,12 @@
         <span id="statusUnits">mm</span>
       </div>
       <div class="status-spacer"></div>
-      <button id="gridToggle" class="status-toggle active">GRID</button>
-      <button id="snapToggle" class="status-toggle active">SNAP</button>
-      <button id="orthoToggle" class="status-toggle">ORTHO</button>
+      <button id="gridToggle" class="status-toggle active"
+              data-tooltip-title="GRID" data-tooltip-key="tooltip.grid">GRID</button>
+      <button id="snapToggle" class="status-toggle active"
+              data-tooltip-title="SNAP" data-tooltip-key="tooltip.snap">SNAP</button>
+      <button id="orthoToggle" class="status-toggle"
+              data-tooltip-title="ORTHO" data-tooltip-key="tooltip.ortho">ORTHO</button>
       <span class="status-divider"></span>
       <span id="statusZoom">100%</span>
     </footer>
@@ -139,17 +155,20 @@
 
   <div id="dialogBackdrop" class="dialog-backdrop" hidden>
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
-      <div class="dialog-title" id="dialogTitle">Calibrate reference</div>
+      <div class="dialog-title" id="dialogTitle" data-i18n="dialog.calibrate">Calibrate reference</div>
       <div class="dialog-copy" id="dialogCopy"></div>
-      <label class="field-label" for="dialogInput">Actual distance (mm)</label>
+      <label class="field-label" for="dialogInput" data-i18n="dialog.actualDistance">Actual distance (mm)</label>
       <input id="dialogInput" class="text-input" type="number" step="0.01" min="0.0001" />
       <div class="dialog-actions">
-        <button id="dialogCancelBtn" class="toolbar-button">Cancel</button>
-        <button id="dialogApplyBtn" class="toolbar-button primary">Apply scale</button>
+        <button id="dialogCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="dialogApplyBtn" class="toolbar-button primary" data-i18n="action.applyScale">Apply scale</button>
       </div>
     </div>
   </div>
 
+  <div id="uiTooltip" class="ui-tooltip" role="tooltip" hidden></div>
+
+  <script src="i18n.js"></script>
   <script src="drawing-studio.js"></script>
   <script src="app.js"></script>
 </body>

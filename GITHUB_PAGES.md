@@ -1,6 +1,6 @@
 # GitHub Pages deployment
 
-PieniPlan Build 1 is a static site. No build command is required.
+PieniPlan v0.1.0 · Build 2 is a static site. No build command is required.
 
 ## Recommended repository root
 
@@ -8,9 +8,11 @@ Upload these files/folders directly to the repository root:
 
 - `index.html`
 - `styles.css`
+- `i18n.js`
 - `app.js`
 - `drawing-studio.js`
 - `workers/`
+- `vendor/`
 - `manifest.webmanifest`
 - `robots.txt`
 - project documentation files
@@ -27,6 +29,15 @@ In the GitHub repository:
 6. Save.
 
 After deployment, open the HTTPS Pages URL and test DXF Worker loading there.
+
+## Language test override
+
+Normal use follows the browser/OS language automatically.
+
+For testing only:
+
+- `?lang=ko`
+- `?lang=en`
 
 ## Important
 
