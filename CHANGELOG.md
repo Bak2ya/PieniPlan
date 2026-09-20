@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.5.0 · Build 6 — 2026-09-20
+
+Plan interaction and CAD → Plan linkage milestone.
+
+- added README quick-launch and repository links
+- improved door/window resize discoverability with larger opening handles and live width labels
+- added door swing flipping by perpendicular drag while keeping explicit hinge/swing flip actions
+- added object-specific Plan right-click menus
+- added visible wall endpoint/wall-segment snapping for Plan wall drawing/editing
+- added attachable T-junction wall relationships; attached branches follow parent-wall movement and can be detached/re-attached
+- added quick `Space` → Select in Plan Tools while preserving hold-Space + drag Pan
+- added F3 SNAP / F7 GRID / F8 ORTHO to the shared shortcut registry and delayed tooltips
+- renamed Space to **Define Space / 공간 지정** and added closed semantic-wall space recognition with stable IDs
+- made Plan dimensions associative with their source wall
+- highlighted the selected CAD object's layer and added quick hide/isolate/show-in-Layers actions
+- added context-sensitive CAD right-click menus
+- added **Drawing Regions**: name a rectangular CAD area, fit to it, export it as DXF, or open it in Plan Tools as a linked vector reference
+- linked Drawing Region references preserve their visible-layer snapshot until explicitly refreshed
+- kept narrow/mobile workspaces viewer-only
+
 ## v0.4.0 · Build 5 — 2026-09-20
 
 Direct-manipulation and real-DXF reliability milestone.

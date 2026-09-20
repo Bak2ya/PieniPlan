@@ -2,7 +2,7 @@
 
 ## Tabler Icons
 
-PieniPlan v0.4.0 Build 5 includes a small local subset of **Tabler Icons v3.46.0** outline SVG icons.
+PieniPlan v0.5.0 Build 6 includes a small local subset of **Tabler Icons v3.46.0** outline SVG icons.
 
 Source project: Tabler Icons (`tabler/tabler-icons`)
 

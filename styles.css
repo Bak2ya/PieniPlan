@@ -403,3 +403,30 @@ button:disabled { opacity:.42; cursor:default; }
 
 .property-value { display:flex; align-items:center; gap:5px; }
 .property-unit { color:var(--text-3); font-size:9px; }
+
+/* Build 6 contextual editing + drawing-region UI */
+.canvas-context-menu {
+  position:fixed; z-index:620; min-width:178px; padding:5px;
+  border:1px solid var(--border-strong); border-radius:8px;
+  background:color-mix(in srgb,var(--surface-2) 98%,transparent);
+  box-shadow:0 14px 34px rgba(0,0,0,.32);
+}
+.context-menu-item {
+  display:block; width:100%; min-height:30px; padding:5px 9px; border:0; border-radius:5px;
+  background:transparent; color:var(--text); text-align:left; font:inherit; font-size:10px; cursor:pointer;
+}
+.context-menu-item:hover:not(:disabled) { background:var(--surface-3); }
+.context-menu-item.danger { color:var(--danger); }
+.context-menu-divider { height:1px; margin:4px 3px; background:var(--border); }
+.panel-divider { height:1px; margin:10px 0; background:var(--border); }
+.region-add { margin:7px 0 9px; }
+.region-row { display:grid; gap:6px; padding:7px 0 9px; border-bottom:1px solid var(--border); }
+.region-row.selected { background:var(--accent-soft); margin-inline:-6px; padding-inline:6px; border-radius:6px; }
+.region-main { display:grid; gap:2px; width:100%; padding:0; border:0; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
+.region-main strong { font-size:10.5px; }
+.region-main span { color:var(--text-3); font-size:9px; }
+.region-actions { display:flex; flex-wrap:wrap; gap:5px; }
+.mini-action.danger { color:var(--danger); }
+.list-row.selected { background:var(--accent-soft); }
+.canvas-host[data-tool="region"] #drawingCanvas { cursor:crosshair; }
+.canvas-host[data-tool="space"] #drawingCanvas { cursor:cell; }
