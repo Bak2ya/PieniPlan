@@ -1,35 +1,16 @@
-# Third-party licenses
+# Third-party notices
 
-## Font Awesome Free 6.7.2 — selected SVG icons only
+## Tabler Icons
 
-PieniPlan includes a small local subset of Font Awesome Free SVG icons for the editor UI.
+PieniPlan v0.4.0 Build 5 includes a small local subset of **Tabler Icons v3.46.0** outline SVG icons.
 
-Source: https://fontawesome.com/
-Copyright: Fonticons, Inc.
-Icon license: Creative Commons Attribution 4.0 International (CC BY 4.0)
+Source project: Tabler Icons (`tabler/tabler-icons`)
 
-Included SVGs:
-- `arrow-pointer.svg`
-- `door-open.svg`
-- `draw-polygon.svg`
-- `eye-slash.svg`
-- `eye.svg`
-- `file-export.svg`
-- `file-import.svg`
-- `house.svg`
-- `layer-group.svg`
-- `lines-leaning.svg`
-- `pen-ruler.svg`
-- `rotate-left.svg`
-- `rotate-right.svg`
-- `ruler-combined.svg`
-- `ruler-horizontal.svg`
-- `screwdriver-wrench.svg`
-- `terminal.svg`
-- `vector-square.svg`
-- `window-maximize.svg`
+License: MIT License  
+Copyright (c) 2020-2026 Paweł Kuna
 
-The original Font Awesome Free license text is included at:
-`vendor/fontawesome/LICENSE.txt`
+The complete license text used by this build is included at:
 
-No Font Awesome font files are included in PieniPlan.
+`vendor/tabler/LICENSE.txt`
+
+Only the icons needed by the PieniPlan interface are bundled locally. No icon CDN is required at runtime.

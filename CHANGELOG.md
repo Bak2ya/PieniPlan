@@ -1,53 +1,59 @@
 # Changelog
 
+## v0.4.0 · Build 5 — 2026-09-20
+
+Direct-manipulation and real-DXF reliability milestone.
+
+- changed CAD Tools empty-state actions to purpose-driven **Draw new / Edit existing DXF**
+- added beginner-oriented direct manipulation for Plan walls, doors, windows and dimensions
+- added conventional door leaf + 90° swing arc and hinge/swing flip controls
+- cut wall display around door/window openings and improved connected thick-wall joins
+- upgraded dimensions with witness/extension lines, dimension line, ticks and editable offset
+- made wall/line Length and Angle editable from Properties
+- added separate hover / selection / drag states and meaningful object handles
+- added main-drawing smart Fit for DXFs with detected distant outlier entities, plus **All extents**
+- added object endpoint spatial indexing for large editable DXFs
+- added document/source status and Modified state; unload warning now follows actual dirty state
+- aligned themes with House Light / Dark / Black(OLED) palette direction
+- added Black(OLED) appearance mode
+- replaced the previous Font Awesome subset with a local Tabler Icons outline subset
+- added viewer-only behavior for very narrow/mobile workspaces with pan/zoom
+- kept browser Back/Forward navigation separate from drawing Undo/Redo
+
 ## v0.3.1 · Build 4 — 2026-09-15
 
-Navigation and appearance refinement for the unified Plan/CAD prototype.
-
-- connected PieniPlan screen/tool-set navigation to the browser History API
-- browser Back/Forward now restores PieniPlan start/workspace/tool-set states; mouse thumb Back/Forward works when the browser/OS maps those buttons to browser navigation
-- added explicit in-app Back and Home controls
-- returning to the start screen preserves the current in-memory drawing instead of clearing it
-- added a Continue current drawing card on the start screen
+- connected PieniPlan navigation to browser History API
+- added in-app Back and Home controls
+- returning Home preserves the current in-memory drawing
+- added Continue current drawing on the start screen
 - added System / Light / Dark appearance selection
-- appearance preference is persisted locally and applied before the main stylesheet paints when possible
-- kept drawing Undo/Redo fully separate from navigation Back/Forward
+- kept drawing Undo/Redo separate from navigation Back/Forward
 
 ## v0.3.0 · Build 3 — 2026-09-15
-
-Prototype of the unified Plan/CAD product direction.
 
 - added a start screen with Plan Tools and CAD Tools as two entry paths into the same drawing
 - kept one shared mm coordinate system and canvas across both tool sets
 - added Plan wall / door / window workflow with exact dimensions
-- added first-time Plan → CAD representation mapping for walls and layer names
-- added CAD → Plan simplified presentation without discarding CAD geometry
+- added first-time Plan → CAD representation mapping
 - added editable DXF opening for common basic entities
 - added CAD command input with a small supported familiar alias set
 - added basic shared-drawing DXF export
 - kept DXF/image reference tracing and calibration
-- separated the public GitHub package from AI/development handoff documents
 
 ## v0.2.0 · Build 2 — 2026-09-14
 
-Localization and UI grammar baseline.
-
 - fixed scale-calibration dialog appearing on first launch
-- added Korean/English localization with browser/OS auto-detection and English fallback
-- kept GRID / SNAP / ORTHO / DXF as intentional English CAD terms in Korean UI
-- replaced improvised Unicode UI glyphs with a local Font Awesome Free SVG subset
-- added selective delayed hover/focus tooltips
-- removed unvalidated arbitrary single-letter tool-selection shortcuts
-- localized DXF Worker progress/error messages
+- added Korean/English localization
+- kept GRID / SNAP / ORTHO / DXF as intentional CAD terms
+- replaced improvised Unicode glyphs with a temporary SVG icon set
+- added selective delayed tooltips
+- removed unvalidated arbitrary single-letter tool shortcuts
 
 ## v0.1.0 · Build 1 — 2026-09-14
 
-First executable PieniPlan baseline.
-
-- established the initial CAD-like workspace
-- added DXF and image references
-- added real-world mm coordinates and reference calibration
-- added Line, Wall, Distance, Select and Delete
-- added numeric Length / Angle / Wall Thickness input
-- added GRID / SNAP / ORTHO and CAD-style navigation
-- added DXF Canvas/Path2D rendering and endpoint snap indexing
+- first executable workspace baseline
+- DXF/image references and calibration
+- real-world mm coordinates
+- Line / Wall / Distance / Select / Delete
+- numeric Length / Angle / Wall Thickness input
+- GRID / SNAP / ORTHO and CAD-style navigation
