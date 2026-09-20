@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.10.0 · Build 11 — 2026-09-20
+
+- 상단바를 PieniPlan 홈, `Plan Mode | CAD Mode`, 중앙 문서명/변경 표시, Undo/Redo/View/File/Settings 아이콘 구조로 재편했습니다.
+- View에는 화면 맞춤/전체 요소 보기만 남기고, File에는 새 도면/프로젝트 열기/프로젝트 저장/DXF 열기/DXF 내보내기를 정리했습니다.
+- Settings에서 Light/Dark/Black을 즉시 바꿀 수 있게 하고, 별도 정식 사용 안내와 About 창을 추가했습니다.
+- Plan Mode의 역할을 `CAD 표현 복제`가 아닌 **층별 semantic floor-plan model**로 명확히 하고 `층 / 팔레트 / 속성` inspector를 추가했습니다.
+- `.pieniplan` schemaVersion 2에 floors/activeFloorId를 저장하며 기존 프로젝트는 기본 1F로 호환 로드합니다.
+- 각 Plan semantic object를 active floor에 귀속시키고, Plan 표시/선택을 현재 층으로 제한했습니다.
+- Plan Wall은 semantic thickness를 유지하면서 화면에서는 일정한 선 굵기로 표시하고, Stair는 복잡한 tread 반복 대신 semantic bounds + label로 단순화했습니다.
+- Plan Mode에서도 기존 Window/Crossing 드래그 다중 선택을 current-floor 의미 객체에 적용했습니다.
+- 연결된 짧은 LINE chain이 원호에 안정적으로 맞는 경우 하나의 Arc Wall 후보로 복원하는 보수적 segmented-curve recognition을 추가했습니다.
+- current floor와 Drawing Region을 연결하고 `재인식`/`CAD에서 편집` 흐름을 추가했습니다. 재인식은 기존 Plan 사용자 작업을 자동 삭제하지 않는 preview 기반 foundation입니다.
+- 실제 source/editable CAD로 단순 복귀할 때 Plan→CAD mapping dialog가 뜨지 않도록 전환 조건을 수정했습니다.
+- Plan reference의 작은 DXF text는 최소 읽기 크기를 적용하고 CAD Mode는 true world-scale text + LOD를 유지합니다.
+- A4/A3 page canvas는 Plan editing model에서 제외하고 향후 FacilityManager/print layout 책임으로 남겼습니다.
+- Build 10 회귀 테스트와 Build 11 topbar/floor/segmented-curve/Plan-visual regression을 통과했습니다.
+
 ## v0.9.0 · Build 10 — 2026-09-20
 
 - `.pieniplan` 프로젝트 저장/열기를 추가해 현재 CAD/Plan 객체, 레이어 표시 상태, Drawing Region, 기준축/제약, 인식 이력과 원본 DXF 식별 정보를 함께 보관할 수 있게 했습니다.
