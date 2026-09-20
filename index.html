@@ -72,6 +72,32 @@
           <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
           <div class="progress-detail" id="progressDetail"></div>
         </div>
+
+        <div id="canvasHud" class="canvas-hud" aria-label="Drawing command and status">
+          <div class="hud-cad-only status-group coord-group">
+            <span id="statusX">X 0</span>
+            <span id="statusY">Y 0</span>
+            <span class="status-divider"></span>
+            <span id="statusUnits">mm</span>
+          </div>
+          <div id="commandBar" class="commandbar">
+            <span class="command-label">Command</span>
+            <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="L, TR, EX, DI, Z …" aria-label="Command" />
+            <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
+          </div>
+          <div class="hud-spacer"></div>
+          <div class="hud-cad-only hud-status-actions">
+            <button id="gridToggle" class="status-toggle active" data-tooltip-title="GRID" data-tooltip-key="tooltip.grid">GRID</button>
+            <button id="snapToggle" class="status-toggle active" data-tooltip-title="SNAP" data-tooltip-key="tooltip.snap">SNAP</button>
+            <button id="orthoToggle" class="status-toggle" data-tooltip-title="ORTHO" data-tooltip-key="tooltip.ortho">ORTHO</button>
+            <button id="polarToggle" class="status-toggle" data-tooltip-title="POLAR" data-tooltip-key="tooltip.polar">POLAR</button>
+            <span class="status-divider"></span>
+            <span id="statusAxis" class="status-axis">AXIS 0°</span>
+            <span class="status-divider"></span>
+            <span id="statusZoom">100%</span>
+          </div>
+        </div>
       </section>
 
       <aside class="inspector">
@@ -120,34 +146,6 @@
       </aside>
     </main>
 
-    <div id="commandBar" class="commandbar" hidden>
-      <div class="command-label">Command:</div>
-      <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
-             placeholder="L, TR, EX, DI, Z …" aria-label="Command" />
-      <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
-    </div>
-
-    <footer class="statusbar">
-      <div class="status-group coord-group">
-        <span id="statusX">X 0</span>
-        <span id="statusY">Y 0</span>
-        <span class="status-divider"></span>
-        <span id="statusUnits">mm</span>
-      </div>
-      <div class="status-spacer"></div>
-      <button id="gridToggle" class="status-toggle active"
-              data-tooltip-title="GRID" data-tooltip-key="tooltip.grid">GRID</button>
-      <button id="snapToggle" class="status-toggle active"
-              data-tooltip-title="SNAP" data-tooltip-key="tooltip.snap">SNAP</button>
-      <button id="orthoToggle" class="status-toggle"
-              data-tooltip-title="ORTHO" data-tooltip-key="tooltip.ortho">ORTHO</button>
-      <button id="polarToggle" class="status-toggle"
-              data-tooltip-title="POLAR" data-tooltip-key="tooltip.polar">POLAR</button>
-      <span class="status-divider"></span>
-      <span id="statusAxis" class="status-axis">AXIS 0°</span>
-      <span class="status-divider"></span>
-      <span id="statusZoom">100%</span>
-    </footer>
   </div>
 
   <section id="startScreen" class="start-screen" aria-labelledby="startTitle">
@@ -292,6 +290,17 @@
       <div class="dialog-actions">
         <button id="recognitionCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
         <button id="recognitionApplyBtn" class="toolbar-button primary" data-i18n="recognition.apply">Create walls and open Plan Mode</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="dialog-title" id="confirmTitle"></div>
+      <div class="dialog-copy" id="confirmCopy"></div>
+      <div class="dialog-actions">
+        <button id="confirmCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="confirmApplyBtn" class="toolbar-button danger"></button>
       </div>
     </div>
   </div>

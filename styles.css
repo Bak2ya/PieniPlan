@@ -581,3 +581,71 @@ button:disabled { opacity:.42; cursor:default; }
   .toolset-button { padding:0 6px; }
   .topbar-document { max-width:28vw; }
 }
+
+/* Build 12 — editor-density pass, canvas HUD, and consistent floor actions */
+html, body { overscroll-behavior:none; }
+.app-shell { grid-template-rows:52px auto minmax(0,1fr); min-width:0; max-width:100vw; overflow:hidden; }
+.topbar { overflow:hidden; min-width:0; }
+.topbar-zone, .topbar-document { min-width:0; }
+.contextbar[hidden] { display:none !important; }
+.workspace { grid-row:3; grid-template-columns:62px minmax(0,1fr) 286px; overflow:hidden; }
+
+/* A denser Photoshop-like grouped rail. The small corner marker indicates expandable tools. */
+.tool-rail { padding:6px 5px; gap:3px; overflow-y:auto; overflow-x:hidden; }
+.tool-category, .tool-direct { position:relative; min-height:46px; padding:4px 2px; gap:3px; border-radius:7px; }
+.tool-category.grouped::after { content:''; position:absolute; right:4px; bottom:4px; width:0; height:0; border-left:4px solid transparent; border-top:4px solid currentColor; opacity:.55; transform:rotate(45deg); transform-origin:center; }
+.tool-icon { width:16px; height:16px; }
+.tool-text { max-width:50px; font-size:8.8px; line-height:1.12; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tool-separator { margin:2px 4px; }
+.tool-popover { left:68px; width:200px; }
+
+/* Canvas HUD replaces the old page-level command/status rows. */
+.canvas-hud {
+  position:absolute; z-index:18; left:10px; right:10px; bottom:9px; min-height:30px;
+  display:flex; align-items:center; gap:7px; padding:3px 6px;
+  border:1px solid color-mix(in srgb,var(--border-strong) 78%,transparent);
+  border-radius:8px; background:color-mix(in srgb,var(--surface) 88%,transparent);
+  box-shadow:0 5px 18px rgba(0,0,0,.16); backdrop-filter:blur(10px);
+  color:var(--text-3); font-size:9.5px; user-select:none; pointer-events:none;
+}
+.canvas-hud > * { pointer-events:auto; }
+.commandbar { min-width:145px; max-width:420px; display:flex; align-items:center; gap:5px; padding:0; border:0; background:transparent; }
+.command-label { color:var(--text-3); font-size:8.8px; text-transform:uppercase; letter-spacing:.05em; }
+.command-input { width:112px; min-width:76px; height:23px; padding:0 7px; border:1px solid transparent; border-radius:5px; background:transparent; color:var(--text); outline:none; font:10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; transition:width .14s ease,background .14s ease,border-color .14s ease; }
+.command-input::placeholder { color:var(--text-3); }
+.commandbar:focus-within .command-input { width:min(320px,32vw); background:var(--surface-2); border-color:var(--border-strong); }
+.commandbar:focus-within .command-label { color:var(--text-2); }
+.command-status { position:absolute; left:66px; bottom:36px; max-width:min(520px,70vw); display:none; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:color-mix(in srgb,var(--surface-2) 96%,transparent); box-shadow:0 8px 22px rgba(0,0,0,.22); color:var(--text-2); font-size:9.5px; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.command-status.visible { display:block; }
+.command-status.strong { color:var(--text); }
+.command-status.error { color:var(--danger); }
+.hud-spacer { flex:1; min-width:0; }
+.hud-status-actions, .coord-group { display:flex; align-items:center; gap:7px; white-space:nowrap; }
+.status-toggle { height:22px; padding:0 4px; border:0; background:transparent; color:var(--text-3); cursor:pointer; font-size:8.8px; border-radius:4px; }
+.status-toggle:hover { color:var(--text); background:var(--surface-3); }
+.status-toggle.active { color:var(--accent); }
+.app-shell.plan-tools .hud-cad-only { display:none !important; }
+.app-shell.plan-tools .canvas-hud { left:auto; right:10px; width:auto; min-width:168px; }
+.app-shell.plan-tools .commandbar { min-width:150px; }
+
+/* Floor overflow menu + inline rename use app-native UI instead of browser prompt(). */
+.floor-row { position:relative; }
+.floor-inline-rename { width:100%; height:28px; border:1px solid var(--plan-accent); background:var(--surface); color:var(--text); border-radius:6px; padding:0 7px; outline:none; font-size:11.5px; }
+.floor-action-menu { position:fixed; z-index:160; min-width:150px; padding:5px; border:1px solid var(--border-strong); border-radius:8px; background:color-mix(in srgb,var(--surface-2) 98%,transparent); box-shadow:0 12px 30px rgba(0,0,0,.3); backdrop-filter:blur(12px); }
+.floor-action-menu button { width:100%; min-height:30px; border:0; border-radius:5px; background:transparent; color:var(--text); text-align:left; padding:6px 8px; cursor:pointer; font-size:10.5px; }
+.floor-action-menu button:hover { background:var(--surface-3); }
+.floor-action-menu .danger { color:var(--danger); }
+.toolbar-button.danger { border-color:color-mix(in srgb,var(--danger) 55%,var(--border)); background:color-mix(in srgb,var(--danger) 13%,var(--surface-2)); color:var(--danger); }
+
+@media (max-width: 900px) {
+  .workspace { grid-template-columns:56px minmax(0,1fr); }
+  .tool-popover { left:62px; }
+  .tool-text { max-width:44px; }
+}
+
+@media (max-width: 720px) {
+  .app-shell { grid-template-rows:44px minmax(0,1fr); }
+  .topbar { grid-row:1; }
+  .workspace { grid-row:2; grid-template-columns:minmax(0,1fr); }
+  .contextbar, .tool-rail, .inspector, .canvas-hud { display:none !important; }
+}

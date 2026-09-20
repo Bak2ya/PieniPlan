@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.11.0 · Build 12 — 2026-09-20
+
+- 상단 아래에 남아 있던 불필요한 overflow/scroll 흔적과 항상 표시되던 Context Bar를 정리하고, 실제 입력 맥락이 필요한 도구에서만 Context Bar가 나타나게 했습니다.
+- 기존 페이지 하단 Command/좌표/GRID/SNAP/ORTHO/POLAR 상태줄을 제거하고 캔버스 하단의 **한 줄 compact HUD**로 통합했습니다. Command 입력은 기본적으로 짧게 유지되고 포커스 시 확장됩니다.
+- Plan Mode에서는 CAD 전용 좌표/GRID/SNAP/ORTHO/POLAR 상태를 숨기되 Command 입력은 유지합니다. `L`, `TR`, `EX`, `E`, `DI`, Undo/Redo를 Plan 의미 객체에 적용할 수 있습니다.
+- Plan TRIM/EXTEND가 현재 층의 직선 Wall/Line을 편집하며 raw DXF는 변경하지 않도록 분리했습니다. Wall trim 시 연결된 opening/dimension 관계도 가능한 범위에서 재매핑합니다.
+- Plan drag Window/Crossing 다중 선택이 실제로 Plan Mode에서도 시작되도록 누락된 입력 경로를 수정했습니다.
+- 공간 topology에서 T자/끝점 접합은 분기점으로 사용하되, 단순 interior X crossing은 방 경계를 불필요하게 분절하지 않도록 Plan 공간 검출 규칙을 보완했습니다.
+- Plan Mode의 hover/selection/render가 거대한 CAD 원본 배열을 반복 순회하지 않도록 active-floor Plan object cache를 추가하고, linked CAD reference는 Path2D 기반 render cache를 재사용하도록 최적화했습니다.
+- `층`의 `…` 메뉴에서 브라우저 `prompt()`를 제거하고 PieniPlan 내부 메뉴 + inline 이름 변경 + 별도 삭제 확인 UI로 통일했습니다.
+- 왼쪽 도구막대를 선택/그리기/건축/수정/측정 그룹으로 고밀도 재구성했습니다. 일반 클릭은 그룹의 마지막 사용 도구를 재실행하고, 길게 누르기·우클릭·모서리 표시는 전체 그룹을 엽니다.
+- Build 11 회귀와 Build 12 HUD/Plan Command·TRIM/다중선택/Floor menu/topology/cache 회귀 테스트를 통과했습니다. 실제 창의관 DXF의 브라우저 체감 성능과 복잡 Wall/Arc trim은 사용자 실기 확인이 남아 있습니다.
+
 ## v0.10.0 · Build 11 — 2026-09-20
 
 - 상단바를 PieniPlan 홈, `Plan Mode | CAD Mode`, 중앙 문서명/변경 표시, Undo/Redo/View/File/Settings 아이콘 구조로 재편했습니다.
