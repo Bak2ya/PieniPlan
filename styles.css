@@ -190,13 +190,29 @@ button:disabled { opacity:.42; cursor:default; }
 .inspector-tab:hover { color:var(--text); }
 .inspector-tab.active { color:var(--text); border-bottom-color:var(--accent); background:var(--surface-2); }
 .app-shell.plan-tools .inspector-tab.active { border-bottom-color:var(--plan-accent); }
-.inspector-body { min-height:0; overflow:auto; }
-.inspector-panel { display:none; padding:12px; }
-.inspector-panel.active { display:block; }
+.inspector-body { min-height:0; overflow:hidden; position:relative; }
+.inspector-panel { display:none; padding:12px; min-height:0; }
+.inspector-panel.active { display:block; position:absolute; inset:0; overflow:auto; }
+.inspector-panel[data-panel="primary"].active { display:grid; grid-template-rows:auto auto minmax(0,1fr); overflow:hidden; }
 .panel-header { display:flex; align-items:flex-start; gap:10px; justify-content:space-between; margin-bottom:10px; }
 .panel-title { font-size:12px; font-weight:650; }
 .panel-subtitle { margin-top:3px; color:var(--text-3); font-size:9.5px; }
 .panel-list { display:flex; flex-direction:column; gap:5px; }
+.primary-controls { display:flex; align-items:center; gap:6px; margin:0 0 7px; min-height:28px; }
+.primary-controls[hidden] { display:none !important; }
+.layer-search { width:100%; min-width:0; height:28px; border:1px solid var(--border); border-radius:6px; background:var(--surface-2); color:var(--text); padding:0 8px; font-size:10px; outline:none; }
+.layer-search:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.app-shell.cad-tools #primaryList { overflow-y:auto; overflow-x:hidden; min-height:0; overscroll-behavior:contain; scrollbar-gutter:stable; gap:1px; padding-right:2px; }
+.app-shell.cad-tools #primaryList .cad-layer-row { min-height:28px; height:28px; border-color:transparent; border-radius:4px; background:transparent; padding:2px 4px; gap:5px; }
+.app-shell.cad-tools #primaryList .cad-layer-row:hover { background:var(--surface-2); }
+.app-shell.cad-tools #primaryList .cad-layer-row.selected { background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 30%,transparent); }
+.cad-layer-row .eye-button { width:22px; height:22px; }
+.cad-layer-row .row-main { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:7px; }
+.cad-layer-row .row-title { font-size:10px; line-height:1; }
+.cad-layer-row .row-meta { margin-top:0; font-size:8.5px; line-height:1; text-align:right; }
+.cad-layer-row .layer-active { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.canvas-number-editor { position:absolute; z-index:45; height:28px; min-width:92px; border:1px solid var(--accent); border-radius:6px; background:var(--surface); color:var(--text); padding:0 7px; box-shadow:0 8px 18px rgba(0,0,0,.24),0 0 0 2px var(--accent-soft); font-size:11px; text-align:center; outline:none; }
+
 .list-row { border:1px solid var(--border); border-radius:7px; background:var(--surface-2); min-height:38px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; padding:6px 7px; }
 .list-row.selected { border-color:color-mix(in srgb,var(--accent) 55%,var(--border)); background:var(--accent-soft); }
 .app-shell.plan-tools .list-row.selected { border-color:color-mix(in srgb,var(--plan-accent) 55%,var(--border)); background:var(--plan-soft); }
@@ -235,6 +251,8 @@ button:disabled { opacity:.42; cursor:default; }
 .status-toggle:hover { color:var(--text); background:var(--surface-2); }
 .status-toggle.active { color:var(--accent); }
 .app-shell.plan-tools .status-toggle.active { color:var(--plan-accent); }
+.status-axis { color:var(--text-3); padding:0 2px; }
+.status-axis.active { color:var(--accent); font-weight:650; }
 
 .start-screen { position:fixed; inset:0; z-index:300; display:grid; place-items:center; padding:28px; background:radial-gradient(circle at 50% 25%, color-mix(in srgb,var(--surface-3) 60%,transparent), transparent 58%), var(--bg); }
 .start-panel { width:min(880px,100%); }

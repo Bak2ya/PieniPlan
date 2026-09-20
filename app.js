@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.5.0';
-  const BUILD = 6;
+  const VERSION = '0.6.0';
+  const BUILD = 7;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -22,9 +22,9 @@
     fitBtn: $('fitBtn'), fullExtentsBtn: $('fullExtentsBtn'), undoBtn: $('undoBtn'), redoBtn: $('redoBtn'), exportDxfBtn: $('exportDxfBtn'),
     contextToolName: $('contextToolName'), contextFields: $('contextFields'), contextHint: $('contextHint'),
     emptyState: $('emptyState'), emptyKicker: $('emptyKicker'), emptyTitle: $('emptyTitle'), emptyCopy: $('emptyCopy'), emptyPrimaryBtn: $('emptyPrimaryBtn'),
-    primaryInspectorTab: $('primaryInspectorTab'), primaryPanelTitle: $('primaryPanelTitle'), primaryPanelSubtitle: $('primaryPanelSubtitle'), primaryList: $('primaryList'), mappingSettingsBtn: $('mappingSettingsBtn'),
+    primaryInspectorTab: $('primaryInspectorTab'), primaryPanelTitle: $('primaryPanelTitle'), primaryPanelSubtitle: $('primaryPanelSubtitle'), primaryControls: $('primaryControls'), primaryList: $('primaryList'), mappingSettingsBtn: $('mappingSettingsBtn'),
     referenceList: $('referenceList'), propertiesPanel: $('propertiesPanel'),
-    statusX: $('statusX'), statusY: $('statusY'), statusUnits: $('statusUnits'), statusZoom: $('statusZoom'),
+    statusX: $('statusX'), statusY: $('statusY'), statusUnits: $('statusUnits'), statusAxis: $('statusAxis'), statusZoom: $('statusZoom'),
     gridToggle: $('gridToggle'), snapToggle: $('snapToggle'), orthoToggle: $('orthoToggle'),
     progressToast: $('progressToast'), progressTitle: $('progressTitle'), progressBar: $('progressBar'), progressDetail: $('progressDetail'),
     commandBar: $('commandBar'), commandInput: $('commandInput'), commandStatus: $('commandStatus'),
@@ -135,6 +135,12 @@
     drawingRegions: [],
     selectedRegionId: null,
     regionDrag: null,
+    selectionDrag: null,
+    selectedObjectIds: new Set(),
+    editableLabels: [],
+    layerFilter: '',
+    baseAxisAngle: 0,
+    baseAxisWallId: null,
     lastCommand: null,
     view: 'start',
     workspaceVisited: false,
@@ -310,6 +316,129 @@
   function isCadObject(o) { return ['cadLine','cadCircle','cadText'].includes(o?.type); }
   function hasSemanticObjects() { return state.objects.some(isSemanticObject); }
   function makeStableUuid() { return globalThis.crypto?.randomUUID?.() || `space-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`; }
+  function ensureWallConstraints(wall){
+    if(!wall||wall.type!=='wall') return null;
+    wall.constraints=wall.constraints||{};
+    if(!('orientation' in wall.constraints)) wall.constraints.orientation=null;
+    if(!('fixedAngle' in wall.constraints)) wall.constraints.fixedAngle=null;
+    if(!('fixedLength' in wall.constraints)) wall.constraints.fixedLength=null;
+    if(!('fixed' in wall.constraints)) wall.constraints.fixed=false;
+    wall.constraints.endpointLocks=wall.constraints.endpointLocks||{a:false,b:false};
+    return wall.constraints;
+  }
+  function isSelectedId(id){return state.selectedObjectId===id||state.selectedObjectIds.has(id);}
+  function isSelectionPreviewId(id){return Boolean(state.selectionDrag?.previewIds?.has(id));}
+  function clearMultiSelection(){state.selectedObjectIds.clear();state.selectedObjectId=null;}
+  function selectOnly(id){state.selectedObjectId=id||null;state.selectedObjectIds.clear();if(id)state.selectedObjectIds.add(id);}
+  function selectionIds(){const ids=new Set(state.selectedObjectIds);if(state.selectedObjectId)ids.add(state.selectedObjectId);return ids;}
+  function visibleSelectableObjects(){
+    return state.objects.filter(o=>{
+      if(state.toolset==='plan'&&isCadObject(o))return false;
+      if(state.toolset==='cad'&&o.type!=='space'&&(isCadObject(o)||isSemanticObject(o)||o.type==='line')&&!cadLayerVisible(cadLayerForObject(o)))return false;
+      return true;
+    });
+  }
+  function objectFullyInsideRect(o,r){const b=objectBoundsWorld(o);return b&&b.minx>=r.minx&&b.maxx<=r.maxx&&b.miny>=r.miny&&b.maxy<=r.maxy;}
+  function applySelectionSet(ids,mode='replace'){const next=new Set(state.selectedObjectIds);if(mode==='replace'){next.clear();for(const id of ids)next.add(id);}else if(mode==='add'){for(const id of ids)next.add(id);}else if(mode==='toggle'){for(const id of ids){if(next.has(id))next.delete(id);else next.add(id);}}state.selectedObjectIds=next;state.selectedObjectId=next.size===1?[...next][0]:null;state.selectedReferenceId=null;state.selectedRegionId=null;}
+  function applyObjectClickSelection(obj,e){if(!obj){if(!e.shiftKey&&!e.ctrlKey&&!e.metaKey)clearMultiSelection();return;}const mode=e.shiftKey?'add':(e.ctrlKey||e.metaKey?'toggle':'replace');applySelectionSet([obj.id],mode);}
+  function registerEditableLabel({objectId,kind,rect,value}){state.editableLabels.push({objectId,kind,rect,value});}
+  function hitEditableLabel(screen){for(let i=state.editableLabels.length-1;i>=0;i--){const l=state.editableLabels[i],r=l.rect;if(screen.x>=r.x&&screen.x<=r.x+r.w&&screen.y>=r.y&&screen.y<=r.y+r.h)return l;}return null;}
+  function baseAxisAngle(){return Number(state.baseAxisAngle)||0;}
+  function normalizeAngle(a){let n=((Number(a)||0)%360+360)%360;return n;}
+  function angleDelta(a,b){let d=normalizeAngle(a)-normalizeAngle(b);if(d>180)d-=360;if(d<-180)d+=360;return d;}
+  function axisConstraintAngle(kind,value=null){
+    if(kind==='horizontal')return 0;
+    if(kind==='vertical')return 90;
+    if(kind==='parallel')return baseAxisAngle();
+    if(kind==='perpendicular')return baseAxisAngle()+90;
+    if(kind==='angle')return baseAxisAngle()+(Number(value)||0);
+    return null;
+  }
+  function wallConstraintAngle(wall){const c=ensureWallConstraints(wall);if(!c)return null;if(c.orientation)return axisConstraintAngle(c.orientation);if(Number.isFinite(c.fixedAngle))return axisConstraintAngle('angle',c.fixedAngle);return null;}
+  function constrainedEndpointAnchor(wall,preferred='a'){
+    const aAttached=Boolean(wall.attachments?.a),bAttached=Boolean(wall.attachments?.b),c=ensureWallConstraints(wall);
+    if(c?.endpointLocks?.a||aAttached)return'a';
+    if(c?.endpointLocks?.b||bAttached)return'b';
+    return preferred==='b'?'b':'a';
+  }
+  function setWallAngleAndLength(wall,angle,length,anchor='a'){
+    const a=rad(angle),len=Math.max(.001,length);
+    if(anchor==='b')wall.a={x:wall.b.x-Math.cos(a)*len,y:wall.b.y-Math.sin(a)*len};
+    else wall.b={x:wall.a.x+Math.cos(a)*len,y:wall.a.y+Math.sin(a)*len};
+  }
+  function enforceWallConstraints(wall,{changed='b'}={}){
+    if(!wall||wall.type!=='wall')return;
+    const c=ensureWallConstraints(wall);
+    if(c.fixed&&c.fixedA&&c.fixedB){wall.a={...c.fixedA};wall.b={...c.fixedB};return;}
+    enforceWallAttachments(wall);
+    const desiredAngle=wallConstraintAngle(wall);
+    const desiredLength=Number.isFinite(c.fixedLength)?c.fixedLength:distance(wall.a,wall.b);
+    if(desiredAngle!=null||Number.isFinite(c.fixedLength)){
+      const angle=desiredAngle!=null?desiredAngle:angleDeg(wall.a,wall.b);
+      let anchor=changed==='a'?'b':'a';
+      anchor=constrainedEndpointAnchor(wall,anchor);
+      setWallAngleAndLength(wall,angle,desiredLength,anchor);
+      enforceWallAttachments(wall);
+    }
+  }
+  function breakWallConstraintForEdit(wall,kind){
+    const c=ensureWallConstraints(wall);if(!c)return false;
+    const conflicts=[];
+    if(c.fixed)conflicts.push('fixed');
+    if(kind==='angle'&&(c.orientation||Number.isFinite(c.fixedAngle)))conflicts.push('angle');
+    if(kind==='length'&&Number.isFinite(c.fixedLength))conflicts.push('length');
+    if(conflicts.length&&!confirm(t(kind==='angle'?'confirm.breakAngleConstraint':'confirm.breakLengthConstraint')))return false;
+    pushHistory();
+    if(conflicts.includes('fixed')){c.fixed=false;delete c.fixedA;delete c.fixedB;}
+    if(kind==='angle'){c.orientation=null;c.fixedAngle=null;}
+    if(kind==='length')c.fixedLength=null;
+    return true;
+  }
+  function setBaseAxisFromWall(wall){
+    if(!wall||wall.type!=='wall')return;
+    pushHistory();
+    state.baseAxisAngle=angleDeg(wall.a,wall.b);
+    state.baseAxisWallId=wall.id;
+    for(const w of state.objects.filter(o=>o.type==='wall'&&o.id!==wall.id)){if(ensureWallConstraints(w).orientation==='parallel'||ensureWallConstraints(w).orientation==='perpendicular'||Number.isFinite(ensureWallConstraints(w).fixedAngle))enforceWallConstraints(w);}
+    markDirty(true);rebuildObjectSnapIndex();updateAll();
+  }
+  function clearBaseAxis(){pushHistory();state.baseAxisAngle=0;state.baseAxisWallId=null;for(const w of state.objects.filter(o=>o.type==='wall'))enforceWallConstraints(w);markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function setWallConstraint(wall,type,value=null){
+    if(!wall||wall.type!=='wall')return;
+    const c=ensureWallConstraints(wall);
+    pushHistory();
+    if(type==='horizontal'||type==='vertical'||type==='parallel'||type==='perpendicular'){c.orientation=type;c.fixedAngle=null;}
+    else if(type==='angle'){c.orientation=null;c.fixedAngle=Number(value)||0;}
+    else if(type==='length')c.fixedLength=Math.max(.001,Number(value)||distance(wall.a,wall.b));
+    else if(type==='fixed'){c.fixed=!c.fixed;if(c.fixed){c.fixedA={...wall.a};c.fixedB={...wall.b};}else{delete c.fixedA;delete c.fixedB;}}
+    enforceWallConstraints(wall);syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();
+  }
+  function clearWallGeometricConstraints(wall){
+    if(!wall||wall.type!=='wall')return;pushHistory();const c=ensureWallConstraints(wall);c.orientation=null;c.fixedAngle=null;c.fixedLength=null;c.fixed=false;c.endpointLocks={a:false,b:false};delete c.fixedA;delete c.fixedB;markDirty(true);updateAll();
+  }
+  function endpointConstraintCandidate(point,selfWallId){
+    const threshold=Math.max(20,12/state.camera.zoom);let endpoint=null,endpointD=threshold;
+    for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;for(const ep of['a','b']){const d=distance(point,wall[ep]);if(d<endpointD){endpointD=d;endpoint={kind:'coincident',wallId:wall.id,targetEndpoint:ep,t:ep==='a'?0:1,point:{...wall[ep]}};}}}
+    if(endpoint)return endpoint;
+    let line=null,lineD=threshold;
+    for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;const pr=projectPointToSegment(point,wall.a,wall.b);if(pr.distance<lineD){lineD=pr.distance;line={kind:'pointOnLine',wallId:wall.id,t:pr.t,point:{...pr.point}};}}
+    return line;
+  }
+  function applyEndpointConstraint(wall,endpoint,candidate){
+    if(!wall||!candidate)return false;pushHistory();wall.attachments=wall.attachments||{};wall.attachments[endpoint]={wallId:candidate.wallId,t:candidate.t,kind:candidate.kind,targetEndpoint:candidate.targetEndpoint||null};wall[endpoint]={...candidate.point};markDirty(true);syncDependentsOfWall(wall.id);refreshSpaces();rebuildObjectSnapIndex();updateAll();return true;
+  }
+  function detachEndpointConstraint(wall,endpoint){if(!wall?.attachments?.[endpoint])return;pushHistory();delete wall.attachments[endpoint];markDirty(true);updateAll();}
+  function drawConstraintBadge(text,world,dx=0,dy=0){
+    const p=toScreenCss(world),styles=getComputedStyle(document.documentElement),fg=styles.getPropertyValue('--selection').trim(),bg=styles.getPropertyValue('--canvas').trim();
+    ctx.save();ctx.font='9px system-ui';const w=Math.max(15,ctx.measureText(text).width+8),h=15,x=p.x+dx-w/2,y=p.y+dy-h/2;ctx.fillStyle=bg;ctx.strokeStyle=fg;ctx.lineWidth=1;ctx.beginPath();ctx.roundRect?.(x,y,w,h,4);if(!ctx.roundRect){ctx.rect(x,y,w,h);}ctx.fill();ctx.stroke();ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x+w/2,y+h/2+.3);ctx.restore();
+  }
+  function drawWallConstraintHints(wall){
+    if(!wall||wall.type!=='wall'||!isSelectedId(wall.id)||state.toolset!=='plan')return;
+    const c=ensureWallConstraints(wall),mid=wallPointAt(wall,.5),v=wallVector(wall),off=Math.max(170,(wall.thickness||150)*1.1),base={x:mid.x+v.nx*off,y:mid.y+v.ny*off};
+    const badges=[];if(c.orientation==='horizontal')badges.push('H');if(c.orientation==='vertical')badges.push('V');if(c.orientation==='parallel')badges.push('∥');if(c.orientation==='perpendicular')badges.push('⊥');if(Number.isFinite(c.fixedAngle))badges.push('∠');if(Number.isFinite(c.fixedLength))badges.push('L');if(c.fixed)badges.push('FIX');
+    badges.forEach((b,i)=>drawConstraintBadge(b,base,i*24,0));
+    for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)drawConstraintBadge(att.kind==='coincident'?'C':'P',wall[ep],0,ep==='a'?-18:18);if(c.endpointLocks?.[ep])drawConstraintBadge('F',wall[ep],ep==='a'?-18:18,0);}
+  }
   function wallPointAt(wall,t){return{x:wall.a.x+(wall.b.x-wall.a.x)*t,y:wall.a.y+(wall.b.y-wall.a.y)*t};}
   function signedDistanceToWall(p,wall){const v=wallVector(wall);return (p.x-wall.a.x)*v.nx+(p.y-wall.a.y)*v.ny;}
   function polygonArea(poly){let a=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];a+=p.x*q.y-q.x*p.y;}return a/2;}
@@ -321,6 +450,11 @@
   function boundsOverlap(a,b){return !(a.maxx<b.minx||a.minx>b.maxx||a.maxy<b.miny||a.miny>b.maxy);}
   function objectBoundsWorld(o){if(o.a&&o.b)return rectFromPoints(o.a,o.b);if(o.type==='cadCircle')return{minx:o.center.x-o.radius,miny:o.center.y-o.radius,maxx:o.center.x+o.radius,maxy:o.center.y+o.radius};if(o.point)return{minx:o.point.x,miny:o.point.y,maxx:o.point.x,maxy:o.point.y};if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);return g?rectFromPoints(g.p1,g.p2):null;}if(o.type==='space'&&o.polygon?.length){return o.polygon.reduce((b,p)=>({minx:Math.min(b.minx,p.x),miny:Math.min(b.miny,p.y),maxx:Math.max(b.maxx,p.x),maxy:Math.max(b.maxy,p.y)}),{minx:Infinity,miny:Infinity,maxx:-Infinity,maxy:-Infinity});}return null;}
   function objectTouchesRegion(o,region){const b=objectBoundsWorld(o);return b?boundsOverlap(b,region):false;}
+  function segmentIntersectsRect(a,b,r){if(pointInRect(a,r)||pointInRect(b,r))return true;const p1={x:r.minx,y:r.miny},p2={x:r.maxx,y:r.miny},p3={x:r.maxx,y:r.maxy},p4={x:r.minx,y:r.maxy};return Boolean(segmentIntersection(a,b,p1,p2)||segmentIntersection(a,b,p2,p3)||segmentIntersection(a,b,p3,p4)||segmentIntersection(a,b,p4,p1));}
+  function objectCrossesRect(o,r){if(o.a&&o.b)return segmentIntersectsRect(o.a,o.b,r);if(o.type==='cadCircle'){const b=objectBoundsWorld(o);return b?boundsOverlap(b,r):false;}if(o.point)return pointInRect(o.point,r);if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);return g?segmentIntersectsRect(g.p1,g.p2,r):false;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?segmentIntersectsRect(g.d1,g.d2,r):false;}const b=objectBoundsWorld(o);return b?boundsOverlap(b,r):false;}
+  function selectionCandidatesForDrag(drag){if(!drag)return[];const r=rectFromPoints(drag.start,drag.current),crossing=drag.current.x<drag.start.x;return visibleSelectableObjects().filter(o=>crossing?objectCrossesRect(o,r):objectFullyInsideRect(o,r));}
+  function updateSelectionDragPreview(){if(!state.selectionDrag)return;state.selectionDrag.previewIds=new Set(selectionCandidatesForDrag(state.selectionDrag).map(o=>o.id));}
+  function drawSelectionDrag(){const drag=state.selectionDrag;if(!drag)return;const r=rectFromPoints(drag.start,drag.current),a=toScreenCss({x:r.minx,y:r.miny}),b=toScreenCss({x:r.maxx,y:r.maxy}),x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y),crossing=drag.current.x<drag.start.x,styles=getComputedStyle(document.documentElement),color=(crossing?styles.getPropertyValue('--success'):styles.getPropertyValue('--accent')).trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.globalAlpha=.12;ctx.fillRect(x,y,w,h);ctx.globalAlpha=.9;ctx.lineWidth=1.2;ctx.setLineDash(crossing?[6,4]:[]);ctx.strokeRect(x+.5,y+.5,w,h);ctx.setLineDash([]);ctx.font='10px system-ui';ctx.fillStyle=color;ctx.fillText(crossing?'Crossing':'Window',x+6,y+14);ctx.restore();}
   function clipLineToRect(a,b,r){let t0=0,t1=1,dx=b.x-a.x,dy=b.y-a.y;for(const[p,q]of[[-dx,a.x-r.minx],[dx,r.maxx-a.x],[-dy,a.y-r.miny],[dy,r.maxy-a.y]]){if(Math.abs(p)<1e-12){if(q<0)return null;continue;}const t=q/p;if(p<0){if(t>t1)return null;if(t>t0)t0=t;}else{if(t<t0)return null;if(t<t1)t1=t;}}return[{x:a.x+dx*t0,y:a.y+dy*t0},{x:a.x+dx*t1,y:a.y+dy*t1}];}
 
   function cssCanvasSize() {
@@ -360,11 +494,13 @@
 
   function render() {
     const { w, h } = cssCanvasSize();
+    state.editableLabels = [];
     ctx.clearRect(0, 0, w, h);
     drawGrid(w, h);
     for (const ref of state.references) if (ref.visible) drawReference(ref);
     if (state.toolset === 'plan') drawPlanWorkspace(); else drawCadWorkspace();
     drawDrawingRegions();
+    drawSelectionDrag();
     drawPreview();
     drawCalibrationPreview();
     drawOpeningPreview();
@@ -445,6 +581,9 @@
 
   function layerVisible(id) { return planLayers.find(l => l.id === id)?.visible !== false; }
   function cadLayerVisible(name) { return state.cadLayerVisibility.get(name || '0') !== false; }
+  function setCadLayerVisibilityUndoable(layer,visible){const key=layer||'0';if(cadLayerVisible(key)===Boolean(visible))return;pushHistory();state.cadLayerVisibility.set(key,Boolean(visible));updateAll();}
+  function soloLayer(layer){const keys=[...state.cadLayerVisibility.keys()],already=keys.every(k=>cadLayerVisible(k)===(k===layer));if(already)return;pushHistory();for(const key of keys)state.cadLayerVisibility.set(key,key===layer);updateAll();}
+  function showAllCadLayers(){const hidden=[...state.cadLayerVisibility].some(([,v])=>v===false);if(!hidden)return;pushHistory();for(const k of state.cadLayerVisibility.keys())state.cadLayerVisibility.set(k,true);updateAll();}
 
   function drawPlanWorkspace() {
     const styles = getComputedStyle(document.documentElement);
@@ -453,27 +592,29 @@
     const wall = styles.getPropertyValue('--wall').trim();
     const dim = styles.getPropertyValue('--dimension').trim();
     const sel = styles.getPropertyValue('--selection').trim();
+    const hover = styles.getPropertyValue('--hover').trim();
     const hasLinkedCadReference = state.references.some(r=>r.visible&&r.type==='linkedCadRegion');
 
     if(!hasLinkedCadReference) for (const obj of state.objects) {
       if (!isCadObject(obj)) continue;
       if (!cadLayerVisible(obj.cadLayer)) continue;
-      drawCadObject(obj, obj.id === state.selectedObjectId ? sel : muted, obj.id === state.selectedObjectId ? 2 : 1);
+      const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id);
+      drawCadObject(obj, selected ? sel : preview ? hover : muted, selected ? 2 : preview ? 1.8 : 1);
     }
 
     if(layerVisible('spaces')) for(const obj of state.objects) if(obj.type==='space') drawSpacePlan(obj);
     for (const obj of state.objects) {
-      if (obj.type === 'wall' && layerVisible('walls')) drawWallPlan(obj, obj.id === state.selectedObjectId ? sel : wall);
+      if (obj.type === 'wall' && layerVisible('walls')) drawWallPlan(obj, isSelectedId(obj.id) ? sel : wall);
     }
     for (const obj of state.objects) {
-      if (obj.type === 'door' && layerVisible('doors')) drawOpeningPlan(obj, 'door', obj.id === state.selectedObjectId ? sel : styles.getPropertyValue('--door').trim());
-      else if (obj.type === 'window' && layerVisible('windows')) drawOpeningPlan(obj, 'window', obj.id === state.selectedObjectId ? sel : styles.getPropertyValue('--window').trim());
-      else if (obj.type === 'dimension' && layerVisible('dimensions')) drawDimension(obj, obj.id === state.selectedObjectId ? sel : dim);
-      else if (obj.type === 'line' && layerVisible('drawing')) drawLineObject(obj, obj.id === state.selectedObjectId ? sel : line);
+      if (obj.type === 'door' && layerVisible('doors')) drawOpeningPlan(obj, 'door', isSelectedId(obj.id) ? sel : styles.getPropertyValue('--door').trim());
+      else if (obj.type === 'window' && layerVisible('windows')) drawOpeningPlan(obj, 'window', isSelectedId(obj.id) ? sel : styles.getPropertyValue('--window').trim());
+      else if (obj.type === 'dimension' && layerVisible('dimensions')) drawDimension(obj, isSelectedId(obj.id) ? sel : dim);
+      else if (obj.type === 'line' && layerVisible('drawing')) drawLineObject(obj, isSelectedId(obj.id) ? sel : line);
     }
   }
 
-  function drawSpacePlan(obj){if(!obj.polygon?.length)return;const styles=getComputedStyle(document.documentElement),selected=obj.id===state.selectedObjectId,stroke=selected?styles.getPropertyValue('--selection').trim():(obj.invalid?'#b45309':styles.getPropertyValue('--accent').trim());ctx.save();ctx.fillStyle=stroke;ctx.globalAlpha=obj.invalid?.06:.08;ctx.beginPath();obj.polygon.forEach((p,i)=>{const q=toScreenCss(p);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});ctx.closePath();ctx.fill();ctx.globalAlpha=.75;ctx.strokeStyle=stroke;ctx.lineWidth=selected?2:1;ctx.setLineDash(obj.invalid?[5,4]:[]);ctx.stroke();ctx.setLineDash([]);const c=toScreenCss(polygonCentroid(obj.polygon));const label=obj.invalid?t('space.invalid'):t('space.area',{area:formatNumber(obj.areaM2||Math.abs(polygonArea(obj.polygon))/1e6,2)});ctx.font='11px system-ui';ctx.fillStyle=stroke;ctx.globalAlpha=.95;ctx.fillText(label,c.x+6,c.y-6);ctx.restore();}
+  function drawSpacePlan(obj){if(!obj.polygon?.length)return;const styles=getComputedStyle(document.documentElement),selected=isSelectedId(obj.id),stroke=selected?styles.getPropertyValue('--selection').trim():(obj.invalid?'#b45309':styles.getPropertyValue('--accent').trim());ctx.save();ctx.fillStyle=stroke;ctx.globalAlpha=obj.invalid?.06:.08;ctx.beginPath();obj.polygon.forEach((p,i)=>{const q=toScreenCss(p);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});ctx.closePath();ctx.fill();ctx.globalAlpha=.75;ctx.strokeStyle=stroke;ctx.lineWidth=selected?2:1;ctx.setLineDash(obj.invalid?[5,4]:[]);ctx.stroke();ctx.setLineDash([]);const c=toScreenCss(polygonCentroid(obj.polygon));const label=obj.invalid?t('space.invalid'):t('space.area',{area:formatNumber(obj.areaM2||Math.abs(polygonArea(obj.polygon))/1e6,2)});ctx.font='11px system-ui';ctx.fillStyle=stroke;ctx.globalAlpha=.95;ctx.fillText(label,c.x+6,c.y-6);ctx.restore();}
 
   function drawDrawingRegions(){if(state.toolset!=='cad')return;const styles=getComputedStyle(document.documentElement),color=styles.getPropertyValue('--accent').trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.setLineDash([6,5]);ctx.lineWidth=1.2;for(const region of state.drawingRegions){const a=toScreenCss({x:region.minx,y:region.miny}),b=toScreenCss({x:region.maxx,y:region.maxy});const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);ctx.globalAlpha=region.id===state.selectedRegionId?.95:.5;ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);ctx.font='11px system-ui';ctx.fillText(region.name||t('region.unnamed'),x+6,y+15);ctx.setLineDash([6,5]);}if(state.regionDrag){const r=rectFromPoints(state.regionDrag.start,state.regionDrag.current);const a=toScreenCss({x:r.minx,y:r.miny}),b=toScreenCss({x:r.maxx,y:r.maxy});ctx.globalAlpha=.85;ctx.strokeRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(a.x-b.x),Math.abs(a.y-b.y));}ctx.restore();}
 
@@ -481,21 +622,21 @@
 
   function drawCadWorkspace() {
     const styles=getComputedStyle(document.documentElement),line=styles.getPropertyValue('--line').trim(),sel=styles.getPropertyValue('--selection').trim(),hover=styles.getPropertyValue('--hover').trim(),dim=styles.getPropertyValue('--dimension').trim(),door=styles.getPropertyValue('--door').trim(),windowColor=styles.getPropertyValue('--window').trim();
-    for(const obj of state.objects){if(!isCadObject(obj)||!cadLayerVisible(obj.cadLayer))continue;const selected=obj.id===state.selectedObjectId,hovered=obj.id===state.hoveredObjectId&&!selected;drawCadObject(obj,selected?sel:hovered?hover:line,selected?2:hovered?1.8:1.25);}
-    for(const obj of state.objects){if(obj.type==='wall'&&cadLayerVisible(cadLayerForObject(obj)))drawWallCad(obj,obj.id===state.selectedObjectId?sel:obj.id===state.hoveredObjectId?hover:line);}
-    for(const obj of state.objects){if(obj.type==='door'&&cadLayerVisible(cadLayerForObject(obj)))drawOpeningCad(obj,'door',obj.id===state.selectedObjectId?sel:obj.id===state.hoveredObjectId?hover:door);else if(obj.type==='window'&&cadLayerVisible(cadLayerForObject(obj)))drawOpeningCad(obj,'window',obj.id===state.selectedObjectId?sel:obj.id===state.hoveredObjectId?hover:windowColor);else if(obj.type==='dimension'&&cadLayerVisible(cadLayerForObject(obj)))drawDimension(obj,obj.id===state.selectedObjectId?sel:obj.id===state.hoveredObjectId?hover:dim);else if(obj.type==='line'&&cadLayerVisible(obj.cadLayer||'0'))drawLineObject(obj,obj.id===state.selectedObjectId?sel:obj.id===state.hoveredObjectId?hover:line);}
+    for(const obj of state.objects){if(!isCadObject(obj)||!cadLayerVisible(obj.cadLayer))continue;const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;drawCadObject(obj,selected?sel:preview?hover:hovered?hover:line,selected?2:preview?1.8:hovered?1.8:1.25);}
+    for(const obj of state.objects){if(obj.type==='wall'&&cadLayerVisible(cadLayerForObject(obj))){const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;drawWallCad(obj,selected?sel:preview?hover:hovered?hover:line);}}
+    for(const obj of state.objects){const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview,color=selected?sel:preview?hover:hovered?hover:null;if(obj.type==='door'&&cadLayerVisible(cadLayerForObject(obj)))drawOpeningCad(obj,'door',color||door);else if(obj.type==='window'&&cadLayerVisible(cadLayerForObject(obj)))drawOpeningCad(obj,'window',color||windowColor);else if(obj.type==='dimension'&&cadLayerVisible(cadLayerForObject(obj)))drawDimension(obj,color||dim);else if(obj.type==='line'&&cadLayerVisible(obj.cadLayer||'0'))drawLineObject(obj,color||line);}
   }
 
   function drawLineObject(obj, color, width = 1.4) {
-    const styles=getComputedStyle(document.documentElement),selected=obj.id===state.selectedObjectId,hovered=obj.id===state.hoveredObjectId&&!selected;
-    const stroke=selected?styles.getPropertyValue('--selection').trim():hovered?styles.getPropertyValue('--hover').trim():color;
-    const a=toScreenCss(obj.a),b=toScreenCss(obj.b);ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=selected?Math.max(2,width):hovered?Math.max(1.8,width):width;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();drawSelectionHandles(obj,[a,b]);ctx.restore();
+    const styles=getComputedStyle(document.documentElement),selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
+    const stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
+    const a=toScreenCss(obj.a),b=toScreenCss(obj.b);ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=selected?Math.max(2,width):preview||hovered?Math.max(1.8,width):width;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();drawSelectionHandles(obj,[a,b]);ctx.restore();
   }
 
   function objectInViewport(obj){const {w,h}=cssCanvasSize(),pad=40/state.camera.zoom,minx=state.camera.cx-w/2/state.camera.zoom-pad,maxx=state.camera.cx+w/2/state.camera.zoom+pad,miny=state.camera.cy-h/2/state.camera.zoom-pad,maxy=state.camera.cy+h/2/state.camera.zoom+pad;let b=null;if(obj.a&&obj.b)b={minx:Math.min(obj.a.x,obj.b.x),maxx:Math.max(obj.a.x,obj.b.x),miny:Math.min(obj.a.y,obj.b.y),maxy:Math.max(obj.a.y,obj.b.y)};else if(obj.center)b={minx:obj.center.x-obj.radius,maxx:obj.center.x+obj.radius,miny:obj.center.y-obj.radius,maxy:obj.center.y+obj.radius};else if(obj.point)b={minx:obj.point.x,maxx:obj.point.x,miny:obj.point.y,maxy:obj.point.y};if(!b)return true;return !(b.maxx<minx||b.minx>maxx||b.maxy<miny||b.miny>maxy);}
 
   function drawCadObject(obj, color, width = 1.2) {
-    if(!objectInViewport(obj))return;const selected=obj.id===state.selectedObjectId;ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;
+    if(!objectInViewport(obj))return;const selected=isSelectedId(obj.id);ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;
     if(obj.type==='cadLine'){const a=toScreenCss(obj.a),b=toScreenCss(obj.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();drawSelectionHandles(obj,[a,b]);}
     else if(obj.type==='cadCircle'){const c=toScreenCss(obj.center);ctx.beginPath();ctx.arc(c.x,c.y,Math.max(.5,obj.radius*state.camera.zoom),0,Math.PI*2);ctx.stroke();if(selected)drawSelectionHandles(obj,[c]);}
     else if(obj.type==='cadText'){const p=toScreenCss(obj.point);ctx.font='10px system-ui';ctx.fillText(obj.text||'',p.x,p.y);}ctx.restore();
@@ -587,12 +728,16 @@
     return {...g,hinge,other,closed,open,leafEnd,swing};
   }
 
+  function drawEditablePill(text,center,objectId,kind,value,{accent=false}={}){const styles=getComputedStyle(document.documentElement),fg=accent?styles.getPropertyValue('--selection').trim():styles.getPropertyValue('--text-2').trim(),bg=styles.getPropertyValue('--canvas').trim();ctx.save();ctx.font='11px system-ui';const tw=ctx.measureText(text).width,w=tw+12,h=20,x=center.x-w/2,y=center.y-h/2;ctx.fillStyle=bg;ctx.globalAlpha=.94;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1;ctx.strokeStyle=accent?fg:styles.getPropertyValue('--border-strong').trim();ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,w-1,h-1);ctx.fillStyle=fg;ctx.textBaseline='middle';ctx.fillText(text,x+6,y+h/2+.2);ctx.restore();registerEditableLabel({objectId,kind,rect:{x,y,w,h},value});}
+  function drawWallEditLabels(wall){if(!isSelectedId(wall.id)||selectionIds().size!==1||state.toolset!=='plan')return;const v=wallVector(wall),mid=wallPointAt(wall,.5),off=Math.max(230,(wall.thickness||150)*1.3),base=toScreenCss({x:mid.x+v.nx*off,y:mid.y+v.ny*off}),len=distance(wall.a,wall.b),ang=angleDeg(wall.a,wall.b);drawEditablePill(`${formatNumber(len,1)} mm`,{x:base.x-42,y:base.y},wall.id,'wallLength',len,{accent:true});drawEditablePill(`${formatNumber(ang,1)}°`,{x:base.x+48,y:base.y},wall.id,'wallAngle',ang,{accent:true});}
+
   function drawWallPlan(obj, color) {
-    const selected=obj.id===state.selectedObjectId, hovered=obj.id===state.hoveredObjectId && !selected;
-    const styles=getComputedStyle(document.documentElement), stroke=selected?styles.getPropertyValue('--selection').trim():hovered?styles.getPropertyValue('--hover').trim():color;
+    const selected=isSelectedId(obj.id), preview=isSelectionPreviewId(obj.id), hovered=obj.id===state.hoveredObjectId && !selected&&!preview;
+    const styles=getComputedStyle(document.documentElement), stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
     ctx.save(); ctx.strokeStyle=stroke; ctx.lineWidth=Math.max(2,(obj.thickness||150)*state.camera.zoom); ctx.lineCap='butt'; ctx.lineJoin='miter';
     for(const [wa,wb] of wallVisibleSegments(obj)){const a=toScreenCss(wa),b=toScreenCss(wb);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
     ctx.lineWidth=1; drawSelectionHandles(obj,[toScreenCss(obj.a),toScreenCss(obj.b)]); ctx.restore();
+    if(selected){drawWallEditLabels(obj);drawWallConstraintHints(obj);}
   }
 
   function wallOutlineWorld(obj) {
@@ -614,7 +759,7 @@
     const layer = mapping.wallLayer || 'WALL';
     if (!cadLayerVisible(layer)) return;
     const mode = mapping.wallRepresentation || 'outline';
-    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = obj.id === state.selectedObjectId ? 2 : 1.2;
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = isSelectedId(obj.id) ? 2 : isSelectionPreviewId(obj.id) ? 1.8 : 1.2;
     if (mode === 'outline' || mode === 'both') {
       for (const [wa,wb] of wallOutlineVisibleWorld(obj)) {
         const a=toScreenCss(wa),b=toScreenCss(wb);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
@@ -624,7 +769,7 @@
       const a=toScreenCss(obj.a),b=toScreenCss(obj.b); if (mode === 'both') ctx.setLineDash([5,4]);
       ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
     }
-    if (obj.id === state.selectedObjectId) drawSelectionHandles(obj, [toScreenCss(obj.a),toScreenCss(obj.b)]);
+    if (isSelectedId(obj.id)) drawSelectionHandles(obj, [toScreenCss(obj.a),toScreenCss(obj.b)]);
     ctx.restore();
   }
 
@@ -644,8 +789,8 @@
 
   function drawOpeningPlan(obj, kind, color) {
     const g=openingGeometry(obj); if(!g)return;
-    const selected=obj.id===state.selectedObjectId, hovered=obj.id===state.hoveredObjectId&&!selected;
-    const styles=getComputedStyle(document.documentElement), stroke=selected?styles.getPropertyValue('--selection').trim():hovered?styles.getPropertyValue('--hover').trim():color;
+    const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id), hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
+    const styles=getComputedStyle(document.documentElement), stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
     ctx.save();ctx.strokeStyle=stroke;ctx.fillStyle=stroke;ctx.lineWidth=1.8;
     const wallHalf=(g.wall.thickness||150)/2;
     const jamb=(p)=>{const a=toScreenCss({x:p.x+g.nx*wallHalf,y:p.y+g.ny*wallHalf}),b=toScreenCss({x:p.x-g.nx*wallHalf,y:p.y-g.ny*wallHalf});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();};
@@ -660,7 +805,7 @@
   }
 
   function drawOpeningCad(obj, kind, color) {
-    const g=openingGeometry(obj);if(!g)return;ctx.save();ctx.strokeStyle=color;ctx.lineWidth=obj.id===state.selectedObjectId?2:1.2;
+    const g=openingGeometry(obj);if(!g)return;ctx.save();ctx.strokeStyle=color;ctx.lineWidth=isSelectedId(obj.id)?2:isSelectionPreviewId(obj.id)?1.8:1.2;
     if(kind==='door'){const d=doorGeometry(obj);if(d){const h=toScreenCss(d.hinge),leaf=toScreenCss(d.leafEnd);ctx.beginPath();ctx.moveTo(h.x,h.y);ctx.lineTo(leaf.x,leaf.y);ctx.stroke();const a0=Math.atan2(d.closed.y,d.closed.x),a1=a0+d.swing*Math.PI/2;ctx.globalAlpha=.55;ctx.beginPath();for(let i=0;i<=14;i++){const a=a0+(a1-a0)*i/14,p=toScreenCss({x:d.hinge.x+Math.cos(a)*d.width,y:d.hinge.y+Math.sin(a)*d.width});if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();ctx.globalAlpha=1;}}
     else {const off=Math.min(50,(g.wall.thickness||150)*.35);for(const sign of[-1,1]){const p1=toScreenCss({x:g.p1.x+g.nx*off*sign,y:g.p1.y+g.ny*off*sign}),p2=toScreenCss({x:g.p2.x+g.nx*off*sign,y:g.p2.y+g.ny*off*sign});ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}}
     ctx.restore();
@@ -668,30 +813,30 @@
 
   function drawDimension(obj, color) {
     const g=dimensionGeometry(obj); if(!g)return;
-    const selected=obj.id===state.selectedObjectId,hovered=obj.id===state.hoveredObjectId&&!selected;
-    const styles=getComputedStyle(document.documentElement),stroke=selected?styles.getPropertyValue('--selection').trim():hovered?styles.getPropertyValue('--hover').trim():color;
+    const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
+    const styles=getComputedStyle(document.documentElement),stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
     const p1=toScreenCss(g.p1),p2=toScreenCss(g.p2),d1=toScreenCss(g.d1),d2=toScreenCss(g.d2);
     ctx.save();ctx.strokeStyle=stroke;ctx.fillStyle=stroke;ctx.lineWidth=1.15;
     const ext=8/Math.max(.000001,state.camera.zoom);const e1=toScreenCss({x:g.d1.x+g.nx*(g.offset>=0?ext:-ext),y:g.d1.y+g.ny*(g.offset>=0?ext:-ext)}),e2=toScreenCss({x:g.d2.x+g.nx*(g.offset>=0?ext:-ext),y:g.d2.y+g.ny*(g.offset>=0?ext:-ext)});
     ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(e1.x,e1.y);ctx.moveTo(p2.x,p2.y);ctx.lineTo(e2.x,e2.y);ctx.stroke();
     ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(d1.x,d1.y);ctx.lineTo(d2.x,d2.y);ctx.stroke();
     const tick=5,ang=Math.atan2(d2.y-d1.y,d2.x-d1.x)+Math.PI/4;for(const d of[d1,d2]){ctx.beginPath();ctx.moveTo(d.x-Math.cos(ang)*tick,d.y-Math.sin(ang)*tick);ctx.lineTo(d.x+Math.cos(ang)*tick,d.y+Math.sin(ang)*tick);ctx.stroke();}
-    const mx=(d1.x+d2.x)/2,my=(d1.y+d2.y)/2,text=`${formatNumber(g.len,1)} mm`;ctx.font='11px system-ui';const tw=ctx.measureText(text).width;ctx.fillStyle=styles.getPropertyValue('--canvas').trim();ctx.fillRect(mx-tw/2-5,my-10,tw+10,18);ctx.fillStyle=stroke;ctx.fillText(text,mx-tw/2,my+3);
+    const mx=(d1.x+d2.x)/2,my=(d1.y+d2.y)/2,text=`${formatNumber(g.len,1)} mm`;ctx.font='11px system-ui';const tw=ctx.measureText(text).width;ctx.fillStyle=styles.getPropertyValue('--canvas').trim();ctx.fillRect(mx-tw/2-5,my-10,tw+10,18);ctx.fillStyle=stroke;ctx.fillText(text,mx-tw/2,my+3);if(selected)registerEditableLabel({objectId:obj.id,kind:'dimensionLength',rect:{x:mx-tw/2-5,y:my-10,w:tw+10,h:18},value:g.len});
     if(selected)drawDimensionHandles(obj,g);ctx.restore();
   }
 
   function drawSelectionHandles(obj, points) {
-    if(obj.id!==state.selectedObjectId)return;const color=getComputedStyle(document.documentElement).getPropertyValue('--selection').trim();ctx.save();ctx.fillStyle=color;ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.lineWidth=1.5;
+    if(!isSelectedId(obj.id)||selectionIds().size!==1)return;const color=getComputedStyle(document.documentElement).getPropertyValue('--selection').trim();ctx.save();ctx.fillStyle=color;ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.lineWidth=1.5;
     for(const p of points){ctx.beginPath();ctx.rect(p.x-4,p.y-4,8,8);ctx.fill();ctx.stroke();}ctx.restore();
   }
 
   function drawOpeningHandles(obj,g){
-    if(obj.id!==state.selectedObjectId)return;const color=getComputedStyle(document.documentElement).getPropertyValue('--selection').trim();const bg=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.save();ctx.fillStyle=color;ctx.strokeStyle=bg;ctx.lineWidth=1.5;for(const p of[toScreenCss(g.p1),toScreenCss(g.p2)]){ctx.beginPath();ctx.rect(p.x-5,p.y-5,10,10);ctx.fill();ctx.stroke();}const c=toScreenCss(g.center);ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();ctx.stroke();
-    const labelWorld={x:g.center.x+g.nx*(Math.max(120,(g.wall.thickness||150)*.9)),y:g.center.y+g.ny*(Math.max(120,(g.wall.thickness||150)*.9))},lp=toScreenCss(labelWorld),text=`${formatNumber(g.width,0)} mm`;ctx.font='11px system-ui';const tw=ctx.measureText(text).width;ctx.fillStyle=bg;ctx.globalAlpha=.92;ctx.fillRect(lp.x-tw/2-5,lp.y-10,tw+10,18);ctx.globalAlpha=1;ctx.fillStyle=color;ctx.fillText(text,lp.x-tw/2,lp.y+3);ctx.restore();
+    if(!isSelectedId(obj.id)||selectionIds().size!==1)return;const color=getComputedStyle(document.documentElement).getPropertyValue('--selection').trim();const bg=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.save();ctx.fillStyle=color;ctx.strokeStyle=bg;ctx.lineWidth=1.5;for(const p of[toScreenCss(g.p1),toScreenCss(g.p2)]){ctx.beginPath();ctx.rect(p.x-5,p.y-5,10,10);ctx.fill();ctx.stroke();}const c=toScreenCss(g.center);ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();ctx.stroke();
+    const labelWorld={x:g.center.x+g.nx*(Math.max(120,(g.wall.thickness||150)*.9)),y:g.center.y+g.ny*(Math.max(120,(g.wall.thickness||150)*.9))},lp=toScreenCss(labelWorld),text=`${formatNumber(g.width,0)} mm`;ctx.font='11px system-ui';const tw=ctx.measureText(text).width;ctx.fillStyle=bg;ctx.globalAlpha=.92;ctx.fillRect(lp.x-tw/2-5,lp.y-10,tw+10,18);ctx.globalAlpha=1;ctx.fillStyle=color;ctx.fillText(text,lp.x-tw/2,lp.y+3);registerEditableLabel({objectId:obj.id,kind:'openingWidth',rect:{x:lp.x-tw/2-5,y:lp.y-10,w:tw+10,h:18},value:g.width});ctx.restore();
   }
 
   function drawDimensionHandles(obj,g){
-    const color=getComputedStyle(document.documentElement).getPropertyValue('--selection').trim(),bg=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.save();ctx.fillStyle=color;ctx.strokeStyle=bg;ctx.lineWidth=1.5;if(!g.associated)for(const p of[toScreenCss(g.p1),toScreenCss(g.p2)]){ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();ctx.stroke();}const c=toScreenCss({x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2});ctx.beginPath();ctx.moveTo(c.x,c.y-5);ctx.lineTo(c.x+5,c.y);ctx.lineTo(c.x,c.y+5);ctx.lineTo(c.x-5,c.y);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+    if(selectionIds().size!==1)return;const color=getComputedStyle(document.documentElement).getPropertyValue('--selection').trim(),bg=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.save();ctx.fillStyle=color;ctx.strokeStyle=bg;ctx.lineWidth=1.5;if(!g.associated)for(const p of[toScreenCss(g.p1),toScreenCss(g.p2)]){ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();ctx.stroke();}const c=toScreenCss({x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2});ctx.beginPath();ctx.moveTo(c.x,c.y-5);ctx.lineTo(c.x+5,c.y);ctx.lineTo(c.x,c.y+5);ctx.lineTo(c.x-5,c.y);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
   }
 
   function drawPreview() {
@@ -708,6 +853,10 @@
   }
 
   function drawCalibrationPreview(){const c=state.calibration;if(!c?.p1)return;const p2=c.p2||state.previewEnd;if(!p2)return;const a=toScreenCss(c.p1),b=toScreenCss(p2);ctx.save();ctx.strokeStyle='#ffb55a';ctx.fillStyle='#ffb55a';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);for(const p of[a,b]){ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();}ctx.restore();}
+
+  function applyNumericLabelEdit(label,value){if(!label||!Number.isFinite(value))return;const obj=state.objects.find(o=>o.id===label.objectId);if(!obj)return;if(label.kind==='openingWidth'&&(obj.type==='door'||obj.type==='window')){if(value<=0)return;pushHistory();obj.width=value;markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallLength'&&obj.type==='wall'){if(value<=0||!breakWallConstraintForEdit(obj,'length'))return;const ang=angleDeg(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,ang,value,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallAngle'&&obj.type==='wall'){if(!breakWallConstraintForEdit(obj,'angle'))return;const len=distance(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,value,len,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='dimensionLength'&&obj.type==='dimension'){const g=dimensionGeometry(obj);if(!g?.associated||value<=0)return;const wall=g.wall,span=Math.abs((obj.t2??1)-(obj.t1??0));if(span<1e-6)return;if(!breakWallConstraintForEdit(wall,'length'))return;const target=value/span,ang=angleDeg(wall.a,wall.b),anchor=constrainedEndpointAnchor(wall,'a');setWallAngleAndLength(wall,ang,target,anchor);enforceWallConstraints(wall,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();}}
+  function beginCanvasNumberEdit(label){host.querySelector('.canvas-number-editor')?.remove();const input=document.createElement('input');input.className='canvas-number-editor';input.type='number';input.step='0.01';input.value=String(Math.round(Number(label.value)*100)/100);input.style.left=`${Math.max(4,label.rect.x)}px`;input.style.top=`${Math.max(4,label.rect.y-5)}px`;input.style.width=`${Math.max(92,label.rect.w+24)}px`;let cancelled=false,committed=false;const commit=()=>{if(committed||cancelled)return;committed=true;const value=Number(input.value);input.remove();applyNumericLabelEdit(label,value);};input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}else if(e.key==='Escape'){e.preventDefault();cancelled=true;input.remove();host.focus();}});input.addEventListener('blur',commit);host.appendChild(input);input.focus();input.select();}
+  function onCanvasDoubleClick(e){if(isCompactViewer())return;const s=fromPointerEvent(e),label=hitEditableLabel(s);if(!label)return;e.preventDefault();e.stopPropagation();beginCanvasNumberEdit(label);}
 
   function currentWallThickness(){const input=document.querySelector('[data-context="thickness"]');const n=Number(input?.value);if(Number.isFinite(n)&&n>0)state.toolSettings.wallThickness=n;return state.toolSettings.wallThickness;}
   function currentOpeningWidth(){const input=document.querySelector('[data-context="width"]');const n=Number(input?.value);const key=state.activeTool==='window'?'windowWidth':'doorWidth';if(Number.isFinite(n)&&n>0)state.toolSettings[key]=n;return state.toolSettings[key];}
@@ -769,21 +918,32 @@
   function applyMapping(){markDirty(true);state.cadMapping={wallRepresentation:dom.wallRepresentation.value,wallLayer:(dom.wallLayerInput.value||'WALL').trim(),doorLayer:(dom.doorLayerInput.value||'DOOR').trim(),windowLayer:(dom.windowLayerInput.value||'WINDOW').trim(),dimensionLayer:(dom.dimensionLayerInput.value||'DIM').trim()};for(const name of Object.values({w:state.cadMapping.wallLayer,d:state.cadMapping.doorLayer,wi:state.cadMapping.windowLayer,di:state.cadMapping.dimensionLayer}))if(!state.cadLayerVisibility.has(name))state.cadLayerVisibility.set(name,true);const action=state.mappingPendingAction;state.mappingPendingAction=null;dom.mappingBackdrop.hidden=true;renderPrimaryPanel();renderProperties();render();if(action==='switch-cad')switchToolset('cad',{skipMapping:true});else if(action==='export')exportDxfNow();else if(action==='tool'){const p=state.pendingToolAfterMapping;state.pendingToolAfterMapping=null;if(p)setTool(p.tool,p.category);}}
   function cancelMapping(){const action=state.mappingPendingAction;state.mappingPendingAction=null;state.pendingToolAfterMapping=null;dom.mappingBackdrop.hidden=true;if(action==='switch-cad'){dom.planToolsBtn.classList.add('active');dom.cadToolsBtn.classList.remove('active');}}
 
-  function historySnapshot(){return JSON.stringify({objects:state.objects,drawingRegions:state.drawingRegions});}
-  function restoreHistorySnapshot(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed)){state.objects=parsed;state.drawingRegions=[];}else{state.objects=parsed.objects||[];state.drawingRegions=parsed.drawingRegions||[];}state.selectedObjectId=null;state.selectedRegionId=null;refreshSpaces();rebuildObjectSnapIndex();}
+  function historySnapshot(){return JSON.stringify({objects:state.objects,drawingRegions:state.drawingRegions,cadLayerVisibility:[...state.cadLayerVisibility],activeCadLayer:state.activeCadLayer,baseAxisAngle:state.baseAxisAngle,baseAxisWallId:state.baseAxisWallId,dirty:state.dirty});}
+  function restoreHistorySnapshot(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed)){state.objects=parsed;state.drawingRegions=[];}else{state.objects=parsed.objects||[];state.drawingRegions=parsed.drawingRegions||[];if(Array.isArray(parsed.cadLayerVisibility))state.cadLayerVisibility=new Map(parsed.cadLayerVisibility);if(parsed.activeCadLayer)state.activeCadLayer=parsed.activeCadLayer;state.baseAxisAngle=Number(parsed.baseAxisAngle)||0;state.baseAxisWallId=parsed.baseAxisWallId||null;if('dirty' in parsed)state.dirty=Boolean(parsed.dirty);}state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedRegionId=null;refreshSpaces();rebuildObjectSnapIndex();}
   function pushHistory(){state.history.push(historySnapshot());if(state.history.length>60)state.history.shift();state.future=[];updateUndoRedo();}
-  function undo(){if(!state.history.length)return;state.future.push(historySnapshot());restoreHistorySnapshot(state.history.pop());markDirty(true);updateAll();}
-  function redo(){if(!state.future.length)return;state.history.push(historySnapshot());restoreHistorySnapshot(state.future.pop());markDirty(true);updateAll();}
+  function undo(){if(!state.history.length)return;state.future.push(historySnapshot());restoreHistorySnapshot(state.history.pop());updateAll();}
+  function redo(){if(!state.future.length)return;state.history.push(historySnapshot());restoreHistorySnapshot(state.future.pop());updateAll();}
   function updateUndoRedo(){dom.undoBtn.disabled=!state.history.length;dom.redoBtn.disabled=!state.future.length;}
 
-  function commitSegment(a,b,type){if(distance(a,b)<.001)return;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),attachments:{}};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine'&&!state.cadLayerVisibility.has(obj.cadLayer))state.cadLayerVisibility.set(obj.cadLayer,true);}state.objects.push(obj);if(obj.type==='wall'){attachWallEndpoint(obj,'a');attachWallEndpoint(obj,'b');refreshSpaces();}state.selectedObjectId=obj.id;state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function commitSegment(a,b,type){if(distance(a,b)<.001)return;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),attachments:{}};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine'&&!state.cadLayerVisibility.has(obj.cadLayer))state.cadLayerVisibility.set(obj.cadLayer,true);}state.objects.push(obj);if(obj.type==='wall'){refreshSpaces();}state.selectedObjectId=obj.id;state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();}
   function commitMeasurement(a,b){const len=distance(a,b);if(len<.001)return;let obj=null;if(state.toolset==='plan'){let best=null,bestScore=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const p1=projectPointToSegment(a,wall.a,wall.b),p2=projectPointToSegment(b,wall.a,wall.b),tol=Math.max((wall.thickness||150),18/state.camera.zoom);if(p1.distance<=tol&&p2.distance<=tol){const score=p1.distance+p2.distance;if(score<bestScore){bestScore=score;best={wall,t1:p1.t,t2:p2.t,p1:p1.point,p2:p2.point};}}}if(!best){alert(t('alert.dimensionNeedsWall'));state.measureStart=null;state.previewEnd=null;updateContextBar();render();return;}const attachedLen=distance(best.p1,best.p2);obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:best.wall.id,t1:best.t1,t2:best.t2,offset:Math.max(250,Math.min(600,attachedLen*.08))};}else obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',p1:{...a},p2:{...b},offset:Math.max(250,Math.min(600,len*.08))};pushHistory();state.objects.push(obj);state.selectedObjectId=obj.id;state.measureStart=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();updateAll();}
 
   function nearestWallProjection(p){let best=null,bestD=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const pr=projectPointToSegment(p,wall.a,wall.b);const threshold=Math.max((wall.thickness||150)/2,18/state.camera.zoom);if(pr.distance<threshold&&pr.distance<bestD){bestD=pr.distance;best={wall,t:pr.t,point:pr.point,distance:pr.distance};}}return best;}
   function projectPointToSegment(p,a,b){const vx=b.x-a.x,vy=b.y-a.y,wx=p.x-a.x,wy=p.y-a.y,c2=vx*vx+vy*vy;if(!c2)return{t:0,point:{...a},distance:distance(p,a)};const tt=clamp((wx*vx+wy*vy)/c2,0,1);const q={x:a.x+tt*vx,y:a.y+tt*vy};return{t:tt,point:q,distance:distance(p,q)};}
 
   function findWallAttachment(point,selfWallId){let best=null,bestD=Math.max(20,10/state.camera.zoom);for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;const pr=projectPointToSegment(point,wall.a,wall.b);if(pr.distance<bestD){bestD=pr.distance;best={wallId:wall.id,t:pr.t};}}return best;}
-  function attachWallEndpoint(wall,endpoint){if(!wall||wall.type!=='wall'||!['a','b'].includes(endpoint))return false;const att=findWallAttachment(wall[endpoint],wall.id);wall.attachments=wall.attachments||{};if(att){wall.attachments[endpoint]=att;const target=state.objects.find(o=>o.id===att.wallId&&o.type==='wall');if(target)wall[endpoint]=wallPointAt(target,att.t);return true;}delete wall.attachments[endpoint];return false;}
+  function attachWallEndpoint(wall,endpoint){
+    if(!wall||wall.type!=='wall'||!['a','b'].includes(endpoint))return false;
+    const candidate=endpointConstraintCandidate(wall[endpoint],wall.id);
+    wall.attachments=wall.attachments||{};
+    if(candidate){
+      wall.attachments[endpoint]={wallId:candidate.wallId,t:candidate.t,kind:candidate.kind,targetEndpoint:candidate.targetEndpoint||null};
+      wall[endpoint]={...candidate.point};
+      return true;
+    }
+    delete wall.attachments[endpoint];
+    return false;
+  }
   function detachWallConnections(wall){if(!wall||wall.type!=='wall')return;wall.attachments={};}
   function enforceWallAttachments(wall){if(!wall?.attachments)return;for(const endpoint of['a','b']){const att=wall.attachments[endpoint],target=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');if(target)wall[endpoint]=wallPointAt(target,att.t);}}
   function attachTouchingWallEndpoints(wall){if(!wall||wall.type!=='wall')return false;let changed=false;for(const endpoint of['a','b'])changed=attachWallEndpoint(wall,endpoint)||changed;return changed;}
@@ -822,7 +982,7 @@
     if(best){state.snapIndicator=best;return{x:best.x,y:best.y};}
     return p;
   }
-  function constrainOrtho(start,p){if(!state.ortho||!start)return p;const dx=p.x-start.x,dy=p.y-start.y;return Math.abs(dx)>=Math.abs(dy)?{x:p.x,y:start.y}:{x:start.x,y:p.y};}
+  function constrainOrtho(start,p){if(!state.ortho||!start)return p;const a=rad(baseAxisAngle()),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux,dx=p.x-start.x,dy=p.y-start.y,du=dx*ux+dy*uy,dv=dx*vx+dy*vy;return Math.abs(du)>=Math.abs(dv)?{x:start.x+ux*du,y:start.y+uy*du}:{x:start.x+vx*dv,y:start.y+vy*dv};}
 
   function hitHandle(p,obj){const tol=9/state.camera.zoom;if(!obj)return null;if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){if(distance(p,obj.a)<=tol)return'a';if(distance(p,obj.b)<=tol)return'b';}
     if(obj.type==='door'||obj.type==='window'){const g=openingGeometry(obj);if(g){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';if(distance(p,g.center)<=tol)return'center';}}
@@ -839,7 +999,25 @@
     if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&src.a&&src.b){
       if(d.mode==='a')obj.a={...p};else if(d.mode==='b')obj.b={...p};else{obj.a={x:src.a.x+delta.x,y:src.a.y+delta.y};obj.b={x:src.b.x+delta.x,y:src.b.y+delta.y};}
       if(obj.type==='wall'){
-        if(d.mode==='body'&&src.attachments){obj.attachments=JSON.parse(JSON.stringify(src.attachments));for(const endpoint of['a','b']){const att=obj.attachments?.[endpoint],parent=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');if(!parent)continue;const desired={x:src[endpoint].x+delta.x,y:src[endpoint].y+delta.y},pr=projectPointToSegment(desired,parent.a,parent.b);att.t=pr.t;obj[endpoint]={...pr.point};}}
+        // SNAP is only a placement aid. Persistent endpoint relationships live in attachments/constraints.
+        // If an endpoint is already constrained to another wall, dragging keeps that explicit relationship.
+        if(src.attachments)obj.attachments=JSON.parse(JSON.stringify(src.attachments));
+        if(d.mode==='body'&&obj.attachments){
+          for(const endpoint of['a','b']){
+            const att=obj.attachments?.[endpoint],parent=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
+            if(!parent)continue;
+            const desired={x:src[endpoint].x+delta.x,y:src[endpoint].y+delta.y};
+            if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){att.t=att.targetEndpoint==='a'?0:1;obj[endpoint]={...parent[att.targetEndpoint]};}
+            else{const pr=projectPointToSegment(desired,parent.a,parent.b);att.t=pr.t;obj[endpoint]={...pr.point};}
+          }
+        }else if((d.mode==='a'||d.mode==='b')&&obj.attachments?.[d.mode]){
+          const att=obj.attachments[d.mode],parent=state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
+          if(parent){
+            if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){att.t=att.targetEndpoint==='a'?0:1;obj[d.mode]={...parent[att.targetEndpoint]};}
+            else{const pr=projectPointToSegment(p,parent.a,parent.b);att.t=pr.t;obj[d.mode]={...pr.point};}
+          }
+        }
+        enforceWallConstraints(obj,{changed:d.mode==='a'?'a':d.mode==='b'?'b':'body'});
         syncDependentsOfWall(obj.id);refreshSpaces();
       }
     }
@@ -857,26 +1035,28 @@
   function onPointerMove(e){const s=fromPointerEvent(e);let p=screenCssToWorld(s);state.cursorWorld=p;dom.statusX.textContent=`X ${formatNumber(p.x,1)}`;dom.statusY.textContent=`Y ${formatNumber(p.y,1)}`;
     if(isCompactViewer()&&moveViewerPointer(e,s))return;
     if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){state.regionDrag.current={...p};render();return;}
+    if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){state.selectionDrag.current={...p};updateSelectionDragPreview();render();return;}
     if(state.pan){const dx=(s.x-state.pan.startScreen.x)/state.camera.zoom,dy=(s.y-state.pan.startScreen.y)/state.camera.zoom;state.camera.cx=state.pan.startCamera.cx-dx;state.camera.cy=state.pan.startCamera.cy+dy;render();return;}
     if(state.dragEdit){applyObjectDrag(nearestSnap(p,state.dragEdit.objectId));return;}
     updateHover(p);
     if(state.activeTool==='door'||state.activeTool==='window')state.previewOpening=nearestWallProjection(p);else state.previewOpening=null;
     const start=state.drawStart||state.measureStart||state.calibration?.p1;if(start)p=constrainOrtho(start,nearestSnap(p));else p=nearestSnap(p);state.previewEnd=p;render();}
 
-  function onPointerDown(e){host.focus();hideContextMenu();const s=fromPointerEvent(e);if(isCompactViewer()){if(e.button===0||e.pointerType==='touch'){e.preventDefault();beginViewerPointer(e,s);}return;}const panGesture=e.button===1||(e.button===0&&state.spaceDown);if(panGesture){e.preventDefault();if(state.spaceGesture)state.spaceGesture.used=true;state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';canvas.setPointerCapture?.(e.pointerId);return;}if(e.button!==0)return;let raw=screenCssToWorld(s),p=nearestSnap(raw);
+  function onPointerDown(e){host.focus();hideContextMenu();const s=fromPointerEvent(e);if(isCompactViewer()){if(e.button===0||e.pointerType==='touch'){e.preventDefault();beginViewerPointer(e,s);}return;}const panGesture=e.button===1||(e.button===0&&state.spaceDown);if(panGesture){e.preventDefault();if(state.spaceGesture)state.spaceGesture.used=true;state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';canvas.setPointerCapture?.(e.pointerId);return;}if(e.button!==0)return;const editableLabel=hitEditableLabel(s);if(editableLabel)return;let raw=screenCssToWorld(s),p=nearestSnap(raw);
     if(state.activeTool==='region'&&state.toolset==='cad'){state.regionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw}};canvas.setPointerCapture?.(e.pointerId);render();return;}
     if(state.calibration){if(!state.calibration.p1){state.calibration.p1=p;state.previewEnd=p;updateContextBar();render();}else{state.calibration.p2=p;openCalibrationDialog();}return;}
-    if(state.activeTool==='select'){const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&hitHandle(raw,selected)){beginObjectDrag(e,raw,selected);return;}const obj=hitObject(raw);state.selectedObjectId=obj?.id||null;state.selectedReferenceId=null;state.selectedRegionId=null;if(obj)beginObjectDrag(e,raw,obj);renderPrimaryPanel();renderProperties();render();return;}
+    if(state.activeTool==='select'){const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&hitHandle(raw,selected)){beginObjectDrag(e,raw,selected);return;}const obj=hitObject(raw);if(obj){applyObjectClickSelection(obj,e);if(!(e.shiftKey||e.ctrlKey||e.metaKey)&&state.selectedObjectIds.size<=1)beginObjectDrag(e,raw,obj);renderPrimaryPanel();renderProperties();render();return;}if(state.toolset==='cad'){const mode=e.shiftKey?'add':(e.ctrlKey||e.metaKey?'toggle':'replace');state.selectionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw},mode,previewIds:new Set()};canvas.setPointerCapture?.(e.pointerId);if(mode==='replace'){state.selectedObjectIds.clear();state.selectedObjectId=null;}state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();return;}applyObjectClickSelection(null,e);renderPrimaryPanel();renderProperties();render();return;}
     if(state.activeTool==='delete'){const obj=hitObject(raw);if(obj)deleteObjectById(obj.id);return;}
     if(state.activeTool==='line'||state.activeTool==='wall'){if(!state.drawStart){state.drawStart=p;state.previewEnd=p;updateContextBar();render();}else commitSegment(state.drawStart,constrainOrtho(state.drawStart,p),state.activeTool);return;}
     if(state.activeTool==='measure'){if(!state.measureStart){state.measureStart=p;state.previewEnd=p;updateContextBar();render();}else commitMeasurement(state.measureStart,constrainOrtho(state.measureStart,p));return;}
     if(state.activeTool==='space'&&state.toolset==='plan'){commitSpace(raw);return;}
     if(state.activeTool==='door'||state.activeTool==='window'){commitOpening(state.activeTool,nearestWallProjection(raw));return;}
   }
-  function onPointerUp(e){if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.dragEdit){const drag=state.dragEdit,hadChange=drag.historyPushed,obj=state.objects.find(o=>o.id===drag.objectId);state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(hadChange&&obj?.type==='wall'){if(['a','b'].includes(drag.mode))attachWallEndpoint(obj,drag.mode);syncDependentsOfWall(obj.id);refreshSpaces();}if(hadChange){rebuildObjectSnapIndex();updateAll();}return;}if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){} }
+  function onPointerUp(e){if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){const drag=state.selectionDrag,candidates=[...(drag.previewIds||new Set())];state.selectionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}applySelectionSet(candidates,drag.mode);renderPrimaryPanel();renderProperties();render();return;}if(state.dragEdit){const drag=state.dragEdit,hadChange=drag.historyPushed,obj=state.objects.find(o=>o.id===drag.objectId);state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(hadChange&&obj?.type==='wall'){syncDependentsOfWall(obj.id);refreshSpaces();}if(hadChange){rebuildObjectSnapIndex();updateAll();}return;}if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){} }
   function onWheel(e){e.preventDefault();const s=fromPointerEvent(e),before=screenCssToWorld(s),factor=Math.exp(-e.deltaY*.0014);state.camera.zoom=clamp(state.camera.zoom*factor,.002,8);const after=screenCssToWorld(s);state.camera.cx+=before.x-after.x;state.camera.cy+=before.y-after.y;render();}
 
-  function deleteObjectById(id){const target=state.objects.find(o=>o.id===id);if(!target)return;pushHistory();const childIds=target.type==='wall'?new Set(state.objects.filter(o=>(o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id).map(o=>o.id)):new Set();state.objects=state.objects.filter(o=>o.id!==id&&!childIds.has(o.id));if(target.type==='wall'){for(const wall of state.objects.filter(o=>o.type==='wall'))for(const endpoint of['a','b'])if(wall.attachments?.[endpoint]?.wallId===id)delete wall.attachments[endpoint];refreshSpaces();}state.selectedObjectId=null;markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function deleteObjectById(id){const target=state.objects.find(o=>o.id===id);if(!target)return;pushHistory();const childIds=target.type==='wall'?new Set(state.objects.filter(o=>(o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id).map(o=>o.id)):new Set();state.objects=state.objects.filter(o=>o.id!==id&&!childIds.has(o.id));if(target.type==='wall'){for(const wall of state.objects.filter(o=>o.type==='wall'))for(const endpoint of['a','b'])if(wall.attachments?.[endpoint]?.wallId===id)delete wall.attachments[endpoint];refreshSpaces();}state.selectedObjectId=null;state.selectedObjectIds.delete(id);for(const childId of childIds)state.selectedObjectIds.delete(childId);markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function deleteSelectedObjects(){const ids=selectionIds();if(!ids.size)return;pushHistory();const remove=new Set(ids);for(const id of ids){const target=state.objects.find(o=>o.id===id);if(target?.type==='wall')for(const o of state.objects)if((o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id)remove.add(o.id);}state.objects=state.objects.filter(o=>!remove.has(o.id));for(const wall of state.objects.filter(o=>o.type==='wall'))for(const endpoint of['a','b'])if(remove.has(wall.attachments?.[endpoint]?.wallId))delete wall.attachments[endpoint];clearMultiSelection();refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();}
 
   function referenceBounds(ref,{main=false}={}){if(ref.type==='linkedCadRegion'){const r=state.drawingRegions.find(x=>x.id===ref.regionId);return r||{minx:0,miny:0,maxx:1000,maxy:1000};}if(ref.type==='image'){const a=referenceLocalToWorld(ref,{x:0,y:0}),b=referenceLocalToWorld(ref,{x:ref.width,y:ref.height});return{minx:Math.min(a.x,b.x),miny:Math.min(a.y,b.y),maxx:Math.max(a.x,b.x),maxy:Math.max(a.y,b.y)};}const b=(main&&ref.mainBounds)||ref.bounds,a=referenceLocalToWorld(ref,{x:b.minx,y:b.miny}),c=referenceLocalToWorld(ref,{x:b.maxx,y:b.maxy});return{minx:Math.min(a.x,c.x),miny:Math.min(a.y,c.y),maxx:Math.max(a.x,c.x),maxy:Math.max(a.y,c.y)};}
   function allBounds({full=false}={}){let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;const add=p=>{if(!p)return;minx=Math.min(minx,p.x);miny=Math.min(miny,p.y);maxx=Math.max(maxx,p.x);maxy=Math.max(maxy,p.y);};for(const r of state.references){const b=referenceBounds(r,{main:!full});add({x:b.minx,y:b.miny});add({x:b.maxx,y:b.maxy});}if(state.sourceDxfName&&state.objects.length&&state.sourceDxfMainBounds&&!full){const b=state.sourceDxfMainBounds;add({x:b.minx,y:b.miny});add({x:b.maxx,y:b.maxy});}else for(const o of state.objects){if(o.a)add(o.a);if(o.b)add(o.b);if(o.center){add({x:o.center.x-o.radius,y:o.center.y-o.radius});add({x:o.center.x+o.radius,y:o.center.y+o.radius});}if(o.point)add(o.point);const g=(o.type==='door'||o.type==='window')?openingGeometry(o):null;if(g){add(g.p1);add(g.p2);}if(o.type==='dimension'){const d=dimensionGeometry(o);if(d){add(d.p1);add(d.p2);add(d.d1);add(d.d2);}}}return Number.isFinite(minx)?{minx,miny,maxx,maxy}:null;}
@@ -892,7 +1072,7 @@
   async function addDxfReference(file){showProgress(t('progress.readingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.readingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit),entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor)),b=boundsEntities(entities),main=scaleBounds(parsed.analysis?.mainBounds,factor);const ref={id:uid('ref'),type:'dxf',name:file.name,visible:true,opacity:.48,scale:1,origin:{x:0,y:0},entities,bounds:b,mainBounds:main||b,outlierCount:parsed.analysis?.outlierCount||0,sourceUnit:parsed.unit?.label||'unspecified',sourceUnitSpecified:parsed.unit?.metersPerUnit!=null,layers:parsed.layers||[],visibleLayers:new Set(parsed.layers||[]),pathsByLayer:buildDxfPaths(entities),textEntities:entities.filter(e=>e.type==='text'),snapIndex:buildSnapIndex(entities,b)};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);hideProgress();updateAll();switchInspector('reference');fitReference(ref);}
   async function addImageReference(file){const dataUrl=await readDataUrl(file),image=await loadImage(dataUrl);const ref={id:uid('ref'),type:'image',name:file.name,visible:true,opacity:.55,scale:1,origin:{x:0,y:0},image,width:image.naturalWidth,height:image.naturalHeight,sourceUnit:'px'};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);updateAll();switchInspector('reference');fitReference(ref);}
 
-  async function openEditableDxf(file){if(!file)return;try{if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.newDrawing')))return;state.objects=[];state.references=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedObjectId=null;state.selectedReferenceId=null;state.history=[];state.future=[];state.nextId=1;state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';showProgress(t('progress.importingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.importingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit);const entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor));const editable=[];for(const e of entities){const layer=e.layer||'0';state.cadLayerVisibility.set(layer,true);if(e.type==='line')editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.x1,y:e.y1},b:{x:e.x2,y:e.y2},source:'DXF'});else if(e.type==='polyline'&&e.points?.length>1){for(let i=1;i<e.points.length;i++)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points[i-1][0],y:e.points[i-1][1]},b:{x:e.points[i][0],y:e.points[i][1]},source:'DXF'});if(e.closed)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points.at(-1)[0],y:e.points.at(-1)[1]},b:{x:e.points[0][0],y:e.points[0][1]},source:'DXF'});}else if(e.type==='circle')editable.push({id:uid('cadCircle'),type:'cadCircle',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,source:'DXF'});else if(e.type==='text')editable.push({id:uid('cadText'),type:'cadText',cadLayer:layer,point:{x:e.x,y:e.y},text:e.text||'',source:'DXF'});}
+  async function openEditableDxf(file){if(!file)return;try{if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.newDrawing')))return;state.objects=[];state.references=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.selectedReferenceId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';showProgress(t('progress.importingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.importingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit);const entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor));const editable=[];for(const e of entities){const layer=e.layer||'0';state.cadLayerVisibility.set(layer,true);if(e.type==='line')editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.x1,y:e.y1},b:{x:e.x2,y:e.y2},source:'DXF'});else if(e.type==='polyline'&&e.points?.length>1){for(let i=1;i<e.points.length;i++)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points[i-1][0],y:e.points[i-1][1]},b:{x:e.points[i][0],y:e.points[i][1]},source:'DXF'});if(e.closed)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points.at(-1)[0],y:e.points.at(-1)[1]},b:{x:e.points[0][0],y:e.points[0][1]},source:'DXF'});}else if(e.type==='circle')editable.push({id:uid('cadCircle'),type:'cadCircle',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,source:'DXF'});else if(e.type==='text')editable.push({id:uid('cadText'),type:'cadText',cadLayer:layer,point:{x:e.x,y:e.y},text:e.text||'',source:'DXF'});}
       if(!editable.some(o=>o.type==='cadLine'||o.type==='cadCircle'))alert(t('alert.dxfNoEditableEntities'));state.objects=editable;state.sourceDxfName=file.name;state.sourceDxfFullBounds=boundsEntities(entities);state.sourceDxfMainBounds=scaleBounds(parsed.analysis?.mainBounds,factor)||state.sourceDxfFullBounds;state.sourceDxfOutlierCount=parsed.analysis?.outlierCount||0;state.activeCadLayer=(parsed.layers||[])[0]||'0';state.dirty=false;rebuildObjectSnapIndex();hideProgress();switchToolset('cad',{skipMapping:true});updateAll();fitAll();}catch(err){hideProgress();console.error(err);alert(err.message||String(err));}finally{dom.dxfEditFileInput.value='';}}
 
   function normalizeEntityToMm(e,factor){const out={...e};if(e.type==='line'){out.x1=e.x1*factor;out.y1=e.y1*factor;out.x2=e.x2*factor;out.y2=e.y2*factor;}else if(e.type==='polyline')out.points=(e.points||[]).map(p=>[p[0]*factor,p[1]*factor]);else if(e.type==='circle'){out.cx=e.cx*factor;out.cy=e.cy*factor;out.r=e.r*factor;}else if(e.type==='text'){out.x=e.x*factor;out.y=e.y*factor;}return out;}
@@ -917,12 +1097,104 @@
   function deleteRegion(regionId){pushHistory();state.drawingRegions=state.drawingRegions.filter(r=>r.id!==regionId);state.references=state.references.filter(r=>!(r.type==='linkedCadRegion'&&r.regionId===regionId));if(state.selectedRegionId===regionId)state.selectedRegionId=null;markDirty(true);updateAll();}
 
   function renderPrimaryPanel(){if(state.toolset==='plan')renderPlanObjectsPanel();else renderCadLayersPanel();}
-  function renderPlanObjectsPanel(){dom.primaryList.innerHTML='';const groups=[['wall','group.walls','wall'],['door','group.doors','door'],['window','group.windows','window'],['space','group.spaces','space'],['dimension','group.dimensions','dimension']];let any=false;for(const[type,key,icon]of groups){const count=state.objects.filter(o=>o.type===type).length;if(!count)continue;any=true;dom.primaryList.appendChild(summaryRow(icon,t(key),t('panel.objects',{count})));}const cadCount=state.objects.filter(isCadObject).length;if(cadCount){any=true;dom.primaryList.appendChild(summaryRow('vector',t('group.cadGeometry'),t('panel.hiddenCad',{count:cadCount})));}if(!any)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noPlanObjects'))}</div>`;}
+  function renderPlanObjectsPanel(){dom.primaryControls.hidden=true;dom.primaryControls.innerHTML='';dom.primaryList.innerHTML='';const groups=[['wall','group.walls','wall'],['door','group.doors','door'],['window','group.windows','window'],['space','group.spaces','space'],['dimension','group.dimensions','dimension']];let any=false;for(const[type,key,icon]of groups){const count=state.objects.filter(o=>o.type===type).length;if(!count)continue;any=true;dom.primaryList.appendChild(summaryRow(icon,t(key),t('panel.objects',{count})));}const cadCount=state.objects.filter(isCadObject).length;if(cadCount){any=true;dom.primaryList.appendChild(summaryRow('vector',t('group.cadGeometry'),t('panel.hiddenCad',{count:cadCount})));}if(!any)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noPlanObjects'))}</div>`;}
   function summaryRow(icon,title,meta){const row=document.createElement('div');row.className='list-row';row.innerHTML=`<div class="object-swatch"><span class="ui-icon icon-${icon}" aria-hidden="true"></span></div><div class="row-main"><div class="row-title">${escapeHtml(title)}</div><div class="row-meta">${escapeHtml(meta)}</div></div><span></span>`;return row;}
-  function renderCadLayersPanel(){dom.primaryList.innerHTML='';const counts=new Map();for(const o of state.objects){let layer=null;if(isCadObject(o)||o.type==='line')layer=o.cadLayer||'0';else if(isSemanticObject(o)&&o.type!=='space')layer=cadLayerForObject(o);if(layer)counts.set(layer,(counts.get(layer)||0)+1);}const selected=state.objects.find(o=>o.id===state.selectedObjectId),selectedLayer=selected&&selected.type!=='space'?cadLayerForObject(selected):null;if(!counts.size)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noCadLayers'))}</div>`;for(const[layer,count]of[...counts.entries()].sort((a,b)=>a[0].localeCompare(b[0]))){if(!state.cadLayerVisibility.has(layer))state.cadLayerVisibility.set(layer,true);const visible=cadLayerVisible(layer),row=document.createElement('div');row.className=`list-row ${selectedLayer===layer?'selected':''}`;row.dataset.layer=layer;const eye=document.createElement('button');eye.className='eye-button';configureVisibilityButton(eye,visible,'layer');eye.addEventListener('click',e=>{e.stopPropagation();state.cadLayerVisibility.set(layer,!visible);renderCadLayersPanel();render();});const main=document.createElement('div');main.className='row-main';main.innerHTML=`<div class="row-title">${escapeHtml(layer)}</div><div class="row-meta">${escapeHtml(t('panel.entities',{count}))}</div>`;const active=document.createElement('span');active.className='row-meta';active.textContent=state.activeCadLayer===layer?t('panel.active'):'';row.addEventListener('click',e=>{if(e.target.closest('button'))return;state.activeCadLayer=layer;renderCadLayersPanel();});row.append(eye,main,active);dom.primaryList.appendChild(row);}if(selectedLayer)requestAnimationFrame(()=>dom.primaryList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`)?.scrollIntoView({block:'nearest'}));
-    const divider=document.createElement('div');divider.className='panel-divider';dom.primaryList.appendChild(divider);const heading=document.createElement('div');heading.className='section-heading';heading.textContent=t('region.section');dom.primaryList.appendChild(heading);const add=document.createElement('button');add.className='mini-action region-add';add.textContent=t('action.defineRegion');add.addEventListener('click',()=>setTool('region','select'));dom.primaryList.appendChild(add);
-    if(!state.drawingRegions.length){const empty=document.createElement('div');empty.className='section-copy';empty.textContent=t('region.none');dom.primaryList.appendChild(empty);}for(const region of state.drawingRegions){const row=document.createElement('div');row.className=`region-row ${state.selectedRegionId===region.id?'selected':''}`;const main=document.createElement('button');main.className='region-main';main.innerHTML=`<strong>${escapeHtml(region.name)}</strong><span>${escapeHtml(t('region.entities',{count:regionObjectCount(region)}))}</span>`;main.addEventListener('click',()=>{state.selectedRegionId=region.id;fitBounds(region);renderCadLayersPanel();render();});const actions=document.createElement('div');actions.className='region-actions';const plan=document.createElement('button');plan.className='mini-action';plan.textContent=t('action.openInPlan');plan.addEventListener('click',()=>openRegionInPlan(region));const exp=document.createElement('button');exp.className='mini-action';exp.textContent='DXF';exp.addEventListener('click',()=>exportRegionDxf(region));const del=document.createElement('button');del.className='mini-action danger';del.textContent=t('action.delete');del.addEventListener('click',()=>deleteRegion(region.id));actions.append(plan,exp,del);row.append(main,actions);dom.primaryList.appendChild(row);}}
+  function scrollLayerRowInsideList(row){if(!row||!dom.primaryList)return;const list=dom.primaryList,top=row.offsetTop,bottom=top+row.offsetHeight,viewTop=list.scrollTop,viewBottom=viewTop+list.clientHeight;if(top<viewTop)list.scrollTop=Math.max(0,top-4);else if(bottom>viewBottom)list.scrollTop=Math.max(0,bottom-list.clientHeight+4);}
+  function renderCadLayersPanel(){
+    const previousScroll=dom.primaryList.scrollTop;
+    dom.primaryControls.hidden=false;
+    dom.primaryControls.innerHTML='';
 
+    const search=document.createElement('input');
+    search.type='search';
+    search.className='layer-search';
+    search.placeholder=t('panel.layerSearch');
+    search.setAttribute('aria-label',t('panel.layerSearch'));
+    search.value=state.layerFilter||'';
+    search.addEventListener('input',()=>{state.layerFilter=search.value;renderCadLayersPanel();});
+    dom.primaryControls.appendChild(search);
+    dom.primaryList.innerHTML='';
+
+    const counts=new Map();
+    for(const o of state.objects){
+      let layer=null;
+      if(isCadObject(o)||o.type==='line')layer=o.cadLayer||'0';
+      else if(isSemanticObject(o)&&o.type!=='space')layer=cadLayerForObject(o);
+      if(layer)counts.set(layer,(counts.get(layer)||0)+1);
+    }
+
+    const selectedIds=selectionIds();
+    const selectedObjects=[...selectedIds].map(id=>state.objects.find(o=>o.id===id)).filter(Boolean);
+    const selectedLayers=new Set(selectedObjects.filter(o=>o.type!=='space').map(cadLayerForObject));
+    const selectedLayer=selectedLayers.size===1?[...selectedLayers][0]:null;
+    const filter=(state.layerFilter||'').trim().toLocaleLowerCase();
+    const entries=[...counts.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+    let shown=0;
+
+    if(!counts.size){
+      const empty=document.createElement('div');
+      empty.className='section-copy';
+      empty.textContent=t('panel.noCadLayers');
+      dom.primaryList.appendChild(empty);
+    }else{
+      for(const[layer,count]of entries){
+        if(filter&&!layer.toLocaleLowerCase().includes(filter)&&!selectedLayers.has(layer))continue;
+        shown++;
+        if(!state.cadLayerVisibility.has(layer))state.cadLayerVisibility.set(layer,true);
+        const visible=cadLayerVisible(layer),row=document.createElement('div');
+        row.className=`list-row cad-layer-row ${selectedLayers.has(layer)?'selected':''}`;
+        row.dataset.layer=layer;
+
+        const eye=document.createElement('button');
+        eye.className='eye-button';
+        configureVisibilityButton(eye,visible,'layer');
+        eye.addEventListener('click',e=>{e.stopPropagation();setCadLayerVisibilityUndoable(layer,!visible);});
+
+        const main=document.createElement('div');
+        main.className='row-main';
+        main.innerHTML=`<div class="row-title" title="${escapeHtml(layer)}">${escapeHtml(layer)}</div><div class="row-meta" title="${escapeHtml(t('panel.entities',{count}))}">${escapeHtml(String(count))}</div>`;
+
+        const active=document.createElement('span');
+        active.className='layer-active';
+        active.hidden=state.activeCadLayer!==layer;
+        active.title=t('panel.active');
+        row.addEventListener('click',e=>{if(e.target.closest('button'))return;state.activeCadLayer=layer;renderCadLayersPanel();});
+        row.append(eye,main,active);
+        dom.primaryList.appendChild(row);
+      }
+      if(!shown){
+        const empty=document.createElement('div');
+        empty.className='section-copy';
+        empty.textContent=t('panel.noLayerMatches');
+        dom.primaryList.appendChild(empty);
+      }
+    }
+
+    // Drawing Regions stay in the same panel, but below the compact layer list.
+    const divider=document.createElement('div');divider.className='panel-divider';dom.primaryList.appendChild(divider);
+    const heading=document.createElement('div');heading.className='section-heading';heading.textContent=t('region.section');dom.primaryList.appendChild(heading);
+    const add=document.createElement('button');add.className='mini-action region-add';add.textContent=t('action.defineRegion');add.addEventListener('click',()=>setTool('region','select'));dom.primaryList.appendChild(add);
+    if(!state.drawingRegions.length){const empty=document.createElement('div');empty.className='section-copy';empty.textContent=t('region.none');dom.primaryList.appendChild(empty);}
+    for(const region of state.drawingRegions){
+      const row=document.createElement('div');row.className=`region-row ${state.selectedRegionId===region.id?'selected':''}`;
+      const main=document.createElement('button');main.className='region-main';main.innerHTML=`<strong>${escapeHtml(region.name)}</strong><span>${escapeHtml(t('region.entities',{count:regionObjectCount(region)}))}</span>`;
+      main.addEventListener('click',()=>{state.selectedRegionId=region.id;fitBounds(region);renderCadLayersPanel();render();});
+      const actions=document.createElement('div');actions.className='region-actions';
+      const plan=document.createElement('button');plan.className='mini-action';plan.textContent=t('action.openInPlan');plan.addEventListener('click',()=>openRegionInPlan(region));
+      const exp=document.createElement('button');exp.className='mini-action';exp.textContent='DXF';exp.addEventListener('click',()=>exportRegionDxf(region));
+      const del=document.createElement('button');del.className='mini-action danger';del.textContent=t('action.delete');del.addEventListener('click',()=>deleteRegion(region.id));
+      actions.append(plan,exp,del);row.append(main,actions);dom.primaryList.appendChild(row);
+    }
+
+    // Restore only this list's scroll position; never scroll the page/workspace.
+    requestAnimationFrame(()=>{
+      dom.primaryList.scrollTop=previousScroll;
+      if(selectedLayer){
+        const row=dom.primaryList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`);
+        scrollLayerRowInsideList(row);
+      }
+    });
+  }
 
   function cadLayerForObject(obj){const m=state.cadMapping||defaultCadMapping();if(obj.type==='wall')return m.wallLayer;if(obj.type==='door')return m.doorLayer;if(obj.type==='window')return m.windowLayer;if(obj.type==='dimension')return m.dimensionLayer;return obj.cadLayer||'0';}
 
@@ -934,16 +1206,17 @@
 
   function localizedObjectType(type){const key=type==='cadLine'?'value.cadLine':`value.${type}`;return t(key);}
   function localizedToolName(tool){const keys={select:'tool.select',line:'tool.line',wall:'tool.wall',door:'tool.door',window:'tool.window',space:'tool.space',region:'tool.region',measure:'tool.measure',delete:'tool.delete'};return t(keys[tool]||`tool.${tool}`);}
-  function renderProperties(){dom.propertiesPanel.innerHTML='';const obj=state.objects.find(o=>o.id===state.selectedObjectId);if(obj){propertyText(t('property.type'),localizedObjectType(obj.type));
-      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);propertyText(t('property.layer'),layer);propertyActions([{label:cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),run:()=>{state.cadLayerVisibility.set(layer,!cadLayerVisible(layer));renderCadLayersPanel();render();}},{label:t('action.soloLayer'),run:()=>{for(const key of state.cadLayerVisibility.keys())state.cadLayerVisibility.set(key,key===layer);renderCadLayersPanel();render();}},{label:t('action.showInLayers'),run:()=>{switchInspector('primary');renderCadLayersPanel();}}]);}
-      if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};if(obj.type==='wall'){enforceWallAttachments(obj);syncDependentsOfWall(obj.id);refreshSpaces();}markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};if(obj.type==='wall'){enforceWallAttachments(obj);syncDependentsOfWall(obj.id);refreshSpaces();}markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
-      if(obj.type==='wall'){propertyNumber(t('property.thickness'),obj.thickness,v=>{if(v>0){pushHistory();obj.thickness=v;markDirty(true);updateAll();}},'mm');const connected=Boolean(obj.attachments?.a||obj.attachments?.b);propertyText(t('property.joint'),connected?t('value.connected'):t('value.free'));propertyActions(connected?[{label:t('action.detachJoint'),run:()=>{pushHistory();detachWallConnections(obj);markDirty(true);updateAll();}}]:[{label:t('action.attachJoint'),run:()=>{pushHistory();const ok=attachTouchingWallEndpoints(obj);if(!ok){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();}}]);}
+  function wallConstraintSummary(wall){const c=ensureWallConstraints(wall),parts=[];if(c.orientation)parts.push(t(`constraint.${c.orientation}`));if(Number.isFinite(c.fixedAngle))parts.push(t('constraint.fixedAngleValue',{value:formatNumber(c.fixedAngle,1)}));if(Number.isFinite(c.fixedLength))parts.push(t('constraint.fixedLengthValue',{value:formatNumber(c.fixedLength,1)}));if(c.fixed)parts.push(t('constraint.fixed'));for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)parts.push(t(att.kind==='coincident'?'constraint.endpointCoincident':'constraint.pointOnLine',{endpoint:ep.toUpperCase()}));}return parts.length?parts.join(' · '):t('constraint.none');}
+  function renderProperties(){dom.propertiesPanel.innerHTML='';const ids=selectionIds();if(ids.size>1){propertyText(t('property.selection'),t('value.objectsSelected',{count:ids.size}));if(state.toolset==='cad'){const layers=new Set([...ids].map(id=>state.objects.find(o=>o.id===id)).filter(Boolean).filter(o=>o.type!=='space').map(cadLayerForObject));propertyText(t('property.layers'),layers.size?`${layers.size}`:'—');}return;}const onlyId=ids.size===1?[...ids][0]:state.selectedObjectId,obj=state.objects.find(o=>o.id===onlyId);if(obj){state.selectedObjectId=obj.id;propertyText(t('property.type'),localizedObjectType(obj.type));
+      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);propertyText(t('property.layer'),layer);propertyActions([{label:cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),run:()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer))},{label:t('action.soloLayer'),run:()=>soloLayer(layer)},{label:t('action.showInLayers'),run:()=>{switchInspector('primary');renderCadLayersPanel();}}]);}
+      if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){if(obj.type==='wall'){if(!breakWallConstraintForEdit(obj,'length'))return;const ang=angleDeg(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,ang,v,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();}else{pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};}markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){if(obj.type==='wall'){if(!breakWallConstraintForEdit(obj,'angle'))return;const len=distance(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,v,len,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();}else{pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};}markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
+      if(obj.type==='wall'){propertyNumber(t('property.thickness'),obj.thickness,v=>{if(v>0){pushHistory();obj.thickness=v;markDirty(true);updateAll();}},'mm');const connected=Boolean(obj.attachments?.a||obj.attachments?.b),c=ensureWallConstraints(obj);propertyText(t('property.joint'),connected?t('value.connected'):t('value.free'));propertyText(t('property.constraints'),wallConstraintSummary(obj));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°${state.baseAxisWallId===obj.id?` · ${t('value.thisWall')}`:''}`);propertyActions(connected?[{label:t('action.detachJoint'),run:()=>{pushHistory();detachWallConnections(obj);markDirty(true);updateAll();}}]:[{label:t('action.attachJoint'),run:()=>{pushHistory();const ok=attachTouchingWallEndpoints(obj);if(!ok){state.history.pop();updateUndoRedo();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();}}]);propertyActions([{label:t('action.constraintHorizontal'),run:()=>setWallConstraint(obj,'horizontal')},{label:t('action.constraintVertical'),run:()=>setWallConstraint(obj,'vertical')},{label:t('action.constraintParallel'),run:()=>setWallConstraint(obj,'parallel')},{label:t('action.constraintPerpendicular'),run:()=>setWallConstraint(obj,'perpendicular')},{label:t('action.constraintAngle'),run:()=>{const current=angleDelta(angleDeg(obj.a,obj.b),baseAxisAngle()),raw=prompt(t('prompt.constraintAngle'),String(Math.round(current*100)/100));if(raw!==null&&Number.isFinite(Number(raw)))setWallConstraint(obj,'angle',Number(raw));}},{label:t('action.constraintLength'),run:()=>setWallConstraint(obj,'length',distance(obj.a,obj.b))},{label:c.fixed?t('action.unfixPosition'):t('action.fixPosition'),run:()=>setWallConstraint(obj,'fixed')}]);propertyActions([{label:t('action.setBaseAxis'),run:()=>setBaseAxisFromWall(obj)},{label:t('action.clearBaseAxis'),run:clearBaseAxis},{label:t('action.clearConstraints'),run:()=>clearWallGeometricConstraints(obj)}]);}
       if(obj.type==='door'||obj.type==='window'){propertyNumber(t('property.width'),obj.width,v=>{if(v>0){pushHistory();obj.width=v;markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');if(obj.type==='door'){propertyText(t('property.openingSide'),`${obj.hinge==='end'?t('value.hingeEnd'):t('value.hingeStart')} · ${obj.swing===-1?t('value.swingReverse'):t('value.swingNormal')}`);propertyActions([{label:t('action.flipHinge'),run:()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();}},{label:t('action.flipSwing'),run:()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();}}]);}}
-      if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){propertyText(t('property.length'),`${formatNumber(g.len,2)} mm`);if(g.associated)propertyText(t('property.association'),t('value.wallLinked'));propertyNumber(t('property.offset'),g.offset,v=>{pushHistory();obj.offset=v;markDirty(true);updateAll();},'mm');}}
+      if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(g.associated)propertyNumber(t('property.length'),g.len,v=>applyNumericLabelEdit({objectId:obj.id,kind:'dimensionLength'},v),'mm');else propertyText(t('property.length'),`${formatNumber(g.len,2)} mm`);if(g.associated)propertyText(t('property.association'),t('value.wallLinked'));propertyNumber(t('property.offset'),g.offset,v=>{pushHistory();obj.offset=v;markDirty(true);updateAll();},'mm');}}
       if(obj.type==='space'){propertyText(t('property.area'),`${formatNumber(obj.areaM2||Math.abs(polygonArea(obj.polygon||[]))/1e6,2)} m²`);propertyText(t('property.spaceId'),obj.spaceUuid||'—');propertyText(t('property.boundaryWalls'),String(obj.wallIds?.length||0));if(obj.invalid)propertyText(t('property.status'),t('space.invalid'));}
       if(obj.type==='cadCircle')propertyText(t('property.length'),`R ${formatNumber(obj.radius,2)} mm`);if(obj.source)propertyText(t('property.source'),obj.source);return;}
     const ref=state.references.find(r=>r.id===state.selectedReferenceId);if(ref){propertyText(t('property.reference'),ref.name);propertyText(t('property.type'),ref.type==='dxf'?'DXF':ref.type==='linkedCadRegion'?t('value.linkedCadReference'):t('value.image'));if(ref.type==='linkedCadRegion'){const region=state.drawingRegions.find(x=>x.id===ref.regionId);if(region)propertyText(t('property.region'),region.name);propertyText(t('property.layers'),String(ref.visibleLayers?.size||0));}else{propertyText(t('property.scale'),`${formatNumber(ref.scale,6)}×`);propertyText(t('property.origin'),`${formatNumber(ref.origin.x,1)}, ${formatNumber(ref.origin.y,1)}`);}propertyText(t('property.opacity'),`${Math.round(ref.opacity*100)}%`);return;}
-    propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);propertyText(t('property.document'),currentDocumentName());propertyText(t('property.toolset'),t(state.toolset==='plan'?'value.planTools':'value.cadTools'));propertyText(t('property.units'),INTERNAL_UNIT);propertyText(t('property.tool'),localizedToolName(state.activeTool));if(state.cadMapping)propertyText(t('property.mapping'),mappingSummary());}
+    propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);propertyText(t('property.document'),currentDocumentName());propertyText(t('property.toolset'),t(state.toolset==='plan'?'value.planTools':'value.cadTools'));propertyText(t('property.units'),INTERNAL_UNIT);propertyText(t('property.tool'),localizedToolName(state.activeTool));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°`);if(state.cadMapping)propertyText(t('property.mapping'),mappingSummary());}
   function propertyActions(items){const actions=document.createElement('div');actions.className='property-actions';for(const item of items){const b=document.createElement('button');b.className='property-action';b.textContent=item.label;b.addEventListener('click',item.run);actions.appendChild(b);}dom.propertiesPanel.appendChild(actions);}
 
   function mappingSummary(){const m=state.cadMapping;if(!m)return'—';return t('mapping.summary',{wallMode:t(`mapping.${m.wallRepresentation}`),wallLayer:m.wallLayer,doorLayer:m.doorLayer,windowLayer:m.windowLayer});}
@@ -951,11 +1224,17 @@
   function propertyNumber(label,value,onChange,unit=''){const row=document.createElement('div');row.className='property-row';const l=document.createElement('div');l.className='property-label';l.textContent=label;const v=document.createElement('div');v.className='property-value';const input=document.createElement('input');input.type='number';input.step='0.01';input.value=String(Math.round(Number(value)*100)/100);input.addEventListener('change',()=>onChange(Number(input.value)));v.appendChild(input);if(unit){const u=document.createElement('span');u.className='property-unit';u.textContent=unit;v.appendChild(u);}row.append(l,v);dom.propertiesPanel.appendChild(row);}
 
   function switchInspector(tab){document.querySelectorAll('.inspector-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.inspector-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===tab));}
-  function updateAll(){updateUndoRedo();updateEmptyState();updateContextBar();updateDocumentStatus();updateCompactViewerState();renderToolRail();renderPrimaryPanel();renderReferences();renderProperties();render();}
+  function updateAxisStatus(){
+    if(!dom.statusAxis)return;
+    dom.statusAxis.textContent=`AXIS ${formatNumber(baseAxisAngle(),1)}°`;
+    dom.statusAxis.classList.toggle('active',Boolean(state.baseAxisWallId));
+    dom.statusAxis.title=state.baseAxisWallId?t('property.baseAxis'):'';
+  }
+  function updateAll(){updateUndoRedo();updateEmptyState();updateContextBar();updateDocumentStatus();updateCompactViewerState();updateAxisStatus();renderToolRail();renderPrimaryPanel();renderReferences();renderProperties();render();}
 
-  function resetProject(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedReferenceId=null;state.selectedObjectId=null;state.hoveredObjectId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;rebuildObjectSnapIndex();setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
+  function resetProject(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedReferenceId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.hoveredObjectId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;rebuildObjectSnapIndex();setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
 
-  function createSample(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.history=[];state.future=[];state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',a,b,thickness:th};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId:innerV.id,t:.48,width:900,hinge:'start',swing:1},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;state.selectedObjectId=null;state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
+  function createSample(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',a,b,thickness:th};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId:innerV.id,t:.48,width:900,hinge:'start',swing:1},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
 
   function runCommand(raw){const command=String(raw||'').trim().toUpperCase();if(!command)return;if(state.commandPending==='zoom'){if(command==='E'||command==='EXTENTS'){fitAll();setCommandStatus(t('command.zoomExtents'),'strong');state.commandPending=null;return;}setCommandStatus(t('command.unknown',{command}),'error');return;}
     if(command==='L'||command==='LINE'){setTool('line','draw');setCommandStatus(t('command.line'),'strong');}
@@ -989,11 +1268,10 @@
   function addContextMenuItem(label,run,{danger=false,disabled=false}={}){const b=document.createElement('button');b.className=`context-menu-item ${danger?'danger':''}`;b.textContent=label;b.disabled=disabled;b.addEventListener('click',()=>{hideContextMenu();run();});contextMenu.appendChild(b);}
   function addContextMenuDivider(){const d=document.createElement('div');d.className='context-menu-divider';contextMenu.appendChild(d);}
   function duplicateObject(obj){if(!obj||obj.type==='space')return;pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;state.objects.push(copy);state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
-  function soloLayer(layer){for(const key of state.cadLayerVisibility.keys())state.cadLayerVisibility.set(key,key===layer);renderCadLayersPanel();render();}
   function showCanvasContextMenu(e){if(isCompactViewer())return;e.preventDefault();hideTooltip();const raw=screenCssToWorld(fromPointerEvent(e)),obj=hitObject(raw);if(obj){state.selectedObjectId=obj.id;state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();addContextMenuItem(t('action.properties'),()=>switchInspector('properties'));if(obj.type==='door'){addContextMenuDivider();addContextMenuItem(t('action.flipHinge'),()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();});addContextMenuItem(t('action.flipSwing'),()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();});}if(obj.type==='wall'){addContextMenuDivider();const connected=Boolean(obj.attachments?.a||obj.attachments?.b);addContextMenuItem(connected?t('action.detachJoint'):t('action.attachJoint'),()=>{pushHistory();if(connected)detachWallConnections(obj);else if(!attachTouchingWallEndpoints(obj)){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();});}
-      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);addContextMenuDivider();addContextMenuItem(cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),()=>{state.cadLayerVisibility.set(layer,!cadLayerVisible(layer));renderCadLayersPanel();render();});addContextMenuItem(t('action.soloLayer'),()=>soloLayer(layer));addContextMenuItem(t('action.showInLayers'),()=>{switchInspector('primary');renderCadLayersPanel();});}
+      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);addContextMenuDivider();addContextMenuItem(cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer)));addContextMenuItem(t('action.soloLayer'),()=>soloLayer(layer));addContextMenuItem(t('action.showInLayers'),()=>{switchInspector('primary');renderCadLayersPanel();});}
       if(obj.type!=='space'){addContextMenuDivider();addContextMenuItem(t('action.duplicate'),()=>duplicateObject(obj));}addContextMenuItem(t('action.delete'),()=>deleteObjectById(obj.id),{danger:true});
-    }else{if(state.toolset==='cad'){addContextMenuItem(t('action.defineRegion'),()=>setTool('region','select'));addContextMenuItem(t('action.fit'),fitAll);if(state.sourceDxfOutlierCount>0)addContextMenuItem(t('action.fitAllEntities'),fitFullExtents);addContextMenuDivider();addContextMenuItem(t('action.showAllLayers'),()=>{for(const k of state.cadLayerVisibility.keys())state.cadLayerVisibility.set(k,true);renderCadLayersPanel();render();});}else{addContextMenuItem(t('action.selectTool'),()=>setTool('select','plan'));addContextMenuItem(t('action.fit'),fitAll);}}
+    }else{if(state.toolset==='cad'){addContextMenuItem(t('action.defineRegion'),()=>setTool('region','select'));addContextMenuItem(t('action.fit'),fitAll);if(state.sourceDxfOutlierCount>0)addContextMenuItem(t('action.fitAllEntities'),fitFullExtents);addContextMenuDivider();addContextMenuItem(t('action.showAllLayers'),showAllCadLayers);}else{addContextMenuItem(t('action.selectTool'),()=>setTool('select','plan'));addContextMenuItem(t('action.fit'),fitAll);}}
     if(!contextMenu.childElementCount)return;contextMenu.hidden=false;const margin=8,rect=contextMenu.getBoundingClientRect();contextMenu.style.left=`${Math.min(e.clientX,window.innerWidth-rect.width-margin)}px`;contextMenu.style.top=`${Math.min(e.clientY,window.innerHeight-rect.height-margin)}px`;
   }
 
@@ -1006,7 +1284,7 @@
 
   function isTyping(){const a=document.activeElement;return a&&(['INPUT','TEXTAREA','SELECT'].includes(a.tagName)||a.isContentEditable);}
   function canvasShortcutContext(){const a=document.activeElement;return !a||a===document.body||a===host||a===canvas;}
-  function cancelTransient(){state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.snapIndicator=null;state.commandPending=null;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));updateContextBar();render();}
+  function cancelTransient(){state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));updateContextBar();render();}
 
   dom.startPlanBtn.addEventListener('click',()=>switchToolset('plan',{skipMapping:true}));
   dom.startCadBtn.addEventListener('click',()=>switchToolset('cad',{skipMapping:true}));
@@ -1031,7 +1309,7 @@
   dom.dialogCancelBtn.addEventListener('click',()=>{dom.dialogBackdrop.hidden=true;state.calibration=null;state.previewEnd=null;updateAll();});dom.dialogApplyBtn.addEventListener('click',applyCalibration);dom.dialogInput.addEventListener('keydown',e=>{if(e.key==='Enter')applyCalibration();if(e.key==='Escape')dom.dialogCancelBtn.click();});
   dom.commandInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const raw=dom.commandInput.value;dom.commandInput.value='';runCommand(raw);}else if(e.key==='Escape'){e.preventDefault();dom.commandInput.value='';cancelTransient();host.focus();}});
 
-  canvas.addEventListener('pointermove',onPointerMove);canvas.addEventListener('pointerdown',onPointerDown);canvas.addEventListener('pointerup',onPointerUp);canvas.addEventListener('pointercancel',onPointerUp);canvas.addEventListener('wheel',onWheel,{passive:false});canvas.addEventListener('contextmenu',showCanvasContextMenu);
+  canvas.addEventListener('pointermove',onPointerMove);canvas.addEventListener('pointerdown',onPointerDown);canvas.addEventListener('pointerup',onPointerUp);canvas.addEventListener('pointercancel',onPointerUp);canvas.addEventListener('dblclick',onCanvasDoubleClick);canvas.addEventListener('wheel',onWheel,{passive:false});canvas.addEventListener('contextmenu',showCanvasContextMenu);
   host.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';});host.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files?.[0];if(file)openReferenceFile(file);});
   window.addEventListener('resize',()=>{updateCompactViewerState();resizeCanvas();});
   window.addEventListener('popstate',e=>applyRoute(e.state));
@@ -1044,8 +1322,8 @@
     if(!isTyping()&&e.key==='F8'){e.preventDefault();state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!isTyping()){e.preventDefault();e.shiftKey?redo():undo();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&!isTyping()){e.preventDefault();redo();}
-    if(e.key==='Escape'){hideTooltip();hideContextMenu();cancelTransient();}
-    if((e.key==='Delete'||e.key==='Backspace')&&!isTyping()&&state.selectedObjectId){e.preventDefault();deleteObjectById(state.selectedObjectId);}
+    if(e.key==='Escape'){hideTooltip();hideContextMenu();if(state.selectionDrag){state.selectionDrag=null;render();}else if(state.activeTool==='select'&&selectionIds().size){clearMultiSelection();renderPrimaryPanel();renderProperties();render();}else cancelTransient();}
+    if((e.key==='Delete'||e.key==='Backspace')&&!isTyping()&&selectionIds().size){e.preventDefault();deleteSelectedObjects();}
     if(state.toolset==='cad'&&!isTyping()&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&/^[a-zA-Z]$/.test(e.key)){e.preventDefault();dom.commandInput.focus();dom.commandInput.value=e.key.toUpperCase();}
   });
   window.addEventListener('keyup',e=>{if(e.code==='Space'){const gesture=state.spaceGesture;state.spaceDown=false;state.spaceGesture=null;if(!state.pan)host.dataset.pan='false';if(gesture&&!gesture.used&&(performance.now()-gesture.started)<420&&state.view==='workspace'&&state.toolset==='plan'&&!isTyping()&&canvasShortcutContext())setTool('select','plan');}});

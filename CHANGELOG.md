@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.6.0 · Build 7 — 2026-09-20
+
+Constraint / selection / large-layer UX milestone.
+
+- separated transient SNAP placement from persistent wall constraints
+- added directly editable on-canvas wall length/angle, opening width and associated-dimension values
+- added Constraint v1: horizontal, vertical, axis-parallel, axis-perpendicular, fixed angle, fixed length and position Fix
+- added explicit endpoint coincidence / point-on-line wall relationships and kept constrained endpoints attached during drag
+- added user-defined wall Base Axis and made ORTHO / axis-relative constraints follow it
+- added selected-wall constraint hints and conflict confirmation before breaking fixed angle/length/position constraints
+- expanded Undo/Redo snapshots to include constraints/base-axis and CAD layer visibility state
+- added CAD left→right Window selection and right→left Crossing selection with live candidate preview, Shift-add, Ctrl/Cmd-toggle and Esc-clear
+- made layer hide / isolate / restore undoable
+- fixed selected-layer reveal so it scrolls only the layer list instead of the outer workspace/page
+- made the CAD Layers panel independently scrollable, searchable and compact for large layer counts
+- preserved Drawing Region controls below the layer list
+- fixed direct numeric double-click so the first click does not clear the selected object before the editor opens
+
 ## v0.5.0 · Build 6 — 2026-09-20
 
 Plan interaction and CAD → Plan linkage milestone.

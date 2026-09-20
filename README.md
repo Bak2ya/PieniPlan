@@ -2,100 +2,157 @@
 
 **Small Web Floor Plan Editor**
 
-**Quick launch:** https://bak2ya.github.io/PieniPlan/  
-**GitHub:** https://github.com/Bak2ya/PieniPlan
+브라우저에서 빠르게 평면도를 만들고, 필요하면 같은 도면을 DXF/CAD 방식으로 더 정밀하게 다룰 수 있는 웹 도면 편집기입니다.
 
-PieniPlan is a browser-based floor-plan and lightweight 2D CAD prototype built on one shared, real-world drawing coordinate system.
+- **바로 실행:** https://bak2ya.github.io/PieniPlan/
+- **GitHub:** https://github.com/Bak2ya/PieniPlan
 
-The same drawing can be approached with two connected tool sets:
+PieniPlan은 **하나의 도면 · 두 가지 도구 세트 · 하나의 DXF 결과물**을 지향합니다.
 
-- **Plan Tools** — walls, doors, windows, spaces and dimensions without requiring CAD structure knowledge.
-- **CAD Tools** — editable DXF geometry, layers, precision controls and command input for experienced CAD users.
+- **Plan Tools(빠른도면)** — CAD 구조를 몰라도 벽·문·창·공간·치수를 이용해 정확한 평면도를 만들 수 있습니다.
+- **CAD Tools** — DXF 객체, 레이어, 정밀 선택, SNAP/ORTHO/GRID, 명령 입력을 이용해 실제 DXF를 직접 편집할 수 있습니다.
 
-Choosing a path on the start screen only selects the first toolbox. Both tool sets use the same canvas, millimetre coordinates and DXF output path.
+처음 화면의 선택은 어떤 도구 세트로 시작할지만 정합니다. 작업 중 언제든 같은 도면에서 Plan Tools와 CAD Tools를 오갈 수 있습니다.
 
-## v0.5.0 · Build 6
+## 할 수 있는 것
 
-This build strengthens direct editing in Plan Tools and adds the first practical CAD → Plan bridge through **Drawing Regions**.
+### 빠른도면 · Plan Tools
 
-### Plan Tools
-
-- Door/window openings remain attached to walls.
-- Select a door or window to reveal its opening handles. Drag either square end handle along the wall to change the width; the current width is shown beside the selected opening.
-- Drag the center/body along the wall to move a door/window. For a door, dragging across the wall also flips the swing side.
-- Door Properties and right-click menu provide explicit **Flip hinge** and **Flip swing** actions.
-- Wall endpoints snap to nearby endpoints and wall segments. A visible snap marker shows the target.
-- T-junction wall endpoints can stay linked to another wall. Moving the parent wall makes the attached branch follow; the joint can be detached or reattached from Properties/right-click.
-- A quick tap of **Space** returns Plan Tools to Select. Holding **Space + drag** continues to pan the canvas.
-- **Define Space** recognizes a closed semantic-wall boundary and assigns it a stable space ID. Existing spaces follow wall edits while their boundary remains valid.
-- Plan dimensions are associative: a placed dimension references a wall instead of floating independently. Wall edits update the dimension; the dimension line offset remains editable.
-- Right-click menus expose object-specific actions instead of forcing every operation into the side panel.
+- 실제 치수 기반 **벽 그리기**
+- 벽에 붙는 **문 / 창문** 배치와 폭 조절
+- 문 **경첩 방향 / 열림 방향 반전**
+- 닫힌 벽 영역을 찾아 **공간 지정**
+- 벽을 따라 움직이는 **연결 치수**
+- 벽 길이·각도, 문/창 폭 등의 **화면 숫자 더블클릭 직접 입력**
+- 벽 끝점과 선에 맞추는 **SNAP**
+- 지속적인 관계를 만드는 **Constraint**
+  - 수평 / 수직
+  - 기준축 평행 / 직각
+  - 각도 고정 / 길이 고정 / 위치 고정
+  - 점-점 일치 / 점-선 연결
+- 살짝 회전된 실제 건물에서도 사용할 수 있는 **기준축(Base Axis)**
+- DXF / 이미지 참조 도면을 깔고 트레이싱
 
 ### CAD Tools
 
-- Selecting an object highlights its layer in the Layers panel and exposes quick **hide / isolate / show in Layers** actions in Properties.
-- CAD right-click menus include object/layer actions; empty-canvas right-click includes view/layer/region actions.
-- **Drawing Region** lets you drag a rectangular CAD area, name it (for example `1층`), fit to it, export that region as DXF, or open it in Plan Tools as a linked vector reference.
-- A linked Drawing Region uses the same coordinates as the source CAD, so no extra scale calibration is needed.
-- Its visible-layer snapshot is preserved until the user explicitly chooses **Update visible layers**; source CAD geometry itself remains linked.
+- 기존 **DXF 열기 및 편집**
+- 새 DXF 도면 작성
+- 레이어 표시 / 숨김 / 단독 보기 / 검색
+- 객체 선택 시 해당 레이어 자동 표시
+- 익숙한 CAD식 영역 선택
+  - 왼쪽 → 오른쪽: **Window Selection** — 완전히 포함된 객체만
+  - 오른쪽 → 왼쪽: **Crossing Selection** — 경계에 걸친 객체도 포함
+- GRID / SNAP / ORTHO
+- 좌표 및 정밀 입력
+- CAD 명령 입력과 일부 익숙한 Alias
+- 특정 부분을 **Drawing Region**으로 지정
+  - 영역 화면 맞춤
+  - 해당 영역만 DXF로 내보내기
+  - 같은 좌표계를 유지한 채 Plan Tools의 연결 참조로 사용
 
-### Shortcuts and discoverability
+### Plan Tools ↔ CAD Tools
 
-PieniPlan keeps shortcut help attached only to controls where it is useful. Current notable shortcuts include:
+Plan Tools에서 만든 벽·문·창은 단순 그림이 아니라 실제 좌표와 치수를 가진 객체입니다.
 
-- `Space` — Select in Plan Tools; hold + drag to Pan
+CAD Tools로 넘어갈 때 벽을 외곽선, 중심선 또는 둘 다로 표현할지와 사용할 레이어를 정할 수 있습니다. 반대로 CAD 도면은 Plan Tools에서 저수준 CAD 정보를 감춘 채 참조하거나 트레이싱할 수 있습니다.
+
+두 도구 세트의 최종 결과는 **DXF로 내보낼 수 있습니다.**
+
+## 간단한 사용법
+
+### 빠른 평면도 만들기
+
+1. 시작 화면에서 **빠른 평면도**를 선택합니다.
+2. 왼쪽에서 **벽**을 선택해 벽을 그립니다.
+3. 문이나 창문을 선택한 뒤 벽 위에 배치합니다.
+4. 객체를 선택하면 나타나는 핸들을 끌어 위치와 크기를 조절합니다.
+5. 표시되는 길이·각도·폭 숫자를 **더블클릭**하면 정확한 값을 직접 입력할 수 있습니다.
+6. 벽 관계를 계속 유지해야 한다면 수평/수직/직각/길이 고정 등의 Constraint를 사용합니다.
+7. 벽으로 완전히 둘러싸인 곳은 **공간 지정**으로 선택합니다.
+8. 필요하면 CAD Tools로 전환해 같은 도면을 더 세밀하게 편집합니다.
+
+### 기준축을 이용해 틀어진 건물 그리기
+
+건물이 화면의 수평·수직과 정확히 맞지 않는 경우:
+
+1. 기준이 될 벽을 선택합니다.
+2. **기준축으로 설정**합니다.
+3. 이후 평행 / 직각 / ORTHO 작업은 이 기준 방향을 따라갈 수 있습니다.
+
+따라서 실제 건물이 몇 도 돌아가 있어도 화면 X/Y축에 억지로 맞출 필요가 없습니다.
+
+### DXF 수정하기
+
+1. 시작 화면에서 **DXF 도면 → 기존 DXF 수정하기**를 선택합니다.
+2. DXF 파일을 엽니다.
+3. 객체를 클릭하면 오른쪽에서 해당 객체의 Layer를 확인할 수 있습니다.
+4. Layers 목록에서 눈 아이콘으로 필요한 레이어만 표시합니다.
+5. 빈 곳에서 드래그하면 Window / Crossing 방식으로 여러 객체를 선택할 수 있습니다.
+6. 필요한 부분만 사용할 경우 **Drawing Region**을 지정합니다.
+7. 작업이 끝나면 **DXF 내보내기**를 사용합니다.
+
+### CAD 일부를 빠른도면의 배경으로 사용하기
+
+1. CAD Tools에서 필요한 레이어만 켭니다.
+2. 원하는 부분을 **Drawing Region**으로 지정합니다.
+3. Region에서 **Plan Tools에서 열기**를 선택합니다.
+4. 같은 좌표와 축척을 유지한 벡터 참조 위에서 벽·문·창을 트레이싱합니다.
+
+일반 DXF/이미지 Reference와 달리 같은 PieniPlan 도면 안의 Drawing Region은 이미 같은 좌표계를 사용하므로 별도의 축척 보정이 필요하지 않습니다.
+
+## 주요 조작
+
+- `Ctrl/Cmd + Z` — Undo
+- `Ctrl/Cmd + Shift + Z` — Redo
+- `Delete / Backspace` — 선택 객체 삭제
+- `Esc` — 현재 작업 취소 / 선택 해제
+- `Space` 짧게 누르기 — Plan Tools에서 **선택**으로 복귀
+- `Space`를 누른 채 Drag — Pan
 - `F3` — SNAP
 - `F7` — GRID
 - `F8` — ORTHO
-- `Ctrl/Cmd+Z` — Undo
-- `Ctrl/Cmd+Shift+Z` — Redo
-- CAD command aliases currently implemented: `L`, `E`, `DI`, `Z`, `U`, `REDO`
 
-## Current CAD prototype
+설명이 필요한 기능이나 실제 단축키가 있는 버튼은 잠시 마우스를 올려두면 툴팁으로 확인할 수 있습니다.
 
-Implemented basics include:
+## 참조 도면
 
-- DXF as an editable drawing or a separate reference underlay
-- LINE / POLYLINE-derived segments / CIRCLE / TEXT import
-- Layers and layer visibility
-- main-drawing Smart Fit plus full extents for distant outliers
-- GRID / SNAP / ORTHO
-- command input with a small supported familiar alias set
-- Plan → CAD representation mapping for semantic objects
-- basic whole-drawing and Drawing Region DXF export
+DXF와 이미지를 참조 도면으로 추가할 수 있습니다.
 
-Unsupported commands shown in the UI are marked as planned rather than pretending to work.
+일반 참조 도면은 실제 길이를 알고 있는 두 점을 지정한 뒤 실제 거리를 입력해 축척을 맞출 수 있습니다.
 
-## Reference tracing
+PDF 참조는 예정된 기능이며 현재 버전에서는 아직 직접 파싱하지 않습니다.
 
-DXF and images can be added as references. A normal reference can be calibrated by selecting two known points and entering the real-world distance.
+## 화면 모드
 
-A CAD Drawing Region can also become a linked Plan reference without calibration because it already shares PieniPlan's world coordinate system.
+- 시스템
+- 라이트
+- 다크
+- 블랙(OLED)
 
-PDF is part of the intended workflow but is not parsed in this prototype yet.
+아주 좁은 화면이나 모바일에서는 편집 UI를 억지로 축소하지 않고 **Viewer 중심**으로 동작합니다.
 
-## Run locally
+## 현재 범위
 
-PieniPlan is a static web app. Use GitHub Pages or another local/static HTTP server.
+PieniPlan은 아직 개발 중인 프로젝트입니다. 현재 DXF의 기본 도형과 레이어 편집, Plan/CAD 연계의 핵심 흐름을 구현하고 있으며, 다음과 같은 기능은 아직 확장 중입니다.
+
+- 프로젝트 저장 / 불러오기 / 자동 저장
+- PDF Reference 직접 읽기
+- MOVE / COPY / ROTATE / OFFSET / TRIM / EXTEND 등 더 많은 CAD 편집 명령
+- 더 다양한 DXF Entity의 완전한 round-trip 보존
+- FACMAP 내보내기와 FacilityManager 연계
+
+## 로컬에서 실행하기
+
+PieniPlan은 정적 웹앱입니다. GitHub Pages 또는 일반적인 로컬 HTTP 서버에서 실행할 수 있습니다.
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000/`.
+그 뒤 브라우저에서 `http://localhost:8000/`을 엽니다.
 
-Opening `index.html` directly with `file://` may prevent the DXF Web Worker from loading in some browsers.
-
-## Prototype limitations
-
-- Project save/load is not implemented yet. Browser Home navigation preserves the in-memory drawing, but reload/browser close does not.
-- MOVE / COPY / OFFSET / TRIM / EXTEND and many CAD operations are still planned.
-- Define Space currently recognizes closed **semantic Plan walls**; it does not silently interpret arbitrary raw DXF lines as walls.
-- FACMAP export is not implemented yet, although defined spaces already receive stable IDs for that future workflow.
-- Drawing Region export is an early implementation: line geometry is clipped to the rectangle, while overlapping circle entities are currently preserved as whole circles.
-- DXF entity support is intentionally limited and should be validated against real production drawings before critical use.
-- Mobile/narrow layouts are viewer-only by design.
+브라우저에 따라 `file://`로 `index.html`을 직접 열면 DXF Web Worker가 제한될 수 있습니다.
 
 ## Third-party notices
 
-PieniPlan includes a small local subset of Tabler Icons. See `THIRD_PARTY_LICENSES.md`.
+PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
