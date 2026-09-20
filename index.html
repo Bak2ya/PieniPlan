@@ -43,6 +43,7 @@
         <input id="referenceFileInput" type="file" accept=".dxf,image/*,.pdf" hidden />
         <button id="fitBtn" class="toolbar-button" data-i18n="action.fit" data-tooltip-title-key="action.fit" data-tooltip-key="tooltip.fitMain">Fit</button>
         <button id="fullExtentsBtn" class="toolbar-button cad-only" data-i18n="action.fitAllEntities" hidden>All extents</button>
+        <button id="mappingSettingsBtn" class="toolbar-button cad-only" data-i18n="action.cadMapping" hidden>CAD mapping</button>
       </div>
 
       <div class="topbar-spacer"></div>
@@ -108,7 +109,6 @@
                 <div id="primaryPanelTitle" class="panel-title">Objects</div>
                 <div id="primaryPanelSubtitle" class="panel-subtitle">Floor-plan objects</div>
               </div>
-              <button id="mappingSettingsBtn" class="small-button cad-only" data-i18n="action.cadMapping">CAD mapping</button>
             </div>
             <div id="primaryControls" class="primary-controls" hidden></div>
             <div id="primaryList" class="panel-list"></div>
@@ -266,6 +266,19 @@
       <div class="dialog-actions">
         <button id="mappingCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
         <button id="mappingApplyBtn" class="toolbar-button primary" data-i18n="mapping.apply">Apply and open CAD Tools</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="recognitionBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog recognition-dialog" role="dialog" aria-modal="true" aria-labelledby="recognitionTitle">
+      <div class="dialog-title" id="recognitionTitle">Recognize walls</div>
+      <div class="dialog-copy" id="recognitionCopy"></div>
+      <div id="recognitionStats" class="recognition-stats"></div>
+      <div class="recognition-note" data-i18n="recognition.note">Detected candidates are previewed on the drawing. Apply them as editable Plan walls, then remove or correct anything unnecessary.</div>
+      <div class="dialog-actions">
+        <button id="recognitionCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="recognitionApplyBtn" class="toolbar-button primary" data-i18n="recognition.apply">Create walls and open Plan Tools</button>
       </div>
     </div>
   </div>

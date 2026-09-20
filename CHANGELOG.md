@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.8.0 · Build 9 — 2026-09-20
+
+- CAD 레이어와 도면 영역을 서로 독립된 관리 영역으로 재구성했습니다.
+- 도면 영역을 한 줄 compact row로 표시하고 이름 변경, 화면 맞춤, Plan Tools 연계, 영역 DXF 내보내기, 삭제를 `…` 메뉴로 정리했습니다.
+- 도면 영역 지정은 CAD `선택` 도구군의 정식 도구로 유지하고 패널에서도 빠르게 진입할 수 있게 했습니다.
+- 선택 도구일 때 의미 없이 차지하던 Context Bar를 숨기고 실제 입력/안내가 필요한 도구에서만 표시합니다.
+- `CAD 표현` 설정은 Layers 패널에서 제거하고 CAD 상단 작업 영역으로 이동했습니다. Plan semantic object가 있을 때만 노출합니다.
+- 도면 영역의 현재 표시 CAD 선에서 평행선 쌍을 찾아 Plan Wall 후보를 만드는 `벽 자동 인식` preview/apply 흐름을 추가했습니다.
+- 자동 인식은 현재 표시 레이어와 지정 영역만 사용하며, 적용 전 실제 벽 두께 형태로 후보를 미리 보여줍니다.
+- GitHub README는 한국어 사용자 문서로 유지하며 현재 가능한 기능과 간단한 사용법 중심으로 갱신했습니다.
+
+## v0.7.0 · Build 8 — 2026-09-20
+
+- Plan Tools 왼쪽에 정식 `제약` 도구군 추가
+- Shift 다중선택 후 Wall 간 평행/직각 관계 적용
+- Constraint-first 흐름과 endpoint→endpoint / endpoint→line 일치 지정
+- Properties를 적용된 제약 목록 + 개별 해제 중심으로 정리
+- Wall 길이/각도 숫자 입력을 지속되는 dimensional constraint로 변경
+- numeric 입력으로 새 Wall을 만들 때 명시된 길이/각도 constraint 유지
+- 평행/직각 적용 시 불필요한 180° 방향 반전 방지
+- endpoint / resize / move / dimension offset cursor affordance 보강
+
+
 ## v0.6.0 · Build 7 — 2026-09-20
 
 Constraint / selection / large-layer UX milestone.

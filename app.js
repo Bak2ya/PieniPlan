@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.6.0';
-  const BUILD = 7;
+  const VERSION = '0.8.0';
+  const BUILD = 9;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -14,7 +14,7 @@
   const ctx = canvas.getContext('2d');
 
   const dom = {
-    appShell: $('appShell'), startScreen: $('startScreen'), startPlanBtn: $('startPlanBtn'), startCadBtn: $('startCadBtn'), startSampleBtn: $('startSampleBtn'), documentStatus: $('documentStatus'), mobileViewerBadge: $('mobileViewerBadge'),
+    appShell: $('appShell'), contextBar: $('contextBar'), startScreen: $('startScreen'), startPlanBtn: $('startPlanBtn'), startCadBtn: $('startCadBtn'), startSampleBtn: $('startSampleBtn'), documentStatus: $('documentStatus'), mobileViewerBadge: $('mobileViewerBadge'),
     continueWorkBtn: $('continueWorkBtn'), continueWorkDetail: $('continueWorkDetail'), backBtn: $('backBtn'), homeBtn: $('homeBtn'), appearanceBtn: $('appearanceBtn'), startAppearanceBtn: $('startAppearanceBtn'), appearanceMenu: $('appearanceMenu'),
     planToolsBtn: $('planToolsBtn'), cadToolsBtn: $('cadToolsBtn'), toolRail: $('toolRail'), toolPopover: $('toolPopover'),
     newBtn: $('newBtn'), openRefBtn: $('openRefBtn'), emptyOpenBtn: $('emptyOpenBtn'), addReferenceBtn: $('addReferenceBtn'),
@@ -29,7 +29,7 @@
     progressToast: $('progressToast'), progressTitle: $('progressTitle'), progressBar: $('progressBar'), progressDetail: $('progressDetail'),
     commandBar: $('commandBar'), commandInput: $('commandInput'), commandStatus: $('commandStatus'),
     dialogBackdrop: $('dialogBackdrop'), dialogTitle: $('dialogTitle'), dialogCopy: $('dialogCopy'), dialogInput: $('dialogInput'), dialogCancelBtn: $('dialogCancelBtn'), dialogApplyBtn: $('dialogApplyBtn'),
-    mappingBackdrop: $('mappingBackdrop'), wallRepresentation: $('wallRepresentation'), wallLayerInput: $('wallLayerInput'), doorLayerInput: $('doorLayerInput'), windowLayerInput: $('windowLayerInput'), dimensionLayerInput: $('dimensionLayerInput'), mappingCancelBtn: $('mappingCancelBtn'), mappingApplyBtn: $('mappingApplyBtn'),
+    mappingBackdrop: $('mappingBackdrop'), recognitionBackdrop: $('recognitionBackdrop'), recognitionTitle: $('recognitionTitle'), recognitionCopy: $('recognitionCopy'), recognitionStats: $('recognitionStats'), recognitionCancelBtn: $('recognitionCancelBtn'), recognitionApplyBtn: $('recognitionApplyBtn'), wallRepresentation: $('wallRepresentation'), wallLayerInput: $('wallLayerInput'), doorLayerInput: $('doorLayerInput'), windowLayerInput: $('windowLayerInput'), dimensionLayerInput: $('dimensionLayerInput'), mappingCancelBtn: $('mappingCancelBtn'), mappingApplyBtn: $('mappingApplyBtn'),
     uiTooltip: $('uiTooltip')
   };
 
@@ -44,12 +44,28 @@
 
   const planToolCatalog = [
     { id: 'select', labelKey: 'tool.select', icon: 'select', ready: true },
+    { id: 'constraint', labelKey: 'tool.constraint', icon: 'vector', ready: true, tooltipKey: 'tooltip.constraintTool' },
+    { separator: true },
     { id: 'wall', labelKey: 'tool.wall', icon: 'wall', ready: true },
     { id: 'door', labelKey: 'tool.door', icon: 'door', ready: true },
     { id: 'window', labelKey: 'tool.window', icon: 'window', ready: true },
     { id: 'space', labelKey: 'tool.space', icon: 'space', ready: true, tooltipKey: 'tooltip.defineSpace' },
     { separator: true },
     { id: 'measure', labelKey: 'tool.measure', icon: 'dimension', ready: true }
+  ];
+
+  const constraintCatalog = [
+    { id: 'coincident', labelKey: 'constraintTool.coincident', noteKey: 'constraintTool.coincidentNote' },
+    { id: 'horizontal', labelKey: 'constraintTool.horizontal' },
+    { id: 'vertical', labelKey: 'constraintTool.vertical' },
+    { id: 'parallel', labelKey: 'constraintTool.parallel' },
+    { id: 'perpendicular', labelKey: 'constraintTool.perpendicular' },
+    { id: 'angle', labelKey: 'constraintTool.angle' },
+    { id: 'length', labelKey: 'constraintTool.length' },
+    { id: 'fixed', labelKey: 'constraintTool.fixed' },
+    { separator: true },
+    { id: 'baseAxis', labelKey: 'constraintTool.baseAxis' },
+    { id: 'clearBaseAxis', labelKey: 'constraintTool.clearBaseAxis' }
   ];
 
   const cadToolCatalog = {
@@ -146,7 +162,12 @@
     workspaceVisited: false,
     theme: 'system',
     viewerPointers: new Map(),
-    viewerGesture: null
+    viewerGesture: null,
+    constraintMode: null,
+    constraintPicks: [],
+    constraintHover: null,
+    pointerAffordance: null,
+    wallRecognitionPreview: null
   };
 
   const THEME_STORAGE_KEY = 'pieniplan-theme';
@@ -323,6 +344,7 @@
     if(!('fixedAngle' in wall.constraints)) wall.constraints.fixedAngle=null;
     if(!('fixedLength' in wall.constraints)) wall.constraints.fixedLength=null;
     if(!('fixed' in wall.constraints)) wall.constraints.fixed=false;
+    if(!('reference' in wall.constraints)) wall.constraints.reference=null;
     wall.constraints.endpointLocks=wall.constraints.endpointLocks||{a:false,b:false};
     return wall.constraints;
   }
@@ -354,7 +376,8 @@
     if(kind==='angle')return baseAxisAngle()+(Number(value)||0);
     return null;
   }
-  function wallConstraintAngle(wall){const c=ensureWallConstraints(wall);if(!c)return null;if(c.orientation)return axisConstraintAngle(c.orientation);if(Number.isFinite(c.fixedAngle))return axisConstraintAngle('angle',c.fixedAngle);return null;}
+  function closestUndirectedAngle(target,current){let best=target,bestD=Infinity;for(let k=-2;k<=2;k++){const cand=target+k*180,d=Math.abs(angleDelta(cand,current));if(d<bestD){bestD=d;best=cand;}}return normalizeAngle(best);}
+  function wallConstraintAngle(wall){const c=ensureWallConstraints(wall);if(!c)return null;const current=angleDeg(wall.a,wall.b);if(c.reference?.wallId){const ref=state.objects.find(o=>o.id===c.reference.wallId&&o.type==='wall');if(ref){const base=angleDeg(ref.a,ref.b)+(c.reference.type==='perpendicular'?90:0);return closestUndirectedAngle(base,current);}}if(c.orientation)return closestUndirectedAngle(axisConstraintAngle(c.orientation),current);if(Number.isFinite(c.fixedAngle))return axisConstraintAngle('angle',c.fixedAngle);return null;}
   function constrainedEndpointAnchor(wall,preferred='a'){
     const aAttached=Boolean(wall.attachments?.a),bAttached=Boolean(wall.attachments?.b),c=ensureWallConstraints(wall);
     if(c?.endpointLocks?.a||aAttached)return'a';
@@ -404,18 +427,92 @@
   }
   function clearBaseAxis(){pushHistory();state.baseAxisAngle=0;state.baseAxisWallId=null;for(const w of state.objects.filter(o=>o.type==='wall'))enforceWallConstraints(w);markDirty(true);rebuildObjectSnapIndex();updateAll();}
   function setWallConstraint(wall,type,value=null){
-    if(!wall||wall.type!=='wall')return;
-    const c=ensureWallConstraints(wall);
+    if(!wall||wall.type!=='wall')return false;
+    const c=ensureWallConstraints(wall),directional=['horizontal','vertical','parallel','perpendicular','angle'].includes(type);
+    if(directional){const existingDirection=Boolean(c.orientation||c.reference||Number.isFinite(c.fixedAngle));if((c.fixed||existingDirection)&&!confirm(t('confirm.replaceAngleConstraint')))return false;}
+    if(type==='length'&&c.fixed&&!confirm(t('confirm.replaceFixedPosition')))return false;
     pushHistory();
-    if(type==='horizontal'||type==='vertical'||type==='parallel'||type==='perpendicular'){c.orientation=type;c.fixedAngle=null;}
-    else if(type==='angle'){c.orientation=null;c.fixedAngle=Number(value)||0;}
-    else if(type==='length')c.fixedLength=Math.max(.001,Number(value)||distance(wall.a,wall.b));
-    else if(type==='fixed'){c.fixed=!c.fixed;if(c.fixed){c.fixedA={...wall.a};c.fixedB={...wall.b};}else{delete c.fixedA;delete c.fixedB;}}
-    enforceWallConstraints(wall);syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();
+    if(directional&&c.fixed){c.fixed=false;delete c.fixedA;delete c.fixedB;}
+    if(type==='horizontal'||type==='vertical'||type==='parallel'||type==='perpendicular'){c.orientation=type;c.fixedAngle=null;c.reference=null;}
+    else if(type==='angle'){c.orientation=null;c.reference=null;c.fixedAngle=Number(value)||0;}
+    else if(type==='length'){if(c.fixed){c.fixed=false;delete c.fixedA;delete c.fixedB;}c.fixedLength=Math.max(.001,Number(value)||distance(wall.a,wall.b));}
+    else if(type==='fixed'){if(c.fixed)return true;c.fixed=true;c.fixedA={...wall.a};c.fixedB={...wall.b};}
+    enforceWallConstraints(wall);syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
   }
   function clearWallGeometricConstraints(wall){
-    if(!wall||wall.type!=='wall')return;pushHistory();const c=ensureWallConstraints(wall);c.orientation=null;c.fixedAngle=null;c.fixedLength=null;c.fixed=false;c.endpointLocks={a:false,b:false};delete c.fixedA;delete c.fixedB;markDirty(true);updateAll();
+    if(!wall||wall.type!=='wall')return;pushHistory();const c=ensureWallConstraints(wall);c.orientation=null;c.reference=null;c.fixedAngle=null;c.fixedLength=null;c.fixed=false;c.endpointLocks={a:false,b:false};delete c.fixedA;delete c.fixedB;wall.attachments={};markDirty(true);rebuildObjectSnapIndex();updateAll();
   }
+  function selectedWalls(){return [...selectionIds()].map(id=>state.objects.find(o=>o.id===id)).filter(o=>o?.type==='wall');}
+  function setWallRelation(referenceWall,targetWall,type){
+    if(!referenceWall||!targetWall||referenceWall.id===targetWall.id)return false;
+    const rc=ensureWallConstraints(referenceWall),tc=ensureWallConstraints(targetWall);
+    if(rc.reference?.wallId===targetWall.id){alert(t('alert.constraintCycle'));return false;}
+    const existingDirection=Boolean(tc.orientation||tc.reference||Number.isFinite(tc.fixedAngle));
+    if((tc.fixed||existingDirection)&&!confirm(t('confirm.replaceAngleConstraint')))return false;
+    pushHistory();if(tc.fixed){tc.fixed=false;delete tc.fixedA;delete tc.fixedB;}tc.reference={wallId:referenceWall.id,type};tc.orientation=null;tc.fixedAngle=null;enforceWallConstraints(targetWall);syncDependentsOfWall(targetWall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
+  }
+  function setWallLengthConstraintFromInput(wall,value){
+    if(!wall||wall.type!=='wall'||!Number.isFinite(value)||value<=0)return false;const c=ensureWallConstraints(wall);
+    if(c.fixed&&!confirm(t('confirm.replaceFixedPosition')))return false;
+    pushHistory();if(c.fixed){c.fixed=false;delete c.fixedA;delete c.fixedB;}c.fixedLength=value;const angle=wallConstraintAngle(wall)??angleDeg(wall.a,wall.b),anchor=constrainedEndpointAnchor(wall,'a');setWallAngleAndLength(wall,angle,value,anchor);enforceWallConstraints(wall,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
+  }
+  function setWallAngleConstraintFromInput(wall,absoluteAngle){
+    if(!wall||wall.type!=='wall'||!Number.isFinite(absoluteAngle))return false;const c=ensureWallConstraints(wall);
+    const hasOther=Boolean(c.fixed||c.orientation||c.reference);
+    if(hasOther&&!confirm(t('confirm.replaceAngleConstraint')))return false;
+    pushHistory();if(c.fixed){c.fixed=false;delete c.fixedA;delete c.fixedB;}c.orientation=null;c.reference=null;c.fixedAngle=angleDelta(absoluteAngle,baseAxisAngle());const len=Number.isFinite(c.fixedLength)?c.fixedLength:distance(wall.a,wall.b),anchor=constrainedEndpointAnchor(wall,'a');setWallAngleAndLength(wall,absoluteAngle,len,anchor);enforceWallConstraints(wall,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
+  }
+  function removeWallConstraint(wall,kind,endpoint=null){
+    if(!wall||wall.type!=='wall')return;const c=ensureWallConstraints(wall);pushHistory();
+    if(kind==='orientation')c.orientation=null;else if(kind==='reference')c.reference=null;else if(kind==='angle')c.fixedAngle=null;else if(kind==='length')c.fixedLength=null;else if(kind==='fixed'){c.fixed=false;delete c.fixedA;delete c.fixedB;}else if(kind==='attachment'&&endpoint&&wall.attachments)delete wall.attachments[endpoint];
+    enforceWallConstraints(wall);syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();
+  }
+  function constraintPickAt(p,{needPoint=false,exclude=null}={}){
+    const tol=11/state.camera.zoom;let bestPoint=null,bestPointD=tol;
+    for(const wall of state.objects){if(wall.type!=='wall')continue;for(const ep of ['a','b']){if(exclude&&exclude.wallId===wall.id&&exclude.endpoint===ep)continue;const d=distance(p,wall[ep]);if(d<bestPointD){bestPointD=d;bestPoint={kind:'point',wallId:wall.id,endpoint:ep,point:{...wall[ep]}};}}}
+    if(bestPoint||needPoint)return bestPoint;
+    let bestLine=null,bestLineD=tol;for(const wall of state.objects){if(wall.type!=='wall')continue;const pr=projectPointToSegment(p,wall.a,wall.b);if(pr.distance<bestLineD){bestLineD=pr.distance;bestLine={kind:'line',wallId:wall.id,t:pr.t,point:{...pr.point}};}}
+    return bestLine;
+  }
+  function applyCoincidentPicks(first,second){
+    if(!first||first.kind!=='point'||!second||first.wallId===second.wallId&&second.kind==='line')return false;const wall=state.objects.find(o=>o.id===first.wallId&&o.type==='wall');if(!wall)return false;
+    const candidate=second.kind==='point'?{kind:'coincident',wallId:second.wallId,targetEndpoint:second.endpoint,t:second.endpoint==='a'?0:1,point:{...second.point}}:{kind:'pointOnLine',wallId:second.wallId,t:second.t,point:{...second.point}};
+    return applyEndpointConstraint(wall,first.endpoint,candidate);
+  }
+  function clearConstraintInteraction(){state.constraintMode=null;state.constraintPicks=[];state.constraintHover=null;}
+  function constraintModeLabel(mode){const key={coincident:'constraintTool.coincident',horizontal:'constraintTool.horizontal',vertical:'constraintTool.vertical',parallel:'constraintTool.parallel',perpendicular:'constraintTool.perpendicular',angle:'constraintTool.angle',length:'constraintTool.length',fixed:'constraintTool.fixed',baseAxis:'constraintTool.baseAxis'}[mode];return key?t(key):t('tool.constraint');}
+  function beginConstraintMode(mode){state.activeTool='constraint';state.constraintMode=mode;state.constraintPicks=[];state.constraintHover=null;host.dataset.tool='constraint';dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();}
+  function applyConstraintCommand(mode){
+    const walls=selectedWalls();
+    if(mode==='clearBaseAxis'){clearBaseAxis();return;}
+    if(mode==='parallel'||mode==='perpendicular'){if(walls.length===2){setWallRelation(walls[0],walls[1],mode);setTool('select','plan');return;}beginConstraintMode(mode);return;}
+    if(mode==='coincident'){beginConstraintMode(mode);return;}
+    if(mode==='baseAxis'){if(walls.length===1){setBaseAxisFromWall(walls[0]);setTool('select','plan');return;}beginConstraintMode(mode);return;}
+    if(['horizontal','vertical','angle','length','fixed'].includes(mode)){if(walls.length===1){const wall=walls[0];if(mode==='angle'){const current=angleDeg(wall.a,wall.b),raw=prompt(t('prompt.constraintAbsoluteAngle'),String(Math.round(current*100)/100));if(raw!==null&&Number.isFinite(Number(raw)))setWallAngleConstraintFromInput(wall,Number(raw));}else if(mode==='length'){const raw=prompt(t('prompt.constraintLength'),String(Math.round(distance(wall.a,wall.b)*100)/100));if(raw!==null&&Number(raw)>0)setWallLengthConstraintFromInput(wall,Number(raw));}else setWallConstraint(wall,mode);setTool('select','plan');return;}beginConstraintMode(mode);}
+  }
+  function openPlanConstraintPalette(button){
+    state.activeTool='constraint';host.dataset.tool='constraint';renderToolRail();updateContextBar();dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(t('tool.constraint'))}</div>`;
+    for(const item of constraintCatalog){if(item.separator){const d=document.createElement('div');d.className='tool-popover-divider';dom.toolPopover.appendChild(d);continue;}const b=document.createElement('button');b.className=`tool-item ${state.constraintMode===item.id?'active':''}`;b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${item.noteKey?escapeHtml(t(item.noteKey)):''}</span>`;b.addEventListener('click',()=>applyConstraintCommand(item.id));dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-310));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;render();
+  }
+  function handleConstraintCanvasClick(p){
+    const mode=state.constraintMode;if(!mode)return false;
+    if(mode==='coincident'){
+      if(!state.constraintPicks.length){const first=constraintPickAt(p,{needPoint:true});if(first){state.constraintPicks=[first];updateContextBar();render();}return true;}
+      const second=constraintPickAt(p,{exclude:state.constraintPicks[0]});if(second&&applyCoincidentPicks(state.constraintPicks[0],second)){clearConstraintInteraction();setTool('select','plan');}return true;
+    }
+    const wallPick=constraintPickAt(p,{needPoint:false});const wall=wallPick&&state.objects.find(o=>o.id===wallPick.wallId&&o.type==='wall');if(!wall)return true;
+    if(mode==='parallel'||mode==='perpendicular'){
+      if(!state.constraintPicks.length){state.constraintPicks=[{kind:'wall',wallId:wall.id}];selectOnly(wall.id);updateContextBar();render();return true;}
+      const ref=state.objects.find(o=>o.id===state.constraintPicks[0].wallId&&o.type==='wall');if(ref&&wall.id!==ref.id&&setWallRelation(ref,wall,mode)){clearConstraintInteraction();selectOnly(wall.id);setTool('select','plan');}return true;
+    }
+    if(mode==='baseAxis'){setBaseAxisFromWall(wall);clearConstraintInteraction();selectOnly(wall.id);setTool('select','plan');return true;}
+    if(mode==='angle'){const current=angleDeg(wall.a,wall.b),raw=prompt(t('prompt.constraintAbsoluteAngle'),String(Math.round(current*100)/100));if(raw!==null&&Number.isFinite(Number(raw)))setWallAngleConstraintFromInput(wall,Number(raw));}
+    else if(mode==='length'){const raw=prompt(t('prompt.constraintLength'),String(Math.round(distance(wall.a,wall.b)*100)/100));if(raw!==null&&Number(raw)>0)setWallLengthConstraintFromInput(wall,Number(raw));}
+    else setWallConstraint(wall,mode);
+    clearConstraintInteraction();selectOnly(wall.id);setTool('select','plan');return true;
+  }
+  function updateConstraintHover(p){if(state.activeTool!=='constraint'||!state.constraintMode){state.constraintHover=null;return;}state.constraintHover=state.constraintMode==='coincident'?constraintPickAt(p,{needPoint:!state.constraintPicks.length,exclude:state.constraintPicks[0]||null}):constraintPickAt(p,{needPoint:false});}
+  function drawConstraintInteraction(){if(state.activeTool!=='constraint'||!state.constraintMode)return;const styles=getComputedStyle(document.documentElement),accent=styles.getPropertyValue('--accent').trim();ctx.save();ctx.strokeStyle=accent;ctx.fillStyle=accent;ctx.lineWidth=2;const drawPick=pick=>{if(!pick)return;if(pick.kind==='line'||pick.kind==='wall'){const wall=state.objects.find(o=>o.id===pick.wallId&&o.type==='wall');if(wall){const a=toScreenCss(wall.a),b=toScreenCss(wall.b);ctx.globalAlpha=.75;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}else{const q=toScreenCss(pick.point);ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(q.x,q.y,6,0,Math.PI*2);ctx.fill();}};state.constraintPicks.forEach(drawPick);drawPick(state.constraintHover);ctx.restore();}
   function endpointConstraintCandidate(point,selfWallId){
     const threshold=Math.max(20,12/state.camera.zoom);let endpoint=null,endpointD=threshold;
     for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;for(const ep of['a','b']){const d=distance(point,wall[ep]);if(d<endpointD){endpointD=d;endpoint={kind:'coincident',wallId:wall.id,targetEndpoint:ep,t:ep==='a'?0:1,point:{...wall[ep]}};}}}
@@ -500,11 +597,13 @@
     for (const ref of state.references) if (ref.visible) drawReference(ref);
     if (state.toolset === 'plan') drawPlanWorkspace(); else drawCadWorkspace();
     drawDrawingRegions();
+    drawWallRecognitionPreview();
     drawSelectionDrag();
     drawPreview();
     drawCalibrationPreview();
     drawOpeningPreview();
     drawSnapIndicator();
+    drawConstraintInteraction();
     dom.emptyState.hidden = state.references.length > 0 || state.objects.length > 0;
     dom.statusZoom.textContent = `${Math.round(state.camera.zoom / 0.12 * 100)}%`;
   }
@@ -854,7 +953,7 @@
 
   function drawCalibrationPreview(){const c=state.calibration;if(!c?.p1)return;const p2=c.p2||state.previewEnd;if(!p2)return;const a=toScreenCss(c.p1),b=toScreenCss(p2);ctx.save();ctx.strokeStyle='#ffb55a';ctx.fillStyle='#ffb55a';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);for(const p of[a,b]){ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();}ctx.restore();}
 
-  function applyNumericLabelEdit(label,value){if(!label||!Number.isFinite(value))return;const obj=state.objects.find(o=>o.id===label.objectId);if(!obj)return;if(label.kind==='openingWidth'&&(obj.type==='door'||obj.type==='window')){if(value<=0)return;pushHistory();obj.width=value;markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallLength'&&obj.type==='wall'){if(value<=0||!breakWallConstraintForEdit(obj,'length'))return;const ang=angleDeg(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,ang,value,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallAngle'&&obj.type==='wall'){if(!breakWallConstraintForEdit(obj,'angle'))return;const len=distance(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,value,len,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='dimensionLength'&&obj.type==='dimension'){const g=dimensionGeometry(obj);if(!g?.associated||value<=0)return;const wall=g.wall,span=Math.abs((obj.t2??1)-(obj.t1??0));if(span<1e-6)return;if(!breakWallConstraintForEdit(wall,'length'))return;const target=value/span,ang=angleDeg(wall.a,wall.b),anchor=constrainedEndpointAnchor(wall,'a');setWallAngleAndLength(wall,ang,target,anchor);enforceWallConstraints(wall,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();}}
+  function applyNumericLabelEdit(label,value){if(!label||!Number.isFinite(value))return;const obj=state.objects.find(o=>o.id===label.objectId);if(!obj)return;if(label.kind==='openingWidth'&&(obj.type==='door'||obj.type==='window')){if(value<=0)return;pushHistory();obj.width=value;markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallLength'&&obj.type==='wall'){setWallLengthConstraintFromInput(obj,value);return;}if(label.kind==='wallAngle'&&obj.type==='wall'){setWallAngleConstraintFromInput(obj,value);return;}if(label.kind==='dimensionLength'&&obj.type==='dimension'){const g=dimensionGeometry(obj);if(!g?.associated||value<=0)return;const span=Math.abs((obj.t2??1)-(obj.t1??0));if(span<1e-6)return;setWallLengthConstraintFromInput(g.wall,value/span);}}
   function beginCanvasNumberEdit(label){host.querySelector('.canvas-number-editor')?.remove();const input=document.createElement('input');input.className='canvas-number-editor';input.type='number';input.step='0.01';input.value=String(Math.round(Number(label.value)*100)/100);input.style.left=`${Math.max(4,label.rect.x)}px`;input.style.top=`${Math.max(4,label.rect.y-5)}px`;input.style.width=`${Math.max(92,label.rect.w+24)}px`;let cancelled=false,committed=false;const commit=()=>{if(committed||cancelled)return;committed=true;const value=Number(input.value);input.remove();applyNumericLabelEdit(label,value);};input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}else if(e.key==='Escape'){e.preventDefault();cancelled=true;input.remove();host.focus();}});input.addEventListener('blur',commit);host.appendChild(input);input.focus();input.select();}
   function onCanvasDoubleClick(e){if(isCompactViewer())return;const s=fromPointerEvent(e),label=hitEditableLabel(s);if(!label)return;e.preventDefault();e.stopPropagation();beginCanvasNumberEdit(label);}
 
@@ -862,18 +961,31 @@
   function currentOpeningWidth(){const input=document.querySelector('[data-context="width"]');const n=Number(input?.value);const key=state.activeTool==='window'?'windowWidth':'doorWidth';if(Number.isFinite(n)&&n>0)state.toolSettings[key]=n;return state.toolSettings[key];}
 
   function updateContextBar(){
-    const keys={select:'context.select',line:'context.line',wall:'context.wall',door:'context.door',window:'context.window',space:'context.space',region:'context.region',measure:'context.measure',delete:'context.delete'};
-    dom.contextToolName.textContent=t(keys[state.activeTool]||`tool.${state.activeTool}`);dom.contextFields.innerHTML='';let hint=t('hint.select');
+    const shouldShow=Boolean(state.calibration)||state.activeTool!=='select';
+    dom.contextBar.hidden=!shouldShow;
+    if(!shouldShow){dom.contextFields.innerHTML='';return;}
+    const keys={select:'context.select',constraint:'context.constraint',line:'context.line',wall:'context.wall',door:'context.door',window:'context.window',space:'context.space',region:'context.region',measure:'context.measure',delete:'context.delete'};
+    dom.contextToolName.textContent=state.activeTool==='constraint'&&state.constraintMode?`${t('context.constraint')} · ${constraintModeLabel(state.constraintMode)}`:t(keys[state.activeTool]||`tool.${state.activeTool}`);
+    dom.contextFields.innerHTML='';
+    let hint=t('hint.select');
     if(state.calibration){dom.contextToolName.textContent=t('context.calibration');dom.contextHint.textContent=state.calibration.p1?t('hint.calibrationSecond'):t('hint.calibrationFirst');return;}
     if(state.activeTool==='line'||state.activeTool==='wall'){
-      dom.contextFields.appendChild(contextNumberField(t('context.length'),'length','','mm'));dom.contextFields.appendChild(contextNumberField(t('context.angle'),'angle','','°'));
+      dom.contextFields.appendChild(contextNumberField(t('context.length'),'length','','mm'));
+      dom.contextFields.appendChild(contextNumberField(t('context.angle'),'angle','','°'));
       if(state.activeTool==='wall')dom.contextFields.appendChild(contextNumberField(t('context.thickness'),'thickness',String(state.toolSettings.wallThickness),'mm'));
       hint=state.drawStart?t('hint.segmentEnd'):t('hint.segmentStart');
     }else if(state.activeTool==='door'||state.activeTool==='window'){
-      const value=state.activeTool==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth;dom.contextFields.appendChild(contextNumberField(t('context.width'),'width',String(value),'mm'));hint=t('hint.opening');
-    }else if(state.activeTool==='measure'){hint=state.measureStart?t('hint.measureSecond'):t('hint.measureFirst');}
-    else if(state.activeTool==='delete'){hint=t('hint.delete');}
-    if(state.activeTool==='select'){const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected?.type==='wall')hint=t('hint.selectedWall');else if(selected?.type==='door')hint=t('hint.selectedDoor');else if(selected?.type==='window')hint=t('hint.selectedWindow');else if(selected?.type==='dimension')hint=t('hint.selectedDimension');else if(selected?.type==='space')hint=t('hint.selectedSpace');}
+      const value=state.activeTool==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth;
+      dom.contextFields.appendChild(contextNumberField(t('context.width'),'width',String(value),'mm'));
+      hint=t('hint.opening');
+    }else if(state.activeTool==='measure')hint=state.measureStart?t('hint.measureSecond'):t('hint.measureFirst');
+    else if(state.activeTool==='constraint'){
+      if(!state.constraintMode)hint=t('hint.constraintChoose');
+      else if(state.constraintMode==='coincident')hint=state.constraintPicks.length?t('hint.constraintCoincidentSecond'):t('hint.constraintCoincidentFirst');
+      else if(state.constraintMode==='parallel'||state.constraintMode==='perpendicular')hint=state.constraintPicks.length?t('hint.constraintSecondWall'):t('hint.constraintFirstWall');
+      else hint=t('hint.constraintWall');
+    }else if(state.activeTool==='delete')hint=t('hint.delete');
+    else if(state.activeTool==='region')hint=t('hint.region');
     dom.contextHint.textContent=hint;
   }
 
@@ -881,14 +993,14 @@
     input.addEventListener('input',()=>{if(key==='thickness'){const n=Number(input.value);if(Number.isFinite(n)&&n>0)state.toolSettings.wallThickness=n;}if(key==='width'){const n=Number(input.value);if(Number.isFinite(n)&&n>0){if(state.activeTool==='door')state.toolSettings.doorWidth=n;else if(state.activeTool==='window')state.toolSettings.windowWidth=n;}render();}});
     input.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&(state.activeTool==='line'||state.activeTool==='wall')&&state.drawStart){e.preventDefault();commitNumericSegment();}});wrap.append(lab,input,u);return wrap;}
 
-  function commitNumericSegment(){if(!state.drawStart)return;const lengthInput=document.querySelector('[data-context="length"]');const angleInput=document.querySelector('[data-context="angle"]');let len=Number(lengthInput?.value),ang=Number(angleInput?.value);if(!Number.isFinite(len)||len<=0)len=state.previewEnd?distance(state.drawStart,state.previewEnd):NaN;if(!Number.isFinite(ang))ang=state.previewEnd?angleDeg(state.drawStart,state.previewEnd):0;if(!Number.isFinite(len)||len<=0)return;const end={x:state.drawStart.x+Math.cos(rad(ang))*len,y:state.drawStart.y+Math.sin(rad(ang))*len};commitSegment(state.drawStart,end,state.activeTool);}
+  function commitNumericSegment(){if(!state.drawStart)return;const lengthInput=document.querySelector('[data-context="length"]');const angleInput=document.querySelector('[data-context="angle"]');const explicitLength=String(lengthInput?.value||'').trim()!=='';const explicitAngle=String(angleInput?.value||'').trim()!=='';let len=Number(lengthInput?.value),ang=Number(angleInput?.value);if(!Number.isFinite(len)||len<=0)len=state.previewEnd?distance(state.drawStart,state.previewEnd):NaN;if(!Number.isFinite(ang))ang=state.previewEnd?angleDeg(state.drawStart,state.previewEnd):0;if(!Number.isFinite(len)||len<=0)return;const end={x:state.drawStart.x+Math.cos(rad(ang))*len,y:state.drawStart.y+Math.sin(rad(ang))*len};const obj=commitSegment(state.drawStart,end,state.activeTool);if(obj?.type==='wall'){const c=ensureWallConstraints(obj);if(explicitLength)c.fixedLength=len;if(explicitAngle)c.fixedAngle=angleDelta(ang,baseAxisAngle());enforceWallConstraints(obj);syncDependentsOfWall(obj.id);updateAll();}}
 
   function renderToolRail(){
     dom.toolRail.innerHTML='';
     if(state.toolset==='plan'){
       for(const item of planToolCatalog){
         if(item.separator){const s=document.createElement('div');s.className='tool-separator';dom.toolRail.appendChild(s);continue;}
-        const b=document.createElement('button');b.className=`tool-direct ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;b.innerHTML=`<span class="tool-icon ui-icon icon-${item.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(item.labelKey))}</span>`;b.setAttribute('aria-label',t(item.labelKey));if(item.id==='select')applyShortcutMetadata(b,'select','tooltip.selectTool',item.labelKey);else if(item.tooltipKey){b.dataset.tooltipTitleKey=item.labelKey;b.dataset.tooltipKey=item.tooltipKey;}b.addEventListener('click',()=>{if(item.ready)setTool(item.id,'plan');});dom.toolRail.appendChild(b);
+        const b=document.createElement('button');b.className=`tool-direct ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;b.innerHTML=`<span class="tool-icon ui-icon icon-${item.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(item.labelKey))}</span>`;b.setAttribute('aria-label',t(item.labelKey));if(item.id==='select')applyShortcutMetadata(b,'select','tooltip.selectTool',item.labelKey);else if(item.tooltipKey){b.dataset.tooltipTitleKey=item.labelKey;b.dataset.tooltipKey=item.tooltipKey;}b.addEventListener('click',()=>{if(!item.ready)return;if(item.id==='constraint')openPlanConstraintPalette(b);else setTool(item.id,'plan');});dom.toolRail.appendChild(b);
       }
     }else{
       for(const cat of cadCategories){const b=document.createElement('button');b.className=`tool-category ${state.activeCategory===cat.id?'active':''}`;b.dataset.category=cat.id;b.dataset.categoryKey=cat.labelKey;b.innerHTML=`<span class="tool-icon ui-icon icon-${cat.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(cat.labelKey))}</span>`;b.setAttribute('aria-label',t(cat.labelKey));b.addEventListener('click',()=>openCategory(cat.id,b));dom.toolRail.appendChild(b);}
@@ -897,7 +1009,7 @@
 
   function setTool(tool,category=null){
     if(state.toolset==='cad'&&['wall','door','window'].includes(tool)&&!state.cadMapping){state.pendingToolAfterMapping={tool,category:category||'architecture'};openMappingDialog('tool');return;}
-    state.activeTool=tool;if(category&&category!=='plan')state.activeCategory=category;state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.snapIndicator=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();
+    state.activeTool=tool;if(tool!=='constraint')clearConstraintInteraction();if(category&&category!=='plan')state.activeCategory=category;state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.snapIndicator=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();
   }
 
   function openCategory(category,button){state.activeCategory=category;renderToolRail();const items=cadToolCatalog[category]||[];dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(t(button.dataset.categoryKey))}</div>`;for(const item of items){const b=document.createElement('button');b.className=`tool-item ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;if(item.ready&&item.note)b.dataset.shortcut=item.note;b.addEventListener('click',()=>setTool(item.id,category));dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-220));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
@@ -907,11 +1019,11 @@
     const sameWorkspace=next===state.toolset&&state.view==='workspace';
     const changed=next!==state.toolset;
     state.toolset=next;dom.appShell.classList.toggle('plan-tools',next==='plan');dom.appShell.classList.toggle('cad-tools',next==='cad');dom.planToolsBtn.classList.toggle('active',next==='plan');dom.cadToolsBtn.classList.toggle('active',next==='cad');dom.commandBar.hidden=next!=='cad';
-    if(changed){state.activeCategory='select';state.activeTool='select';state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
+    if(changed){state.activeCategory='select';state.activeTool='select';clearConstraintInteraction();state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
     updateEmptyState();renderToolRail();renderPrimaryPanel();renderProperties();updateContextBar();render();showWorkspace({historyMode:sameWorkspace?'none':historyMode});
   }
 
-  function updateEmptyState(){const plan=state.toolset==='plan',compact=isCompactViewer();dom.emptyKicker.textContent=plan?'Plan Tools':'CAD Tools';dom.emptyTitle.textContent=t(plan?'empty.planTitle':'empty.cadTitle');dom.emptyCopy.textContent=t(compact?'empty.viewerCopy':plan?'empty.planCopy':'empty.cadCopy');dom.emptyPrimaryBtn.hidden=compact;dom.emptyPrimaryBtn.textContent=t(plan?'empty.planPrimary':'empty.cadPrimary');dom.emptyOpenBtn.textContent=t(compact?(plan?'empty.planViewerOpen':'empty.cadViewerOpen'):plan?'empty.planSecondary':'empty.cadSecondary');dom.primaryInspectorTab.textContent=t(plan?'tab.objects':'tab.layers');dom.primaryPanelTitle.textContent=t(plan?'panel.planObjects':'panel.cadLayers');dom.primaryPanelSubtitle.textContent=t(plan?'panel.planObjectsSub':'panel.cadLayersSub');}
+  function updateEmptyState(){const plan=state.toolset==='plan',compact=isCompactViewer();dom.emptyKicker.textContent=plan?'Plan Tools':'CAD Tools';dom.emptyTitle.textContent=t(plan?'empty.planTitle':'empty.cadTitle');dom.emptyCopy.textContent=t(compact?'empty.viewerCopy':plan?'empty.planCopy':'empty.cadCopy');dom.emptyPrimaryBtn.hidden=compact;dom.emptyPrimaryBtn.textContent=t(plan?'empty.planPrimary':'empty.cadPrimary');dom.emptyOpenBtn.textContent=t(compact?(plan?'empty.planViewerOpen':'empty.cadViewerOpen'):plan?'empty.planSecondary':'empty.cadSecondary');dom.primaryInspectorTab.textContent=t(plan?'tab.objects':'tab.layers');dom.primaryPanelTitle.textContent=t(plan?'panel.planObjects':'panel.cadLayers');dom.primaryPanelSubtitle.textContent=t(plan?'panel.planObjectsSub':'panel.cadLayersSub');if(dom.mappingSettingsBtn)dom.mappingSettingsBtn.hidden=plan||!hasSemanticObjects();}
 
   function defaultCadMapping(){return{wallRepresentation:'outline',wallLayer:'WALL',doorLayer:'DOOR',windowLayer:'WINDOW',dimensionLayer:'DIM'};}
   function openMappingDialog(action){const m=state.cadMapping||defaultCadMapping();state.mappingPendingAction=action;dom.wallRepresentation.value=m.wallRepresentation;dom.wallLayerInput.value=m.wallLayer;dom.doorLayerInput.value=m.doorLayer;dom.windowLayerInput.value=m.windowLayer;dom.dimensionLayerInput.value=m.dimensionLayer;dom.mappingBackdrop.hidden=false;setTimeout(()=>dom.wallRepresentation.focus(),0);}
@@ -925,7 +1037,7 @@
   function redo(){if(!state.future.length)return;state.history.push(historySnapshot());restoreHistorySnapshot(state.future.pop());updateAll();}
   function updateUndoRedo(){dom.undoBtn.disabled=!state.history.length;dom.redoBtn.disabled=!state.future.length;}
 
-  function commitSegment(a,b,type){if(distance(a,b)<.001)return;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),attachments:{}};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine'&&!state.cadLayerVisibility.has(obj.cadLayer))state.cadLayerVisibility.set(obj.cadLayer,true);}state.objects.push(obj);if(obj.type==='wall'){refreshSpaces();}state.selectedObjectId=obj.id;state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function commitSegment(a,b,type){if(distance(a,b)<.001)return null;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),attachments:{}};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine'&&!state.cadLayerVisibility.has(obj.cadLayer))state.cadLayerVisibility.set(obj.cadLayer,true);}state.objects.push(obj);if(obj.type==='wall'){refreshSpaces();}state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();return obj;}
   function commitMeasurement(a,b){const len=distance(a,b);if(len<.001)return;let obj=null;if(state.toolset==='plan'){let best=null,bestScore=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const p1=projectPointToSegment(a,wall.a,wall.b),p2=projectPointToSegment(b,wall.a,wall.b),tol=Math.max((wall.thickness||150),18/state.camera.zoom);if(p1.distance<=tol&&p2.distance<=tol){const score=p1.distance+p2.distance;if(score<bestScore){bestScore=score;best={wall,t1:p1.t,t2:p2.t,p1:p1.point,p2:p2.point};}}}if(!best){alert(t('alert.dimensionNeedsWall'));state.measureStart=null;state.previewEnd=null;updateContextBar();render();return;}const attachedLen=distance(best.p1,best.p2);obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:best.wall.id,t1:best.t1,t2:best.t2,offset:Math.max(250,Math.min(600,attachedLen*.08))};}else obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',p1:{...a},p2:{...b},offset:Math.max(250,Math.min(600,len*.08))};pushHistory();state.objects.push(obj);state.selectedObjectId=obj.id;state.measureStart=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();updateAll();}
 
   function nearestWallProjection(p){let best=null,bestD=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const pr=projectPointToSegment(p,wall.a,wall.b);const threshold=Math.max((wall.thickness||150)/2,18/state.camera.zoom);if(pr.distance<threshold&&pr.distance<bestD){bestD=pr.distance;best={wall,t:pr.t,point:pr.point,distance:pr.distance};}}return best;}
@@ -947,7 +1059,7 @@
   function detachWallConnections(wall){if(!wall||wall.type!=='wall')return;wall.attachments={};}
   function enforceWallAttachments(wall){if(!wall?.attachments)return;for(const endpoint of['a','b']){const att=wall.attachments[endpoint],target=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');if(target)wall[endpoint]=wallPointAt(target,att.t);}}
   function attachTouchingWallEndpoints(wall){if(!wall||wall.type!=='wall')return false;let changed=false;for(const endpoint of['a','b'])changed=attachWallEndpoint(wall,endpoint)||changed;return changed;}
-  function syncDependentsOfWall(parentId,visited=new Set()){if(visited.has(parentId))return;visited.add(parentId);const parent=state.objects.find(o=>o.id===parentId&&o.type==='wall');if(!parent)return;for(const wall of state.objects){if(wall.type!=='wall'||wall.id===parentId||!wall.attachments)continue;let changed=false;for(const endpoint of['a','b']){const att=wall.attachments?.[endpoint];if(att?.wallId===parentId){wall[endpoint]=wallPointAt(parent,att.t);changed=true;}}if(changed)syncDependentsOfWall(wall.id,visited);}refreshSpaces();}
+  function syncDependentsOfWall(parentId,visited=new Set()){if(visited.has(parentId))return;visited.add(parentId);const parent=state.objects.find(o=>o.id===parentId&&o.type==='wall');if(!parent)return;for(const wall of state.objects){if(wall.type!=='wall'||wall.id===parentId)continue;let changed=false;for(const endpoint of['a','b']){const att=wall.attachments?.[endpoint];if(att?.wallId===parentId){wall[endpoint]=wallPointAt(parent,att.t);changed=true;}}const c=ensureWallConstraints(wall);if(c.reference?.wallId===parentId){enforceWallConstraints(wall);changed=true;}if(changed)syncDependentsOfWall(wall.id,visited);}refreshSpaces();}
 
   function detectClosedWallFaces(){
     const walls=state.objects.filter(o=>o.type==='wall');if(walls.length<3)return[];
@@ -1026,7 +1138,8 @@
     markDirty(true);rebuildObjectSnapIndex();renderProperties();render();}
 
 
-  function updateHover(p){if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()||(state.toolset==='cad'&&state.objects.length>5000)){state.hoveredObjectId=null;host.dataset.hover='false';return;}const o=hitObject(p);state.hoveredObjectId=o?.id||null;host.dataset.hover=state.hoveredObjectId?'true':'false';}
+  function updatePointerAffordance(p){state.pointerAffordance=null;if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()){delete host.dataset.affordance;return;}const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&selectionIds().size===1){const h=hitHandle(p,selected);if(h){if((selected.type==='wall'||selected.type==='line'||selected.type==='cadLine')&&(h==='a'||h==='b'))state.pointerAffordance='endpoint';else if((selected.type==='door'||selected.type==='window')&&(h==='p1'||h==='p2'))state.pointerAffordance='resize';else if(selected.type==='dimension'&&h==='offset')state.pointerAffordance='offset';else state.pointerAffordance='move';}}if(!state.pointerAffordance&&hitObject(p))state.pointerAffordance='move';if(state.pointerAffordance)host.dataset.affordance=state.pointerAffordance;else delete host.dataset.affordance;}
+  function updateHover(p){if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()||(state.toolset==='cad'&&state.objects.length>5000)){state.hoveredObjectId=null;host.dataset.hover='false';updatePointerAffordance(p);return;}const o=hitObject(p);state.hoveredObjectId=o?.id||null;host.dataset.hover=state.hoveredObjectId?'true':'false';updatePointerAffordance(p);}
 
   function beginViewerPointer(e,s){state.viewerPointers.set(e.pointerId,s);canvas.setPointerCapture?.(e.pointerId);if(state.viewerPointers.size===1){state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';}else if(state.viewerPointers.size===2){const pts=[...state.viewerPointers.values()],c={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2},dist=Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y));state.viewerGesture={startDistance:dist,startCenter:c,startCamera:{...state.camera},startZoom:state.camera.zoom,worldAtCenter:screenCssToWorld(c)};state.pan=null;}}
   function moveViewerPointer(e,s){if(!state.viewerPointers.has(e.pointerId))return false;state.viewerPointers.set(e.pointerId,s);if(state.viewerPointers.size>=2&&state.viewerGesture){const pts=[...state.viewerPointers.values()].slice(0,2),c={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2},dist=Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y)),g=state.viewerGesture;state.camera.zoom=clamp(g.startZoom*(dist/g.startDistance),.002,8);const after=screenCssToWorld(c);state.camera.cx+=g.worldAtCenter.x-after.x;state.camera.cy+=g.worldAtCenter.y-after.y;render();return true;}if(state.pan&&state.pan.pointerId===e.pointerId){const dx=(s.x-state.pan.startScreen.x)/state.camera.zoom,dy=(s.y-state.pan.startScreen.y)/state.camera.zoom;state.camera.cx=state.pan.startCamera.cx-dx;state.camera.cy=state.pan.startCamera.cy+dy;render();return true;}return true;}
@@ -1038,12 +1151,13 @@
     if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){state.selectionDrag.current={...p};updateSelectionDragPreview();render();return;}
     if(state.pan){const dx=(s.x-state.pan.startScreen.x)/state.camera.zoom,dy=(s.y-state.pan.startScreen.y)/state.camera.zoom;state.camera.cx=state.pan.startCamera.cx-dx;state.camera.cy=state.pan.startCamera.cy+dy;render();return;}
     if(state.dragEdit){applyObjectDrag(nearestSnap(p,state.dragEdit.objectId));return;}
-    updateHover(p);
+    if(state.activeTool==='constraint')updateConstraintHover(p);else updateHover(p);
     if(state.activeTool==='door'||state.activeTool==='window')state.previewOpening=nearestWallProjection(p);else state.previewOpening=null;
     const start=state.drawStart||state.measureStart||state.calibration?.p1;if(start)p=constrainOrtho(start,nearestSnap(p));else p=nearestSnap(p);state.previewEnd=p;render();}
 
   function onPointerDown(e){host.focus();hideContextMenu();const s=fromPointerEvent(e);if(isCompactViewer()){if(e.button===0||e.pointerType==='touch'){e.preventDefault();beginViewerPointer(e,s);}return;}const panGesture=e.button===1||(e.button===0&&state.spaceDown);if(panGesture){e.preventDefault();if(state.spaceGesture)state.spaceGesture.used=true;state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';canvas.setPointerCapture?.(e.pointerId);return;}if(e.button!==0)return;const editableLabel=hitEditableLabel(s);if(editableLabel)return;let raw=screenCssToWorld(s),p=nearestSnap(raw);
     if(state.activeTool==='region'&&state.toolset==='cad'){state.regionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw}};canvas.setPointerCapture?.(e.pointerId);render();return;}
+    if(state.activeTool==='constraint'&&state.toolset==='plan'){handleConstraintCanvasClick(raw);return;}
     if(state.calibration){if(!state.calibration.p1){state.calibration.p1=p;state.previewEnd=p;updateContextBar();render();}else{state.calibration.p2=p;openCalibrationDialog();}return;}
     if(state.activeTool==='select'){const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&hitHandle(raw,selected)){beginObjectDrag(e,raw,selected);return;}const obj=hitObject(raw);if(obj){applyObjectClickSelection(obj,e);if(!(e.shiftKey||e.ctrlKey||e.metaKey)&&state.selectedObjectIds.size<=1)beginObjectDrag(e,raw,obj);renderPrimaryPanel();renderProperties();render();return;}if(state.toolset==='cad'){const mode=e.shiftKey?'add':(e.ctrlKey||e.metaKey?'toggle':'replace');state.selectionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw},mode,previewIds:new Set()};canvas.setPointerCapture?.(e.pointerId);if(mode==='replace'){state.selectedObjectIds.clear();state.selectedObjectId=null;}state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();return;}applyObjectClickSelection(null,e);renderPrimaryPanel();renderProperties();render();return;}
     if(state.activeTool==='delete'){const obj=hitObject(raw);if(obj)deleteObjectById(obj.id);return;}
@@ -1055,8 +1169,8 @@
   function onPointerUp(e){if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){const drag=state.selectionDrag,candidates=[...(drag.previewIds||new Set())];state.selectionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}applySelectionSet(candidates,drag.mode);renderPrimaryPanel();renderProperties();render();return;}if(state.dragEdit){const drag=state.dragEdit,hadChange=drag.historyPushed,obj=state.objects.find(o=>o.id===drag.objectId);state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(hadChange&&obj?.type==='wall'){syncDependentsOfWall(obj.id);refreshSpaces();}if(hadChange){rebuildObjectSnapIndex();updateAll();}return;}if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){} }
   function onWheel(e){e.preventDefault();const s=fromPointerEvent(e),before=screenCssToWorld(s),factor=Math.exp(-e.deltaY*.0014);state.camera.zoom=clamp(state.camera.zoom*factor,.002,8);const after=screenCssToWorld(s);state.camera.cx+=before.x-after.x;state.camera.cy+=before.y-after.y;render();}
 
-  function deleteObjectById(id){const target=state.objects.find(o=>o.id===id);if(!target)return;pushHistory();const childIds=target.type==='wall'?new Set(state.objects.filter(o=>(o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id).map(o=>o.id)):new Set();state.objects=state.objects.filter(o=>o.id!==id&&!childIds.has(o.id));if(target.type==='wall'){for(const wall of state.objects.filter(o=>o.type==='wall'))for(const endpoint of['a','b'])if(wall.attachments?.[endpoint]?.wallId===id)delete wall.attachments[endpoint];refreshSpaces();}state.selectedObjectId=null;state.selectedObjectIds.delete(id);for(const childId of childIds)state.selectedObjectIds.delete(childId);markDirty(true);rebuildObjectSnapIndex();updateAll();}
-  function deleteSelectedObjects(){const ids=selectionIds();if(!ids.size)return;pushHistory();const remove=new Set(ids);for(const id of ids){const target=state.objects.find(o=>o.id===id);if(target?.type==='wall')for(const o of state.objects)if((o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id)remove.add(o.id);}state.objects=state.objects.filter(o=>!remove.has(o.id));for(const wall of state.objects.filter(o=>o.type==='wall'))for(const endpoint of['a','b'])if(remove.has(wall.attachments?.[endpoint]?.wallId))delete wall.attachments[endpoint];clearMultiSelection();refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function deleteObjectById(id){const target=state.objects.find(o=>o.id===id);if(!target)return;pushHistory();const childIds=target.type==='wall'?new Set(state.objects.filter(o=>(o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id).map(o=>o.id)):new Set();state.objects=state.objects.filter(o=>o.id!==id&&!childIds.has(o.id));if(target.type==='wall'){for(const wall of state.objects.filter(o=>o.type==='wall')){for(const endpoint of['a','b'])if(wall.attachments?.[endpoint]?.wallId===id)delete wall.attachments[endpoint];const c=ensureWallConstraints(wall);if(c.reference?.wallId===id)c.reference=null;}if(state.baseAxisWallId===id){state.baseAxisWallId=null;state.baseAxisAngle=0;}refreshSpaces();}state.selectedObjectId=null;state.selectedObjectIds.delete(id);for(const childId of childIds)state.selectedObjectIds.delete(childId);markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function deleteSelectedObjects(){const ids=selectionIds();if(!ids.size)return;pushHistory();const remove=new Set(ids);for(const id of ids){const target=state.objects.find(o=>o.id===id);if(target?.type==='wall')for(const o of state.objects)if((o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id)remove.add(o.id);}state.objects=state.objects.filter(o=>!remove.has(o.id));for(const wall of state.objects.filter(o=>o.type==='wall')){for(const endpoint of['a','b'])if(remove.has(wall.attachments?.[endpoint]?.wallId))delete wall.attachments[endpoint];const c=ensureWallConstraints(wall);if(remove.has(c.reference?.wallId))c.reference=null;}if(remove.has(state.baseAxisWallId)){state.baseAxisWallId=null;state.baseAxisAngle=0;}clearMultiSelection();refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();}
 
   function referenceBounds(ref,{main=false}={}){if(ref.type==='linkedCadRegion'){const r=state.drawingRegions.find(x=>x.id===ref.regionId);return r||{minx:0,miny:0,maxx:1000,maxy:1000};}if(ref.type==='image'){const a=referenceLocalToWorld(ref,{x:0,y:0}),b=referenceLocalToWorld(ref,{x:ref.width,y:ref.height});return{minx:Math.min(a.x,b.x),miny:Math.min(a.y,b.y),maxx:Math.max(a.x,b.x),maxy:Math.max(a.y,b.y)};}const b=(main&&ref.mainBounds)||ref.bounds,a=referenceLocalToWorld(ref,{x:b.minx,y:b.miny}),c=referenceLocalToWorld(ref,{x:b.maxx,y:b.maxy});return{minx:Math.min(a.x,c.x),miny:Math.min(a.y,c.y),maxx:Math.max(a.x,c.x),maxy:Math.max(a.y,c.y)};}
   function allBounds({full=false}={}){let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;const add=p=>{if(!p)return;minx=Math.min(minx,p.x);miny=Math.min(miny,p.y);maxx=Math.max(maxx,p.x);maxy=Math.max(maxy,p.y);};for(const r of state.references){const b=referenceBounds(r,{main:!full});add({x:b.minx,y:b.miny});add({x:b.maxx,y:b.maxy});}if(state.sourceDxfName&&state.objects.length&&state.sourceDxfMainBounds&&!full){const b=state.sourceDxfMainBounds;add({x:b.minx,y:b.miny});add({x:b.maxx,y:b.maxy});}else for(const o of state.objects){if(o.a)add(o.a);if(o.b)add(o.b);if(o.center){add({x:o.center.x-o.radius,y:o.center.y-o.radius});add({x:o.center.x+o.radius,y:o.center.y+o.radius});}if(o.point)add(o.point);const g=(o.type==='door'||o.type==='window')?openingGeometry(o):null;if(g){add(g.p1);add(g.p2);}if(o.type==='dimension'){const d=dimensionGeometry(o);if(d){add(d.p1);add(d.p2);add(d.d1);add(d.d2);}}}return Number.isFinite(minx)?{minx,miny,maxx,maxy}:null;}
@@ -1072,7 +1186,7 @@
   async function addDxfReference(file){showProgress(t('progress.readingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.readingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit),entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor)),b=boundsEntities(entities),main=scaleBounds(parsed.analysis?.mainBounds,factor);const ref={id:uid('ref'),type:'dxf',name:file.name,visible:true,opacity:.48,scale:1,origin:{x:0,y:0},entities,bounds:b,mainBounds:main||b,outlierCount:parsed.analysis?.outlierCount||0,sourceUnit:parsed.unit?.label||'unspecified',sourceUnitSpecified:parsed.unit?.metersPerUnit!=null,layers:parsed.layers||[],visibleLayers:new Set(parsed.layers||[]),pathsByLayer:buildDxfPaths(entities),textEntities:entities.filter(e=>e.type==='text'),snapIndex:buildSnapIndex(entities,b)};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);hideProgress();updateAll();switchInspector('reference');fitReference(ref);}
   async function addImageReference(file){const dataUrl=await readDataUrl(file),image=await loadImage(dataUrl);const ref={id:uid('ref'),type:'image',name:file.name,visible:true,opacity:.55,scale:1,origin:{x:0,y:0},image,width:image.naturalWidth,height:image.naturalHeight,sourceUnit:'px'};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);updateAll();switchInspector('reference');fitReference(ref);}
 
-  async function openEditableDxf(file){if(!file)return;try{if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.newDrawing')))return;state.objects=[];state.references=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.selectedReferenceId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';showProgress(t('progress.importingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.importingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit);const entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor));const editable=[];for(const e of entities){const layer=e.layer||'0';state.cadLayerVisibility.set(layer,true);if(e.type==='line')editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.x1,y:e.y1},b:{x:e.x2,y:e.y2},source:'DXF'});else if(e.type==='polyline'&&e.points?.length>1){for(let i=1;i<e.points.length;i++)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points[i-1][0],y:e.points[i-1][1]},b:{x:e.points[i][0],y:e.points[i][1]},source:'DXF'});if(e.closed)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points.at(-1)[0],y:e.points.at(-1)[1]},b:{x:e.points[0][0],y:e.points[0][1]},source:'DXF'});}else if(e.type==='circle')editable.push({id:uid('cadCircle'),type:'cadCircle',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,source:'DXF'});else if(e.type==='text')editable.push({id:uid('cadText'),type:'cadText',cadLayer:layer,point:{x:e.x,y:e.y},text:e.text||'',source:'DXF'});}
+  async function openEditableDxf(file){if(!file)return;try{if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.newDrawing')))return;state.objects=[];state.references=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.selectedReferenceId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';showProgress(t('progress.importingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.importingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit);const entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor));const editable=[];for(const e of entities){const layer=e.layer||'0';state.cadLayerVisibility.set(layer,true);if(e.type==='line')editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.x1,y:e.y1},b:{x:e.x2,y:e.y2},source:'DXF'});else if(e.type==='polyline'&&e.points?.length>1){for(let i=1;i<e.points.length;i++)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points[i-1][0],y:e.points[i-1][1]},b:{x:e.points[i][0],y:e.points[i][1]},source:'DXF'});if(e.closed)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points.at(-1)[0],y:e.points.at(-1)[1]},b:{x:e.points[0][0],y:e.points[0][1]},source:'DXF'});}else if(e.type==='circle')editable.push({id:uid('cadCircle'),type:'cadCircle',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,source:'DXF'});else if(e.type==='text')editable.push({id:uid('cadText'),type:'cadText',cadLayer:layer,point:{x:e.x,y:e.y},text:e.text||'',source:'DXF'});}
       if(!editable.some(o=>o.type==='cadLine'||o.type==='cadCircle'))alert(t('alert.dxfNoEditableEntities'));state.objects=editable;state.sourceDxfName=file.name;state.sourceDxfFullBounds=boundsEntities(entities);state.sourceDxfMainBounds=scaleBounds(parsed.analysis?.mainBounds,factor)||state.sourceDxfFullBounds;state.sourceDxfOutlierCount=parsed.analysis?.outlierCount||0;state.activeCadLayer=(parsed.layers||[])[0]||'0';state.dirty=false;rebuildObjectSnapIndex();hideProgress();switchToolset('cad',{skipMapping:true});updateAll();fitAll();}catch(err){hideProgress();console.error(err);alert(err.message||String(err));}finally{dom.dxfEditFileInput.value='';}}
 
   function normalizeEntityToMm(e,factor){const out={...e};if(e.type==='line'){out.x1=e.x1*factor;out.y1=e.y1*factor;out.x2=e.x2*factor;out.y2=e.y2*factor;}else if(e.type==='polyline')out.points=(e.points||[]).map(p=>[p[0]*factor,p[1]*factor]);else if(e.type==='circle'){out.cx=e.cx*factor;out.cy=e.cy*factor;out.r=e.r*factor;}else if(e.type==='text'){out.x=e.x*factor;out.y=e.y*factor;}return out;}
@@ -1096,12 +1210,211 @@
   function sanitizeFilename(name){return String(name||'PieniPlan').replace(/[\/:*?"<>|]+/g,'_').trim()||'PieniPlan';}
   function deleteRegion(regionId){pushHistory();state.drawingRegions=state.drawingRegions.filter(r=>r.id!==regionId);state.references=state.references.filter(r=>!(r.type==='linkedCadRegion'&&r.regionId===regionId));if(state.selectedRegionId===regionId)state.selectedRegionId=null;markDirty(true);updateAll();}
 
+
+  function renameRegion(region){
+    if(!region)return;
+    const next=prompt(t('region.renamePrompt'),region.name||t('region.unnamed'));
+    if(next===null)return;
+    const name=String(next).trim();
+    if(!name||name===region.name)return;
+    pushHistory();
+    region.name=name;
+    markDirty(true);
+    renderPrimaryPanel();
+    renderReferences();
+    render();
+  }
+
+  function positionContextMenuAtElement(button){
+    contextMenu.hidden=false;
+    contextMenu.style.left='0px';
+    contextMenu.style.top='0px';
+    const anchor=button.getBoundingClientRect();
+    const rect=contextMenu.getBoundingClientRect();
+    const margin=8;
+    const left=Math.max(margin,Math.min(window.innerWidth-rect.width-margin,anchor.right-rect.width));
+    const top=Math.max(margin,Math.min(window.innerHeight-rect.height-margin,anchor.bottom+5));
+    contextMenu.style.left=`${Math.round(left)}px`;
+    contextMenu.style.top=`${Math.round(top)}px`;
+  }
+
+  function showRegionActionMenu(region,button){
+    hideContextMenu();
+    addContextMenuItem(t('action.fit'),()=>{state.selectedRegionId=region.id;fitBounds(region);renderPrimaryPanel();render();});
+    addContextMenuItem(t('action.rename'),()=>renameRegion(region));
+    addContextMenuDivider();
+    addContextMenuItem(t('action.openInPlanReference'),()=>openRegionInPlan(region));
+    addContextMenuItem(t('action.openInPlanRecognizeWalls'),()=>beginWallRecognition(region));
+    addContextMenuItem(t('action.exportRegionDxf'),()=>exportRegionDxf(region));
+    addContextMenuDivider();
+    addContextMenuItem(t('action.delete'),()=>deleteRegion(region.id),{danger:true});
+    positionContextMenuAtElement(button);
+  }
+
+  function wallRecognitionSourceLines(region){
+    const result=[];
+    for(const o of state.objects){
+      if(!(o.type==='cadLine'||o.type==='line'))continue;
+      const layer=o.cadLayer||'0';
+      if(!cadLayerVisible(layer))continue;
+      const clipped=clipLineToRect(o.a,o.b,region);
+      if(!clipped)continue;
+      const len=distance(clipped[0],clipped[1]);
+      if(len<350)continue;
+      let angle=angleDeg(clipped[0],clipped[1])%180;
+      if(angle<0)angle+=180;
+      result.push({id:o.id,layer,a:clipped[0],b:clipped[1],length:len,angle});
+    }
+    return result;
+  }
+
+  function angleDiff180(a,b){
+    let d=Math.abs(a-b)%180;
+    if(d>90)d=180-d;
+    return d;
+  }
+
+  function pairWallCandidate(a,b){
+    if(angleDiff180(a.angle,b.angle)>2.2)return null;
+    let ux1=(a.b.x-a.a.x)/a.length,uy1=(a.b.y-a.a.y)/a.length;
+    let ux2=(b.b.x-b.a.x)/b.length,uy2=(b.b.y-b.a.y)/b.length;
+    if(ux1*ux2+uy1*uy2<0){ux2=-ux2;uy2=-uy2;}
+    let ux=ux1+ux2,uy=uy1+uy2;
+    const ul=Math.hypot(ux,uy)||1;ux/=ul;uy/=ul;
+    const nx=-uy,ny=ux;
+    const proj=(p)=>p.x*ux+p.y*uy;
+    const off=(p)=>p.x*nx+p.y*ny;
+    const a0=Math.min(proj(a.a),proj(a.b)),a1=Math.max(proj(a.a),proj(a.b));
+    const b0=Math.min(proj(b.a),proj(b.b)),b1=Math.max(proj(b.a),proj(b.b));
+    const lo=Math.max(a0,b0),hi=Math.min(a1,b1);
+    const overlap=hi-lo;
+    if(overlap<350)return null;
+    const oa=(off(a.a)+off(a.b))/2,ob=(off(b.a)+off(b.b))/2;
+    const thickness=Math.abs(ob-oa);
+    if(thickness<60||thickness>500)return null;
+    const shorter=Math.min(a.length,b.length);
+    const overlapRatio=overlap/Math.max(shorter,1);
+    if(overlapRatio<.32)return null;
+    const centerOff=(oa+ob)/2;
+    const p1={x:ux*lo+nx*centerOff,y:uy*lo+ny*centerOff};
+    const p2={x:ux*hi+nx*centerOff,y:uy*hi+ny*centerOff};
+    const preferred=thickness>=80&&thickness<=320?1:.72;
+    const score=overlapRatio*2+Math.min(overlap/4000,1)+preferred-(angleDiff180(a.angle,b.angle)/8);
+    return {a:p1,b:p2,thickness,score,sourceIds:[a.id,b.id],sourceLayers:[a.layer,b.layer]};
+  }
+
+  function detectWallCandidates(region){
+    const lines=wallRecognitionSourceLines(region);
+    const bins=new Map();
+    for(const line of lines){
+      const key=Math.round(line.angle/2)*2;
+      if(!bins.has(key))bins.set(key,[]);
+      bins.get(key).push(line);
+    }
+    const pairs=[];
+    const usedPairs=new Set();
+    for(const bucket of bins.values()){
+      const theta=rad(bucket[0]?.angle||0),nx=-Math.sin(theta),ny=Math.cos(theta);
+      const prepared=bucket.map(line=>({...line,offset:((line.a.x+line.b.x)/2)*nx+((line.a.y+line.b.y)/2)*ny})).sort((a,b)=>a.offset-b.offset);
+      for(let i=0;i<prepared.length;i++){
+        let best=null;
+        for(let j=i+1;j<prepared.length;j++){
+          const delta=prepared[j].offset-prepared[i].offset;
+          if(delta>520)break;
+          if(delta<55)continue;
+          const cand=pairWallCandidate(prepared[i],prepared[j]);
+          if(!cand)continue;
+          if(!best||cand.score>best.score)best=cand;
+        }
+        if(best){
+          const key=[...best.sourceIds].sort().join('|');
+          if(!usedPairs.has(key)){usedPairs.add(key);pairs.push(best);}
+        }
+      }
+    }
+    pairs.sort((a,b)=>b.score-a.score);
+    const maxCandidates=1200;
+    return {lines,candidates:pairs.slice(0,maxCandidates),truncated:pairs.length>maxCandidates};
+  }
+
+  function drawWallRecognitionPreview(){
+    const preview=state.wallRecognitionPreview;
+    if(!preview?.candidates?.length)return;
+    const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#3478F6';
+    ctx.save();
+    ctx.strokeStyle=accent;
+    ctx.globalAlpha=.42;
+    ctx.lineCap='square';
+    for(const wall of preview.candidates){
+      const a=toScreenCss(wall.a),b=toScreenCss(wall.b);
+      ctx.lineWidth=Math.max(2,wall.thickness*state.camera.zoom);
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function beginWallRecognition(region){
+    if(!region)return;
+    const result=detectWallCandidates(region);
+    if(!result.candidates.length){alert(t('recognition.none'));return;}
+    state.selectedRegionId=region.id;
+    state.wallRecognitionPreview={regionId:region.id,candidates:result.candidates,sourceLineCount:result.lines.length,truncated:result.truncated};
+    dom.recognitionTitle.textContent=t('recognition.title');
+    dom.recognitionCopy.textContent=t('recognition.copy',{name:region.name});
+    dom.recognitionStats.textContent=t('recognition.stats',{walls:result.candidates.length.toLocaleString(),lines:result.lines.length.toLocaleString()})+(result.truncated?` · ${t('recognition.truncated')}`:'');
+    dom.recognitionBackdrop.hidden=false;
+    render();
+  }
+
+  function cancelWallRecognition(){
+    state.wallRecognitionPreview=null;
+    dom.recognitionBackdrop.hidden=true;
+    render();
+  }
+
+  function wallCandidateDuplicatesExisting(c){
+    const ang=angleDeg(c.a,c.b)%180,mid={x:(c.a.x+c.b.x)/2,y:(c.a.y+c.b.y)/2},len=distance(c.a,c.b);
+    for(const w of state.objects){
+      if(w.type!=='wall')continue;
+      const wa=angleDeg(w.a,w.b)%180;
+      if(angleDiff180(ang,wa)>1.5)continue;
+      const wmid={x:(w.a.x+w.b.x)/2,y:(w.a.y+w.b.y)/2};
+      if(distance(mid,wmid)>Math.max(80,(c.thickness+w.thickness)/2))continue;
+      const ratio=Math.min(len,distance(w.a,w.b))/Math.max(len,distance(w.a,w.b),1);
+      if(ratio>.78)return true;
+    }
+    return false;
+  }
+
+  function applyWallRecognition(){
+    const preview=state.wallRecognitionPreview;
+    const region=state.drawingRegions.find(r=>r.id===preview?.regionId);
+    if(!preview||!region)return cancelWallRecognition();
+    const candidates=preview.candidates.filter(c=>!wallCandidateDuplicatesExisting(c));
+    pushHistory();
+    for(const c of candidates){
+      state.objects.push({id:uid('wall'),type:'wall',layerId:'walls',a:{...c.a},b:{...c.b},thickness:Math.round(c.thickness*10)/10,attachments:{},recognizedFromCad:true,sourceRegionId:region.id});
+    }
+    state.wallRecognitionPreview=null;
+    dom.recognitionBackdrop.hidden=true;
+    markDirty(true);
+    rebuildObjectSnapIndex();
+    refreshSpaces();
+    openRegionInPlan(region);
+    renderPrimaryPanel();
+    renderProperties();
+    render();
+  }
+
   function renderPrimaryPanel(){if(state.toolset==='plan')renderPlanObjectsPanel();else renderCadLayersPanel();}
-  function renderPlanObjectsPanel(){dom.primaryControls.hidden=true;dom.primaryControls.innerHTML='';dom.primaryList.innerHTML='';const groups=[['wall','group.walls','wall'],['door','group.doors','door'],['window','group.windows','window'],['space','group.spaces','space'],['dimension','group.dimensions','dimension']];let any=false;for(const[type,key,icon]of groups){const count=state.objects.filter(o=>o.type===type).length;if(!count)continue;any=true;dom.primaryList.appendChild(summaryRow(icon,t(key),t('panel.objects',{count})));}const cadCount=state.objects.filter(isCadObject).length;if(cadCount){any=true;dom.primaryList.appendChild(summaryRow('vector',t('group.cadGeometry'),t('panel.hiddenCad',{count:cadCount})));}if(!any)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noPlanObjects'))}</div>`;}
+  function renderPlanObjectsPanel(){dom.primaryControls.hidden=true;dom.primaryControls.innerHTML='';dom.primaryList.className='panel-list';dom.primaryList.innerHTML='';const groups=[['wall','group.walls','wall'],['door','group.doors','door'],['window','group.windows','window'],['space','group.spaces','space'],['dimension','group.dimensions','dimension']];let any=false;for(const[type,key,icon]of groups){const count=state.objects.filter(o=>o.type===type).length;if(!count)continue;any=true;dom.primaryList.appendChild(summaryRow(icon,t(key),t('panel.objects',{count})));}const cadCount=state.objects.filter(isCadObject).length;if(cadCount){any=true;dom.primaryList.appendChild(summaryRow('vector',t('group.cadGeometry'),t('panel.hiddenCad',{count:cadCount})));}if(!any)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noPlanObjects'))}</div>`;}
   function summaryRow(icon,title,meta){const row=document.createElement('div');row.className='list-row';row.innerHTML=`<div class="object-swatch"><span class="ui-icon icon-${icon}" aria-hidden="true"></span></div><div class="row-main"><div class="row-title">${escapeHtml(title)}</div><div class="row-meta">${escapeHtml(meta)}</div></div><span></span>`;return row;}
   function scrollLayerRowInsideList(row){if(!row||!dom.primaryList)return;const list=dom.primaryList,top=row.offsetTop,bottom=top+row.offsetHeight,viewTop=list.scrollTop,viewBottom=viewTop+list.clientHeight;if(top<viewTop)list.scrollTop=Math.max(0,top-4);else if(bottom>viewBottom)list.scrollTop=Math.max(0,bottom-list.clientHeight+4);}
   function renderCadLayersPanel(){
-    const previousScroll=dom.primaryList.scrollTop;
+    const oldLayerList=dom.primaryList.querySelector('.cad-layer-list');
+    const oldRegionList=dom.primaryList.querySelector('.cad-region-list');
+    const previousLayerScroll=oldLayerList?.scrollTop||0;
+    const previousRegionScroll=oldRegionList?.scrollTop||0;
     dom.primaryControls.hidden=false;
     dom.primaryControls.innerHTML='';
 
@@ -1113,7 +1426,15 @@
     search.value=state.layerFilter||'';
     search.addEventListener('input',()=>{state.layerFilter=search.value;renderCadLayersPanel();});
     dom.primaryControls.appendChild(search);
+
     dom.primaryList.innerHTML='';
+    dom.primaryList.className='panel-list cad-primary-layout';
+
+    const layersSection=document.createElement('section');
+    layersSection.className='cad-manager-section cad-layer-manager';
+    const layerList=document.createElement('div');
+    layerList.className='cad-layer-list';
+    layersSection.appendChild(layerList);
 
     const counts=new Map();
     for(const o of state.objects){
@@ -1135,7 +1456,7 @@
       const empty=document.createElement('div');
       empty.className='section-copy';
       empty.textContent=t('panel.noCadLayers');
-      dom.primaryList.appendChild(empty);
+      layerList.appendChild(empty);
     }else{
       for(const[layer,count]of entries){
         if(filter&&!layer.toLocaleLowerCase().includes(filter)&&!selectedLayers.has(layer))continue;
@@ -1160,38 +1481,68 @@
         active.title=t('panel.active');
         row.addEventListener('click',e=>{if(e.target.closest('button'))return;state.activeCadLayer=layer;renderCadLayersPanel();});
         row.append(eye,main,active);
-        dom.primaryList.appendChild(row);
+        layerList.appendChild(row);
       }
       if(!shown){
         const empty=document.createElement('div');
         empty.className='section-copy';
         empty.textContent=t('panel.noLayerMatches');
-        dom.primaryList.appendChild(empty);
+        layerList.appendChild(empty);
       }
     }
 
-    // Drawing Regions stay in the same panel, but below the compact layer list.
-    const divider=document.createElement('div');divider.className='panel-divider';dom.primaryList.appendChild(divider);
-    const heading=document.createElement('div');heading.className='section-heading';heading.textContent=t('region.section');dom.primaryList.appendChild(heading);
-    const add=document.createElement('button');add.className='mini-action region-add';add.textContent=t('action.defineRegion');add.addEventListener('click',()=>setTool('region','select'));dom.primaryList.appendChild(add);
-    if(!state.drawingRegions.length){const empty=document.createElement('div');empty.className='section-copy';empty.textContent=t('region.none');dom.primaryList.appendChild(empty);}
-    for(const region of state.drawingRegions){
-      const row=document.createElement('div');row.className=`region-row ${state.selectedRegionId===region.id?'selected':''}`;
-      const main=document.createElement('button');main.className='region-main';main.innerHTML=`<strong>${escapeHtml(region.name)}</strong><span>${escapeHtml(t('region.entities',{count:regionObjectCount(region)}))}</span>`;
-      main.addEventListener('click',()=>{state.selectedRegionId=region.id;fitBounds(region);renderCadLayersPanel();render();});
-      const actions=document.createElement('div');actions.className='region-actions';
-      const plan=document.createElement('button');plan.className='mini-action';plan.textContent=t('action.openInPlan');plan.addEventListener('click',()=>openRegionInPlan(region));
-      const exp=document.createElement('button');exp.className='mini-action';exp.textContent='DXF';exp.addEventListener('click',()=>exportRegionDxf(region));
-      const del=document.createElement('button');del.className='mini-action danger';del.textContent=t('action.delete');del.addEventListener('click',()=>deleteRegion(region.id));
-      actions.append(plan,exp,del);row.append(main,actions);dom.primaryList.appendChild(row);
-    }
+    const regionSection=document.createElement('section');
+    regionSection.className='cad-manager-section cad-region-manager';
+    const regionHeader=document.createElement('div');
+    regionHeader.className='cad-section-header';
+    const regionHeading=document.createElement('div');
+    regionHeading.className='section-heading';
+    regionHeading.textContent=t('region.section');
+    const add=document.createElement('button');
+    add.className='mini-action region-compact-add';
+    add.textContent=t('action.defineRegionShort');
+    add.addEventListener('click',()=>setTool('region','select'));
+    regionHeader.append(regionHeading,add);
+    const regionList=document.createElement('div');
+    regionList.className='cad-region-list';
 
-    // Restore only this list's scroll position; never scroll the page/workspace.
+    if(!state.drawingRegions.length){
+      const empty=document.createElement('div');
+      empty.className='section-copy region-empty-copy';
+      empty.textContent=t('region.noneCompact');
+      regionList.appendChild(empty);
+    }
+    for(const region of state.drawingRegions){
+      const row=document.createElement('div');
+      row.className=`region-row compact ${state.selectedRegionId===region.id?'selected':''}`;
+      row.dataset.region=region.id;
+      const main=document.createElement('button');
+      main.className='region-main compact';
+      main.innerHTML=`<strong title="${escapeHtml(region.name)}">${escapeHtml(region.name)}</strong><span>${escapeHtml(t('region.entities',{count:regionObjectCount(region).toLocaleString()}))}</span>`;
+      main.addEventListener('click',()=>{state.selectedRegionId=region.id;renderCadLayersPanel();render();});
+      main.addEventListener('dblclick',e=>{e.preventDefault();renameRegion(region);});
+      const more=document.createElement('button');
+      more.className='region-more';
+      more.type='button';
+      more.setAttribute('aria-label',t('action.more'));
+      more.textContent='⋯';
+      more.addEventListener('click',e=>{e.stopPropagation();showRegionActionMenu(region,more);});
+      row.append(main,more);
+      regionList.appendChild(row);
+    }
+    regionSection.append(regionHeader,regionList);
+    dom.primaryList.append(layersSection,regionSection);
+
     requestAnimationFrame(()=>{
-      dom.primaryList.scrollTop=previousScroll;
+      layerList.scrollTop=previousLayerScroll;
+      regionList.scrollTop=previousRegionScroll;
       if(selectedLayer){
-        const row=dom.primaryList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`);
-        scrollLayerRowInsideList(row);
+        const row=layerList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`);
+        if(row){
+          const top=row.offsetTop,bottom=top+row.offsetHeight,viewTop=layerList.scrollTop,viewBottom=viewTop+layerList.clientHeight;
+          if(top<viewTop)layerList.scrollTop=Math.max(0,top-4);
+          else if(bottom>viewBottom)layerList.scrollTop=Math.max(0,bottom-layerList.clientHeight+4);
+        }
       }
     });
   }
@@ -1205,12 +1556,24 @@
   function configureVisibilityButton(button,visible,kind){const showKey=kind==='reference'?'tooltip.showReference':'tooltip.showLayer',hideKey=kind==='reference'?'tooltip.hideReference':'tooltip.hideLayer';button.innerHTML=iconMarkup(visible?'eye':'eye-off');button.setAttribute('aria-label',t(visible?hideKey:showKey));button.dataset.tooltipTitleKey=visible?hideKey:showKey;delete button.dataset.tooltipKey;delete button.dataset.shortcut;}
 
   function localizedObjectType(type){const key=type==='cadLine'?'value.cadLine':`value.${type}`;return t(key);}
-  function localizedToolName(tool){const keys={select:'tool.select',line:'tool.line',wall:'tool.wall',door:'tool.door',window:'tool.window',space:'tool.space',region:'tool.region',measure:'tool.measure',delete:'tool.delete'};return t(keys[tool]||`tool.${tool}`);}
-  function wallConstraintSummary(wall){const c=ensureWallConstraints(wall),parts=[];if(c.orientation)parts.push(t(`constraint.${c.orientation}`));if(Number.isFinite(c.fixedAngle))parts.push(t('constraint.fixedAngleValue',{value:formatNumber(c.fixedAngle,1)}));if(Number.isFinite(c.fixedLength))parts.push(t('constraint.fixedLengthValue',{value:formatNumber(c.fixedLength,1)}));if(c.fixed)parts.push(t('constraint.fixed'));for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)parts.push(t(att.kind==='coincident'?'constraint.endpointCoincident':'constraint.pointOnLine',{endpoint:ep.toUpperCase()}));}return parts.length?parts.join(' · '):t('constraint.none');}
+  function localizedToolName(tool){const keys={select:'tool.select',constraint:'tool.constraint',line:'tool.line',wall:'tool.wall',door:'tool.door',window:'tool.window',space:'tool.space',region:'tool.region',measure:'tool.measure',delete:'tool.delete'};return t(keys[tool]||`tool.${tool}`);}
+  function wallConstraintSummary(wall){const c=ensureWallConstraints(wall),parts=[];if(c.reference)parts.push(t(`constraint.${c.reference.type}`));if(c.orientation)parts.push(t(`constraint.${c.orientation}`));if(Number.isFinite(c.fixedAngle))parts.push(t('constraint.fixedAngleValue',{value:formatNumber(c.fixedAngle,1)}));if(Number.isFinite(c.fixedLength))parts.push(t('constraint.fixedLengthValue',{value:formatNumber(c.fixedLength,1)}));if(c.fixed)parts.push(t('constraint.fixed'));for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)parts.push(t(att.kind==='coincident'?'constraint.endpointCoincident':'constraint.pointOnLine',{endpoint:ep.toUpperCase()}));}return parts.length?parts.join(' · '):t('constraint.none');}
   function renderProperties(){dom.propertiesPanel.innerHTML='';const ids=selectionIds();if(ids.size>1){propertyText(t('property.selection'),t('value.objectsSelected',{count:ids.size}));if(state.toolset==='cad'){const layers=new Set([...ids].map(id=>state.objects.find(o=>o.id===id)).filter(Boolean).filter(o=>o.type!=='space').map(cadLayerForObject));propertyText(t('property.layers'),layers.size?`${layers.size}`:'—');}return;}const onlyId=ids.size===1?[...ids][0]:state.selectedObjectId,obj=state.objects.find(o=>o.id===onlyId);if(obj){state.selectedObjectId=obj.id;propertyText(t('property.type'),localizedObjectType(obj.type));
       if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);propertyText(t('property.layer'),layer);propertyActions([{label:cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),run:()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer))},{label:t('action.soloLayer'),run:()=>soloLayer(layer)},{label:t('action.showInLayers'),run:()=>{switchInspector('primary');renderCadLayersPanel();}}]);}
-      if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){if(obj.type==='wall'){if(!breakWallConstraintForEdit(obj,'length'))return;const ang=angleDeg(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,ang,v,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();}else{pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};}markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){if(obj.type==='wall'){if(!breakWallConstraintForEdit(obj,'angle'))return;const len=distance(obj.a,obj.b),anchor=constrainedEndpointAnchor(obj,'a');setWallAngleAndLength(obj,v,len,anchor);enforceWallConstraints(obj,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(obj.id);refreshSpaces();}else{pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};}markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
-      if(obj.type==='wall'){propertyNumber(t('property.thickness'),obj.thickness,v=>{if(v>0){pushHistory();obj.thickness=v;markDirty(true);updateAll();}},'mm');const connected=Boolean(obj.attachments?.a||obj.attachments?.b),c=ensureWallConstraints(obj);propertyText(t('property.joint'),connected?t('value.connected'):t('value.free'));propertyText(t('property.constraints'),wallConstraintSummary(obj));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°${state.baseAxisWallId===obj.id?` · ${t('value.thisWall')}`:''}`);propertyActions(connected?[{label:t('action.detachJoint'),run:()=>{pushHistory();detachWallConnections(obj);markDirty(true);updateAll();}}]:[{label:t('action.attachJoint'),run:()=>{pushHistory();const ok=attachTouchingWallEndpoints(obj);if(!ok){state.history.pop();updateUndoRedo();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();}}]);propertyActions([{label:t('action.constraintHorizontal'),run:()=>setWallConstraint(obj,'horizontal')},{label:t('action.constraintVertical'),run:()=>setWallConstraint(obj,'vertical')},{label:t('action.constraintParallel'),run:()=>setWallConstraint(obj,'parallel')},{label:t('action.constraintPerpendicular'),run:()=>setWallConstraint(obj,'perpendicular')},{label:t('action.constraintAngle'),run:()=>{const current=angleDelta(angleDeg(obj.a,obj.b),baseAxisAngle()),raw=prompt(t('prompt.constraintAngle'),String(Math.round(current*100)/100));if(raw!==null&&Number.isFinite(Number(raw)))setWallConstraint(obj,'angle',Number(raw));}},{label:t('action.constraintLength'),run:()=>setWallConstraint(obj,'length',distance(obj.a,obj.b))},{label:c.fixed?t('action.unfixPosition'):t('action.fixPosition'),run:()=>setWallConstraint(obj,'fixed')}]);propertyActions([{label:t('action.setBaseAxis'),run:()=>setBaseAxisFromWall(obj)},{label:t('action.clearBaseAxis'),run:clearBaseAxis},{label:t('action.clearConstraints'),run:()=>clearWallGeometricConstraints(obj)}]);}
+      if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){if(obj.type==='wall'){setWallLengthConstraintFromInput(obj,v);return;}pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){if(obj.type==='wall'){setWallAngleConstraintFromInput(obj,v);return;}pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
+      if(obj.type==='wall'){
+        propertyNumber(t('property.thickness'),obj.thickness,v=>{if(v>0){pushHistory();obj.thickness=v;markDirty(true);updateAll();}},'mm');
+        const connected=Boolean(obj.attachments?.a||obj.attachments?.b),c=ensureWallConstraints(obj);propertyText(t('property.joint'),connected?t('value.connected'):t('value.free'));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°${state.baseAxisWallId===obj.id?` · ${t('value.thisWall')}`:''}`);
+        const items=[];
+        if(c.reference){const ref=state.objects.find(o=>o.id===c.reference.wallId);items.push({label:`${t(`constraint.${c.reference.type}`)} · ${t('constraint.referenceWall',{name:ref?.id||c.reference.wallId})}`,run:()=>removeWallConstraint(obj,'reference')});}
+        if(c.orientation)items.push({label:t(`constraint.${c.orientation}`),run:()=>removeWallConstraint(obj,'orientation')});
+        if(Number.isFinite(c.fixedAngle))items.push({label:t('constraint.fixedAngleValue',{value:formatNumber(angleDeg(obj.a,obj.b),1)}),run:()=>removeWallConstraint(obj,'angle')});
+        if(Number.isFinite(c.fixedLength))items.push({label:t('constraint.fixedLengthValue',{value:formatNumber(c.fixedLength,1)}),run:()=>removeWallConstraint(obj,'length')});
+        if(c.fixed)items.push({label:t('constraint.fixed'),run:()=>removeWallConstraint(obj,'fixed')});
+        for(const ep of ['a','b']){const att=obj.attachments?.[ep];if(att)items.push({label:`${ep.toUpperCase()} · ${t(att.kind==='coincident'?'constraint.endpointCoincident':'constraint.pointOnLine')}`,run:()=>removeWallConstraint(obj,'attachment',ep)});}
+        if(state.baseAxisWallId===obj.id)items.push({label:t('constraint.baseAxis'),run:clearBaseAxis});
+        propertyConstraintList(items);
+      }
       if(obj.type==='door'||obj.type==='window'){propertyNumber(t('property.width'),obj.width,v=>{if(v>0){pushHistory();obj.width=v;markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');if(obj.type==='door'){propertyText(t('property.openingSide'),`${obj.hinge==='end'?t('value.hingeEnd'):t('value.hingeStart')} · ${obj.swing===-1?t('value.swingReverse'):t('value.swingNormal')}`);propertyActions([{label:t('action.flipHinge'),run:()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();}},{label:t('action.flipSwing'),run:()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();}}]);}}
       if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(g.associated)propertyNumber(t('property.length'),g.len,v=>applyNumericLabelEdit({objectId:obj.id,kind:'dimensionLength'},v),'mm');else propertyText(t('property.length'),`${formatNumber(g.len,2)} mm`);if(g.associated)propertyText(t('property.association'),t('value.wallLinked'));propertyNumber(t('property.offset'),g.offset,v=>{pushHistory();obj.offset=v;markDirty(true);updateAll();},'mm');}}
       if(obj.type==='space'){propertyText(t('property.area'),`${formatNumber(obj.areaM2||Math.abs(polygonArea(obj.polygon||[]))/1e6,2)} m²`);propertyText(t('property.spaceId'),obj.spaceUuid||'—');propertyText(t('property.boundaryWalls'),String(obj.wallIds?.length||0));if(obj.invalid)propertyText(t('property.status'),t('space.invalid'));}
@@ -1218,6 +1581,7 @@
     const ref=state.references.find(r=>r.id===state.selectedReferenceId);if(ref){propertyText(t('property.reference'),ref.name);propertyText(t('property.type'),ref.type==='dxf'?'DXF':ref.type==='linkedCadRegion'?t('value.linkedCadReference'):t('value.image'));if(ref.type==='linkedCadRegion'){const region=state.drawingRegions.find(x=>x.id===ref.regionId);if(region)propertyText(t('property.region'),region.name);propertyText(t('property.layers'),String(ref.visibleLayers?.size||0));}else{propertyText(t('property.scale'),`${formatNumber(ref.scale,6)}×`);propertyText(t('property.origin'),`${formatNumber(ref.origin.x,1)}, ${formatNumber(ref.origin.y,1)}`);}propertyText(t('property.opacity'),`${Math.round(ref.opacity*100)}%`);return;}
     propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);propertyText(t('property.document'),currentDocumentName());propertyText(t('property.toolset'),t(state.toolset==='plan'?'value.planTools':'value.cadTools'));propertyText(t('property.units'),INTERNAL_UNIT);propertyText(t('property.tool'),localizedToolName(state.activeTool));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°`);if(state.cadMapping)propertyText(t('property.mapping'),mappingSummary());}
   function propertyActions(items){const actions=document.createElement('div');actions.className='property-actions';for(const item of items){const b=document.createElement('button');b.className='property-action';b.textContent=item.label;b.addEventListener('click',item.run);actions.appendChild(b);}dom.propertiesPanel.appendChild(actions);}
+  function propertyConstraintList(items){const section=document.createElement('div');section.className='constraint-property-section';const heading=document.createElement('div');heading.className='section-heading';heading.textContent=t('property.constraints');section.appendChild(heading);if(!items.length){const empty=document.createElement('div');empty.className='section-copy';empty.textContent=t('constraint.none');section.appendChild(empty);}for(const item of items){const row=document.createElement('div');row.className='constraint-property-row';const text=document.createElement('span');text.textContent=item.label;const remove=document.createElement('button');remove.className='constraint-remove';remove.textContent=t('action.removeConstraint');remove.addEventListener('click',item.run);row.append(text,remove);section.appendChild(row);}dom.propertiesPanel.appendChild(section);}
 
   function mappingSummary(){const m=state.cadMapping;if(!m)return'—';return t('mapping.summary',{wallMode:t(`mapping.${m.wallRepresentation}`),wallLayer:m.wallLayer,doorLayer:m.doorLayer,windowLayer:m.windowLayer});}
   function propertyText(label,value){const row=document.createElement('div');row.className='property-row';row.innerHTML=`<div class="property-label">${escapeHtml(label)}</div><div class="property-value">${escapeHtml(String(value))}</div>`;dom.propertiesPanel.appendChild(row);}
@@ -1232,9 +1596,9 @@
   }
   function updateAll(){updateUndoRedo();updateEmptyState();updateContextBar();updateDocumentStatus();updateCompactViewerState();updateAxisStatus();renderToolRail();renderPrimaryPanel();renderReferences();renderProperties();render();}
 
-  function resetProject(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedReferenceId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.hoveredObjectId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;rebuildObjectSnapIndex();setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
+  function resetProject(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedReferenceId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.hoveredObjectId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;rebuildObjectSnapIndex();setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
 
-  function createSample(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',a,b,thickness:th};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId:innerV.id,t:.48,width:900,hinge:'start',swing:1},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
+  function createSample(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',a,b,thickness:th};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId:innerV.id,t:.48,width:900,hinge:'start',swing:1},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
 
   function runCommand(raw){const command=String(raw||'').trim().toUpperCase();if(!command)return;if(state.commandPending==='zoom'){if(command==='E'||command==='EXTENTS'){fitAll();setCommandStatus(t('command.zoomExtents'),'strong');state.commandPending=null;return;}setCommandStatus(t('command.unknown',{command}),'error');return;}
     if(command==='L'||command==='LINE'){setTool('line','draw');setCommandStatus(t('command.line'),'strong');}
@@ -1284,7 +1648,7 @@
 
   function isTyping(){const a=document.activeElement;return a&&(['INPUT','TEXTAREA','SELECT'].includes(a.tagName)||a.isContentEditable);}
   function canvasShortcutContext(){const a=document.activeElement;return !a||a===document.body||a===host||a===canvas;}
-  function cancelTransient(){state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));updateContextBar();render();}
+  function cancelTransient(){state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;clearConstraintInteraction();if(state.activeTool==='constraint')state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
 
   dom.startPlanBtn.addEventListener('click',()=>switchToolset('plan',{skipMapping:true}));
   dom.startCadBtn.addEventListener('click',()=>switchToolset('cad',{skipMapping:true}));
@@ -1304,7 +1668,7 @@
   dom.openDxfBtn.addEventListener('click',()=>dom.dxfEditFileInput.click());dom.dxfEditFileInput.addEventListener('change',()=>openEditableDxf(dom.dxfEditFileInput.files?.[0]));
   dom.fitBtn.addEventListener('click',fitAll);dom.fullExtentsBtn?.addEventListener('click',fitFullExtents);dom.newBtn.addEventListener('click',resetProject);dom.undoBtn.addEventListener('click',undo);dom.redoBtn.addEventListener('click',redo);dom.exportDxfBtn.addEventListener('click',exportDxf);
   dom.emptyPrimaryBtn.addEventListener('click',()=>setTool(state.toolset==='plan'?'wall':'line',state.toolset==='plan'?'plan':'draw'));
-  dom.mappingSettingsBtn.addEventListener('click',()=>openMappingDialog('settings'));dom.mappingApplyBtn.addEventListener('click',applyMapping);dom.mappingCancelBtn.addEventListener('click',cancelMapping);
+  dom.mappingSettingsBtn.addEventListener('click',()=>openMappingDialog('settings'));dom.mappingApplyBtn.addEventListener('click',applyMapping);dom.mappingCancelBtn.addEventListener('click',cancelMapping);dom.recognitionApplyBtn.addEventListener('click',applyWallRecognition);dom.recognitionCancelBtn.addEventListener('click',cancelWallRecognition);
   dom.gridToggle.addEventListener('click',()=>{state.grid=!state.grid;dom.gridToggle.classList.toggle('active',state.grid);render();});dom.snapToggle.addEventListener('click',()=>{state.snap=!state.snap;dom.snapToggle.classList.toggle('active',state.snap);});dom.orthoToggle.addEventListener('click',()=>{state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();});
   dom.dialogCancelBtn.addEventListener('click',()=>{dom.dialogBackdrop.hidden=true;state.calibration=null;state.previewEnd=null;updateAll();});dom.dialogApplyBtn.addEventListener('click',applyCalibration);dom.dialogInput.addEventListener('keydown',e=>{if(e.key==='Enter')applyCalibration();if(e.key==='Escape')dom.dialogCancelBtn.click();});
   dom.commandInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const raw=dom.commandInput.value;dom.commandInput.value='';runCommand(raw);}else if(e.key==='Escape'){e.preventDefault();dom.commandInput.value='';cancelTransient();host.focus();}});
@@ -1322,7 +1686,7 @@
     if(!isTyping()&&e.key==='F8'){e.preventDefault();state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!isTyping()){e.preventDefault();e.shiftKey?redo():undo();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&!isTyping()){e.preventDefault();redo();}
-    if(e.key==='Escape'){hideTooltip();hideContextMenu();if(state.selectionDrag){state.selectionDrag=null;render();}else if(state.activeTool==='select'&&selectionIds().size){clearMultiSelection();renderPrimaryPanel();renderProperties();render();}else cancelTransient();}
+    if(e.key==='Escape'){hideTooltip();hideContextMenu();if(state.selectionDrag){state.selectionDrag=null;render();}else if(state.activeTool==='constraint'){cancelTransient();}else if(state.activeTool==='select'&&selectionIds().size){clearMultiSelection();renderPrimaryPanel();renderProperties();render();}else cancelTransient();}
     if((e.key==='Delete'||e.key==='Backspace')&&!isTyping()&&selectionIds().size){e.preventDefault();deleteSelectedObjects();}
     if(state.toolset==='cad'&&!isTyping()&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&/^[a-zA-Z]$/.test(e.key)){e.preventDefault();dom.commandInput.focus();dom.commandInput.value=e.key.toUpperCase();}
   });
@@ -1331,5 +1695,5 @@
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();});
 
   applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');
-  dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.commandBar.hidden=true;i18n.apply(document);state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
+  dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.commandBar.hidden=true;i18n.apply(document);state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();
