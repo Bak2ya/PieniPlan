@@ -409,8 +409,10 @@ button:disabled { opacity:.42; cursor:default; }
 
 @media (max-width: 720px) {
   .app-shell { grid-template-rows:44px minmax(0,1fr) 25px; }
+  .topbar { grid-row:1; }
+  .workspace { grid-row:2; grid-template-columns:minmax(0,1fr); }
+  .statusbar { grid-row:3; }
   .contextbar, .tool-rail, .inspector, .commandbar { display:none !important; }
-  .workspace { grid-template-columns:minmax(0,1fr); }
   .topbar { gap:6px; padding:0 7px; overflow:hidden; }
   .topbar .toolset-switch, .topbar .topbar-actions-left > :not(#fitBtn), .topbar #undoBtn, .topbar #redoBtn, .topbar #exportDxfBtn { display:none !important; }
   .topbar-actions-left { margin-left:auto; }
@@ -484,3 +486,24 @@ button:disabled { opacity:.42; cursor:default; }
 .recognition-dialog { width:min(460px,calc(100vw - 32px)); }
 .recognition-stats { margin-top:10px; padding:9px 10px; border:1px solid var(--border); border-radius:7px; background:var(--surface-2); font-size:11px; color:var(--text); }
 .recognition-note { margin-top:9px; color:var(--text-3); font-size:10px; line-height:1.5; }
+
+/* Build 10: resizable CAD manager split and recognition review. */
+.cad-primary-layout { display:flex; flex-direction:column; gap:0; }
+.cad-layer-manager { flex:0 0 64%; min-height:96px; }
+.cad-region-manager { flex:1 1 auto; min-height:76px; }
+.cad-manager-splitter { position:relative; flex:0 0 9px; min-height:9px; cursor:row-resize; touch-action:none; user-select:none; }
+.cad-manager-splitter::before { content:''; position:absolute; left:8px; right:8px; top:4px; height:1px; background:var(--border-strong); opacity:.72; }
+.cad-manager-splitter:hover::before, .cad-manager-splitter.dragging::before { height:2px; top:3px; background:var(--accent); opacity:1; }
+.cad-manager-splitter:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+.cad-layer-row.filter-forced .row-title::after { content:' · selected'; color:var(--accent); font-size:8px; font-weight:500; }
+:lang(ko) .cad-layer-row.filter-forced .row-title::after { content:' · 선택됨'; }
+.recognition-breakdown { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin:8px 0 10px; }
+.recognition-breakdown .recognition-chip { min-width:0; padding:7px 8px; border:1px solid var(--border); border-radius:7px; background:var(--surface); }
+.recognition-chip strong { display:block; font-size:12px; color:var(--text); }
+.recognition-chip span { display:block; margin-top:2px; color:var(--text-3); font-size:8.5px; line-height:1.25; }
+.recognition-options { display:grid; gap:7px; margin:10px 0; padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:color-mix(in srgb,var(--surface) 60%,transparent); }
+.recognition-options label { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:7px; color:var(--text-2); font-size:10px; line-height:1.35; cursor:pointer; }
+.recognition-options input { accent-color:var(--accent); }
+.recognition-note { margin-top:8px; padding:8px 9px; border-radius:7px; background:var(--surface-3); color:var(--text-3); font-size:9.5px; line-height:1.5; }
+.recognition-stats { color:var(--text-2); font-size:10.5px; line-height:1.45; }
+.recognition-dialog { width:min(520px,calc(100% - 32px)); }

@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.8.0';
-  const BUILD = 9;
+  const VERSION = '0.9.0';
+  const BUILD = 10;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -17,7 +17,7 @@
     appShell: $('appShell'), contextBar: $('contextBar'), startScreen: $('startScreen'), startPlanBtn: $('startPlanBtn'), startCadBtn: $('startCadBtn'), startSampleBtn: $('startSampleBtn'), documentStatus: $('documentStatus'), mobileViewerBadge: $('mobileViewerBadge'),
     continueWorkBtn: $('continueWorkBtn'), continueWorkDetail: $('continueWorkDetail'), backBtn: $('backBtn'), homeBtn: $('homeBtn'), appearanceBtn: $('appearanceBtn'), startAppearanceBtn: $('startAppearanceBtn'), appearanceMenu: $('appearanceMenu'),
     planToolsBtn: $('planToolsBtn'), cadToolsBtn: $('cadToolsBtn'), toolRail: $('toolRail'), toolPopover: $('toolPopover'),
-    newBtn: $('newBtn'), openRefBtn: $('openRefBtn'), emptyOpenBtn: $('emptyOpenBtn'), addReferenceBtn: $('addReferenceBtn'),
+    newBtn: $('newBtn'), openProjectBtn: $('openProjectBtn'), saveProjectBtn: $('saveProjectBtn'), projectFileInput: $('projectFileInput'), openRefBtn: $('openRefBtn'), emptyOpenBtn: $('emptyOpenBtn'), addReferenceBtn: $('addReferenceBtn'),
     openDxfBtn: $('openDxfBtn'), dxfEditFileInput: $('dxfEditFileInput'), referenceFileInput: $('referenceFileInput'),
     fitBtn: $('fitBtn'), fullExtentsBtn: $('fullExtentsBtn'), undoBtn: $('undoBtn'), redoBtn: $('redoBtn'), exportDxfBtn: $('exportDxfBtn'),
     contextToolName: $('contextToolName'), contextFields: $('contextFields'), contextHint: $('contextHint'),
@@ -25,11 +25,11 @@
     primaryInspectorTab: $('primaryInspectorTab'), primaryPanelTitle: $('primaryPanelTitle'), primaryPanelSubtitle: $('primaryPanelSubtitle'), primaryControls: $('primaryControls'), primaryList: $('primaryList'), mappingSettingsBtn: $('mappingSettingsBtn'),
     referenceList: $('referenceList'), propertiesPanel: $('propertiesPanel'),
     statusX: $('statusX'), statusY: $('statusY'), statusUnits: $('statusUnits'), statusAxis: $('statusAxis'), statusZoom: $('statusZoom'),
-    gridToggle: $('gridToggle'), snapToggle: $('snapToggle'), orthoToggle: $('orthoToggle'),
+    gridToggle: $('gridToggle'), snapToggle: $('snapToggle'), orthoToggle: $('orthoToggle'), polarToggle: $('polarToggle'),
     progressToast: $('progressToast'), progressTitle: $('progressTitle'), progressBar: $('progressBar'), progressDetail: $('progressDetail'),
     commandBar: $('commandBar'), commandInput: $('commandInput'), commandStatus: $('commandStatus'),
     dialogBackdrop: $('dialogBackdrop'), dialogTitle: $('dialogTitle'), dialogCopy: $('dialogCopy'), dialogInput: $('dialogInput'), dialogCancelBtn: $('dialogCancelBtn'), dialogApplyBtn: $('dialogApplyBtn'),
-    mappingBackdrop: $('mappingBackdrop'), recognitionBackdrop: $('recognitionBackdrop'), recognitionTitle: $('recognitionTitle'), recognitionCopy: $('recognitionCopy'), recognitionStats: $('recognitionStats'), recognitionCancelBtn: $('recognitionCancelBtn'), recognitionApplyBtn: $('recognitionApplyBtn'), wallRepresentation: $('wallRepresentation'), wallLayerInput: $('wallLayerInput'), doorLayerInput: $('doorLayerInput'), windowLayerInput: $('windowLayerInput'), dimensionLayerInput: $('dimensionLayerInput'), mappingCancelBtn: $('mappingCancelBtn'), mappingApplyBtn: $('mappingApplyBtn'),
+    mappingBackdrop: $('mappingBackdrop'), recognitionBackdrop: $('recognitionBackdrop'), recognitionTitle: $('recognitionTitle'), recognitionCopy: $('recognitionCopy'), recognitionStats: $('recognitionStats'), recognitionBreakdown: $('recognitionBreakdown'), recognitionCreateWalls: $('recognitionCreateWalls'), recognitionCreateSpaces: $('recognitionCreateSpaces'), recognitionCreateDoors: $('recognitionCreateDoors'), recognitionCreateStairs: $('recognitionCreateStairs'), recognitionCancelBtn: $('recognitionCancelBtn'), recognitionApplyBtn: $('recognitionApplyBtn'), wallRepresentation: $('wallRepresentation'), wallLayerInput: $('wallLayerInput'), doorLayerInput: $('doorLayerInput'), windowLayerInput: $('windowLayerInput'), dimensionLayerInput: $('dimensionLayerInput'), mappingCancelBtn: $('mappingCancelBtn'), mappingApplyBtn: $('mappingApplyBtn'),
     uiTooltip: $('uiTooltip')
   };
 
@@ -39,7 +39,8 @@
     { id: 'doors', nameKey: 'layer.doors', visible: true },
     { id: 'windows', nameKey: 'layer.windows', visible: true },
     { id: 'spaces', nameKey: 'layer.spaces', visible: true },
-    { id: 'dimensions', nameKey: 'layer.dimensions', visible: true }
+    { id: 'dimensions', nameKey: 'layer.dimensions', visible: true },
+    { id: 'stairs', nameKey: 'layer.stairs', visible: true }
   ];
 
   const planToolCatalog = [
@@ -52,6 +53,19 @@
     { id: 'space', labelKey: 'tool.space', icon: 'space', ready: true, tooltipKey: 'tooltip.defineSpace' },
     { separator: true },
     { id: 'measure', labelKey: 'tool.measure', icon: 'dimension', ready: true }
+  ];
+
+  const wallTypeCatalog = [
+    { id:'straight', labelKey:'wallType.straight' },
+    { id:'arc', labelKey:'wallType.arc' }
+  ];
+
+  const doorTypeCatalog = [
+    { id:'hingedSingle', labelKey:'doorType.hingedSingle' },
+    { id:'hingedDouble', labelKey:'doorType.hingedDouble' },
+    { id:'slidingSingle', labelKey:'doorType.slidingSingle' },
+    { id:'slidingDouble', labelKey:'doorType.slidingDouble' },
+    { id:'pocket', labelKey:'doorType.pocket' }
   ];
 
   const constraintCatalog = [
@@ -94,7 +108,8 @@
       { id: 'move', labelKey: 'tool.move', ready: false, note: 'M' },
       { id: 'copy', labelKey: 'tool.copy', ready: false, note: 'CO' },
       { id: 'rotate', labelKey: 'tool.rotate', ready: false, note: 'RO' },
-      { id: 'trim', labelKey: 'tool.trim', ready: false, note: 'TR' },
+      { id: 'trim', labelKey: 'tool.trim', ready: true, note: 'TR' },
+      { id: 'extend', labelKey: 'tool.extend', ready: true, note: 'EX' },
       { id: 'offset', labelKey: 'tool.offset', ready: false, note: 'O' },
       { id: 'delete', labelKey: 'tool.delete', ready: true, note: 'E' }
     ]
@@ -130,13 +145,15 @@
     grid: true,
     snap: true,
     ortho: false,
+    polar: false,
+    shiftDown: false,
     spaceDown: false,
     spaceGesture: null,
     pan: null,
     nextId: 1,
     history: [],
     future: [],
-    toolSettings: { wallThickness: 150, doorWidth: 900, windowWidth: 1200 },
+    toolSettings: { wallThickness: 150, wallType:'straight', doorWidth: 900, doorType:'hingedSingle', windowWidth: 1200 },
     cadMapping: null,
     mappingPendingAction: null,
     pendingToolAfterMapping: null,
@@ -145,6 +162,10 @@
     sourceDxfMainBounds: null,
     sourceDxfFullBounds: null,
     sourceDxfOutlierCount: 0,
+    sourceDxfFingerprint: null,
+    sourceDxfSize: 0,
+    sourceDxfLastModified: 0,
+    projectFileName: null,
     dirty: false,
     objectSnapIndex: null,
     snapIndicator: null,
@@ -155,6 +176,7 @@
     selectedObjectIds: new Set(),
     editableLabels: [],
     layerFilter: '',
+    layerRevealRequested: false,
     baseAxisAngle: 0,
     baseAxisWallId: null,
     lastCommand: null,
@@ -167,15 +189,19 @@
     constraintPicks: [],
     constraintHover: null,
     pointerAffordance: null,
-    wallRecognitionPreview: null
+    wallRecognitionPreview: null,
+    recognitionHistory: [],
+    arcDraft: null,
+    inspectorSplit: 0.64
   };
 
   const THEME_STORAGE_KEY = 'pieniplan-theme';
+  const INSPECTOR_SPLIT_STORAGE_KEY = 'pieniplan-cad-manager-split';
   const ROUTE_MARKER = 'pieniplan';
   const SHORTCUTS = Object.freeze({
     undo: 'Ctrl/Cmd+Z', redo: 'Ctrl/Cmd+Shift+Z', select: 'Space', pan: 'Hold Space + drag',
-    delete: 'Delete / Backspace', cancel: 'Esc', grid: 'F7', snap: 'F3', ortho: 'F8',
-    line: 'L', erase: 'E', distance: 'DI', zoom: 'Z'
+    delete: 'Delete / Backspace', cancel: 'Esc', grid: 'F7', snap: 'F3', ortho: 'F8', polar: 'F10',
+    line: 'L', erase: 'E', distance: 'DI', zoom: 'Z', trim:'TR', extend:'EX'
   });
 
   function applyShortcutMetadata(el, shortcutKey, tooltipKey = null, titleKey = null) {
@@ -191,6 +217,17 @@
       const value = localStorage.getItem(THEME_STORAGE_KEY);
       return ['system','light','dark','black'].includes(value) ? value : 'system';
     } catch (_) { return 'system'; }
+  }
+
+  function safeReadInspectorSplit() {
+    try {
+      const value = Number(localStorage.getItem(INSPECTOR_SPLIT_STORAGE_KEY));
+      return Number.isFinite(value) ? clamp(value, .28, .78) : .64;
+    } catch (_) { return .64; }
+  }
+  function persistInspectorSplit(value){
+    state.inspectorSplit=clamp(Number(value)||.64,.28,.78);
+    try{localStorage.setItem(INSPECTOR_SPLIT_STORAGE_KEY,String(state.inspectorSplit));}catch(_){}
   }
 
   function resolvedTheme(theme = state.theme) {
@@ -333,8 +370,9 @@
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
   function unitFactorToMm(unit) { return unit?.metersPerUnit != null ? unit.metersPerUnit * 1000 : 1; }
-  function isSemanticObject(o) { return ['wall','door','window','dimension','space'].includes(o?.type); }
-  function isCadObject(o) { return ['cadLine','cadCircle','cadText'].includes(o?.type); }
+  function isSemanticObject(o) { return ['wall','door','window','dimension','space','stair'].includes(o?.type); }
+  function isCadObject(o) { return ['cadLine','cadCircle','cadArc','cadText'].includes(o?.type); }
+  function isArcWall(w){ return w?.type==='wall' && w.geometry==='arc' && w.center && Number.isFinite(w.radius) && Number.isFinite(w.startAngle) && Number.isFinite(w.sweep); }
   function hasSemanticObjects() { return state.objects.some(isSemanticObject); }
   function makeStableUuid() { return globalThis.crypto?.randomUUID?.() || `space-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`; }
   function ensureWallConstraints(wall){
@@ -361,7 +399,7 @@
     });
   }
   function objectFullyInsideRect(o,r){const b=objectBoundsWorld(o);return b&&b.minx>=r.minx&&b.maxx<=r.maxx&&b.miny>=r.miny&&b.maxy<=r.maxy;}
-  function applySelectionSet(ids,mode='replace'){const next=new Set(state.selectedObjectIds);if(mode==='replace'){next.clear();for(const id of ids)next.add(id);}else if(mode==='add'){for(const id of ids)next.add(id);}else if(mode==='toggle'){for(const id of ids){if(next.has(id))next.delete(id);else next.add(id);}}state.selectedObjectIds=next;state.selectedObjectId=next.size===1?[...next][0]:null;state.selectedReferenceId=null;state.selectedRegionId=null;}
+  function applySelectionSet(ids,mode='replace'){const next=new Set(state.selectedObjectIds);if(mode==='replace'){next.clear();for(const id of ids)next.add(id);}else if(mode==='add'){for(const id of ids)next.add(id);}else if(mode==='toggle'){for(const id of ids){if(next.has(id))next.delete(id);else next.add(id);}}state.selectedObjectIds=next;state.selectedObjectId=next.size===1?[...next][0]:null;state.selectedReferenceId=null;state.selectedRegionId=null;if(state.toolset==='cad'&&next.size===1)state.layerRevealRequested=true;}
   function applyObjectClickSelection(obj,e){if(!obj){if(!e.shiftKey&&!e.ctrlKey&&!e.metaKey)clearMultiSelection();return;}const mode=e.shiftKey?'add':(e.ctrlKey||e.metaKey?'toggle':'replace');applySelectionSet([obj.id],mode);}
   function registerEditableLabel({objectId,kind,rect,value}){state.editableLabels.push({objectId,kind,rect,value});}
   function hitEditableLabel(screen){for(let i=state.editableLabels.length-1;i>=0;i--){const l=state.editableLabels[i],r=l.rect;if(screen.x>=r.x&&screen.x<=r.x+r.w&&screen.y>=r.y&&screen.y<=r.y+r.h)return l;}return null;}
@@ -418,7 +456,7 @@
     return true;
   }
   function setBaseAxisFromWall(wall){
-    if(!wall||wall.type!=='wall')return;
+    if(!wall||wall.type!=='wall'||isArcWall(wall))return;
     pushHistory();
     state.baseAxisAngle=angleDeg(wall.a,wall.b);
     state.baseAxisWallId=wall.id;
@@ -427,7 +465,7 @@
   }
   function clearBaseAxis(){pushHistory();state.baseAxisAngle=0;state.baseAxisWallId=null;for(const w of state.objects.filter(o=>o.type==='wall'))enforceWallConstraints(w);markDirty(true);rebuildObjectSnapIndex();updateAll();}
   function setWallConstraint(wall,type,value=null){
-    if(!wall||wall.type!=='wall')return false;
+    if(!wall||wall.type!=='wall'||isArcWall(wall))return false;
     const c=ensureWallConstraints(wall),directional=['horizontal','vertical','parallel','perpendicular','angle'].includes(type);
     if(directional){const existingDirection=Boolean(c.orientation||c.reference||Number.isFinite(c.fixedAngle));if((c.fixed||existingDirection)&&!confirm(t('confirm.replaceAngleConstraint')))return false;}
     if(type==='length'&&c.fixed&&!confirm(t('confirm.replaceFixedPosition')))return false;
@@ -442,9 +480,9 @@
   function clearWallGeometricConstraints(wall){
     if(!wall||wall.type!=='wall')return;pushHistory();const c=ensureWallConstraints(wall);c.orientation=null;c.reference=null;c.fixedAngle=null;c.fixedLength=null;c.fixed=false;c.endpointLocks={a:false,b:false};delete c.fixedA;delete c.fixedB;wall.attachments={};markDirty(true);rebuildObjectSnapIndex();updateAll();
   }
-  function selectedWalls(){return [...selectionIds()].map(id=>state.objects.find(o=>o.id===id)).filter(o=>o?.type==='wall');}
+  function selectedWalls(){return [...selectionIds()].map(id=>state.objects.find(o=>o.id===id)).filter(o=>o?.type==='wall'&&!isArcWall(o));}
   function setWallRelation(referenceWall,targetWall,type){
-    if(!referenceWall||!targetWall||referenceWall.id===targetWall.id)return false;
+    if(!referenceWall||!targetWall||isArcWall(referenceWall)||isArcWall(targetWall)||referenceWall.id===targetWall.id)return false;
     const rc=ensureWallConstraints(referenceWall),tc=ensureWallConstraints(targetWall);
     if(rc.reference?.wallId===targetWall.id){alert(t('alert.constraintCycle'));return false;}
     const existingDirection=Boolean(tc.orientation||tc.reference||Number.isFinite(tc.fixedAngle));
@@ -452,12 +490,12 @@
     pushHistory();if(tc.fixed){tc.fixed=false;delete tc.fixedA;delete tc.fixedB;}tc.reference={wallId:referenceWall.id,type};tc.orientation=null;tc.fixedAngle=null;enforceWallConstraints(targetWall);syncDependentsOfWall(targetWall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
   }
   function setWallLengthConstraintFromInput(wall,value){
-    if(!wall||wall.type!=='wall'||!Number.isFinite(value)||value<=0)return false;const c=ensureWallConstraints(wall);
+    if(!wall||wall.type!=='wall'||isArcWall(wall)||!Number.isFinite(value)||value<=0)return false;const c=ensureWallConstraints(wall);
     if(c.fixed&&!confirm(t('confirm.replaceFixedPosition')))return false;
     pushHistory();if(c.fixed){c.fixed=false;delete c.fixedA;delete c.fixedB;}c.fixedLength=value;const angle=wallConstraintAngle(wall)??angleDeg(wall.a,wall.b),anchor=constrainedEndpointAnchor(wall,'a');setWallAngleAndLength(wall,angle,value,anchor);enforceWallConstraints(wall,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
   }
   function setWallAngleConstraintFromInput(wall,absoluteAngle){
-    if(!wall||wall.type!=='wall'||!Number.isFinite(absoluteAngle))return false;const c=ensureWallConstraints(wall);
+    if(!wall||wall.type!=='wall'||isArcWall(wall)||!Number.isFinite(absoluteAngle))return false;const c=ensureWallConstraints(wall);
     const hasOther=Boolean(c.fixed||c.orientation||c.reference);
     if(hasOther&&!confirm(t('confirm.replaceAngleConstraint')))return false;
     pushHistory();if(c.fixed){c.fixed=false;delete c.fixedA;delete c.fixedB;}c.orientation=null;c.reference=null;c.fixedAngle=angleDelta(absoluteAngle,baseAxisAngle());const len=Number.isFinite(c.fixedLength)?c.fixedLength:distance(wall.a,wall.b),anchor=constrainedEndpointAnchor(wall,'a');setWallAngleAndLength(wall,absoluteAngle,len,anchor);enforceWallConstraints(wall,{changed:anchor==='a'?'b':'a'});syncDependentsOfWall(wall.id);refreshSpaces();markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
@@ -471,7 +509,7 @@
     const tol=11/state.camera.zoom;let bestPoint=null,bestPointD=tol;
     for(const wall of state.objects){if(wall.type!=='wall')continue;for(const ep of ['a','b']){if(exclude&&exclude.wallId===wall.id&&exclude.endpoint===ep)continue;const d=distance(p,wall[ep]);if(d<bestPointD){bestPointD=d;bestPoint={kind:'point',wallId:wall.id,endpoint:ep,point:{...wall[ep]}};}}}
     if(bestPoint||needPoint)return bestPoint;
-    let bestLine=null,bestLineD=tol;for(const wall of state.objects){if(wall.type!=='wall')continue;const pr=projectPointToSegment(p,wall.a,wall.b);if(pr.distance<bestLineD){bestLineD=pr.distance;bestLine={kind:'line',wallId:wall.id,t:pr.t,point:{...pr.point}};}}
+    let bestLine=null,bestLineD=tol;for(const wall of state.objects){if(wall.type!=='wall')continue;const pr=wallProjectPoint(p,wall);if(pr.distance<bestLineD){bestLineD=pr.distance;bestLine={kind:'line',wallId:wall.id,t:pr.t,point:{...pr.point}};}}
     return bestLine;
   }
   function applyCoincidentPicks(first,second){
@@ -518,7 +556,7 @@
     for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;for(const ep of['a','b']){const d=distance(point,wall[ep]);if(d<endpointD){endpointD=d;endpoint={kind:'coincident',wallId:wall.id,targetEndpoint:ep,t:ep==='a'?0:1,point:{...wall[ep]}};}}}
     if(endpoint)return endpoint;
     let line=null,lineD=threshold;
-    for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;const pr=projectPointToSegment(point,wall.a,wall.b);if(pr.distance<lineD){lineD=pr.distance;line={kind:'pointOnLine',wallId:wall.id,t:pr.t,point:{...pr.point}};}}
+    for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;const pr=wallProjectPoint(point,wall);if(pr.distance<lineD){lineD=pr.distance;line={kind:'pointOnLine',wallId:wall.id,t:pr.t,point:{...pr.point}};}}
     return line;
   }
   function applyEndpointConstraint(wall,endpoint,candidate){
@@ -536,19 +574,76 @@
     badges.forEach((b,i)=>drawConstraintBadge(b,base,i*24,0));
     for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)drawConstraintBadge(att.kind==='coincident'?'C':'P',wall[ep],0,ep==='a'?-18:18);if(c.endpointLocks?.[ep])drawConstraintBadge('F',wall[ep],ep==='a'?-18:18,0);}
   }
-  function wallPointAt(wall,t){return{x:wall.a.x+(wall.b.x-wall.a.x)*t,y:wall.a.y+(wall.b.y-wall.a.y)*t};}
-  function signedDistanceToWall(p,wall){const v=wallVector(wall);return (p.x-wall.a.x)*v.nx+(p.y-wall.a.y)*v.ny;}
+  function deltaCcw(a,b){return((b-a)%360+360)%360;}
+  function wallLength(wall){return isArcWall(wall)?Math.abs(rad(wall.sweep))*wall.radius:distance(wall.a,wall.b);}
+  function wallPointAt(wall,t){
+    const tt=clamp(Number(t)||0,0,1);
+    if(isArcWall(wall)){const a=rad(wall.startAngle+wall.sweep*tt);return{x:wall.center.x+Math.cos(a)*wall.radius,y:wall.center.y+Math.sin(a)*wall.radius};}
+    return{x:wall.a.x+(wall.b.x-wall.a.x)*tt,y:wall.a.y+(wall.b.y-wall.a.y)*tt};
+  }
+  function wallTangentAt(wall,t){
+    if(isArcWall(wall)){const a=rad(wall.startAngle+wall.sweep*clamp(t,0,1)),sign=wall.sweep>=0?1:-1;return{ux:-Math.sin(a)*sign,uy:Math.cos(a)*sign};}
+    const dx=wall.b.x-wall.a.x,dy=wall.b.y-wall.a.y,len=Math.max(.000001,Math.hypot(dx,dy));return{ux:dx/len,uy:dy/len};
+  }
+  function wallProjectPoint(p,wall){
+    if(!isArcWall(wall))return projectPointToSegment(p,wall.a,wall.b);
+    const angle=normalizeAngle(deg(Math.atan2(p.y-wall.center.y,p.x-wall.center.x))),start=normalizeAngle(wall.startAngle),sweep=wall.sweep;
+    let progress=sweep>=0?deltaCcw(start,angle)/Math.max(.000001,sweep):deltaCcw(angle,start)/Math.max(.000001,-sweep);
+    if(progress>=0&&progress<=1){const point=wallPointAt(wall,progress);return{t:progress,point,distance:distance(p,point)};}
+    const da=distance(p,wall.a),db=distance(p,wall.b);return da<=db?{t:0,point:{...wall.a},distance:da}:{t:1,point:{...wall.b},distance:db};
+  }
+  function circleFromThreePoints(a,b,c){
+    const d=2*(a.x*(b.y-c.y)+b.x*(c.y-a.y)+c.x*(a.y-b.y));if(Math.abs(d)<1e-7)return null;
+    const aa=a.x*a.x+a.y*a.y,bb=b.x*b.x+b.y*b.y,cc=c.x*c.x+c.y*c.y;
+    const center={x:(aa*(b.y-c.y)+bb*(c.y-a.y)+cc*(a.y-b.y))/d,y:(aa*(c.x-b.x)+bb*(a.x-c.x)+cc*(b.x-a.x))/d};
+    const radius=distance(center,a);if(!Number.isFinite(radius)||radius<1)return null;
+    const start=normalizeAngle(deg(Math.atan2(a.y-center.y,a.x-center.x))),end=normalizeAngle(deg(Math.atan2(b.y-center.y,b.x-center.x))),mid=normalizeAngle(deg(Math.atan2(c.y-center.y,c.x-center.x))),ccw=deltaCcw(start,end),midCcw=deltaCcw(start,mid);
+    let sweep=midCcw<=ccw+1e-6?ccw:ccw-360;if(Math.abs(sweep)<.01||Math.abs(sweep)>359.99)return null;
+    return{center,radius,startAngle:start,sweep};
+  }
+  function applyArcFromControl(wall,control){const g=circleFromThreePoints(wall.a,wall.b,control);if(!g)return false;Object.assign(wall,g,{geometry:'arc'});return true;}
+  function arcControlPoint(wall){return wallPointAt(wall,.5);}
+  function signedDistanceToWall(p,wall){const pr=wallProjectPoint(p,wall),tan=wallTangentAt(wall,pr.t),nx=-tan.uy,ny=tan.ux;return(p.x-pr.point.x)*nx+(p.y-pr.point.y)*ny;}
   function polygonArea(poly){let a=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];a+=p.x*q.y-q.x*p.y;}return a/2;}
   function polygonCentroid(poly){let a=0,cx=0,cy=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length],cross=p.x*q.y-q.x*p.y;a+=cross;cx+=(p.x+q.x)*cross;cy+=(p.y+q.y)*cross;}a*=.5;if(Math.abs(a)<1e-9)return poly[0]||{x:0,y:0};return{x:cx/(6*a),y:cy/(6*a)};}
   function pointInPolygon(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];const hit=((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/((b.y-a.y)||1e-12)+a.x);if(hit)inside=!inside;}return inside;}
   function segmentIntersection(a,b,c,d){const r={x:b.x-a.x,y:b.y-a.y},s={x:d.x-c.x,y:d.y-c.y};const cross=(u,v)=>u.x*v.y-u.y*v.x,den=cross(r,s);if(Math.abs(den)<1e-9)return null;const ca={x:c.x-a.x,y:c.y-a.y},t0=cross(ca,s)/den,u0=cross(ca,r)/den;if(t0<-1e-8||t0>1+1e-8||u0<-1e-8||u0>1+1e-8)return null;return{t:clamp(t0,0,1),u:clamp(u0,0,1),point:{x:a.x+r.x*t0,y:a.y+r.y*t0}};}
+
+  function infiniteLineSegmentIntersection(a,b,c,d){
+    const r={x:b.x-a.x,y:b.y-a.y},q={x:d.x-c.x,y:d.y-c.y};
+    const cross=(u,v)=>u.x*v.y-u.y*v.x,den=cross(r,q);if(Math.abs(den)<1e-10)return null;
+    const ca={x:c.x-a.x,y:c.y-a.y},t=cross(ca,q)/den,u=cross(ca,r)/den;
+    if(u<-1e-8||u>1+1e-8)return null;
+    return{t,u:clamp(u,0,1),point:{x:a.x+r.x*t,y:a.y+r.y*t}};
+  }
+
+  function infiniteLineIntersection(a,b,c,d){
+    const r={x:b.x-a.x,y:b.y-a.y},q={x:d.x-c.x,y:d.y-c.y},cross=(u,v)=>u.x*v.y-u.y*v.x,den=cross(r,q);if(Math.abs(den)<1e-10)return null;const ca={x:c.x-a.x,y:c.y-a.y},t=cross(ca,q)/den,u=cross(ca,r)/den;return{t,u,point:{x:a.x+r.x*t,y:a.y+r.y*t}};
+  }
+  function sampleWallSegments(wall,{maxAngle=10,maxLength=350}={}){
+    if(!isArcWall(wall))return[{a:{...wall.a},b:{...wall.b},t0:0,t1:1,wallId:wall.id}];
+    const n=Math.max(4,Math.ceil(Math.max(Math.abs(wall.sweep)/maxAngle,wallLength(wall)/maxLength))),out=[];
+    let prev=wallPointAt(wall,0);
+    for(let i=1;i<=n;i++){const t=i/n,p=wallPointAt(wall,t);out.push({a:prev,b:p,t0:(i-1)/n,t1:t,wallId:wall.id});prev=p;}
+    return out;
+  }
+  function lineAxis(line){
+    const dx=line.b.x-line.a.x,dy=line.b.y-line.a.y,len=Math.max(1e-9,Math.hypot(dx,dy));let ux=dx/len,uy=dy/len;
+    if(ux<0||(Math.abs(ux)<1e-9&&uy<0)){ux=-ux;uy=-uy;}
+    const nx=-uy,ny=ux,project=p=>p.x*ux+p.y*uy,offset=p=>p.x*nx+p.y*ny;
+    return{ux,uy,nx,ny,len,angle:((deg(Math.atan2(uy,ux))%180)+180)%180,project,offset};
+  }
+  function orientedRectFromAxes(u,n,minU,maxU,minN,maxN){return[
+    {x:u.x*minU+n.x*minN,y:u.y*minU+n.y*minN},{x:u.x*maxU+n.x*minN,y:u.y*maxU+n.y*minN},
+    {x:u.x*maxU+n.x*maxN,y:u.y*maxU+n.y*maxN},{x:u.x*minU+n.x*maxN,y:u.y*minU+n.y*maxN}
+  ];}
   function rectFromPoints(a,b){return{minx:Math.min(a.x,b.x),miny:Math.min(a.y,b.y),maxx:Math.max(a.x,b.x),maxy:Math.max(a.y,b.y)};}
   function pointInRect(p,r){return p.x>=r.minx&&p.x<=r.maxx&&p.y>=r.miny&&p.y<=r.maxy;}
   function boundsOverlap(a,b){return !(a.maxx<b.minx||a.minx>b.maxx||a.maxy<b.miny||a.miny>b.maxy);}
-  function objectBoundsWorld(o){if(o.a&&o.b)return rectFromPoints(o.a,o.b);if(o.type==='cadCircle')return{minx:o.center.x-o.radius,miny:o.center.y-o.radius,maxx:o.center.x+o.radius,maxy:o.center.y+o.radius};if(o.point)return{minx:o.point.x,miny:o.point.y,maxx:o.point.x,maxy:o.point.y};if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);return g?rectFromPoints(g.p1,g.p2):null;}if(o.type==='space'&&o.polygon?.length){return o.polygon.reduce((b,p)=>({minx:Math.min(b.minx,p.x),miny:Math.min(b.miny,p.y),maxx:Math.max(b.maxx,p.x),maxy:Math.max(b.maxy,p.y)}),{minx:Infinity,miny:Infinity,maxx:-Infinity,maxy:-Infinity});}return null;}
+  function objectBoundsWorld(o){if(o.a&&o.b)return rectFromPoints(o.a,o.b);if(o.type==='cadCircle'||o.type==='cadArc')return{minx:o.center.x-o.radius,miny:o.center.y-o.radius,maxx:o.center.x+o.radius,maxy:o.center.y+o.radius};if(o.point)return{minx:o.point.x,miny:o.point.y,maxx:o.point.x,maxy:o.point.y};if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);return g?rectFromPoints(g.p1,g.p2):null;}if((o.type==='space'||o.type==='stair')&&o.polygon?.length){return o.polygon.reduce((b,p)=>({minx:Math.min(b.minx,p.x),miny:Math.min(b.miny,p.y),maxx:Math.max(b.maxx,p.x),maxy:Math.max(b.maxy,p.y)}),{minx:Infinity,miny:Infinity,maxx:-Infinity,maxy:-Infinity});}return null;}
   function objectTouchesRegion(o,region){const b=objectBoundsWorld(o);return b?boundsOverlap(b,region):false;}
   function segmentIntersectsRect(a,b,r){if(pointInRect(a,r)||pointInRect(b,r))return true;const p1={x:r.minx,y:r.miny},p2={x:r.maxx,y:r.miny},p3={x:r.maxx,y:r.maxy},p4={x:r.minx,y:r.maxy};return Boolean(segmentIntersection(a,b,p1,p2)||segmentIntersection(a,b,p2,p3)||segmentIntersection(a,b,p3,p4)||segmentIntersection(a,b,p4,p1));}
-  function objectCrossesRect(o,r){if(o.a&&o.b)return segmentIntersectsRect(o.a,o.b,r);if(o.type==='cadCircle'){const b=objectBoundsWorld(o);return b?boundsOverlap(b,r):false;}if(o.point)return pointInRect(o.point,r);if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);return g?segmentIntersectsRect(g.p1,g.p2,r):false;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?segmentIntersectsRect(g.d1,g.d2,r):false;}const b=objectBoundsWorld(o);return b?boundsOverlap(b,r):false;}
+  function objectCrossesRect(o,r){if(o.a&&o.b)return segmentIntersectsRect(o.a,o.b,r);if(o.type==='cadCircle'||o.type==='cadArc'){const b=objectBoundsWorld(o);return b?boundsOverlap(b,r):false;}if(o.point)return pointInRect(o.point,r);if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);return g?segmentIntersectsRect(g.p1,g.p2,r):false;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?segmentIntersectsRect(g.d1,g.d2,r):false;}const b=objectBoundsWorld(o);return b?boundsOverlap(b,r):false;}
   function selectionCandidatesForDrag(drag){if(!drag)return[];const r=rectFromPoints(drag.start,drag.current),crossing=drag.current.x<drag.start.x;return visibleSelectableObjects().filter(o=>crossing?objectCrossesRect(o,r):objectFullyInsideRect(o,r));}
   function updateSelectionDragPreview(){if(!state.selectionDrag)return;state.selectionDrag.previewIds=new Set(selectionCandidatesForDrag(state.selectionDrag).map(o=>o.id));}
   function drawSelectionDrag(){const drag=state.selectionDrag;if(!drag)return;const r=rectFromPoints(drag.start,drag.current),a=toScreenCss({x:r.minx,y:r.miny}),b=toScreenCss({x:r.maxx,y:r.maxy}),x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y),crossing=drag.current.x<drag.start.x,styles=getComputedStyle(document.documentElement),color=(crossing?styles.getPropertyValue('--success'):styles.getPropertyValue('--accent')).trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.globalAlpha=.12;ctx.fillRect(x,y,w,h);ctx.globalAlpha=.9;ctx.lineWidth=1.2;ctx.setLineDash(crossing?[6,4]:[]);ctx.strokeRect(x+.5,y+.5,w,h);ctx.setLineDash([]);ctx.font='10px system-ui';ctx.fillStyle=color;ctx.fillText(crossing?'Crossing':'Window',x+6,y+14);ctx.restore();}
@@ -666,13 +761,12 @@
         ctx.stroke(path);
       }
       ctx.restore();
-      if (state.camera.zoom * ref.scale >= .018) {
-        ctx.font = '10px system-ui';
-        for (const e of ref.textEntities) {
-          if (visibleLayers && !visibleLayers.has(e.layer || '0')) continue;
-          const s = toScreenCss(referenceLocalToWorld(ref, { x:e.x, y:e.y }));
-          ctx.fillText(e.text || '', s.x, s.y);
-        }
+      for (const e of ref.textEntities) {
+        if (visibleLayers && !visibleLayers.has(e.layer || '0')) continue;
+        const fontPx=Math.max(1,(Number(e.height)||180)*state.camera.zoom*ref.scale);
+        if(fontPx<2)continue;
+        const sp=toScreenCss(referenceLocalToWorld(ref,{x:e.x,y:e.y}));
+        ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(-rad(Number(e.rotation)||0));ctx.font=`${Math.min(fontPx,900)}px system-ui`;ctx.fillStyle=color;ctx.textBaseline='alphabetic';ctx.fillText(e.text||'',0,0);ctx.restore();
       }
     }
     ctx.restore();
@@ -702,6 +796,7 @@
     }
 
     if(layerVisible('spaces')) for(const obj of state.objects) if(obj.type==='space') drawSpacePlan(obj);
+    if(layerVisible('stairs')) for(const obj of state.objects) if(obj.type==='stair') drawStairPlan(obj);
     for (const obj of state.objects) {
       if (obj.type === 'wall' && layerVisible('walls')) drawWallPlan(obj, isSelectedId(obj.id) ? sel : wall);
     }
@@ -715,6 +810,8 @@
 
   function drawSpacePlan(obj){if(!obj.polygon?.length)return;const styles=getComputedStyle(document.documentElement),selected=isSelectedId(obj.id),stroke=selected?styles.getPropertyValue('--selection').trim():(obj.invalid?'#b45309':styles.getPropertyValue('--accent').trim());ctx.save();ctx.fillStyle=stroke;ctx.globalAlpha=obj.invalid?.06:.08;ctx.beginPath();obj.polygon.forEach((p,i)=>{const q=toScreenCss(p);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});ctx.closePath();ctx.fill();ctx.globalAlpha=.75;ctx.strokeStyle=stroke;ctx.lineWidth=selected?2:1;ctx.setLineDash(obj.invalid?[5,4]:[]);ctx.stroke();ctx.setLineDash([]);const c=toScreenCss(polygonCentroid(obj.polygon));const label=obj.invalid?t('space.invalid'):t('space.area',{area:formatNumber(obj.areaM2||Math.abs(polygonArea(obj.polygon))/1e6,2)});ctx.font='11px system-ui';ctx.fillStyle=stroke;ctx.globalAlpha=.95;ctx.fillText(label,c.x+6,c.y-6);ctx.restore();}
 
+
+  function drawStairPlan(obj){if(!obj.polygon?.length)return;const styles=getComputedStyle(document.documentElement),selected=isSelectedId(obj.id),stroke=selected?styles.getPropertyValue('--selection').trim():styles.getPropertyValue('--text-2').trim();ctx.save();ctx.strokeStyle=stroke;ctx.fillStyle=stroke;ctx.lineWidth=selected?2:1.2;ctx.globalAlpha=.9;ctx.beginPath();obj.polygon.forEach((p,i)=>{const q=toScreenCss(p);if(!i)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});ctx.closePath();ctx.stroke();const count=Math.max(3,Math.min(40,Math.round(obj.treadCount||10))),axis=obj.axis||{ux:1,uy:0,nx:0,ny:1},bounds=obj.axisBounds;if(bounds){for(let i=1;i<count;i++){const u=bounds.minU+(bounds.maxU-bounds.minU)*i/count,a={x:axis.ux*u+axis.nx*bounds.minN,y:axis.uy*u+axis.ny*bounds.minN},b={x:axis.ux*u+axis.nx*bounds.maxN,y:axis.uy*u+axis.ny*bounds.maxN};drawWorldLine(a,b,1);}}ctx.restore();}
   function drawDrawingRegions(){if(state.toolset!=='cad')return;const styles=getComputedStyle(document.documentElement),color=styles.getPropertyValue('--accent').trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.setLineDash([6,5]);ctx.lineWidth=1.2;for(const region of state.drawingRegions){const a=toScreenCss({x:region.minx,y:region.miny}),b=toScreenCss({x:region.maxx,y:region.maxy});const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);ctx.globalAlpha=region.id===state.selectedRegionId?.95:.5;ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);ctx.font='11px system-ui';ctx.fillText(region.name||t('region.unnamed'),x+6,y+15);ctx.setLineDash([6,5]);}if(state.regionDrag){const r=rectFromPoints(state.regionDrag.start,state.regionDrag.current);const a=toScreenCss({x:r.minx,y:r.miny}),b=toScreenCss({x:r.maxx,y:r.maxy});ctx.globalAlpha=.85;ctx.strokeRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(a.x-b.x),Math.abs(a.y-b.y));}ctx.restore();}
 
   function drawSnapIndicator(){const s=state.snapIndicator;if(!state.snap||!s||isCompactViewer())return;const p=toScreenCss(s),color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim();ctx.lineWidth=1.4;if(s.kind==='wall'){ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();ctx.stroke();}else{ctx.beginPath();ctx.rect(p.x-4,p.y-4,8,8);ctx.fill();ctx.stroke();}ctx.restore();}
@@ -734,14 +831,20 @@
 
   function objectInViewport(obj){const {w,h}=cssCanvasSize(),pad=40/state.camera.zoom,minx=state.camera.cx-w/2/state.camera.zoom-pad,maxx=state.camera.cx+w/2/state.camera.zoom+pad,miny=state.camera.cy-h/2/state.camera.zoom-pad,maxy=state.camera.cy+h/2/state.camera.zoom+pad;let b=null;if(obj.a&&obj.b)b={minx:Math.min(obj.a.x,obj.b.x),maxx:Math.max(obj.a.x,obj.b.x),miny:Math.min(obj.a.y,obj.b.y),maxy:Math.max(obj.a.y,obj.b.y)};else if(obj.center)b={minx:obj.center.x-obj.radius,maxx:obj.center.x+obj.radius,miny:obj.center.y-obj.radius,maxy:obj.center.y+obj.radius};else if(obj.point)b={minx:obj.point.x,maxx:obj.point.x,miny:obj.point.y,maxy:obj.point.y};if(!b)return true;return !(b.maxx<minx||b.minx>maxx||b.maxy<miny||b.miny>maxy);}
 
+  function cadArcPointAt(obj,t){const a=rad((obj.startAngle||0)+(obj.sweep||0)*clamp(t,0,1));return{x:obj.center.x+Math.cos(a)*obj.radius,y:obj.center.y+Math.sin(a)*obj.radius};}
+  function projectPointToCadArc(p,obj){const start=normalizeAngle(obj.startAngle||0),sweep=Number(obj.sweep)||0,angle=normalizeAngle(deg(Math.atan2(p.y-obj.center.y,p.x-obj.center.x)));let progress=sweep>=0?deltaCcw(start,angle)/Math.max(.000001,sweep):deltaCcw(angle,start)/Math.max(.000001,-sweep);if(progress>=0&&progress<=1){const point=cadArcPointAt(obj,progress);return{t:progress,point,distance:distance(p,point)};}const a=cadArcPointAt(obj,0),b=cadArcPointAt(obj,1),da=distance(p,a),db=distance(p,b);return da<=db?{t:0,point:a,distance:da}:{t:1,point:b,distance:db};}
+  function drawModelText(obj,color,worldScale=1){const height=Math.max(1,Number(obj.height)||180),px=height*state.camera.zoom*worldScale;if(px<2)return;const p=toScreenCss(obj.point);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-rad(Number(obj.rotation)||0));ctx.fillStyle=color;ctx.font=`${Math.min(px,900)}px system-ui`;ctx.textBaseline='alphabetic';ctx.fillText(obj.text||'',0,0);ctx.restore();}
+
   function drawCadObject(obj, color, width = 1.2) {
     if(!objectInViewport(obj))return;const selected=isSelectedId(obj.id);ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;
     if(obj.type==='cadLine'){const a=toScreenCss(obj.a),b=toScreenCss(obj.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();drawSelectionHandles(obj,[a,b]);}
     else if(obj.type==='cadCircle'){const c=toScreenCss(obj.center);ctx.beginPath();ctx.arc(c.x,c.y,Math.max(.5,obj.radius*state.camera.zoom),0,Math.PI*2);ctx.stroke();if(selected)drawSelectionHandles(obj,[c]);}
-    else if(obj.type==='cadText'){const p=toScreenCss(obj.point);ctx.font='10px system-ui';ctx.fillText(obj.text||'',p.x,p.y);}ctx.restore();
+    else if(obj.type==='cadArc'){const c=toScreenCss(obj.center),start=-rad((obj.startAngle||0)+(obj.sweep||0)),end=-rad(obj.startAngle||0);ctx.beginPath();ctx.arc(c.x,c.y,Math.max(.5,obj.radius*state.camera.zoom),start,end,obj.sweep>=0);ctx.stroke();if(selected)drawSelectionHandles(obj,[toScreenCss(cadArcPointAt(obj,0)),toScreenCss(cadArcPointAt(obj,1))]);}
+    else if(obj.type==='cadText'){ctx.restore();drawModelText(obj,color,1);return;}ctx.restore();
   }
 
   function wallVector(wall) {
+    if(isArcWall(wall)){const tan=wallTangentAt(wall,.5),len=Math.max(.000001,wallLength(wall));return{dx:tan.ux*len,dy:tan.uy*len,len,ux:tan.ux,uy:tan.uy,nx:-tan.uy,ny:tan.ux};}
     const dx = wall.b.x - wall.a.x, dy = wall.b.y - wall.a.y;
     const len = Math.max(.000001, Math.hypot(dx, dy));
     return { dx, dy, len, ux: dx / len, uy: dy / len, nx: -dy / len, ny: dx / len };
@@ -753,7 +856,7 @@
     for (const other of state.objects) {
       if (other === wall || other.type !== 'wall') continue;
       if (distance(p, other.a) <= tol || distance(p, other.b) <= tol) return true;
-      const pr = projectPointToSegment(p, other.a, other.b);
+      const pr = wallProjectPoint(p, other);
       if (pr.distance <= tol && pr.t > .001 && pr.t < .999) return true;
     }
     return false;
@@ -788,19 +891,12 @@
   }
 
   function wallVisibleSegments(wall) {
-    const gaps = wallOpeningIntervals(wall), v = wallVector(wall), spans=[];
-    let t0=0;
-    for(const [ga,gb] of gaps){ if(ga>t0)spans.push([t0,ga]); t0=Math.max(t0,gb); }
-    if(t0<1)spans.push([t0,1]);
-    const h=(wall.thickness||150)/2;
-    return spans.map(([a,b])=>{
-      let p1={x:wall.a.x+v.dx*a,y:wall.a.y+v.dy*a}, p2={x:wall.a.x+v.dx*b,y:wall.a.y+v.dy*b};
-      if(a<=1e-9 && wallEndpointConnected(wall,'a')) p1={x:p1.x-v.ux*h,y:p1.y-v.uy*h};
-      if(b>=1-1e-9 && wallEndpointConnected(wall,'b')) p2={x:p2.x+v.ux*h,y:p2.y+v.uy*h};
-      return [p1,p2];
-    });
+    const gaps=wallOpeningIntervals(wall),spans=[];let t0=0;
+    for(const[ga,gb]of gaps){if(ga>t0)spans.push([t0,ga]);t0=Math.max(t0,gb);}if(t0<1)spans.push([t0,1]);
+    if(isArcWall(wall))return spans.map(([a,b])=>({kind:'arc',t0:a,t1:b}));
+    const v=wallVector(wall),h=(wall.thickness||150)/2;
+    return spans.map(([a,b])=>{let p1=wallPointAt(wall,a),p2=wallPointAt(wall,b);if(a<=1e-9&&wallEndpointConnected(wall,'a'))p1={x:p1.x-v.ux*h,y:p1.y-v.uy*h};if(b>=1-1e-9&&wallEndpointConnected(wall,'b'))p2={x:p2.x+v.ux*h,y:p2.y+v.uy*h};return{kind:'line',a:p1,b:p2,t0:a,t1:b};});
   }
-
   function dimensionGeometry(obj) {
     if(obj.wallId){const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const p1=wallPointAt(wall,Number.isFinite(obj.t1)?obj.t1:0),p2=wallPointAt(wall,Number.isFinite(obj.t2)?obj.t2:1),v={x:p2.x-p1.x,y:p2.y-p1.y};const len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len,off=Number(obj.offset)||0;return{p1,p2,d1:{x:p1.x+nx*off,y:p1.y+ny*off},d2:{x:p2.x+nx*off,y:p2.y+ny*off},nx,ny,len,offset:off,associated:true,wall};}}
     if (obj.p1 && obj.p2) {
@@ -828,17 +924,24 @@
   }
 
   function drawEditablePill(text,center,objectId,kind,value,{accent=false}={}){const styles=getComputedStyle(document.documentElement),fg=accent?styles.getPropertyValue('--selection').trim():styles.getPropertyValue('--text-2').trim(),bg=styles.getPropertyValue('--canvas').trim();ctx.save();ctx.font='11px system-ui';const tw=ctx.measureText(text).width,w=tw+12,h=20,x=center.x-w/2,y=center.y-h/2;ctx.fillStyle=bg;ctx.globalAlpha=.94;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1;ctx.strokeStyle=accent?fg:styles.getPropertyValue('--border-strong').trim();ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,w-1,h-1);ctx.fillStyle=fg;ctx.textBaseline='middle';ctx.fillText(text,x+6,y+h/2+.2);ctx.restore();registerEditableLabel({objectId,kind,rect:{x,y,w,h},value});}
-  function drawWallEditLabels(wall){if(!isSelectedId(wall.id)||selectionIds().size!==1||state.toolset!=='plan')return;const v=wallVector(wall),mid=wallPointAt(wall,.5),off=Math.max(230,(wall.thickness||150)*1.3),base=toScreenCss({x:mid.x+v.nx*off,y:mid.y+v.ny*off}),len=distance(wall.a,wall.b),ang=angleDeg(wall.a,wall.b);drawEditablePill(`${formatNumber(len,1)} mm`,{x:base.x-42,y:base.y},wall.id,'wallLength',len,{accent:true});drawEditablePill(`${formatNumber(ang,1)}°`,{x:base.x+48,y:base.y},wall.id,'wallAngle',ang,{accent:true});}
-
+  function drawWallEditLabels(wall){
+    if(!isSelectedId(wall.id)||selectionIds().size!==1||state.toolset!=='plan')return;
+    const mid=wallPointAt(wall,.5),tan=wallTangentAt(wall,.5),nx=-tan.uy,ny=tan.ux,off=Math.max(230,(wall.thickness||150)*1.3),base=toScreenCss({x:mid.x+nx*off,y:mid.y+ny*off}),len=wallLength(wall);
+    drawEditablePill(`${formatNumber(len,1)} mm`,{x:base.x-46,y:base.y},wall.id,'wallLength',len,{accent:true});
+    if(isArcWall(wall)){drawEditablePill(`R ${formatNumber(wall.radius,1)}`,{x:base.x+52,y:base.y},wall.id,'wallRadius',wall.radius,{accent:true});}
+    else{const ang=angleDeg(wall.a,wall.b);drawEditablePill(`${formatNumber(ang,1)}°`,{x:base.x+48,y:base.y},wall.id,'wallAngle',ang,{accent:true});}
+  }
   function drawWallPlan(obj, color) {
-    const selected=isSelectedId(obj.id), preview=isSelectionPreviewId(obj.id), hovered=obj.id===state.hoveredObjectId && !selected&&!preview;
-    const styles=getComputedStyle(document.documentElement), stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
-    ctx.save(); ctx.strokeStyle=stroke; ctx.lineWidth=Math.max(2,(obj.thickness||150)*state.camera.zoom); ctx.lineCap='butt'; ctx.lineJoin='miter';
-    for(const [wa,wb] of wallVisibleSegments(obj)){const a=toScreenCss(wa),b=toScreenCss(wb);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
-    ctx.lineWidth=1; drawSelectionHandles(obj,[toScreenCss(obj.a),toScreenCss(obj.b)]); ctx.restore();
+    const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
+    const styles=getComputedStyle(document.documentElement),stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
+    ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(2,(obj.thickness||150)*state.camera.zoom);ctx.lineCap='butt';ctx.lineJoin='miter';
+    for(const seg of wallVisibleSegments(obj)){
+      if(seg.kind==='line'){const a=toScreenCss(seg.a),b=toScreenCss(seg.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+      else{const steps=Math.max(4,Math.ceil(Math.abs(obj.sweep)*(seg.t1-seg.t0)/7));ctx.beginPath();for(let i=0;i<=steps;i++){const p=toScreenCss(wallPointAt(obj,seg.t0+(seg.t1-seg.t0)*i/steps));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();}
+    }
+    ctx.lineWidth=1;const handles=[toScreenCss(obj.a),toScreenCss(obj.b)];if(isArcWall(obj))handles.push(toScreenCss(arcControlPoint(obj)));drawSelectionHandles(obj,handles);ctx.restore();
     if(selected){drawWallEditLabels(obj);drawWallConstraintHints(obj);}
   }
-
   function wallOutlineWorld(obj) {
     const c=wallCenterlineWithJoins(obj), h=(obj.thickness||150)/2;
     return [
@@ -848,68 +951,54 @@
   }
 
   function wallOutlineVisibleWorld(obj) {
-    const v=wallVector(obj),h=(obj.thickness||150)/2,segments=wallVisibleSegments(obj),out=[];
-    for(const [sa,sb] of segments){for(const sign of[-1,1])out.push([{x:sa.x+v.nx*h*sign,y:sa.y+v.ny*h*sign},{x:sb.x+v.nx*h*sign,y:sb.y+v.ny*h*sign}]);}
+    const h=(obj.thickness||150)/2,out=[];
+    if(!isArcWall(obj)){
+      const v=wallVector(obj);for(const seg of wallVisibleSegments(obj)){if(seg.kind!=='line')continue;for(const sign of[-1,1])out.push([{x:seg.a.x+v.nx*h*sign,y:seg.a.y+v.ny*h*sign},{x:seg.b.x+v.nx*h*sign,y:seg.b.y+v.ny*h*sign}]);}return out;
+    }
+    for(const seg of wallVisibleSegments(obj)){
+      if(seg.kind!=='arc')continue;const steps=Math.max(4,Math.ceil(Math.abs(obj.sweep)*(seg.t1-seg.t0)/7));
+      for(const sign of[-1,1]){let prev=null;for(let i=0;i<=steps;i++){const t=seg.t0+(seg.t1-seg.t0)*i/steps,base=wallPointAt(obj,t),tan=wallTangentAt(obj,t),nx=-tan.uy,ny=tan.ux,p={x:base.x+nx*h*sign,y:base.y+ny*h*sign};if(prev)out.push([prev,p]);prev=p;}}
+    }
     return out;
   }
-
   function drawWallCad(obj, color) {
-    const mapping = state.cadMapping || defaultCadMapping();
-    const layer = mapping.wallLayer || 'WALL';
-    if (!cadLayerVisible(layer)) return;
-    const mode = mapping.wallRepresentation || 'outline';
-    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = isSelectedId(obj.id) ? 2 : isSelectionPreviewId(obj.id) ? 1.8 : 1.2;
-    if (mode === 'outline' || mode === 'both') {
-      for (const [wa,wb] of wallOutlineVisibleWorld(obj)) {
-        const a=toScreenCss(wa),b=toScreenCss(wb);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-      }
-    }
-    if (mode === 'centerline' || mode === 'both') {
-      const a=toScreenCss(obj.a),b=toScreenCss(obj.b); if (mode === 'both') ctx.setLineDash([5,4]);
-      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
-    }
-    if (isSelectedId(obj.id)) drawSelectionHandles(obj, [toScreenCss(obj.a),toScreenCss(obj.b)]);
-    ctx.restore();
+    const mapping=state.cadMapping||defaultCadMapping(),layer=mapping.wallLayer||'WALL';if(!cadLayerVisible(layer))return;const mode=mapping.wallRepresentation||'outline';
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=isSelectedId(obj.id)?2:isSelectionPreviewId(obj.id)?1.8:1.2;
+    if(mode==='outline'||mode==='both')for(const[wa,wb]of wallOutlineVisibleWorld(obj)){const a=toScreenCss(wa),b=toScreenCss(wb);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+    if(mode==='centerline'||mode==='both'){if(mode==='both')ctx.setLineDash([5,4]);for(const seg of sampleWallSegments(obj,{maxAngle:7,maxLength:350})){const a=toScreenCss(seg.a),b=toScreenCss(seg.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.setLineDash([]);}
+    if(isSelectedId(obj.id)){const hs=[toScreenCss(obj.a),toScreenCss(obj.b)];if(isArcWall(obj))hs.push(toScreenCss(arcControlPoint(obj)));drawSelectionHandles(obj,hs);}ctx.restore();
   }
-
   function openingGeometry(obj) {
-    const wall = state.objects.find(o => o.id === obj.wallId && o.type === 'wall');
-    if (!wall) return null;
-    const dx = wall.b.x - wall.a.x, dy = wall.b.y - wall.a.y;
-    const len = Math.max(.000001, Math.hypot(dx,dy));
-    const ux = dx/len, uy = dy/len;
-    const t = clamp(obj.t ?? .5, 0, 1);
-    const c = { x: wall.a.x + dx*t, y: wall.a.y + dy*t };
-    const half = Math.min(obj.width || 900, len * .9) / 2;
-    const p1 = { x:c.x-ux*half, y:c.y-uy*half };
-    const p2 = { x:c.x+ux*half, y:c.y+uy*half };
-    return { wall, center:c, p1, p2, ux, uy, nx:-uy, ny:ux, width:half*2 };
+    const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(!wall)return null;
+    const total=Math.max(.000001,wallLength(wall)),t=clamp(obj.t??.5,0,1),c=wallPointAt(wall,t),tan=wallTangentAt(wall,t),ux=tan.ux,uy=tan.uy,nx=-uy,ny=ux,width=Math.min(obj.width||900,total*.9),halfT=(width/total)/2;
+    const p1=wallPointAt(wall,clamp(t-halfT,0,1)),p2=wallPointAt(wall,clamp(t+halfT,0,1));
+    return{wall,center:c,p1,p2,ux,uy,nx,ny,width,t1:clamp(t-halfT,0,1),t2:clamp(t+halfT,0,1)};
   }
-
   function drawOpeningPlan(obj, kind, color) {
-    const g=openingGeometry(obj); if(!g)return;
-    const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id), hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
-    const styles=getComputedStyle(document.documentElement), stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
-    ctx.save();ctx.strokeStyle=stroke;ctx.fillStyle=stroke;ctx.lineWidth=1.8;
-    const wallHalf=(g.wall.thickness||150)/2;
-    const jamb=(p)=>{const a=toScreenCss({x:p.x+g.nx*wallHalf,y:p.y+g.ny*wallHalf}),b=toScreenCss({x:p.x-g.nx*wallHalf,y:p.y-g.ny*wallHalf});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();};
-    jamb(g.p1); jamb(g.p2);
+    const g=openingGeometry(obj);if(!g)return;const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
+    const styles=getComputedStyle(document.documentElement),stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
+    ctx.save();ctx.strokeStyle=stroke;ctx.fillStyle=stroke;ctx.lineWidth=1.8;const wallHalf=(g.wall.thickness||150)/2;
+    const jamb=p=>{const a=toScreenCss({x:p.x+g.nx*wallHalf,y:p.y+g.ny*wallHalf}),b=toScreenCss({x:p.x-g.nx*wallHalf,y:p.y-g.ny*wallHalf});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();};jamb(g.p1);jamb(g.p2);
     if(kind==='door'){
-      const d=doorGeometry(obj); if(d){const h=toScreenCss(d.hinge),leaf=toScreenCss(d.leafEnd);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(h.x,h.y);ctx.lineTo(leaf.x,leaf.y);ctx.stroke();
-        const a0=Math.atan2(d.closed.y,d.closed.x),a1=a0+d.swing*Math.PI/2;ctx.globalAlpha=.62;ctx.lineWidth=1.2;ctx.beginPath();for(let i=0;i<=18;i++){const a=a0+(a1-a0)*(i/18),p=toScreenCss({x:d.hinge.x+Math.cos(a)*d.width,y:d.hinge.y+Math.sin(a)*d.width});if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();ctx.globalAlpha=1;}
-    }else{
-      for(const off of[-wallHalf*.34,0,wallHalf*.34]){const a=toScreenCss({x:g.p1.x+g.nx*off,y:g.p1.y+g.ny*off}),b=toScreenCss({x:g.p2.x+g.nx*off,y:g.p2.y+g.ny*off});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
-    }
-    if(selected) drawOpeningHandles(obj,g);ctx.restore();
+      const type=obj.doorType||'hingedSingle',dir=obj.slideDirection===-1?-1:1;
+      if(type==='hingedSingle')drawHingedLeaf(obj,g,stroke,0,1);
+      else if(type==='hingedDouble'){drawHingedLeaf({...obj,hinge:'start'},g,stroke,0,.5);drawHingedLeaf({...obj,hinge:'end',swing:obj.swing},g,stroke,.5,1);}
+      else if(type==='slidingSingle'||type==='pocket'){
+        const off=(type==='pocket'?0.22:0.72)*wallHalf*dir,panelLen=g.width*.82,shift=dir*g.width*.34,center=wallPointAt(g.wall,clamp((obj.t??.5)+shift/Math.max(wallLength(g.wall),1),0,1)),tg=wallTangentAt(g.wall,obj.t??.5),a={x:center.x-tg.ux*panelLen/2+g.nx*off,y:center.y-tg.uy*panelLen/2+g.ny*off},b={x:center.x+tg.ux*panelLen/2+g.nx*off,y:center.y+tg.uy*panelLen/2+g.ny*off};drawWorldLine(a,b,2);if(type==='pocket'){ctx.setLineDash([4,3]);drawWorldLine(g.p1,g.p2,1);ctx.setLineDash([]);}
+      }else if(type==='slidingDouble'){
+        const off=.68*wallHalf*dir,tg=wallTangentAt(g.wall,obj.t??.5),half=g.width*.45;for(const sign of[-1,1]){const c={x:g.center.x+tg.ux*sign*g.width*.22+g.nx*off,y:g.center.y+tg.uy*sign*g.width*.22+g.ny*off};drawWorldLine({x:c.x-tg.ux*half/2,y:c.y-tg.uy*half/2},{x:c.x+tg.ux*half/2,y:c.y+tg.uy*half/2},2);}}
+    }else for(const off of[-wallHalf*.34,0,wallHalf*.34])drawWorldLine({x:g.p1.x+g.nx*off,y:g.p1.y+g.ny*off},{x:g.p2.x+g.nx*off,y:g.p2.y+g.ny*off},1.4);
+    if(selected)drawOpeningHandles(obj,g);ctx.restore();
   }
-
+  function drawWorldLine(a,b,width=1.5){const sa=toScreenCss(a),sb=toScreenCss(b);ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(sa.x,sa.y);ctx.lineTo(sb.x,sb.y);ctx.stroke();}
+  function drawHingedLeaf(obj,g,color,t0=0,t1=1){
+    const pA=t0===0?g.p1:wallPointAt(g.wall,g.t1+(g.t2-g.t1)*t0),pB=t1===1?g.p2:wallPointAt(g.wall,g.t1+(g.t2-g.t1)*t1),hingeEnd=obj.hinge==='end',hinge=hingeEnd?pB:pA,other=hingeEnd?pA:pB,width=distance(hinge,other),tan={x:(other.x-hinge.x)/Math.max(width,1e-9),y:(other.y-hinge.y)/Math.max(width,1e-9)},swing=obj.swing===-1?-1:1,open=rotate90(tan,swing),leaf={x:hinge.x+open.x*width,y:hinge.y+open.y*width};drawWorldLine(hinge,leaf,2);const a0=Math.atan2(tan.y,tan.x),a1=a0+swing*Math.PI/2;ctx.globalAlpha=.62;ctx.lineWidth=1.2;ctx.beginPath();for(let i=0;i<=16;i++){const a=a0+(a1-a0)*i/16,p=toScreenCss({x:hinge.x+Math.cos(a)*width,y:hinge.y+Math.sin(a)*width});if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();ctx.globalAlpha=1;
+  }
   function drawOpeningCad(obj, kind, color) {
     const g=openingGeometry(obj);if(!g)return;ctx.save();ctx.strokeStyle=color;ctx.lineWidth=isSelectedId(obj.id)?2:isSelectionPreviewId(obj.id)?1.8:1.2;
-    if(kind==='door'){const d=doorGeometry(obj);if(d){const h=toScreenCss(d.hinge),leaf=toScreenCss(d.leafEnd);ctx.beginPath();ctx.moveTo(h.x,h.y);ctx.lineTo(leaf.x,leaf.y);ctx.stroke();const a0=Math.atan2(d.closed.y,d.closed.x),a1=a0+d.swing*Math.PI/2;ctx.globalAlpha=.55;ctx.beginPath();for(let i=0;i<=14;i++){const a=a0+(a1-a0)*i/14,p=toScreenCss({x:d.hinge.x+Math.cos(a)*d.width,y:d.hinge.y+Math.sin(a)*d.width});if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();ctx.globalAlpha=1;}}
-    else {const off=Math.min(50,(g.wall.thickness||150)*.35);for(const sign of[-1,1]){const p1=toScreenCss({x:g.p1.x+g.nx*off*sign,y:g.p1.y+g.ny*off*sign}),p2=toScreenCss({x:g.p2.x+g.nx*off*sign,y:g.p2.y+g.ny*off*sign});ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}}
-    ctx.restore();
+    if(kind==='door'){const type=obj.doorType||'hingedSingle';if(type==='hingedSingle'||type==='hingedDouble')drawOpeningPlan(obj,kind,color);else drawOpeningPlan(obj,kind,color);}
+    else{const off=Math.min(50,(g.wall.thickness||150)*.35);for(const sign of[-1,1])drawWorldLine({x:g.p1.x+g.nx*off*sign,y:g.p1.y+g.ny*off*sign},{x:g.p2.x+g.nx*off*sign,y:g.p2.y+g.ny*off*sign},1.2);}ctx.restore();
   }
-
   function drawDimension(obj, color) {
     const g=dimensionGeometry(obj); if(!g)return;
     const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
@@ -940,20 +1029,19 @@
 
   function drawPreview() {
     let start=null,end=null,color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),width=1.5;
-    if(state.activeTool==='line'||state.activeTool==='wall'){start=state.drawStart;end=state.previewEnd;if(state.activeTool==='wall')width=Math.max(2,currentWallThickness()*state.camera.zoom);}
-    else if(state.activeTool==='measure'){start=state.measureStart;end=state.previewEnd;color=getComputedStyle(document.documentElement).getPropertyValue('--dimension').trim();}
-    if(!start||!end)return;
-    if(state.activeTool==='measure'){const tmp={p1:start,p2:end,offset:Math.max(250,Math.min(600,distance(start,end)*.08))};drawDimension(tmp,color);return;}
-    const a=toScreenCss(start),b=toScreenCss(end);ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.globalAlpha=.72;ctx.lineCap='butt';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();const text=`${formatNumber(distance(start,end),1)} mm · ${formatNumber(angleDeg(start,end),1)}°`;ctx.font='11px system-ui';ctx.fillStyle=color;ctx.fillText(text,b.x+8,b.y-8);ctx.restore();
+    if(state.activeTool==='line'||state.activeTool==='wall'){start=state.drawStart;end=state.previewEnd;if(state.activeTool==='wall')width=Math.max(2,currentWallThickness()*state.camera.zoom);}else if(state.activeTool==='measure'){start=state.measureStart;end=state.previewEnd;color=getComputedStyle(document.documentElement).getPropertyValue('--dimension').trim();}
+    if(!start||!end)return;if(state.activeTool==='measure'){drawDimension({p1:start,p2:end,offset:Math.max(250,Math.min(600,distance(start,end)*.08))},color);return;}
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.globalAlpha=.72;ctx.lineCap='butt';
+    if(state.activeTool==='wall'&&state.toolSettings.wallType==='arc'&&state.arcDraft?.a&&state.arcDraft?.b){const g=circleFromThreePoints(state.arcDraft.a,state.arcDraft.b,end);if(g){const tmp={...g,a:state.arcDraft.a,b:state.arcDraft.b,geometry:'arc'};const steps=Math.max(8,Math.ceil(Math.abs(g.sweep)/6));ctx.beginPath();for(let i=0;i<=steps;i++){const p=toScreenCss(wallPointAt(tmp,i/steps));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();const bp=toScreenCss(end);ctx.font='11px system-ui';ctx.fillStyle=color;ctx.fillText(`R ${formatNumber(g.radius,1)} mm · ${formatNumber(wallLength(tmp),1)} mm`,bp.x+8,bp.y-8);ctx.restore();return;}}
+    const a=toScreenCss(start),b=toScreenCss(end);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.font='11px system-ui';ctx.fillStyle=color;ctx.fillText(`${formatNumber(distance(start,end),1)} mm · ${formatNumber(angleDeg(start,end),1)}°`,b.x+8,b.y-8);ctx.restore();
   }
-
   function drawOpeningPreview() {
-    const p=state.previewOpening;if(!p||!['door','window'].includes(state.activeTool))return;const temp={id:'preview',type:state.activeTool,wallId:p.wall.id,t:p.t,width:currentOpeningWidth(),hinge:'start',swing:1};const styles=getComputedStyle(document.documentElement),color=state.activeTool==='door'?styles.getPropertyValue('--door').trim():styles.getPropertyValue('--window').trim();ctx.save();ctx.globalAlpha=.65;drawOpeningPlan(temp,state.activeTool,color);ctx.restore();
+    const p=state.previewOpening;if(!p||!['door','window'].includes(state.activeTool))return;const temp={id:'preview',type:state.activeTool,wallId:p.wall.id,t:p.t,width:currentOpeningWidth(),hinge:'start',swing:1,doorType:state.toolSettings.doorType||'hingedSingle',slideDirection:1};const styles=getComputedStyle(document.documentElement),color=state.activeTool==='door'?styles.getPropertyValue('--door').trim():styles.getPropertyValue('--window').trim();ctx.save();ctx.globalAlpha=.65;drawOpeningPlan(temp,state.activeTool,color);ctx.restore();
   }
 
   function drawCalibrationPreview(){const c=state.calibration;if(!c?.p1)return;const p2=c.p2||state.previewEnd;if(!p2)return;const a=toScreenCss(c.p1),b=toScreenCss(p2);ctx.save();ctx.strokeStyle='#ffb55a';ctx.fillStyle='#ffb55a';ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);for(const p of[a,b]){ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();}ctx.restore();}
 
-  function applyNumericLabelEdit(label,value){if(!label||!Number.isFinite(value))return;const obj=state.objects.find(o=>o.id===label.objectId);if(!obj)return;if(label.kind==='openingWidth'&&(obj.type==='door'||obj.type==='window')){if(value<=0)return;pushHistory();obj.width=value;markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallLength'&&obj.type==='wall'){setWallLengthConstraintFromInput(obj,value);return;}if(label.kind==='wallAngle'&&obj.type==='wall'){setWallAngleConstraintFromInput(obj,value);return;}if(label.kind==='dimensionLength'&&obj.type==='dimension'){const g=dimensionGeometry(obj);if(!g?.associated||value<=0)return;const span=Math.abs((obj.t2??1)-(obj.t1??0));if(span<1e-6)return;setWallLengthConstraintFromInput(g.wall,value/span);}}
+  function applyNumericLabelEdit(label,value){if(!label||!Number.isFinite(value))return;const obj=state.objects.find(o=>o.id===label.objectId);if(!obj)return;if(label.kind==='openingWidth'&&(obj.type==='door'||obj.type==='window')){if(value<=0)return;pushHistory();obj.width=value;markDirty(true);rebuildObjectSnapIndex();updateAll();return;}if(label.kind==='wallLength'&&obj.type==='wall'){if(isArcWall(obj)){if(value<=0)return;pushHistory();const sweepRad=Math.max(.000001,Math.abs(rad(obj.sweep))),r=value/sweepRad;obj.radius=r;obj.a=wallPointAt({...obj,radius:r},0);obj.b=wallPointAt({...obj,radius:r},1);markDirty(true);rebuildObjectSnapIndex();refreshSpaces();updateAll();return;}setWallLengthConstraintFromInput(obj,value);return;}if(label.kind==='wallRadius'&&obj.type==='wall'&&isArcWall(obj)){if(value<=0)return;pushHistory();obj.radius=value;obj.a=wallPointAt({...obj,radius:value},0);obj.b=wallPointAt({...obj,radius:value},1);markDirty(true);rebuildObjectSnapIndex();refreshSpaces();updateAll();return;}if(label.kind==='wallAngle'&&obj.type==='wall'){setWallAngleConstraintFromInput(obj,value);return;}if(label.kind==='dimensionLength'&&obj.type==='dimension'){const g=dimensionGeometry(obj);if(!g?.associated||value<=0)return;const span=Math.abs((obj.t2??1)-(obj.t1??0));if(span<1e-6)return;setWallLengthConstraintFromInput(g.wall,value/span);}}
   function beginCanvasNumberEdit(label){host.querySelector('.canvas-number-editor')?.remove();const input=document.createElement('input');input.className='canvas-number-editor';input.type='number';input.step='0.01';input.value=String(Math.round(Number(label.value)*100)/100);input.style.left=`${Math.max(4,label.rect.x)}px`;input.style.top=`${Math.max(4,label.rect.y-5)}px`;input.style.width=`${Math.max(92,label.rect.w+24)}px`;let cancelled=false,committed=false;const commit=()=>{if(committed||cancelled)return;committed=true;const value=Number(input.value);input.remove();applyNumericLabelEdit(label,value);};input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}else if(e.key==='Escape'){e.preventDefault();cancelled=true;input.remove();host.focus();}});input.addEventListener('blur',commit);host.appendChild(input);input.focus();input.select();}
   function onCanvasDoubleClick(e){if(isCompactViewer())return;const s=fromPointerEvent(e),label=hitEditableLabel(s);if(!label)return;e.preventDefault();e.stopPropagation();beginCanvasNumberEdit(label);}
 
@@ -964,7 +1052,7 @@
     const shouldShow=Boolean(state.calibration)||state.activeTool!=='select';
     dom.contextBar.hidden=!shouldShow;
     if(!shouldShow){dom.contextFields.innerHTML='';return;}
-    const keys={select:'context.select',constraint:'context.constraint',line:'context.line',wall:'context.wall',door:'context.door',window:'context.window',space:'context.space',region:'context.region',measure:'context.measure',delete:'context.delete'};
+    const keys={select:'context.select',constraint:'context.constraint',line:'context.line',wall:'context.wall',door:'context.door',window:'context.window',space:'context.space',region:'context.region',measure:'context.measure',trim:'tool.trim',extend:'tool.extend',delete:'context.delete'};
     dom.contextToolName.textContent=state.activeTool==='constraint'&&state.constraintMode?`${t('context.constraint')} · ${constraintModeLabel(state.constraintMode)}`:t(keys[state.activeTool]||`tool.${state.activeTool}`);
     dom.contextFields.innerHTML='';
     let hint=t('hint.select');
@@ -973,7 +1061,7 @@
       dom.contextFields.appendChild(contextNumberField(t('context.length'),'length','','mm'));
       dom.contextFields.appendChild(contextNumberField(t('context.angle'),'angle','','°'));
       if(state.activeTool==='wall')dom.contextFields.appendChild(contextNumberField(t('context.thickness'),'thickness',String(state.toolSettings.wallThickness),'mm'));
-      hint=state.drawStart?t('hint.segmentEnd'):t('hint.segmentStart');
+      hint=(state.activeTool==='wall'&&state.toolSettings.wallType==='arc'&&state.arcDraft)?t('hint.arcWallCurve'):(state.drawStart?t('hint.segmentEnd'):t('hint.segmentStart'));
     }else if(state.activeTool==='door'||state.activeTool==='window'){
       const value=state.activeTool==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth;
       dom.contextFields.appendChild(contextNumberField(t('context.width'),'width',String(value),'mm'));
@@ -984,7 +1072,9 @@
       else if(state.constraintMode==='coincident')hint=state.constraintPicks.length?t('hint.constraintCoincidentSecond'):t('hint.constraintCoincidentFirst');
       else if(state.constraintMode==='parallel'||state.constraintMode==='perpendicular')hint=state.constraintPicks.length?t('hint.constraintSecondWall'):t('hint.constraintFirstWall');
       else hint=t('hint.constraintWall');
-    }else if(state.activeTool==='delete')hint=t('hint.delete');
+    }else if(state.activeTool==='trim')hint=t('hint.trim');
+    else if(state.activeTool==='extend')hint=t('hint.extend');
+    else if(state.activeTool==='delete')hint=t('hint.delete');
     else if(state.activeTool==='region')hint=t('hint.region');
     dom.contextHint.textContent=hint;
   }
@@ -998,18 +1088,28 @@
   function renderToolRail(){
     dom.toolRail.innerHTML='';
     if(state.toolset==='plan'){
-      for(const item of planToolCatalog){
-        if(item.separator){const s=document.createElement('div');s.className='tool-separator';dom.toolRail.appendChild(s);continue;}
-        const b=document.createElement('button');b.className=`tool-direct ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;b.innerHTML=`<span class="tool-icon ui-icon icon-${item.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(item.labelKey))}</span>`;b.setAttribute('aria-label',t(item.labelKey));if(item.id==='select')applyShortcutMetadata(b,'select','tooltip.selectTool',item.labelKey);else if(item.tooltipKey){b.dataset.tooltipTitleKey=item.labelKey;b.dataset.tooltipKey=item.tooltipKey;}b.addEventListener('click',()=>{if(!item.ready)return;if(item.id==='constraint')openPlanConstraintPalette(b);else setTool(item.id,'plan');});dom.toolRail.appendChild(b);
-      }
-    }else{
-      for(const cat of cadCategories){const b=document.createElement('button');b.className=`tool-category ${state.activeCategory===cat.id?'active':''}`;b.dataset.category=cat.id;b.dataset.categoryKey=cat.labelKey;b.innerHTML=`<span class="tool-icon ui-icon icon-${cat.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(cat.labelKey))}</span>`;b.setAttribute('aria-label',t(cat.labelKey));b.addEventListener('click',()=>openCategory(cat.id,b));dom.toolRail.appendChild(b);}
-    }
+      for(const item of planToolCatalog){if(item.separator){const s=document.createElement('div');s.className='tool-separator';dom.toolRail.appendChild(s);continue;}const b=document.createElement('button');b.className=`tool-direct ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;b.innerHTML=`<span class="tool-icon ui-icon icon-${item.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(item.labelKey))}</span>`;b.setAttribute('aria-label',t(item.labelKey));if(item.id==='select')applyShortcutMetadata(b,'select','tooltip.selectTool',item.labelKey);else if(item.tooltipKey){b.dataset.tooltipTitleKey=item.labelKey;b.dataset.tooltipKey=item.tooltipKey;}b.addEventListener('click',()=>{if(!item.ready)return;if(item.id==='constraint')openPlanConstraintPalette(b);else if(item.id==='wall')openPlanWallPalette(b);else if(item.id==='door')openPlanDoorPalette(b);else setTool(item.id,'plan');});dom.toolRail.appendChild(b);}
+    }else for(const cat of cadCategories){const b=document.createElement('button');b.className=`tool-category ${state.activeCategory===cat.id?'active':''}`;b.dataset.category=cat.id;b.dataset.categoryKey=cat.labelKey;b.innerHTML=`<span class="tool-icon ui-icon icon-${cat.icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(t(cat.labelKey))}</span>`;b.setAttribute('aria-label',t(cat.labelKey));b.addEventListener('click',()=>openCategory(cat.id,b));dom.toolRail.appendChild(b);}
   }
+  function openPlanTypePalette(button,catalog,selected,onPick,title){dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(title)}</div>`;for(const item of catalog){const b=document.createElement('button');b.className=`tool-item ${selected===item.id?'active':''}`;b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span>`;b.addEventListener('click',()=>{onPick(item.id);dom.toolPopover.hidden=true;});dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-220));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
+  function openPlanWallPalette(button){openPlanTypePalette(button,wallTypeCatalog,state.toolSettings.wallType,id=>{state.toolSettings.wallType=id;setTool('wall','plan');},t('tool.wall'));}
+  function openPlanDoorPalette(button){openPlanTypePalette(button,doorTypeCatalog,state.toolSettings.doorType,id=>{state.toolSettings.doorType=id;setTool('door','plan');},t('tool.door'));}
+  function ensureActiveCadLayerVisible(){const layer=state.activeCadLayer||'0';if(!cadLayerVisible(layer)){state.cadLayerVisibility.set(layer,true);renderPrimaryPanel();}}
 
+
+  function visibleCadLines(excludeId=null){return state.objects.filter(o=>o.type==='cadLine'&&o.id!==excludeId&&cadLayerVisible(o.cadLayer||'0'));}
+  function trimCadLineAtClick(target,click){
+    if(!target||target.type!=='cadLine')return false;const hits=[];for(const other of visibleCadLines(target.id)){const x=segmentIntersection(target.a,target.b,other.a,other.b);if(x&&x.t>1e-6&&x.t<1-1e-6)hits.push(x.t);}if(!hits.length)return false;
+    const pr=projectPointToSegment(click,target.a,target.b),cuts=[0,...[...new Set(hits.map(v=>Math.round(v*1e7)/1e7))].sort((a,b)=>a-b),1];let k=0;for(let i=0;i<cuts.length-1;i++)if(pr.t>=cuts[i]-1e-8&&pr.t<=cuts[i+1]+1e-8){k=i;break;}const t0=cuts[k],t1=cuts[k+1],point=t=>({x:target.a.x+(target.b.x-target.a.x)*t,y:target.a.y+(target.b.y-target.a.y)*t});pushHistory();
+    if(t0<=1e-8)target.a=point(t1);else if(t1>=1-1e-8)target.b=point(t0);else{const oldB={...target.b};target.b=point(t0);state.objects.push({id:uid('cadLine'),type:'cadLine',cadLayer:target.cadLayer||'0',layerId:'drawing',a:point(t1),b:oldB});}markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
+  }
+  function extendCadLineAtClick(target,click){
+    if(!target||target.type!=='cadLine')return false;const da=distance(click,target.a),db=distance(click,target.b),extendA=da<=db,candidates=[];for(const other of visibleCadLines(target.id)){const x=infiniteLineSegmentIntersection(target.a,target.b,other.a,other.b);if(!x)continue;if(extendA&&x.t<-.00001)candidates.push(x);if(!extendA&&x.t>1.00001)candidates.push(x);}if(!candidates.length)return false;candidates.sort((x,y)=>extendA?y.t-x.t:x.t-y.t);const hit=candidates[0];pushHistory();if(extendA)target.a={...hit.point};else target.b={...hit.point};markDirty(true);rebuildObjectSnapIndex();updateAll();return true;
+  }
+  function applyTrimExtendAtPoint(raw,mode){const obj=hitObject(raw);if(!obj||obj.type!=='cadLine')return false;const actual=state.shiftDown?(mode==='trim'?'extend':'trim'):mode,ok=actual==='trim'?trimCadLineAtClick(obj,raw):extendCadLineAtClick(obj,raw);setCommandStatus(ok?t(actual==='trim'?'command.trimApplied':'command.extendApplied'):t(actual==='trim'?'command.trimNoBoundary':'command.extendNoBoundary'),ok?'strong':'error');return ok;}
   function setTool(tool,category=null){
     if(state.toolset==='cad'&&['wall','door','window'].includes(tool)&&!state.cadMapping){state.pendingToolAfterMapping={tool,category:category||'architecture'};openMappingDialog('tool');return;}
-    state.activeTool=tool;if(tool!=='constraint')clearConstraintInteraction();if(category&&category!=='plan')state.activeCategory=category;state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.snapIndicator=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();
+    state.activeTool=tool;if(state.toolset==='cad'&&['line','trim','extend'].includes(tool))ensureActiveCadLayerVisible();if(tool!=='constraint')clearConstraintInteraction();if(category&&category!=='plan')state.activeCategory=category;state.drawStart=null;state.arcDraft=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.snapIndicator=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();
   }
 
   function openCategory(category,button){state.activeCategory=category;renderToolRail();const items=cadToolCatalog[category]||[];dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(t(button.dataset.categoryKey))}</div>`;for(const item of items){const b=document.createElement('button');b.className=`tool-item ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;if(item.ready&&item.note)b.dataset.shortcut=item.note;b.addEventListener('click',()=>setTool(item.id,category));dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-220));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
@@ -1037,13 +1137,13 @@
   function redo(){if(!state.future.length)return;state.history.push(historySnapshot());restoreHistorySnapshot(state.future.pop());updateAll();}
   function updateUndoRedo(){dom.undoBtn.disabled=!state.history.length;dom.redoBtn.disabled=!state.future.length;}
 
-  function commitSegment(a,b,type){if(distance(a,b)<.001)return null;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),attachments:{}};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine'&&!state.cadLayerVisibility.has(obj.cadLayer))state.cadLayerVisibility.set(obj.cadLayer,true);}state.objects.push(obj);if(obj.type==='wall'){refreshSpaces();}state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();return obj;}
-  function commitMeasurement(a,b){const len=distance(a,b);if(len<.001)return;let obj=null;if(state.toolset==='plan'){let best=null,bestScore=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const p1=projectPointToSegment(a,wall.a,wall.b),p2=projectPointToSegment(b,wall.a,wall.b),tol=Math.max((wall.thickness||150),18/state.camera.zoom);if(p1.distance<=tol&&p2.distance<=tol){const score=p1.distance+p2.distance;if(score<bestScore){bestScore=score;best={wall,t1:p1.t,t2:p2.t,p1:p1.point,p2:p2.point};}}}if(!best){alert(t('alert.dimensionNeedsWall'));state.measureStart=null;state.previewEnd=null;updateContextBar();render();return;}const attachedLen=distance(best.p1,best.p2);obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:best.wall.id,t1:best.t1,t2:best.t2,offset:Math.max(250,Math.min(600,attachedLen*.08))};}else obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',p1:{...a},p2:{...b},offset:Math.max(250,Math.min(600,len*.08))};pushHistory();state.objects.push(obj);state.selectedObjectId=obj.id;state.measureStart=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function commitSegment(a,b,type){if(distance(a,b)<.001)return null;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),geometry:'straight',attachments:{}};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine')state.cadLayerVisibility.set(obj.cadLayer,true);}state.objects.push(obj);if(obj.type==='wall'){refreshSpaces();}state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();return obj;}
+  function commitMeasurement(a,b){const len=distance(a,b);if(len<.001)return;let obj=null;if(state.toolset==='plan'){let best=null,bestScore=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const p1=wallProjectPoint(a,wall),p2=wallProjectPoint(b,wall),tol=Math.max((wall.thickness||150),18/state.camera.zoom);if(p1.distance<=tol&&p2.distance<=tol){const score=p1.distance+p2.distance;if(score<bestScore){bestScore=score;best={wall,t1:p1.t,t2:p2.t,p1:p1.point,p2:p2.point};}}}if(!best){alert(t('alert.dimensionNeedsWall'));state.measureStart=null;state.previewEnd=null;updateContextBar();render();return;}const attachedLen=distance(best.p1,best.p2);obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:best.wall.id,t1:best.t1,t2:best.t2,offset:Math.max(250,Math.min(600,attachedLen*.08))};}else obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',p1:{...a},p2:{...b},offset:Math.max(250,Math.min(600,len*.08))};pushHistory();state.objects.push(obj);state.selectedObjectId=obj.id;state.measureStart=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();updateAll();}
 
-  function nearestWallProjection(p){let best=null,bestD=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const pr=projectPointToSegment(p,wall.a,wall.b);const threshold=Math.max((wall.thickness||150)/2,18/state.camera.zoom);if(pr.distance<threshold&&pr.distance<bestD){bestD=pr.distance;best={wall,t:pr.t,point:pr.point,distance:pr.distance};}}return best;}
+  function nearestWallProjection(p){let best=null,bestD=Infinity;for(const wall of state.objects.filter(o=>o.type==='wall')){const pr=wallProjectPoint(p,wall),threshold=Math.max((wall.thickness||150)/2,18/state.camera.zoom);if(pr.distance<threshold&&pr.distance<bestD){bestD=pr.distance;best={wall,t:pr.t,point:pr.point,distance:pr.distance};}}return best;}
   function projectPointToSegment(p,a,b){const vx=b.x-a.x,vy=b.y-a.y,wx=p.x-a.x,wy=p.y-a.y,c2=vx*vx+vy*vy;if(!c2)return{t:0,point:{...a},distance:distance(p,a)};const tt=clamp((wx*vx+wy*vy)/c2,0,1);const q={x:a.x+tt*vx,y:a.y+tt*vy};return{t:tt,point:q,distance:distance(p,q)};}
 
-  function findWallAttachment(point,selfWallId){let best=null,bestD=Math.max(20,10/state.camera.zoom);for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;const pr=projectPointToSegment(point,wall.a,wall.b);if(pr.distance<bestD){bestD=pr.distance;best={wallId:wall.id,t:pr.t};}}return best;}
+  function findWallAttachment(point,selfWallId){let best=null,bestD=Math.max(20,10/state.camera.zoom);for(const wall of state.objects){if(wall.type!=='wall'||wall.id===selfWallId)continue;const pr=wallProjectPoint(point,wall);if(pr.distance<bestD){bestD=pr.distance;best={wallId:wall.id,t:pr.t};}}return best;}
   function attachWallEndpoint(wall,endpoint){
     if(!wall||wall.type!=='wall'||!['a','b'].includes(endpoint))return false;
     const candidate=endpointConstraintCandidate(wall[endpoint],wall.id);
@@ -1063,22 +1163,24 @@
 
   function detectClosedWallFaces(){
     const walls=state.objects.filter(o=>o.type==='wall');if(walls.length<3)return[];
-    const splits=new Map(walls.map(w=>[w.id,new Set([0,1])]));
-    for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){const x=segmentIntersection(walls[i].a,walls[i].b,walls[j].a,walls[j].b);if(!x)continue;splits.get(walls[i].id).add(x.t);splits.get(walls[j].id).add(x.u);}
-    const tol=2,keyOf=p=>`${Math.round(p.x/tol)},${Math.round(p.y/tol)}`,nodes=new Map(),adj=new Map(),edgeWall=new Map();
+    const segments=[];for(const w of walls)for(const seg of sampleWallSegments(w,{maxAngle:8,maxLength:280}))segments.push({id:`${w.id}:${seg.t0}`,wallId:w.id,a:seg.a,b:seg.b});
+    return detectFacesFromSegments(segments,{minArea:10000});
+  }
+  function detectFacesFromSegments(segments,{minArea=10000,maxArea=Infinity,snapTol=3}={}){
+    if(!segments?.length)return[];const splits=new Map(segments.map(seg=>[seg.id,new Set([0,1])]));
+    for(let i=0;i<segments.length;i++)for(let j=i+1;j<segments.length;j++){const x=segmentIntersection(segments[i].a,segments[i].b,segments[j].a,segments[j].b);if(!x)continue;splits.get(segments[i].id).add(x.t);splits.get(segments[j].id).add(x.u);}
+    const tol=Math.max(.5,snapTol),keyOf=p=>`${Math.round(p.x/tol)},${Math.round(p.y/tol)}`,nodes=new Map(),adj=new Map(),edgeWall=new Map();
     const nodeFor=p=>{const k=keyOf(p);if(!nodes.has(k))nodes.set(k,{x:Math.round(p.x/tol)*tol,y:Math.round(p.y/tol)*tol});if(!adj.has(k))adj.set(k,new Set());return k;};
-    for(const wall of walls){const ts=[...splits.get(wall.id)].sort((a,b)=>a-b);for(let i=1;i<ts.length;i++){if(ts[i]-ts[i-1]<1e-8)continue;const p1=wallPointAt(wall,ts[i-1]),p2=wallPointAt(wall,ts[i]),a=nodeFor(p1),b=nodeFor(p2);if(a===b)continue;adj.get(a).add(b);adj.get(b).add(a);edgeWall.set([a,b].sort().join('|'),wall.id);}}
-    for(const[k,set]of adj){const p=nodes.get(k);adj.set(k,[...set].sort((ka,kb)=>{const a=nodes.get(ka),b=nodes.get(kb);return Math.atan2(a.y-p.y,a.x-p.x)-Math.atan2(b.y-p.y,b.x-p.x);}));}
-    const visited=new Set(),faces=[];
-    for(const[u,neighbors]of adj)for(const v0 of neighbors){const start=`${u}>${v0}`;if(visited.has(start))continue;let a=u,b=v0,poly=[],wallIds=new Set(),guard=0,closed=false;while(guard++<2000){const dir=`${a}>${b}`;if(visited.has(dir)&&dir!==start)break;visited.add(dir);poly.push(nodes.get(a));wallIds.add(edgeWall.get([a,b].sort().join('|')));const list=adj.get(b)||[],idx=list.indexOf(a);if(idx<0||!list.length)break;const c=list[(idx-1+list.length)%list.length];a=b;b=c;if(`${a}>${b}`===start){closed=true;break;}}if(!closed||poly.length<3)continue;const area=polygonArea(poly);if(area>10000)faces.push({polygon:poly,area,wallIds:[...wallIds].filter(Boolean)});}
-    return faces.sort((a,b)=>a.area-b.area);
+    for(const seg of segments){const ts=[...splits.get(seg.id)].sort((a,b)=>a-b);for(let i=1;i<ts.length;i++){if(ts[i]-ts[i-1]<1e-8)continue;const p1={x:seg.a.x+(seg.b.x-seg.a.x)*ts[i-1],y:seg.a.y+(seg.b.y-seg.a.y)*ts[i-1]},p2={x:seg.a.x+(seg.b.x-seg.a.x)*ts[i],y:seg.a.y+(seg.b.y-seg.a.y)*ts[i]},a=nodeFor(p1),b=nodeFor(p2);if(a===b)continue;adj.get(a).add(b);adj.get(b).add(a);edgeWall.set([a,b].sort().join('|'),seg.wallId||seg.id);}}
+    for(const[k,set]of adj){const p0=nodes.get(k);adj.set(k,[...set].sort((ka,kb)=>{const a=nodes.get(ka),b=nodes.get(kb);return Math.atan2(a.y-p0.y,a.x-p0.x)-Math.atan2(b.y-p0.y,b.x-p0.x);}));}
+    const visited=new Set(),faces=[];for(const[u,neighbors]of adj)for(const v0 of neighbors){const start=`${u}>${v0}`;if(visited.has(start))continue;let a=u,b=v0,poly=[],wallIds=new Set(),guard=0,closed=false;while(guard++<4000){const dir=`${a}>${b}`;if(visited.has(dir)&&dir!==start)break;visited.add(dir);poly.push(nodes.get(a));wallIds.add(edgeWall.get([a,b].sort().join('|')));const list=adj.get(b)||[],idx=list.indexOf(a);if(idx<0||!list.length)break;const c=list[(idx-1+list.length)%list.length];a=b;b=c;if(`${a}>${b}`===start){closed=true;break;}}if(!closed||poly.length<3)continue;const area=polygonArea(poly);if(area>minArea&&area<maxArea)faces.push({polygon:poly,area,wallIds:[...wallIds].filter(Boolean)});}
+    const unique=[];for(const f of faces.sort((a,b)=>a.area-b.area)){const c=polygonCentroid(f.polygon);if(unique.some(u=>Math.abs(u.area-f.area)/Math.max(f.area,1)<.015&&distance(c,polygonCentroid(u.polygon))<20))continue;unique.push(f);}return unique;
   }
   function faceAtPoint(p){return detectClosedWallFaces().find(f=>pointInPolygon(p,f.polygon))||null;}
   function refreshSpaces(){const spaces=state.objects.filter(o=>o.type==='space');if(!spaces.length)return;const faces=detectClosedWallFaces();for(const space of spaces){const face=faces.find(f=>pointInPolygon(space.seed||polygonCentroid(space.polygon||[]),f.polygon));if(face){space.polygon=face.polygon.map(p=>({...p}));space.wallIds=[...face.wallIds];space.areaM2=face.area/1e6;space.invalid=false;}else space.invalid=true;}}
   function commitSpace(p){const face=faceAtPoint(p);if(!face){alert(t('alert.noClosedSpace'));return;}const existing=state.objects.find(o=>o.type==='space'&&o.polygon?.length&&pointInPolygon(p,o.polygon));if(existing){state.selectedObjectId=existing.id;renderProperties();render();return;}pushHistory();const obj={id:uid('space'),type:'space',layerId:'spaces',spaceUuid:makeStableUuid(),seed:{...p},polygon:face.polygon.map(q=>({...q})),wallIds:[...face.wallIds],areaM2:face.area/1e6,invalid:false};state.objects.push(obj);state.selectedObjectId=obj.id;markDirty(true);updateAll();}
-  function commitOpening(kind,projection){if(!projection){alert(t('alert.noWallForOpening'));return;}pushHistory();const width=kind==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth;const obj={id:uid(kind),type:kind,layerId:kind==='door'?'doors':'windows',wallId:projection.wall.id,t:projection.t,width};if(kind==='door'){obj.hinge='start';obj.swing=1;}state.objects.push(obj);state.selectedObjectId=obj.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
-
-  function collectObjectSnapPoints(){const pts=[];for(const o of state.objects){if(o.a)pts.push({x:o.a.x,y:o.a.y,objectId:o.id,kind:'endpoint'});if(o.b)pts.push({x:o.b.x,y:o.b.y,objectId:o.id,kind:'endpoint'});if(o.center)pts.push({x:o.center.x,y:o.center.y,objectId:o.id,kind:'center'});if(o.point)pts.push({x:o.point.x,y:o.point.y,objectId:o.id,kind:'point'});if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);if(g){pts.push({...g.p1,objectId:o.id,kind:'opening'},{...g.p2,objectId:o.id,kind:'opening'},{...g.center,objectId:o.id,kind:'center'});}}if(o.type==='dimension'){const g=dimensionGeometry(o);if(g)pts.push({...g.p1,objectId:o.id,kind:'dimension'},{...g.p2,objectId:o.id,kind:'dimension'});}}return pts;}
+  function commitOpening(kind,projection){if(!projection){alert(t('alert.noWallForOpening'));return;}pushHistory();const width=kind==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth,obj={id:uid(kind),type:kind,layerId:kind==='door'?'doors':'windows',wallId:projection.wall.id,t:projection.t,width};if(kind==='door'){obj.doorType=state.toolSettings.doorType||'hingedSingle';obj.hinge='start';obj.swing=1;obj.slideDirection=1;}state.objects.push(obj);state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function collectObjectSnapPoints(){const pts=[];for(const o of state.objects){if(o.a)pts.push({x:o.a.x,y:o.a.y,objectId:o.id,kind:'endpoint'});if(o.b)pts.push({x:o.b.x,y:o.b.y,objectId:o.id,kind:'endpoint'});if(o.center)pts.push({x:o.center.x,y:o.center.y,objectId:o.id,kind:'center'});if(o.type==='cadArc'){for(const t of[0,1]){const ap=cadArcPointAt(o,t);pts.push({...ap,objectId:o.id,kind:'endpoint'});}}if(o.point)pts.push({x:o.point.x,y:o.point.y,objectId:o.id,kind:'point'});if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);if(g){pts.push({...g.p1,objectId:o.id,kind:'opening'},{...g.p2,objectId:o.id,kind:'opening'},{...g.center,objectId:o.id,kind:'center'});}}if(o.type==='dimension'){const g=dimensionGeometry(o);if(g)pts.push({...g.p1,objectId:o.id,kind:'dimension'},{...g.p2,objectId:o.id,kind:'dimension'});}}return pts;}
   function rebuildObjectSnapIndex(){const pts=collectObjectSnapPoints();if(!pts.length){state.objectSnapIndex=null;return;}const cellW=1000,cellH=1000,cells=new Map();for(const q of pts){const gx=Math.floor(q.x/cellW),gy=Math.floor(q.y/cellH),k=`${gx},${gy}`;if(!cells.has(k))cells.set(k,[]);cells.get(k).push(q);}state.objectSnapIndex={minx:0,miny:0,cellW,cellH,cells};}
   function queryObjectSnapIndex(p,threshold,test){const idx=state.objectSnapIndex;if(!idx)return;const gx=Math.floor((p.x-idx.minx)/idx.cellW),gy=Math.floor((p.y-idx.miny)/idx.cellH),rx=Math.max(1,Math.ceil(threshold/idx.cellW)),ry=Math.max(1,Math.ceil(threshold/idx.cellH));for(let dx=-rx;dx<=rx;dx++)for(let dy=-ry;dy<=ry;dy++){const bucket=idx.cells.get(`${gx+dx},${gy+dy}`);if(bucket)for(const q of bucket)test(q);}}
 
@@ -1089,18 +1191,29 @@
     const test=(q,kind=q.kind||'endpoint')=>{if(excludeObjectId&&q.objectId===excludeObjectId)return;const d=distance(p,q);if(d<bestD){bestD=d;best={x:q.x,y:q.y,kind,objectId:q.objectId||null};}};
     if(state.objectSnapIndex)queryObjectSnapIndex(p,threshold,q=>test(q,q.kind));else for(const o of state.objects){if(o.a)test({...o.a,objectId:o.id},'endpoint');if(o.b)test({...o.b,objectId:o.id},'endpoint');}
     const wantsWallProjection=state.activeTool==='wall'||(state.dragEdit&&state.objects.find(o=>o.id===state.dragEdit.objectId)?.type==='wall'&&['a','b'].includes(state.dragEdit.mode));
-    if(wantsWallProjection){for(const wall of state.objects){if(wall.type!=='wall'||wall.id===excludeObjectId)continue;const pr=projectPointToSegment(p,wall.a,wall.b);if(pr.distance<bestD)test({...pr.point,objectId:wall.id},'wall');}}
+    if(wantsWallProjection){for(const wall of state.objects){if(wall.type!=='wall'||wall.id===excludeObjectId)continue;const pr=wallProjectPoint(p,wall);if(pr.distance<bestD)test({...pr.point,objectId:wall.id},'wall');}}
     for(const ref of state.references){if(!ref.visible||ref.type!=='dxf'||!ref.snapIndex)continue;const local=referenceWorldToLocal(ref,p);const{minx,miny,cellW,cellH,cells}=ref.snapIndex;const gx=Math.floor((local.x-minx)/cellW),gy=Math.floor((local.y-miny)/cellH);const lt=threshold/Math.max(.000001,ref.scale),rx=Math.max(1,Math.ceil(lt/cellW)),ry=Math.max(1,Math.ceil(lt/cellH));for(let dx=-rx;dx<=rx;dx++)for(let dy=-ry;dy<=ry;dy++){const bucket=cells.get(`${gx+dx},${gy+dy}`);if(!bucket)continue;for(const q of bucket){if(ref.visibleLayers&&!ref.visibleLayers.has(q.layer||'0'))continue;const w=referenceLocalToWorld(ref,q);test({...w,objectId:null},'reference');}}}
     if(best){state.snapIndicator=best;return{x:best.x,y:best.y};}
     return p;
   }
-  function constrainOrtho(start,p){if(!state.ortho||!start)return p;const a=rad(baseAxisAngle()),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux,dx=p.x-start.x,dy=p.y-start.y,du=dx*ux+dy*uy,dv=dx*vx+dy*vy;return Math.abs(du)>=Math.abs(dv)?{x:start.x+ux*du,y:start.y+uy*du}:{x:start.x+vx*dv,y:start.y+vy*dv};}
+  function effectiveOrtho(){return Boolean(state.ortho)!==Boolean(state.shiftDown);}
+  function constrainTracking(start,p){
+    if(!start)return p;
+    const base=baseAxisAngle(),dx=p.x-start.x,dy=p.y-start.y,len=Math.hypot(dx,dy);if(len<1e-9)return p;
+    if(effectiveOrtho()){
+      const a=rad(base),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux,du=dx*ux+dy*uy,dv=dx*vx+dy*vy;
+      return Math.abs(du)>=Math.abs(dv)?{x:start.x+ux*du,y:start.y+uy*du}:{x:start.x+vx*dv,y:start.y+vy*dv};
+    }
+    if(state.polar){
+      const ang=angleDeg(start,p),relative=angleDelta(ang,base),step=45,snapped=Math.round(relative/step)*step,diff=Math.abs(angleDelta(relative,snapped));
+      if(diff<=7){const a=rad(base+snapped);return{x:start.x+Math.cos(a)*len,y:start.y+Math.sin(a)*len};}
+    }
+    return p;
+  }
+  function constrainOrtho(start,p){return constrainTracking(start,p);}
 
-  function hitHandle(p,obj){const tol=9/state.camera.zoom;if(!obj)return null;if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){if(distance(p,obj.a)<=tol)return'a';if(distance(p,obj.b)<=tol)return'b';}
-    if(obj.type==='door'||obj.type==='window'){const g=openingGeometry(obj);if(g){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';if(distance(p,g.center)<=tol)return'center';}}
-    if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(!g.associated){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';}const c={x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2};if(distance(p,c)<=tol)return'offset';}}
-    return null;}
-  function objectBodyDistance(p,o){if(o.type==='door'){const g=doorGeometry(o);return g?Math.min(pointSegmentDistance(p,g.p1,g.p2),pointSegmentDistance(p,g.hinge,g.leafEnd)):Infinity;}if(o.type==='window'){const g=openingGeometry(o);return g?pointSegmentDistance(p,g.p1,g.p2):Infinity;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?pointSegmentDistance(p,g.d1,g.d2):Infinity;}if(o.type==='space')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='cadCircle')return Math.abs(distance(p,o.center)-o.radius);if(o.a&&o.b){let d=pointSegmentDistance(p,o.a,o.b);if(o.type==='wall')d=Math.max(0,d-(o.thickness||150)/2);return d;}return Infinity;}
+  function hitHandle(p,obj){const tol=9/state.camera.zoom;if(!obj)return null;if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){if(distance(p,obj.a)<=tol)return'a';if(distance(p,obj.b)<=tol)return'b';if(obj.type==='wall'&&isArcWall(obj)&&distance(p,arcControlPoint(obj))<=tol)return'arcControl';}if(obj.type==='door'||obj.type==='window'){const g=openingGeometry(obj);if(g){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';if(distance(p,g.center)<=tol)return'center';}}if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(!g.associated){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';}const c={x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2};if(distance(p,c)<=tol)return'offset';}}return null;}
+  function objectBodyDistance(p,o){if(o.type==='door'){const g=openingGeometry(o);if(!g)return Infinity;const type=o.doorType||'hingedSingle';if(type.startsWith('hinged')){const d=doorGeometry(o);return d?Math.min(pointSegmentDistance(p,g.p1,g.p2),pointSegmentDistance(p,d.hinge,d.leafEnd)):pointSegmentDistance(p,g.p1,g.p2);}return pointSegmentDistance(p,g.p1,g.p2);}if(o.type==='window'){const g=openingGeometry(o);return g?pointSegmentDistance(p,g.p1,g.p2):Infinity;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?pointSegmentDistance(p,g.d1,g.d2):Infinity;}if(o.type==='space')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='stair')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='cadCircle')return Math.abs(distance(p,o.center)-o.radius);if(o.type==='cadArc')return projectPointToCadArc(p,o).distance;if(o.type==='wall'&&isArcWall(o))return Math.max(0,wallProjectPoint(p,o).distance-(o.thickness||150)/2);if(o.a&&o.b){let d=pointSegmentDistance(p,o.a,o.b);if(o.type==='wall')d=Math.max(0,d-(o.thickness||150)/2);return d;}return Infinity;}
   function hitObject(p){const tolerance=9/state.camera.zoom;let best=null,bestD=Infinity,spaceHit=null;const semanticOnly=state.toolset==='plan';for(let i=state.objects.length-1;i>=0;i--){const o=state.objects[i];if(semanticOnly&&isCadObject(o))continue;if(state.toolset==='cad'&&o.type!=='space'&&(isCadObject(o)||isSemanticObject(o)||o.type==='line')&&!cadLayerVisible(cadLayerForObject(o)))continue;if(o.type==='space'){if(!spaceHit&&objectBodyDistance(p,o)===0)spaceHit=o;continue;}const d=objectBodyDistance(p,o);if(d<tolerance&&d<bestD){best=o;bestD=d;}}return best||spaceHit;}
   function pointSegmentDistance(p,a,b){return projectPointToSegment(p,a,b).distance;}
 
@@ -1109,7 +1222,10 @@
   function moveChildrenWithWall(wallId,dx,dy){/* openings are parametric on the wall and move with it automatically */}
   function applyObjectDrag(p){const d=state.dragEdit;if(!d)return;const obj=state.objects.find(o=>o.id===d.objectId);if(!obj)return;const src=d.snapshot,delta={x:p.x-d.start.x,y:p.y-d.start.y};ensureDragHistory();
     if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&src.a&&src.b){
-      if(d.mode==='a')obj.a={...p};else if(d.mode==='b')obj.b={...p};else{obj.a={x:src.a.x+delta.x,y:src.a.y+delta.y};obj.b={x:src.b.x+delta.x,y:src.b.y+delta.y};}
+      if(obj.type==='wall'&&isArcWall(src)&&d.mode==='arcControl'){obj.a={...src.a};obj.b={...src.b};applyArcFromControl(obj,p);}
+      else if(d.mode==='a'){obj.a={...p};if(obj.type==='wall'&&isArcWall(src)){const control=wallPointAt(src,.5);applyArcFromControl(obj,control);}}
+      else if(d.mode==='b'){obj.b={...p};if(obj.type==='wall'&&isArcWall(src)){const control=wallPointAt(src,.5);applyArcFromControl(obj,control);}}
+      else{obj.a={x:src.a.x+delta.x,y:src.a.y+delta.y};obj.b={x:src.b.x+delta.x,y:src.b.y+delta.y};if(obj.type==='wall'&&isArcWall(src)){obj.center={x:src.center.x+delta.x,y:src.center.y+delta.y};}}
       if(obj.type==='wall'){
         // SNAP is only a placement aid. Persistent endpoint relationships live in attachments/constraints.
         // If an endpoint is already constrained to another wall, dragging keeps that explicit relationship.
@@ -1120,25 +1236,25 @@
             if(!parent)continue;
             const desired={x:src[endpoint].x+delta.x,y:src[endpoint].y+delta.y};
             if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){att.t=att.targetEndpoint==='a'?0:1;obj[endpoint]={...parent[att.targetEndpoint]};}
-            else{const pr=projectPointToSegment(desired,parent.a,parent.b);att.t=pr.t;obj[endpoint]={...pr.point};}
+            else{const pr=wallProjectPoint(desired,parent);att.t=pr.t;obj[endpoint]={...pr.point};}
           }
         }else if((d.mode==='a'||d.mode==='b')&&obj.attachments?.[d.mode]){
           const att=obj.attachments[d.mode],parent=state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
           if(parent){
             if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){att.t=att.targetEndpoint==='a'?0:1;obj[d.mode]={...parent[att.targetEndpoint]};}
-            else{const pr=projectPointToSegment(p,parent.a,parent.b);att.t=pr.t;obj[d.mode]={...pr.point};}
+            else{const pr=wallProjectPoint(p,parent);att.t=pr.t;obj[d.mode]={...pr.point};}
           }
         }
         enforceWallConstraints(obj,{changed:d.mode==='a'?'a':d.mode==='b'?'b':'body'});
         syncDependentsOfWall(obj.id);refreshSpaces();
       }
     }
-    else if(obj.type==='door'||obj.type==='window'){const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const pr=projectPointToSegment(p,wall.a,wall.b);if(d.mode==='center'||d.mode==='body'){obj.t=pr.t;if(obj.type==='door'){const signed=signedDistanceToWall(p,wall),threshold=Math.max((wall.thickness||150)*.8,45/state.camera.zoom);if(Math.abs(signed)>threshold)obj.swing=signed>=0?1:-1;}}else if(d.mode==='p1'||d.mode==='p2'){const g0=openingGeometry(src);if(g0){const opposite=d.mode==='p1'?g0.p2:g0.p1;const pp=projectPointToSegment(p,wall.a,wall.b);const po=projectPointToSegment(opposite,wall.a,wall.b);const len=distance(wall.a,wall.b);obj.t=clamp((pp.t+po.t)/2,0,1);obj.width=Math.max(100,Math.abs(pp.t-po.t)*len);}}}}
+    else if(obj.type==='door'||obj.type==='window'){const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const pr=wallProjectPoint(p,wall);if(d.mode==='center'||d.mode==='body'){obj.t=pr.t;if(obj.type==='door'){const signed=signedDistanceToWall(p,wall),threshold=Math.max((wall.thickness||150)*.8,45/state.camera.zoom);if(Math.abs(signed)>threshold)obj.swing=signed>=0?1:-1;}}else if(d.mode==='p1'||d.mode==='p2'){const g0=openingGeometry(src);if(g0){const opposite=d.mode==='p1'?g0.p2:g0.p1;const pp=wallProjectPoint(p,wall);const po=wallProjectPoint(opposite,wall);const len=wallLength(wall);obj.t=clamp((pp.t+po.t)/2,0,1);obj.width=Math.max(100,Math.abs(pp.t-po.t)*len);}}}}
     else if(obj.type==='dimension'){const g0=dimensionGeometry(src);if(g0){if(g0.associated){const base={x:(g0.p1.x+g0.p2.x)/2,y:(g0.p1.y+g0.p2.y)/2};obj.offset=(p.x-base.x)*g0.nx+(p.y-base.y)*g0.ny;}else if(d.mode==='p1')obj.p1={...p};else if(d.mode==='p2')obj.p2={...p};else if(d.mode==='offset'){const base={x:(obj.p1.x+obj.p2.x)/2,y:(obj.p1.y+obj.p2.y)/2},v={x:obj.p2.x-obj.p1.x,y:obj.p2.y-obj.p1.y},len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len;obj.offset=(p.x-base.x)*nx+(p.y-base.y)*ny;}else{obj.p1={x:g0.p1.x+delta.x,y:g0.p1.y+delta.y};obj.p2={x:g0.p2.x+delta.x,y:g0.p2.y+delta.y};}}}
     markDirty(true);rebuildObjectSnapIndex();renderProperties();render();}
 
 
-  function updatePointerAffordance(p){state.pointerAffordance=null;if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()){delete host.dataset.affordance;return;}const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&selectionIds().size===1){const h=hitHandle(p,selected);if(h){if((selected.type==='wall'||selected.type==='line'||selected.type==='cadLine')&&(h==='a'||h==='b'))state.pointerAffordance='endpoint';else if((selected.type==='door'||selected.type==='window')&&(h==='p1'||h==='p2'))state.pointerAffordance='resize';else if(selected.type==='dimension'&&h==='offset')state.pointerAffordance='offset';else state.pointerAffordance='move';}}if(!state.pointerAffordance&&hitObject(p))state.pointerAffordance='move';if(state.pointerAffordance)host.dataset.affordance=state.pointerAffordance;else delete host.dataset.affordance;}
+  function updatePointerAffordance(p){state.pointerAffordance=null;if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()){delete host.dataset.affordance;return;}const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&selectionIds().size===1){const h=hitHandle(p,selected);if(h){if((selected.type==='wall'||selected.type==='line'||selected.type==='cadLine')&&(h==='a'||h==='b'))state.pointerAffordance='endpoint';else if(selected.type==='wall'&&h==='arcControl')state.pointerAffordance='offset';else if((selected.type==='door'||selected.type==='window')&&(h==='p1'||h==='p2'))state.pointerAffordance='resize';else if(selected.type==='dimension'&&h==='offset')state.pointerAffordance='offset';else state.pointerAffordance='move';}}if(!state.pointerAffordance&&hitObject(p))state.pointerAffordance='move';if(state.pointerAffordance)host.dataset.affordance=state.pointerAffordance;else delete host.dataset.affordance;}
   function updateHover(p){if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()||(state.toolset==='cad'&&state.objects.length>5000)){state.hoveredObjectId=null;host.dataset.hover='false';updatePointerAffordance(p);return;}const o=hitObject(p);state.hoveredObjectId=o?.id||null;host.dataset.hover=state.hoveredObjectId?'true':'false';updatePointerAffordance(p);}
 
   function beginViewerPointer(e,s){state.viewerPointers.set(e.pointerId,s);canvas.setPointerCapture?.(e.pointerId);if(state.viewerPointers.size===1){state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';}else if(state.viewerPointers.size===2){const pts=[...state.viewerPointers.values()],c={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2},dist=Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y));state.viewerGesture={startDistance:dist,startCenter:c,startCamera:{...state.camera},startZoom:state.camera.zoom,worldAtCenter:screenCssToWorld(c)};state.pan=null;}}
@@ -1161,7 +1277,15 @@
     if(state.calibration){if(!state.calibration.p1){state.calibration.p1=p;state.previewEnd=p;updateContextBar();render();}else{state.calibration.p2=p;openCalibrationDialog();}return;}
     if(state.activeTool==='select'){const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&hitHandle(raw,selected)){beginObjectDrag(e,raw,selected);return;}const obj=hitObject(raw);if(obj){applyObjectClickSelection(obj,e);if(!(e.shiftKey||e.ctrlKey||e.metaKey)&&state.selectedObjectIds.size<=1)beginObjectDrag(e,raw,obj);renderPrimaryPanel();renderProperties();render();return;}if(state.toolset==='cad'){const mode=e.shiftKey?'add':(e.ctrlKey||e.metaKey?'toggle':'replace');state.selectionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw},mode,previewIds:new Set()};canvas.setPointerCapture?.(e.pointerId);if(mode==='replace'){state.selectedObjectIds.clear();state.selectedObjectId=null;}state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();return;}applyObjectClickSelection(null,e);renderPrimaryPanel();renderProperties();render();return;}
     if(state.activeTool==='delete'){const obj=hitObject(raw);if(obj)deleteObjectById(obj.id);return;}
-    if(state.activeTool==='line'||state.activeTool==='wall'){if(!state.drawStart){state.drawStart=p;state.previewEnd=p;updateContextBar();render();}else commitSegment(state.drawStart,constrainOrtho(state.drawStart,p),state.activeTool);return;}
+    if((state.activeTool==='trim'||state.activeTool==='extend')&&state.toolset==='cad'){applyTrimExtendAtPoint(raw,state.activeTool);return;}
+    if(state.activeTool==='line'||state.activeTool==='wall'){
+      if(state.activeTool==='wall'&&state.toolset==='plan'&&state.toolSettings.wallType==='arc'){
+        if(!state.drawStart){state.drawStart=p;state.previewEnd=p;state.arcDraft=null;updateContextBar();render();return;}
+        if(!state.arcDraft){state.arcDraft={a:{...state.drawStart},b:{...constrainOrtho(state.drawStart,p)}};state.previewEnd=p;updateContextBar();render();return;}
+        const g=circleFromThreePoints(state.arcDraft.a,state.arcDraft.b,p);if(g){pushHistory();const obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...state.arcDraft.a},b:{...state.arcDraft.b},thickness:currentWallThickness(),geometry:'arc',...g,attachments:{}};state.objects.push(obj);state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart=null;state.arcDraft=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();refreshSpaces();updateAll();}return;
+      }
+      if(!state.drawStart){state.drawStart=p;state.previewEnd=p;updateContextBar();render();}else commitSegment(state.drawStart,constrainOrtho(state.drawStart,p),state.activeTool);return;
+    }
     if(state.activeTool==='measure'){if(!state.measureStart){state.measureStart=p;state.previewEnd=p;updateContextBar();render();}else commitMeasurement(state.measureStart,constrainOrtho(state.measureStart,p));return;}
     if(state.activeTool==='space'&&state.toolset==='plan'){commitSpace(raw);return;}
     if(state.activeTool==='door'||state.activeTool==='window'){commitOpening(state.activeTool,nearestWallProjection(raw));return;}
@@ -1184,17 +1308,88 @@
 
   async function openReferenceFile(file){if(!file)return;const lower=file.name.toLowerCase();try{if(lower.endsWith('.dxf'))await addDxfReference(file);else if(file.type.startsWith('image/'))await addImageReference(file);else alert(t('alert.unsupportedReference'));}finally{dom.referenceFileInput.value='';}}
   async function addDxfReference(file){showProgress(t('progress.readingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.readingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit),entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor)),b=boundsEntities(entities),main=scaleBounds(parsed.analysis?.mainBounds,factor);const ref={id:uid('ref'),type:'dxf',name:file.name,visible:true,opacity:.48,scale:1,origin:{x:0,y:0},entities,bounds:b,mainBounds:main||b,outlierCount:parsed.analysis?.outlierCount||0,sourceUnit:parsed.unit?.label||'unspecified',sourceUnitSpecified:parsed.unit?.metersPerUnit!=null,layers:parsed.layers||[],visibleLayers:new Set(parsed.layers||[]),pathsByLayer:buildDxfPaths(entities),textEntities:entities.filter(e=>e.type==='text'),snapIndex:buildSnapIndex(entities,b)};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);hideProgress();updateAll();switchInspector('reference');fitReference(ref);}
-  async function addImageReference(file){const dataUrl=await readDataUrl(file),image=await loadImage(dataUrl);const ref={id:uid('ref'),type:'image',name:file.name,visible:true,opacity:.55,scale:1,origin:{x:0,y:0},image,width:image.naturalWidth,height:image.naturalHeight,sourceUnit:'px'};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);updateAll();switchInspector('reference');fitReference(ref);}
+  async function addImageReference(file){const dataUrl=await readDataUrl(file),image=await loadImage(dataUrl);const ref={id:uid('ref'),type:'image',name:file.name,visible:true,opacity:.55,scale:1,origin:{x:0,y:0},image,width:image.naturalWidth,height:image.naturalHeight,sourceUnit:'px',dataUrl};state.references.push(ref);state.selectedReferenceId=ref.id;markDirty(true);updateAll();switchInspector('reference');fitReference(ref);}
 
-  async function openEditableDxf(file){if(!file)return;try{if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.newDrawing')))return;state.objects=[];state.references=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.selectedReferenceId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';showProgress(t('progress.importingDxf'),0,file.name);const text=await file.text();const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.importingDxf'),p.ratio||0,p.detail||''));const factor=unitFactorToMm(parsed.unit);const entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor));const editable=[];for(const e of entities){const layer=e.layer||'0';state.cadLayerVisibility.set(layer,true);if(e.type==='line')editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.x1,y:e.y1},b:{x:e.x2,y:e.y2},source:'DXF'});else if(e.type==='polyline'&&e.points?.length>1){for(let i=1;i<e.points.length;i++)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points[i-1][0],y:e.points[i-1][1]},b:{x:e.points[i][0],y:e.points[i][1]},source:'DXF'});if(e.closed)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points.at(-1)[0],y:e.points.at(-1)[1]},b:{x:e.points[0][0],y:e.points[0][1]},source:'DXF'});}else if(e.type==='circle')editable.push({id:uid('cadCircle'),type:'cadCircle',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,source:'DXF'});else if(e.type==='text')editable.push({id:uid('cadText'),type:'cadText',cadLayer:layer,point:{x:e.x,y:e.y},text:e.text||'',source:'DXF'});}
-      if(!editable.some(o=>o.type==='cadLine'||o.type==='cadCircle'))alert(t('alert.dxfNoEditableEntities'));state.objects=editable;state.sourceDxfName=file.name;state.sourceDxfFullBounds=boundsEntities(entities);state.sourceDxfMainBounds=scaleBounds(parsed.analysis?.mainBounds,factor)||state.sourceDxfFullBounds;state.sourceDxfOutlierCount=parsed.analysis?.outlierCount||0;state.activeCadLayer=(parsed.layers||[])[0]||'0';state.dirty=false;rebuildObjectSnapIndex();hideProgress();switchToolset('cad',{skipMapping:true});updateAll();fitAll();}catch(err){hideProgress();console.error(err);alert(err.message||String(err));}finally{dom.dxfEditFileInput.value='';}}
+  async function openEditableDxf(file){
+    if(!file)return;
+    try{
+      if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.newDrawing')))return;
+      state.objects=[];state.references=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.recognitionHistory=[];state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.selectedReferenceId=null;state.layerFilter='';state.layerRevealRequested=false;state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.projectFileName=null;
+      showProgress(t('progress.importingDxf'),0,file.name);
+      const text=await file.text();
+      const parsed=await window.PieniPlanDXF.parseAndAnalyze(text,p=>showProgress(p.stage||t('progress.importingDxf'),p.ratio||0,p.detail||''));
+      const factor=unitFactorToMm(parsed.unit),entities=parsed.entities.map(e=>normalizeEntityToMm(e,factor)),editable=[];
+      for(const e of entities){
+        const layer=e.layer||'0';state.cadLayerVisibility.set(layer,true);
+        if(e.type==='line')editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.x1,y:e.y1},b:{x:e.x2,y:e.y2},source:'DXF'});
+        else if(e.type==='polyline'&&e.points?.length>1){for(let i=1;i<e.points.length;i++)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points[i-1][0],y:e.points[i-1][1]},b:{x:e.points[i][0],y:e.points[i][1]},source:'DXF'});if(e.closed)editable.push({id:uid('cadLine'),type:'cadLine',cadLayer:layer,a:{x:e.points.at(-1)[0],y:e.points.at(-1)[1]},b:{x:e.points[0][0],y:e.points[0][1]},source:'DXF'});}
+        else if(e.type==='circle')editable.push({id:uid('cadCircle'),type:'cadCircle',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,source:'DXF'});
+        else if(e.type==='arc')editable.push({id:uid('cadArc'),type:'cadArc',cadLayer:layer,center:{x:e.cx,y:e.cy},radius:e.r,startAngle:e.startAngle||0,sweep:e.sweep||0,sourceType:e.sourceType||'ARC',source:'DXF'});
+        else if(e.type==='text')editable.push({id:uid('cadText'),type:'cadText',cadLayer:layer,point:{x:e.x,y:e.y},text:e.text||'',height:e.height||180,rotation:e.rotation||0,sourceType:e.sourceType||'TEXT',source:'DXF'});
+      }
+      if(!editable.some(o=>o.type==='cadLine'||o.type==='cadCircle'||o.type==='cadArc'))alert(t('alert.dxfNoEditableEntities'));
+      state.objects=editable;state.sourceDxfName=file.name;state.sourceDxfFingerprint=await sha256Hex(text);state.sourceDxfSize=file.size||text.length;state.sourceDxfLastModified=file.lastModified||0;state.sourceDxfFullBounds=boundsEntities(entities);state.sourceDxfMainBounds=scaleBounds(parsed.analysis?.mainBounds,factor)||state.sourceDxfFullBounds;state.sourceDxfOutlierCount=parsed.analysis?.outlierCount||0;state.activeCadLayer=(parsed.layers||[])[0]||'0';state.dirty=false;rebuildObjectSnapIndex();hideProgress();switchToolset('cad',{skipMapping:true});updateAll();fitAll();
+    }catch(err){hideProgress();console.error(err);alert(err.message||String(err));}
+    finally{dom.dxfEditFileInput.value='';}
+  }
 
-  function normalizeEntityToMm(e,factor){const out={...e};if(e.type==='line'){out.x1=e.x1*factor;out.y1=e.y1*factor;out.x2=e.x2*factor;out.y2=e.y2*factor;}else if(e.type==='polyline')out.points=(e.points||[]).map(p=>[p[0]*factor,p[1]*factor]);else if(e.type==='circle'){out.cx=e.cx*factor;out.cy=e.cy*factor;out.r=e.r*factor;}else if(e.type==='text'){out.x=e.x*factor;out.y=e.y*factor;}return out;}
-  function buildDxfPaths(entities){const paths=new Map(),get=layer=>{const key=layer||'0';if(!paths.has(key))paths.set(key,new Path2D());return paths.get(key);};for(const e of entities){const path=get(e.layer);if(e.type==='line'){path.moveTo(e.x1,e.y1);path.lineTo(e.x2,e.y2);}else if(e.type==='polyline'&&e.points?.length){path.moveTo(e.points[0][0],e.points[0][1]);for(let i=1;i<e.points.length;i++)path.lineTo(e.points[i][0],e.points[i][1]);if(e.closed)path.closePath();}else if(e.type==='circle'&&e.r>0){path.moveTo(e.cx+e.r,e.cy);path.arc(e.cx,e.cy,e.r,0,Math.PI*2);}}return paths;}
-  function buildSnapIndex(entities,bounds){const cellW=1000,cellH=1000,cells=new Map();const add=(x,y,layer='0')=>{if(!Number.isFinite(x)||!Number.isFinite(y))return;const gx=Math.floor(x/cellW),gy=Math.floor(y/cellH),key=`${gx},${gy}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push({x,y,layer});};for(const e of entities){if(e.type==='line'){add(e.x1,e.y1,e.layer);add(e.x2,e.y2,e.layer);}else if(e.type==='polyline')for(const p of e.points||[])add(p[0],p[1],e.layer);else if(e.type==='circle'){add(e.cx-e.r,e.cy,e.layer);add(e.cx+e.r,e.cy,e.layer);add(e.cx,e.cy-e.r,e.layer);add(e.cx,e.cy+e.r,e.layer);}}return{minx:0,miny:0,cellW,cellH,cells};}
-  function boundsEntities(entities){let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;const add=(x,y)=>{if(Number.isFinite(x)&&Number.isFinite(y)){minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);}};for(const e of entities){if(e.type==='line'){add(e.x1,e.y1);add(e.x2,e.y2);}else if(e.type==='polyline')for(const p of e.points||[])add(p[0],p[1]);else if(e.type==='circle'){add(e.cx-e.r,e.cy-e.r);add(e.cx+e.r,e.cy+e.r);}else if(e.type==='text')add(e.x,e.y);}return Number.isFinite(minx)?{minx,miny,maxx,maxy}:{minx:0,miny:0,maxx:1000,maxy:1000};}
+  function normalizeEntityToMm(e,factor){const out={...e};if(e.type==='line'){out.x1=e.x1*factor;out.y1=e.y1*factor;out.x2=e.x2*factor;out.y2=e.y2*factor;}else if(e.type==='polyline')out.points=(e.points||[]).map(p=>[p[0]*factor,p[1]*factor]);else if(e.type==='circle'||e.type==='arc'){out.cx=e.cx*factor;out.cy=e.cy*factor;out.r=e.r*factor;}else if(e.type==='text'){out.x=e.x*factor;out.y=e.y*factor;out.height=(e.height||180)*factor;}return out;}
+  function buildDxfPaths(entities){const paths=new Map(),get=layer=>{const key=layer||'0';if(!paths.has(key))paths.set(key,new Path2D());return paths.get(key);};for(const e of entities){const path=get(e.layer);if(e.type==='line'){path.moveTo(e.x1,e.y1);path.lineTo(e.x2,e.y2);}else if(e.type==='polyline'&&e.points?.length){path.moveTo(e.points[0][0],e.points[0][1]);for(let i=1;i<e.points.length;i++)path.lineTo(e.points[i][0],e.points[i][1]);if(e.closed)path.closePath();}else if(e.type==='circle'&&e.r>0){path.moveTo(e.cx+e.r,e.cy);path.arc(e.cx,e.cy,e.r,0,Math.PI*2);}else if(e.type==='arc'&&e.r>0){const a0=rad(e.startAngle||0),a1=rad((e.startAngle||0)+(e.sweep||0));path.moveTo(e.cx+Math.cos(a0)*e.r,e.cy+Math.sin(a0)*e.r);path.arc(e.cx,e.cy,e.r,a0,a1,(e.sweep||0)<0);}}return paths;}
+  function buildSnapIndex(entities,bounds){const cellW=1000,cellH=1000,cells=new Map();const add=(x,y,layer='0')=>{if(!Number.isFinite(x)||!Number.isFinite(y))return;const gx=Math.floor(x/cellW),gy=Math.floor(y/cellH),key=`${gx},${gy}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push({x,y,layer});};for(const e of entities){if(e.type==='line'){add(e.x1,e.y1,e.layer);add(e.x2,e.y2,e.layer);}else if(e.type==='polyline')for(const p of e.points||[])add(p[0],p[1],e.layer);else if(e.type==='circle'){add(e.cx-e.r,e.cy,e.layer);add(e.cx+e.r,e.cy,e.layer);add(e.cx,e.cy-e.r,e.layer);add(e.cx,e.cy+e.r,e.layer);}else if(e.type==='arc'){const a0=rad(e.startAngle||0),a1=rad((e.startAngle||0)+(e.sweep||0));add(e.cx+Math.cos(a0)*e.r,e.cy+Math.sin(a0)*e.r,e.layer);add(e.cx+Math.cos(a1)*e.r,e.cy+Math.sin(a1)*e.r,e.layer);}}return{minx:0,miny:0,cellW,cellH,cells};}
+  function boundsEntities(entities){let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;const add=(x,y)=>{if(Number.isFinite(x)&&Number.isFinite(y)){minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);}};for(const e of entities){if(e.type==='line'){add(e.x1,e.y1);add(e.x2,e.y2);}else if(e.type==='polyline')for(const p of e.points||[])add(p[0],p[1]);else if(e.type==='circle'||e.type==='arc'){add(e.cx-e.r,e.cy-e.r);add(e.cx+e.r,e.cy+e.r);}else if(e.type==='text')add(e.x,e.y);}return Number.isFinite(minx)?{minx,miny,maxx,maxy}:{minx:0,miny:0,maxx:1000,maxy:1000};}
   function readDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
   function loadImage(src){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=rej;img.src=src;});}
+
+
+  async function sha256Hex(text){
+    try{const bytes=new TextEncoder().encode(text),hash=await crypto.subtle.digest('SHA-256',bytes);return[...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');}catch(_){return null;}
+  }
+  function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+  function serializeReference(ref){
+    const base={id:ref.id,type:ref.type,name:ref.name,visible:ref.visible!==false,opacity:Number(ref.opacity??.5),scale:Number(ref.scale??1),origin:ref.origin?{...ref.origin}:{x:0,y:0},sourceUnit:ref.sourceUnit||null};
+    if(ref.type==='image')return{...base,width:ref.width,height:ref.height,dataUrl:ref.dataUrl||null};
+    if(ref.type==='dxf')return{...base,entities:ref.entities||[],bounds:ref.bounds||null,mainBounds:ref.mainBounds||null,outlierCount:ref.outlierCount||0,sourceUnitSpecified:Boolean(ref.sourceUnitSpecified),layers:ref.layers||[],visibleLayers:[...(ref.visibleLayers||[]) ]};
+    if(ref.type==='linkedCadRegion')return{...base,regionId:ref.regionId,layers:ref.layers||[],visibleLayers:[...(ref.visibleLayers||[]) ]};
+    return base;
+  }
+  async function hydrateReference(raw){
+    const ref={...raw,origin:raw.origin?{...raw.origin}:{x:0,y:0}};
+    if(ref.type==='image'){
+      if(!ref.dataUrl)return null;
+      try{ref.image=await loadImage(ref.dataUrl);ref.width=ref.width||ref.image.naturalWidth;ref.height=ref.height||ref.image.naturalHeight;}catch(_){return null;}
+    }else if(ref.type==='dxf'){
+      ref.entities=Array.isArray(ref.entities)?ref.entities:[];ref.layers=Array.isArray(ref.layers)?ref.layers:[];ref.visibleLayers=new Set(Array.isArray(raw.visibleLayers)?raw.visibleLayers:ref.layers);ref.pathsByLayer=buildDxfPaths(ref.entities);ref.textEntities=ref.entities.filter(e=>e.type==='text');ref.bounds=ref.bounds||boundsEntities(ref.entities);ref.mainBounds=ref.mainBounds||ref.bounds;ref.snapIndex=buildSnapIndex(ref.entities,ref.bounds);
+    }else if(ref.type==='linkedCadRegion'){
+      ref.layers=Array.isArray(ref.layers)?ref.layers:[];ref.visibleLayers=new Set(Array.isArray(raw.visibleLayers)?raw.visibleLayers:ref.layers);
+    }
+    return ref;
+  }
+  function makeProjectPayload(){
+    return{
+      format:'PieniPlan',schemaVersion:1,app:{version:VERSION,build:BUILD},savedAt:new Date().toISOString(),
+      sourceDxf:{name:state.sourceDxfName||null,fingerprint:state.sourceDxfFingerprint||null,size:state.sourceDxfSize||0,lastModified:state.sourceDxfLastModified||0,mainBounds:state.sourceDxfMainBounds||null,fullBounds:state.sourceDxfFullBounds||null,outlierCount:state.sourceDxfOutlierCount||0},
+      drawing:{objects:state.objects,drawingRegions:state.drawingRegions,references:state.references.map(serializeReference),cadLayerVisibility:[...state.cadLayerVisibility],activeCadLayer:state.activeCadLayer,cadMapping:state.cadMapping,baseAxisAngle:state.baseAxisAngle,baseAxisWallId:state.baseAxisWallId,camera:state.camera,toolset:state.toolset,toolSettings:state.toolSettings,planLayerVisibility:planLayers.map(l=>[l.id,l.visible!==false]),recognitionHistory:state.recognitionHistory,nextId:state.nextId}
+    };
+  }
+  function projectBaseName(){const raw=state.sourceDxfName||state.projectFileName||'PieniPlan';return sanitizeFilename(String(raw).replace(/\.(dxf|pieniplan)$/i,''));}
+  async function saveProjectFile(){
+    try{
+      const payload=makeProjectPayload(),json=JSON.stringify(payload,null,2),name=`${projectBaseName()}.pieniplan`;
+      downloadBlob(new Blob([json],{type:'application/json;charset=utf-8'}),name);state.projectFileName=name;markDirty(false);setCommandStatus(t('project.saved',{name}),'strong');
+    }catch(err){console.error(err);alert(t('project.saveFailed',{message:String(err?.message||err)}));}
+  }
+  async function openProjectFile(file){
+    if(!file)return;
+    try{
+      if((state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.openProject')))return;
+      const raw=JSON.parse(await file.text());if(raw?.format!=='PieniPlan'||!raw.drawing)throw new Error(t('project.invalid'));
+      const d=raw.drawing,refs=[];for(const rr of d.references||[]){const ref=await hydrateReference(rr);if(ref)refs.push(ref);}
+      state.objects=Array.isArray(d.objects)?d.objects:[];state.drawingRegions=Array.isArray(d.drawingRegions)?d.drawingRegions:[];state.references=refs;state.cadLayerVisibility=new Map(Array.isArray(d.cadLayerVisibility)?d.cadLayerVisibility:[['0',true]]);state.activeCadLayer=d.activeCadLayer||'0';state.cadMapping=d.cadMapping||null;state.baseAxisAngle=Number(d.baseAxisAngle)||0;state.baseAxisWallId=d.baseAxisWallId||null;state.camera=d.camera&&Number.isFinite(d.camera.zoom)?{...d.camera}:{cx:0,cy:0,zoom:.12};state.toolSettings={...state.toolSettings,...(d.toolSettings||{})};state.recognitionHistory=Array.isArray(d.recognitionHistory)?d.recognitionHistory:[];state.nextId=Math.max(Number(d.nextId)||1,state.objects.length+state.references.length+state.drawingRegions.length+1);
+      if(Array.isArray(d.planLayerVisibility)){const vis=new Map(d.planLayerVisibility);for(const l of planLayers)l.visible=vis.get(l.id)!==false;}
+      const src=raw.sourceDxf||{};state.sourceDxfName=src.name||null;state.sourceDxfFingerprint=src.fingerprint||null;state.sourceDxfSize=Number(src.size)||0;state.sourceDxfLastModified=Number(src.lastModified)||0;state.sourceDxfMainBounds=src.mainBounds||null;state.sourceDxfFullBounds=src.fullBounds||null;state.sourceDxfOutlierCount=Number(src.outlierCount)||0;state.projectFileName=file.name;
+      state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;state.selectedRegionId=null;state.wallRecognitionPreview=null;state.history=[];state.future=[];state.layerFilter='';state.layerRevealRequested=false;state.dirty=false;rebuildObjectSnapIndex();refreshSpaces();switchToolset(d.toolset==='cad'?'cad':'plan',{skipMapping:true});updateAll();setCommandStatus(t('project.opened',{name:file.name}),'strong');
+    }catch(err){console.error(err);alert(t('project.openFailed',{message:String(err?.message||err)}));}
+  }
   function showProgress(title,ratio,detail){dom.progressToast.hidden=false;dom.progressTitle.textContent=title;dom.progressBar.style.width=`${clamp(ratio,0,1)*100}%`;dom.progressDetail.textContent=detail;}
   function hideProgress(){dom.progressToast.hidden=true;}
 
@@ -1205,7 +1400,7 @@
   function visibleCadLayers(region=null){const layers=new Set();for(const o of state.objects){if(!(isCadObject(o)||o.type==='line'))continue;const layer=o.cadLayer||'0';if(!cadLayerVisible(layer))continue;if(region&&!objectTouchesRegion(o,region))continue;layers.add(layer);}return layers;}
   function regionObjectCount(region){return state.objects.filter(o=>(isCadObject(o)||o.type==='line')&&cadLayerVisible(o.cadLayer||'0')&&objectTouchesRegion(o,region)).length;}
   function openRegionInPlan(region){let ref=state.references.find(r=>r.type==='linkedCadRegion'&&r.regionId===region.id);if(!ref){const layers=visibleCadLayers(region);ref={id:uid('ref'),type:'linkedCadRegion',regionId:region.id,name:`${region.name} · CAD`,visible:true,opacity:.48,layers:[...layers],visibleLayers:new Set(layers)};state.references.push(ref);}else ref.visible=true;state.selectedReferenceId=ref.id;markDirty(true);switchToolset('plan',{skipMapping:true});switchInspector('reference');fitBounds(region);updateAll();}
-  function exportRegionDxf(region){const visible=visibleCadLayers();let entities='',layers=new Set(['0']);for(const o of state.objects){if(!(isCadObject(o)||o.type==='line')||!objectTouchesRegion(o,region))continue;const layer=o.cadLayer||'0';if(!visible.has(layer))continue;layers.add(layer);if(o.type==='cadLine'||o.type==='line'){const clipped=clipLineToRect(o.a,o.b,region);if(clipped)entities+=dxfLine(layer,clipped[0],clipped[1]);}else if(o.type==='cadCircle')entities+=dxfCircle(layer,o.center,o.radius);else if(o.type==='cadText'&&pointInRect(o.point,region))entities+=dxfText(layer,o.point,o.text||'');}let layerTable=dxfPair(0,'TABLE')+dxfPair(2,'LAYER')+dxfPair(70,layers.size);for(const name of layers)layerTable+=dxfPair(0,'LAYER')+dxfPair(2,sanitizeLayer(name))+dxfPair(70,0)+dxfPair(62,7)+dxfPair(6,'CONTINUOUS');layerTable+=dxfPair(0,'ENDTAB');const dxf=dxfPair(0,'SECTION')+dxfPair(2,'HEADER')+dxfPair(9,'$ACADVER')+dxfPair(1,'AC1009')+dxfPair(9,'$INSUNITS')+dxfPair(70,4)+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'TABLES')+layerTable+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'ENTITIES')+entities+dxfPair(0,'ENDSEC')+dxfPair(0,'EOF');downloadTextFile(dxf,`${sanitizeFilename(region.name||'region')}_PieniPlan.dxf`,'application/dxf;charset=utf-8');}
+  function exportRegionDxf(region){const visible=visibleCadLayers();let entities='',layers=new Set(['0']);for(const o of state.objects){if(!(isCadObject(o)||o.type==='line')||!objectTouchesRegion(o,region))continue;const layer=o.cadLayer||'0';if(!visible.has(layer))continue;layers.add(layer);if(o.type==='cadLine'||o.type==='line'){const clipped=clipLineToRect(o.a,o.b,region);if(clipped)entities+=dxfLine(layer,clipped[0],clipped[1]);}else if(o.type==='cadCircle')entities+=dxfCircle(layer,o.center,o.radius);else if(o.type==='cadArc')entities+=dxfArc(layer,o.center,o.radius,o.startAngle||0,(o.startAngle||0)+(o.sweep||0));else if(o.type==='cadText'&&pointInRect(o.point,region))entities+=dxfText(layer,o.point,o.text||'',o.height||180,o.rotation||0);}let layerTable=dxfPair(0,'TABLE')+dxfPair(2,'LAYER')+dxfPair(70,layers.size);for(const name of layers)layerTable+=dxfPair(0,'LAYER')+dxfPair(2,sanitizeLayer(name))+dxfPair(70,0)+dxfPair(62,7)+dxfPair(6,'CONTINUOUS');layerTable+=dxfPair(0,'ENDTAB');const dxf=dxfPair(0,'SECTION')+dxfPair(2,'HEADER')+dxfPair(9,'$ACADVER')+dxfPair(1,'AC1009')+dxfPair(9,'$INSUNITS')+dxfPair(70,4)+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'TABLES')+layerTable+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'ENTITIES')+entities+dxfPair(0,'ENDSEC')+dxfPair(0,'EOF');downloadTextFile(dxf,`${sanitizeFilename(region.name||'region')}_PieniPlan.dxf`,'application/dxf;charset=utf-8');}
   function downloadTextFile(text,filename,type='text/plain;charset=utf-8'){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function sanitizeFilename(name){return String(name||'PieniPlan').replace(/[\/:*?"<>|]+/g,'_').trim()||'PieniPlan';}
   function deleteRegion(regionId){pushHistory();state.drawingRegions=state.drawingRegions.filter(r=>r.id!==regionId);state.references=state.references.filter(r=>!(r.type==='linkedCadRegion'&&r.regionId===regionId));if(state.selectedRegionId===regionId)state.selectedRegionId=null;markDirty(true);updateAll();}
@@ -1252,164 +1447,154 @@
   }
 
   function wallRecognitionSourceLines(region){
-    const result=[];
-    for(const o of state.objects){
-      if(!(o.type==='cadLine'||o.type==='line'))continue;
-      const layer=o.cadLayer||'0';
-      if(!cadLayerVisible(layer))continue;
-      const clipped=clipLineToRect(o.a,o.b,region);
-      if(!clipped)continue;
-      const len=distance(clipped[0],clipped[1]);
-      if(len<350)continue;
-      let angle=angleDeg(clipped[0],clipped[1])%180;
-      if(angle<0)angle+=180;
-      result.push({id:o.id,layer,a:clipped[0],b:clipped[1],length:len,angle});
-    }
-    return result;
+    const result=[];for(const o of state.objects){if(!(o.type==='cadLine'||o.type==='line'))continue;const layer=o.cadLayer||'0';if(!cadLayerVisible(layer))continue;const clipped=clipLineToRect(o.a,o.b,region);if(!clipped)continue;const len=distance(clipped[0],clipped[1]);if(len<120)continue;let angle=angleDeg(clipped[0],clipped[1])%180;if(angle<0)angle+=180;result.push({id:o.id,layer,a:clipped[0],b:clipped[1],length:len,angle});}return result;
+  }
+  function wallRecognitionSourceArcs(region){
+    const result=[];for(const o of state.objects){if(o.type!=='cadArc')continue;const layer=o.cadLayer||'0';if(!cadLayerVisible(layer)||!objectTouchesRegion(o,region))continue;const r=Number(o.radius)||0,sweep=Number(o.sweep)||0;if(r<120||Math.abs(sweep)<6)continue;result.push({id:o.id,layer,center:{...o.center},radius:r,startAngle:Number(o.startAngle)||0,sweep,sourceType:o.sourceType||'ARC'});}return result;
   }
 
-  function angleDiff180(a,b){
-    let d=Math.abs(a-b)%180;
-    if(d>90)d=180-d;
-    return d;
-  }
+  function angleDiff180(a,b){let d=Math.abs(a-b)%180;if(d>90)d=180-d;return d;}
 
   function pairWallCandidate(a,b){
-    if(angleDiff180(a.angle,b.angle)>2.2)return null;
-    let ux1=(a.b.x-a.a.x)/a.length,uy1=(a.b.y-a.a.y)/a.length;
-    let ux2=(b.b.x-b.a.x)/b.length,uy2=(b.b.y-b.a.y)/b.length;
-    if(ux1*ux2+uy1*uy2<0){ux2=-ux2;uy2=-uy2;}
-    let ux=ux1+ux2,uy=uy1+uy2;
-    const ul=Math.hypot(ux,uy)||1;ux/=ul;uy/=ul;
-    const nx=-uy,ny=ux;
-    const proj=(p)=>p.x*ux+p.y*uy;
-    const off=(p)=>p.x*nx+p.y*ny;
-    const a0=Math.min(proj(a.a),proj(a.b)),a1=Math.max(proj(a.a),proj(a.b));
-    const b0=Math.min(proj(b.a),proj(b.b)),b1=Math.max(proj(b.a),proj(b.b));
-    const lo=Math.max(a0,b0),hi=Math.min(a1,b1);
-    const overlap=hi-lo;
-    if(overlap<350)return null;
-    const oa=(off(a.a)+off(a.b))/2,ob=(off(b.a)+off(b.b))/2;
-    const thickness=Math.abs(ob-oa);
-    if(thickness<60||thickness>500)return null;
-    const shorter=Math.min(a.length,b.length);
-    const overlapRatio=overlap/Math.max(shorter,1);
-    if(overlapRatio<.32)return null;
-    const centerOff=(oa+ob)/2;
-    const p1={x:ux*lo+nx*centerOff,y:uy*lo+ny*centerOff};
-    const p2={x:ux*hi+nx*centerOff,y:uy*hi+ny*centerOff};
-    const preferred=thickness>=80&&thickness<=320?1:.72;
-    const score=overlapRatio*2+Math.min(overlap/4000,1)+preferred-(angleDiff180(a.angle,b.angle)/8);
-    return {a:p1,b:p2,thickness,score,sourceIds:[a.id,b.id],sourceLayers:[a.layer,b.layer]};
+    if(angleDiff180(a.angle,b.angle)>2.4)return null;const ax=lineAxis(a),bx=lineAxis(b);let ux=ax.ux,uy=ax.uy;if(ux*bx.ux+uy*bx.uy<0){/* canonical lineAxis normally prevents this */}
+    const nx=-uy,ny=ux,proj=p=>p.x*ux+p.y*uy,off=p=>p.x*nx+p.y*ny,a0=Math.min(proj(a.a),proj(a.b)),a1=Math.max(proj(a.a),proj(a.b)),b0=Math.min(proj(b.a),proj(b.b)),b1=Math.max(proj(b.a),proj(b.b)),lo=Math.max(a0,b0),hi=Math.min(a1,b1),overlap=hi-lo;if(overlap<280)return null;
+    const oa=(off(a.a)+off(a.b))/2,ob=(off(b.a)+off(b.b))/2,thickness=Math.abs(ob-oa);if(thickness<55||thickness>560)return null;const shorter=Math.min(a.length,b.length),overlapRatio=overlap/Math.max(shorter,1);if(overlapRatio<.26)return null;const centerOff=(oa+ob)/2,p1={x:ux*lo+nx*centerOff,y:uy*lo+ny*centerOff},p2={x:ux*hi+nx*centerOff,y:uy*hi+ny*centerOff},preferred=thickness>=80&&thickness<=360?1:.68,score=overlapRatio*2+Math.min(overlap/4500,1)+preferred-angleDiff180(a.angle,b.angle)/8;
+    return{a:p1,b:p2,thickness,score,overlap,overlapRatio,sourceIds:[a.id,b.id],sourceLayers:[a.layer,b.layer],angle:ax.angle,geometry:'straight'};
+  }
+
+  function detectStairCandidates(lines,region){
+    const buckets=new Map();for(const line of lines){if(line.length<220||line.length>6500)continue;const key=Math.round(line.angle/3)*3;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(line);}const candidates=[],used=new Set();
+    for(const bucket of buckets.values()){
+      if(bucket.length<5)continue;const axis=lineAxis(bucket[0]),items=bucket.map(line=>{const u0=Math.min(axis.project(line.a),axis.project(line.b)),u1=Math.max(axis.project(line.a),axis.project(line.b)),n=(axis.offset(line.a)+axis.offset(line.b))/2;return{line,u0,u1,n,centerU:(u0+u1)/2};}).sort((a,b)=>a.n-b.n),adj=new Map(items.map((_,i)=>[i,new Set()]));
+      for(let i=0;i<items.length;i++){for(let j=i+1;j<Math.min(items.length,i+18);j++){const dn=items[j].n-items[i].n;if(dn>520)break;if(dn<90)continue;const lo=Math.max(items[i].u0,items[j].u0),hi=Math.min(items[i].u1,items[j].u1),overlap=Math.max(0,hi-lo),shorter=Math.min(items[i].line.length,items[j].line.length),ratio=overlap/Math.max(shorter,1),lr=Math.min(items[i].line.length,items[j].line.length)/Math.max(items[i].line.length,items[j].line.length);if(ratio>.52&&lr>.48){adj.get(i).add(j);adj.get(j).add(i);}}}
+      const seen=new Set();for(let i=0;i<items.length;i++){if(seen.has(i))continue;const q=[i],component=[];seen.add(i);while(q.length){const k=q.pop();component.push(items[k]);for(const n of adj.get(k))if(!seen.has(n)){seen.add(n);q.push(n);}}if(component.length<5)continue;const minU=Math.min(...component.map(x=>x.u0)),maxU=Math.max(...component.map(x=>x.u1)),minN=Math.min(...component.map(x=>x.n)),maxN=Math.max(...component.map(x=>x.n));if(maxN-minN<360||maxN-minN>8000||maxU-minU<350)continue;const ids=component.map(x=>x.line.id),key=ids.slice().sort().join('|');if(used.has(key))continue;used.add(key);candidates.push({id:`stairCandidate${candidates.length+1}`,polygon:orientedRectFromAxes({x:axis.ux,y:axis.uy},{x:axis.nx,y:axis.ny},minU,maxU,minN,maxN),axis:{ux:axis.ux,uy:axis.uy,nx:axis.nx,ny:axis.ny},axisBounds:{minU,maxU,minN,maxN},treadCount:component.length,sourceIds:ids,confidence:Math.min(.98,.55+component.length*.035)});}}
+    return candidates.slice(0,50);
+  }
+
+  function clusterCommonWallThicknesses(pairs){
+    const bins=new Map();for(const p of pairs){const k=Math.round(p.thickness/10)*10,b=bins.get(k)||{value:k,weight:0,count:0};b.weight+=Math.max(1,p.overlap)*Math.max(.4,p.overlapRatio);b.count++;bins.set(k,b);}const sorted=[...bins.values()].sort((a,b)=>b.weight-a.weight),chosen=[];for(const b of sorted){if(chosen.some(c=>Math.abs(c.value-b.value)<25))continue;chosen.push(b);if(chosen.length>=7)break;}return chosen.sort((a,b)=>a.value-b.value);
+  }
+  function dominantArchitecturalAxes(lines){
+    const bins=new Map();for(const l of lines){if(l.length<450)continue;const k=Math.round(l.angle)%180,b=bins.get(k)||{angle:k,weight:0};b.weight+=Math.min(l.length,16000);bins.set(k,b);}const ordered=[...bins.values()].sort((a,b)=>b.weight-a.weight),axes=[];for(const b of ordered){if(axes.some(a=>angleDiff180(a.angle,b.angle)<4))continue;axes.push(b);if(axes.length>=6)break;}return axes;
+  }
+  function snapWallCandidateToAxis(w,axes){
+    if(w.geometry==='arc'||!axes.length)return w;const current=angleDeg(w.a,w.b)%180;let best=null,bestD=Infinity;for(const a of axes){const d=angleDiff180(current,a.angle);if(d<bestD){bestD=d;best=a.angle;}}if(best==null||bestD>4)return w;const m=wallMidPoint(w),len=distance(w.a,w.b),r=rad(best),ux=Math.cos(r),uy=Math.sin(r);return{...w,a:{x:m.x-ux*len/2,y:m.y-uy*len/2},b:{x:m.x+ux*len/2,y:m.y+uy*len/2},angle:best};
+  }
+  function median(values){const a=values.filter(Number.isFinite).slice().sort((x,y)=>x-y);if(!a.length)return 0;const i=Math.floor(a.length/2);return a.length%2?a[i]:(a[i-1]+a[i])/2;}
+  function projectionOverlapRatio(a,b,axis){const a0=Math.min(axis.project(a.a),axis.project(a.b)),a1=Math.max(axis.project(a.a),axis.project(a.b)),b0=Math.min(axis.project(b.a),axis.project(b.b)),b1=Math.max(axis.project(b.a),axis.project(b.b)),overlap=Math.max(0,Math.min(a1,b1)-Math.max(a0,b0));return overlap/Math.max(1,Math.min(a1-a0,b1-b0));}
+  function collapseArchitecturalWallBundles(walls){
+    const ordered=walls.slice().sort((a,b)=>distance(b.a,b.b)-distance(a.a,a.b)),used=new Set(),out=[];
+    for(let i=0;i<ordered.length;i++){
+      if(used.has(i))continue;const seed=ordered[i],axis=lineAxis(seed),cluster=[seed];used.add(i);
+      for(let j=i+1;j<ordered.length;j++){if(used.has(j))continue;const c=ordered[j];if(angleDiff180(axis.angle,lineAxis(c).angle)>2.5)continue;const overlap=projectionOverlapRatio(seed,c,axis);if(overlap<.34)continue;const normal=Math.abs(axis.offset(wallMidPoint(seed))-axis.offset(wallMidPoint(c))),limit=Math.max(165,1.2*Math.max(seed.thickness||150,c.thickness||150));if(normal>limit)continue;cluster.push(c);used.add(j);}
+      if(cluster.length===1){out.push(seed);continue;}
+      const weights=cluster.map(c=>Math.max(1,distance(c.a,c.b))*Math.max(.7,c.score||1)),sum=weights.reduce((a,b)=>a+b,0),offsets=cluster.map(c=>axis.offset(wallMidPoint(c))),off=offsets.reduce((s,v,k)=>s+v*weights[k],0)/sum,lo=Math.min(...cluster.flatMap(c=>[axis.project(c.a),axis.project(c.b)])),hi=Math.max(...cluster.flatMap(c=>[axis.project(c.a),axis.project(c.b)])),baseThickness=median(cluster.map(c=>c.thickness||150)),spread=Math.max(...offsets)-Math.min(...offsets),thickness=Math.max(baseThickness,spread+baseThickness),sourceIds=[...new Set(cluster.flatMap(c=>c.sourceIds||[]))],sourceLayers=[...new Set(cluster.flatMap(c=>c.sourceLayers||[]))];
+      out.push({id:seed.id,a:{x:axis.ux*lo+axis.nx*off,y:axis.uy*lo+axis.ny*off},b:{x:axis.ux*hi+axis.nx*off,y:axis.uy*hi+axis.ny*off},thickness:clamp(thickness,60,520),score:Math.max(...cluster.map(c=>c.score||0))+.12*Math.min(4,cluster.length-1),sourceIds,sourceLayers,geometry:'straight',bundleSize:cluster.length,confidence:clamp(.58+.06*Math.min(cluster.length,5),.58,.92)});
+    }
+    return out;
+  }
+  function mergeCollinearArchitecturalRuns(walls){
+    const groups=[];for(const w of walls){const ax=lineAxis(w),mid=wallMidPoint(w);let g=groups.find(g=>angleDiff180(g.axis.angle,ax.angle)<=1.8&&Math.abs(g.axis.offset(mid)-g.offset)<=Math.max(95,.55*Math.max(g.thickness,w.thickness||150)));if(!g){g={axis:ax,offset:ax.offset(mid),thickness:w.thickness||150,walls:[]};groups.push(g);}g.walls.push(w);const n=g.walls.length;g.offset=(g.offset*(n-1)+ax.offset(mid))/n;g.thickness=Math.max(g.thickness,w.thickness||150);}
+    const out=[];for(const g of groups){const ax=g.axis,items=g.walls.map(w=>({w,lo:Math.min(ax.project(w.a),ax.project(w.b)),hi:Math.max(ax.project(w.a),ax.project(w.b))})).sort((a,b)=>a.lo-b.lo);let cur=null;for(const it of items){const gapLimit=Math.max(1150,Math.min(1700,(it.w.thickness||150)*6));if(!cur||it.lo-cur.hi>gapLimit){if(cur)out.push(finalizeRun(cur,ax));cur={lo:it.lo,hi:it.hi,offset:ax.offset(wallMidPoint(it.w)),weights:Math.max(1,it.hi-it.lo),thickness:it.w.thickness||150,score:it.w.score||0,sources:new Set(it.w.sourceIds||[]),layers:new Set(it.w.sourceLayers||[]),bundleSize:it.w.bundleSize||1};}else{const weight=Math.max(1,it.hi-it.lo),tot=cur.weights+weight,off=ax.offset(wallMidPoint(it.w));cur.hi=Math.max(cur.hi,it.hi);cur.offset=(cur.offset*cur.weights+off*weight)/tot;cur.weights=tot;cur.thickness=Math.max(cur.thickness,it.w.thickness||150);cur.score=Math.max(cur.score,it.w.score||0);cur.bundleSize=Math.max(cur.bundleSize,it.w.bundleSize||1);for(const id of it.w.sourceIds||[])cur.sources.add(id);for(const l of it.w.sourceLayers||[])cur.layers.add(l);}}if(cur)out.push(finalizeRun(cur,ax));}
+    return out;
+  }
+  function finalizeRun(cur,ax){return{id:`wallCandidate_${Math.random().toString(36).slice(2,9)}`,a:{x:ax.ux*cur.lo+ax.nx*cur.offset,y:ax.uy*cur.lo+ax.ny*cur.offset},b:{x:ax.ux*cur.hi+ax.nx*cur.offset,y:ax.uy*cur.hi+ax.ny*cur.offset},thickness:clamp(cur.thickness,60,520),score:cur.score,sourceIds:[...cur.sources],sourceLayers:[...cur.layers],geometry:'straight',bundleSize:cur.bundleSize,confidence:clamp(.62+Math.min(.28,(cur.score||0)*.08)+Math.min(.08,(cur.bundleSize-1)*.03),.58,.97)};}
+
+  function mergeArchitecturalWallBands(pairs,thicknessClusters,sourceLines=[]){
+    const accepted=pairs.filter(p=>{const near=thicknessClusters.some(c=>Math.abs(c.value-p.thickness)<=32);return near||p.score>=2.2;}).slice(0,6500),groups=new Map();
+    for(const p of accepted){const ax=lineAxis(p),mid=wallMidPoint(p),off=ax.offset(mid),angleKey=Math.round(ax.angle/2)*2,offKey=Math.round(off/80)*80,thickKey=Math.round(p.thickness/20)*20,key=`${angleKey}|${offKey}|${thickKey}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push({...p,ax,off});}
+    const merged=[];for(const list of groups.values()){if(!list.length)continue;const base=list.reduce((a,b)=>a.overlap>=b.overlap?a:b),ax=base.ax;const intervals=list.map(p=>({lo:Math.min(ax.project(p.a),ax.project(p.b)),hi:Math.max(ax.project(p.a),ax.project(p.b)),off:p.off,thickness:p.thickness,score:p.score,sourceIds:p.sourceIds,sourceLayers:p.sourceLayers})).sort((a,b)=>a.lo-b.lo);let cur=null;for(const it of intervals){if(!cur||it.lo-cur.hi>1450){if(cur)merged.push(finalizeMergedBand(cur,ax));cur={...it,weights:Math.max(1,it.hi-it.lo),sources:new Set(it.sourceIds),layers:new Set(it.sourceLayers||[])};}else{const w=Math.max(1,it.hi-it.lo),tot=cur.weights+w;cur.hi=Math.max(cur.hi,it.hi);cur.off=(cur.off*cur.weights+it.off*w)/tot;cur.thickness=(cur.thickness*cur.weights+it.thickness*w)/tot;cur.score=Math.max(cur.score,it.score);cur.weights=tot;for(const id of it.sourceIds)cur.sources.add(id);for(const l of it.sourceLayers||[])cur.layers.add(l);}}if(cur)merged.push(finalizeMergedBand(cur,ax));}
+    const axes=dominantArchitecturalAxes(sourceLines),snapped=merged.map(w=>snapWallCandidateToAxis(w,axes)),bundled=collapseArchitecturalWallBundles(snapped),runs=mergeCollinearArchitecturalRuns(bundled),cornered=snapArchitecturalWallCorners(runs),connected=snapArchitecturalEndpointsToWalls(cornered);return mergeCollinearArchitecturalRuns(connected).filter(w=>distance(w.a,w.b)>=250).slice(0,300);
+  }
+  function wallMidPoint(w){return{x:(w.a.x+w.b.x)/2,y:(w.a.y+w.b.y)/2};}
+  function finalizeMergedBand(cur,ax){return{id:`wallCandidate_${Math.random().toString(36).slice(2,9)}`,a:{x:ax.ux*cur.lo+ax.nx*cur.off,y:ax.uy*cur.lo+ax.ny*cur.off},b:{x:ax.ux*cur.hi+ax.nx*cur.off,y:ax.uy*cur.hi+ax.ny*cur.off},thickness:Math.max(60,Math.min(520,cur.thickness)),score:cur.score,sourceIds:[...cur.sources],sourceLayers:[...(cur.layers||[])],geometry:'straight',confidence:clamp(.52+(cur.score||0)*.1,.5,.9)};}
+  function snapArchitecturalWallCorners(walls){
+    const out=walls.map(w=>w.geometry==='arc'?w:{...w,a:{...w.a},b:{...w.b}});for(let i=0;i<out.length;i++)for(let j=i+1;j<out.length;j++){const a=out[i],b=out[j];if(a.geometry==='arc'||b.geometry==='arc')continue;const aa=lineAxis(a),bb=lineAxis(b);if(angleDiff180(aa.angle,bb.angle)<15)continue;const x=infiniteLineIntersection(a.a,a.b,b.a,b.b);if(!x)continue;const pa=[a.a,a.b].sort((p,q)=>distance(p,x.point)-distance(q,x.point))[0],pb=[b.a,b.b].sort((p,q)=>distance(p,x.point)-distance(q,x.point))[0],da=distance(pa,x.point),db=distance(pb,x.point);if(da<=430&&db<=430){if(distance(a.a,x.point)<=distance(a.b,x.point))a.a={...x.point};else a.b={...x.point};if(distance(b.a,x.point)<=distance(b.b,x.point))b.a={...x.point};else b.b={...x.point};}}
+    return out.filter(w=>w.geometry==='arc'||distance(w.a,w.b)>=250);
+  }
+
+  function snapArchitecturalEndpointsToWalls(walls){
+    const out=walls.map(w=>w.geometry==='arc'?w:{...w,a:{...w.a},b:{...w.b}}),straight=out.filter(w=>w.geometry!=='arc');
+    for(let pass=0;pass<2;pass++)for(const w of straight)for(const ep of['a','b']){let best=null,bestD=Infinity;for(const other of straight){if(other===w)continue;if(angleDiff180(lineAxis(w).angle,lineAxis(other).angle)<12)continue;const pr=projectPointToSegment(w[ep],other.a,other.b),tol=Math.max(90,Math.min(260,.75*Math.max(w.thickness||150,other.thickness||150)));if(pr.distance<=tol&&pr.distance<bestD){bestD=pr.distance;best=pr.point;}}if(best)w[ep]={...best};}
+    return out;
+  }
+
+  function arcAnglesComparable(a,b){return Math.sign(a.sweep||1)===Math.sign(b.sweep||1)&&Math.abs(angleDelta(a.startAngle||0,b.startAngle||0))<=9&&Math.abs(Math.abs(a.sweep||0)-Math.abs(b.sweep||0))<=16;}
+  function detectArcWallCandidates(arcs){
+    const raw=[];for(let i=0;i<arcs.length;i++)for(let j=i+1;j<arcs.length;j++){const a=arcs[i],b=arcs[j];if(!arcAnglesComparable(a,b))continue;const dc=distance(a.center,b.center),rMin=Math.min(a.radius,b.radius);if(dc>Math.max(65,rMin*.025))continue;const thickness=Math.abs(a.radius-b.radius);if(thickness<55||thickness>560)continue;const center={x:(a.center.x+b.center.x)/2,y:(a.center.y+b.center.y)/2},radius=(a.radius+b.radius)/2,sweep=Math.sign(a.sweep||1)*Math.min(Math.abs(a.sweep),Math.abs(b.sweep)),startAngle=a.startAngle,aa=rad(startAngle),ab=rad(startAngle+sweep),p1={x:center.x+Math.cos(aa)*radius,y:center.y+Math.sin(aa)*radius},p2={x:center.x+Math.cos(ab)*radius,y:center.y+Math.sin(ab)*radius},score=2.2+Math.min(Math.abs(sweep)/90,1)+Math.max(0,1-dc/120);raw.push({id:`arcWallCandidate_${raw.length+1}`,geometry:'arc',center,radius,startAngle,sweep,a:p1,b:p2,thickness,score,sourceIds:[a.id,b.id],sourceLayers:[a.layer,b.layer],confidence:clamp(.72+score*.05,.72,.96)});}
+    const kept=[];for(const c of raw.sort((a,b)=>b.score-a.score)){const dup=kept.find(k=>distance(k.center,c.center)<90&&Math.abs(k.radius-c.radius)<Math.max(100,.8*Math.max(k.thickness,c.thickness))&&Math.abs(angleDelta(k.startAngle,c.startAngle))<8&&Math.abs(Math.abs(k.sweep)-Math.abs(c.sweep))<12);if(dup){const radii=[dup.radius,c.radius],spread=Math.abs(dup.radius-c.radius);dup.radius=(dup.radius+c.radius)/2;dup.thickness=clamp(Math.max(dup.thickness,c.thickness,spread+Math.min(dup.thickness,c.thickness)),60,520);dup.sourceIds=[...new Set([...(dup.sourceIds||[]),...(c.sourceIds||[])])];dup.sourceLayers=[...new Set([...(dup.sourceLayers||[]),...(c.sourceLayers||[])])];const a0=rad(dup.startAngle),a1=rad(dup.startAngle+dup.sweep);dup.a={x:dup.center.x+Math.cos(a0)*dup.radius,y:dup.center.y+Math.sin(a0)*dup.radius};dup.b={x:dup.center.x+Math.cos(a1)*dup.radius,y:dup.center.y+Math.sin(a1)*dup.radius};continue;}kept.push(c);}return kept.slice(0,80);
+  }
+  function candidateWallLength(w){return w.geometry==='arc'?Math.abs(rad(w.sweep))*w.radius:distance(w.a,w.b);}
+  function candidateWallPointAt(w,t){if(w.geometry==='arc'){const a=rad(w.startAngle+w.sweep*clamp(t,0,1));return{x:w.center.x+Math.cos(a)*w.radius,y:w.center.y+Math.sin(a)*w.radius};}return{x:w.a.x+(w.b.x-w.a.x)*t,y:w.a.y+(w.b.y-w.a.y)*t};}
+  function candidateWallProjectPoint(p,w){if(w.geometry!=='arc')return projectPointToSegment(p,w.a,w.b);const angle=normalizeAngle(deg(Math.atan2(p.y-w.center.y,p.x-w.center.x))),start=normalizeAngle(w.startAngle),sweep=w.sweep;let progress=sweep>=0?deltaCcw(start,angle)/Math.max(.000001,sweep):deltaCcw(angle,start)/Math.max(.000001,-sweep);if(progress>=0&&progress<=1){const point=candidateWallPointAt(w,progress);return{t:progress,point,distance:distance(p,point)};}const da=distance(p,w.a),db=distance(p,w.b);return da<=db?{t:0,point:{...w.a},distance:da}:{t:1,point:{...w.b},distance:db};}
+  function sampleCandidateWallSegments(w){if(w.geometry!=='arc')return[{id:`${w.id}:0`,wallId:w.id,a:w.a,b:w.b}];const n=Math.max(6,Math.ceil(Math.max(Math.abs(w.sweep)/8,candidateWallLength(w)/320))),out=[];let prev=candidateWallPointAt(w,0);for(let i=1;i<=n;i++){const cur=candidateWallPointAt(w,i/n);out.push({id:`${w.id}:${i-1}`,wallId:w.id,a:prev,b:cur});prev=cur;}return out;}
+
+  function detectDoorCandidates(region,walls,arcWallSourceIds=new Set()){
+    const candidates=[];for(const o of state.objects){if(o.type!=='cadArc'||arcWallSourceIds.has(o.id)||!cadLayerVisible(o.cadLayer||'0')||!objectTouchesRegion(o,region))continue;const sweep=Math.abs(Number(o.sweep)||0),r=Number(o.radius)||0;if(sweep<55||sweep>125||r<450||r>1800)continue;let best=null,bestD=Infinity;for(const w of walls){const pr=candidateWallProjectPoint(o.center,w),limit=Math.max(360,(w.thickness||150)*1.8);if(pr.distance<limit&&pr.distance<bestD){bestD=pr.distance;best={w,pr};}}if(!best)continue;candidates.push({id:`doorCandidate_${candidates.length+1}`,wallCandidateId:best.w.id,t:best.pr.t,width:r,doorType:'hingedSingle',hinge:'start',swing:1,sourceId:o.id,confidence:Math.max(.55,1-bestD/800)});}const out=[];for(const c of candidates.sort((a,b)=>b.confidence-a.confidence)){if(out.some(x=>x.wallCandidateId===c.wallCandidateId&&Math.abs(x.t-c.t)<.05))continue;out.push(c);}return out.slice(0,120);
   }
 
   function detectWallCandidates(region){
-    const lines=wallRecognitionSourceLines(region);
-    const bins=new Map();
-    for(const line of lines){
-      const key=Math.round(line.angle/2)*2;
-      if(!bins.has(key))bins.set(key,[]);
-      bins.get(key).push(line);
-    }
-    const pairs=[];
-    const usedPairs=new Set();
+    const lines=wallRecognitionSourceLines(region),arcs=wallRecognitionSourceArcs(region),stairs=detectStairCandidates(lines,region),stairIds=new Set(stairs.flatMap(s=>s.sourceIds)),structural=lines.filter(l=>l.length>=280&&!stairIds.has(l.id)),bins=new Map();for(const line of structural){const key=Math.round(line.angle/2)*2;if(!bins.has(key))bins.set(key,[]);bins.get(key).push(line);}const pairs=[];
     for(const bucket of bins.values()){
-      const theta=rad(bucket[0]?.angle||0),nx=-Math.sin(theta),ny=Math.cos(theta);
-      const prepared=bucket.map(line=>({...line,offset:((line.a.x+line.b.x)/2)*nx+((line.a.y+line.b.y)/2)*ny})).sort((a,b)=>a.offset-b.offset);
-      for(let i=0;i<prepared.length;i++){
-        let best=null;
-        for(let j=i+1;j<prepared.length;j++){
-          const delta=prepared[j].offset-prepared[i].offset;
-          if(delta>520)break;
-          if(delta<55)continue;
-          const cand=pairWallCandidate(prepared[i],prepared[j]);
-          if(!cand)continue;
-          if(!best||cand.score>best.score)best=cand;
-        }
-        if(best){
-          const key=[...best.sourceIds].sort().join('|');
-          if(!usedPairs.has(key)){usedPairs.add(key);pairs.push(best);}
-        }
-      }
-    }
-    pairs.sort((a,b)=>b.score-a.score);
-    const maxCandidates=1200;
-    return {lines,candidates:pairs.slice(0,maxCandidates),truncated:pairs.length>maxCandidates};
+      if(bucket.length<2)continue;const axis=lineAxis(bucket[0]),prepared=bucket.map(line=>({...line,offset:(axis.offset(line.a)+axis.offset(line.b))/2})).sort((a,b)=>a.offset-b.offset);for(let i=0;i<prepared.length;i++){let checked=0;for(let j=i+1;j<prepared.length&&checked<22;j++){const delta=prepared[j].offset-prepared[i].offset;if(delta>600)break;if(delta<50)continue;checked++;const cand=pairWallCandidate(prepared[i],prepared[j]);if(cand)pairs.push(cand);if(pairs.length>18000)break;}if(pairs.length>18000)break;}if(pairs.length>18000)break;}
+    const thicknessClusters=clusterCommonWallThicknesses(pairs),straightWalls=mergeArchitecturalWallBands(pairs.sort((a,b)=>b.score-a.score),thicknessClusters,structural),arcWalls=detectArcWallCandidates(arcs),walls=[...straightWalls,...arcWalls],arcWallSourceIds=new Set(arcWalls.flatMap(w=>w.sourceIds||[])),segments=walls.flatMap(sampleCandidateWallSegments),regionArea=Math.max(1,(region.maxx-region.minx)*(region.maxy-region.miny)),faces=detectFacesFromSegments(segments,{minArea:1_000_000,maxArea:regionArea*.82,snapTol:14}).filter(f=>f.area<600_000_000),spaces=faces.map((f,i)=>({id:`spaceCandidate_${i+1}`,...f,confidence:clamp(.68+Math.min(.24,(f.wallIds?.length||0)*.03),.68,.92)})),doors=detectDoorCandidates(region,walls,arcWallSourceIds);
+    return{lines,arcs,structural,pairs,walls,candidates:walls,spaces,doors,stairs,thicknessClusters,truncated:pairs.length>=18000,safetyExceeded:walls.length>=280};
   }
 
+  function candidateWallTangentAt(w,t){
+    if(w.geometry==='arc'){const a=rad(w.startAngle+w.sweep*clamp(t,0,1)),sign=w.sweep>=0?1:-1;return{ux:-Math.sin(a)*sign,uy:Math.cos(a)*sign};}
+    const dx=w.b.x-w.a.x,dy=w.b.y-w.a.y,len=Math.max(.000001,Math.hypot(dx,dy));return{ux:dx/len,uy:dy/len};
+  }
+  function candidateSignature(c){
+    if(c.geometry==='arc')return `A:${Math.round(c.center.x/10)}:${Math.round(c.center.y/10)}:${Math.round(c.radius/10)}:${Math.round(c.startAngle)}:${Math.round(c.sweep)}:${Math.round((c.thickness||0)/5)}`;
+    if(c.a&&c.b){const pts=[c.a,c.b].sort((p,q)=>p.x===q.x?p.y-q.y:p.x-q.x);return `L:${pts.map(p=>`${Math.round(p.x/10)}:${Math.round(p.y/10)}`).join(':')}:${Math.round((c.thickness||0)/5)}`;}
+    if(c.polygon?.length)return `P:${c.polygon.length}:${Math.round((c.area||0)/10000)}`;
+    return String(c.id||'candidate');
+  }
   function drawWallRecognitionPreview(){
-    const preview=state.wallRecognitionPreview;
-    if(!preview?.candidates?.length)return;
-    const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#3478F6';
-    ctx.save();
-    ctx.strokeStyle=accent;
-    ctx.globalAlpha=.42;
-    ctx.lineCap='square';
-    for(const wall of preview.candidates){
-      const a=toScreenCss(wall.a),b=toScreenCss(wall.b);
-      ctx.lineWidth=Math.max(2,wall.thickness*state.camera.zoom);
-      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-    }
-    ctx.restore();
+    const p=state.wallRecognitionPreview;if(!p)return;const styles=getComputedStyle(document.documentElement),accent=styles.getPropertyValue('--accent').trim()||'#3478F6',success=styles.getPropertyValue('--success').trim()||'#22c55e',door=styles.getPropertyValue('--door').trim()||'#f59e0b';ctx.save();
+    ctx.fillStyle=success;ctx.strokeStyle=success;for(const space of p.spaces||[]){ctx.globalAlpha=.07;ctx.beginPath();space.polygon.forEach((q,i)=>{const s=toScreenCss(q);if(!i)ctx.moveTo(s.x,s.y);else ctx.lineTo(s.x,s.y);});ctx.closePath();ctx.fill();ctx.globalAlpha=.32;ctx.lineWidth=1;ctx.stroke();}
+    ctx.strokeStyle=accent;ctx.globalAlpha=.48;ctx.lineCap='square';for(const wall of p.walls||p.candidates||[]){ctx.lineWidth=Math.max(2,(wall.thickness||150)*state.camera.zoom);const segs=sampleCandidateWallSegments(wall);ctx.beginPath();for(const seg of segs){const a=toScreenCss(seg.a),b=toScreenCss(seg.b);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);}ctx.stroke();}
+    ctx.strokeStyle=door;ctx.globalAlpha=.72;ctx.lineWidth=1.8;for(const d of p.doors||[]){const w=(p.walls||[]).find(x=>x.id===d.wallCandidateId);if(!w)continue;const c=candidateWallPointAt(w,d.t),tg=candidateWallTangentAt(w,d.t),nx=-tg.uy,ny=tg.ux,h={x:c.x-tg.ux*d.width/2,y:c.y-tg.uy*d.width/2},leaf={x:h.x+nx*d.width,y:h.y+ny*d.width};drawWorldLine(h,leaf,1.8);}
+    ctx.strokeStyle=success;ctx.globalAlpha=.65;ctx.setLineDash([6,4]);for(const st of p.stairs||[]){ctx.beginPath();st.polygon.forEach((q,i)=>{const s=toScreenCss(q);if(!i)ctx.moveTo(s.x,s.y);else ctx.lineTo(s.x,s.y);});ctx.closePath();ctx.stroke();}ctx.setLineDash([]);ctx.restore();
   }
 
   function beginWallRecognition(region){
-    if(!region)return;
-    const result=detectWallCandidates(region);
-    if(!result.candidates.length){alert(t('recognition.none'));return;}
-    state.selectedRegionId=region.id;
-    state.wallRecognitionPreview={regionId:region.id,candidates:result.candidates,sourceLineCount:result.lines.length,truncated:result.truncated};
-    dom.recognitionTitle.textContent=t('recognition.title');
-    dom.recognitionCopy.textContent=t('recognition.copy',{name:region.name});
-    dom.recognitionStats.textContent=t('recognition.stats',{walls:result.candidates.length.toLocaleString(),lines:result.lines.length.toLocaleString()})+(result.truncated?` · ${t('recognition.truncated')}`:'');
-    dom.recognitionBackdrop.hidden=false;
-    render();
+    if(!region)return;const result=detectWallCandidates(region);if(!result.walls.length&&!result.spaces.length&&!result.stairs.length){alert(t('recognition.none'));return;}state.selectedRegionId=region.id;state.wallRecognitionPreview={regionId:region.id,...result};dom.recognitionTitle.textContent=t('recognition.title');dom.recognitionCopy.textContent=t('recognition.copy',{name:region.name});dom.recognitionStats.textContent=t('recognition.stats',{walls:result.walls.length.toLocaleString(),lines:result.lines.length.toLocaleString()})+(result.truncated?` · ${t('recognition.truncated')}`:'');
+    if(dom.recognitionBreakdown)dom.recognitionBreakdown.innerHTML=[['recognition.wallsCount',result.walls.length],['recognition.spacesCount',result.spaces.length],['recognition.doorsCount',result.doors.length],['recognition.stairsCount',result.stairs.length]].map(([k,n])=>`<span class="recognition-chip">${escapeHtml(t(k,{count:n.toLocaleString()}))}</span>`).join('');dom.recognitionCreateWalls.checked=true;dom.recognitionCreateSpaces.checked=true;dom.recognitionCreateDoors.checked=true;dom.recognitionCreateStairs.checked=true;dom.recognitionApplyBtn.disabled=result.safetyExceeded;dom.recognitionBackdrop.hidden=false;render();
   }
-
-  function cancelWallRecognition(){
-    state.wallRecognitionPreview=null;
-    dom.recognitionBackdrop.hidden=true;
-    render();
-  }
-
+  function cancelWallRecognition(){state.wallRecognitionPreview=null;dom.recognitionBackdrop.hidden=true;dom.recognitionApplyBtn.disabled=false;render();}
   function wallCandidateDuplicatesExisting(c){
-    const ang=angleDeg(c.a,c.b)%180,mid={x:(c.a.x+c.b.x)/2,y:(c.a.y+c.b.y)/2},len=distance(c.a,c.b);
-    for(const w of state.objects){
-      if(w.type!=='wall')continue;
-      const wa=angleDeg(w.a,w.b)%180;
-      if(angleDiff180(ang,wa)>1.5)continue;
-      const wmid={x:(w.a.x+w.b.x)/2,y:(w.a.y+w.b.y)/2};
-      if(distance(mid,wmid)>Math.max(80,(c.thickness+w.thickness)/2))continue;
-      const ratio=Math.min(len,distance(w.a,w.b))/Math.max(len,distance(w.a,w.b),1);
-      if(ratio>.78)return true;
-    }
-    return false;
+    if(c.geometry==='arc'){for(const w of state.objects){if(!isArcWall(w))continue;if(distance(w.center,c.center)>100)continue;if(Math.abs(w.radius-c.radius)>Math.max(100,(w.thickness+c.thickness)/2))continue;if(Math.abs(angleDelta(w.startAngle,c.startAngle))<8&&Math.abs(Math.abs(w.sweep)-Math.abs(c.sweep))<12)return true;}return false;}
+    const ang=angleDeg(c.a,c.b)%180,mid=wallMidPoint(c),len=distance(c.a,c.b);for(const w of state.objects){if(w.type!=='wall'||isArcWall(w))continue;const wa=angleDeg(w.a,w.b)%180;if(angleDiff180(ang,wa)>1.5)continue;const wmid=wallMidPoint(w);if(distance(mid,wmid)>Math.max(100,(c.thickness+w.thickness)/2))continue;const ratio=Math.min(len,distance(w.a,w.b))/Math.max(len,distance(w.a,w.b),1);if(ratio>.78)return true;}return false;
   }
 
   function applyWallRecognition(){
-    const preview=state.wallRecognitionPreview;
-    const region=state.drawingRegions.find(r=>r.id===preview?.regionId);
-    if(!preview||!region)return cancelWallRecognition();
-    const candidates=preview.candidates.filter(c=>!wallCandidateDuplicatesExisting(c));
-    pushHistory();
-    for(const c of candidates){
-      state.objects.push({id:uid('wall'),type:'wall',layerId:'walls',a:{...c.a},b:{...c.b},thickness:Math.round(c.thickness*10)/10,attachments:{},recognizedFromCad:true,sourceRegionId:region.id});
-    }
-    state.wallRecognitionPreview=null;
-    dom.recognitionBackdrop.hidden=true;
-    markDirty(true);
-    rebuildObjectSnapIndex();
-    refreshSpaces();
-    openRegionInPlan(region);
-    renderPrimaryPanel();
-    renderProperties();
-    render();
+    const p=state.wallRecognitionPreview,region=state.drawingRegions.find(r=>r.id===p?.regionId);if(!p||!region)return cancelWallRecognition();if(p.safetyExceeded){alert(t('recognition.safetyExceeded'));return;}pushHistory();const wallMap=new Map(),created=[];
+    const createWalls=dom.recognitionCreateWalls?.checked!==false,createDoors=dom.recognitionCreateDoors?.checked!==false,createStairs=dom.recognitionCreateStairs?.checked!==false,createSpaces=dom.recognitionCreateSpaces?.checked!==false;
+    if(createWalls){for(const c of p.walls.filter(c=>!wallCandidateDuplicatesExisting(c))){const w={id:uid('wall'),type:'wall',layerId:'walls',a:{...c.a},b:{...c.b},thickness:Math.round(c.thickness/5)*5,geometry:c.geometry==='arc'?'arc':'straight',attachments:{},recognizedFromCad:true,sourceRegionId:region.id,recognitionSourceIds:c.sourceIds||[],recognitionConfidence:c.confidence||null};if(c.geometry==='arc'){w.center={...c.center};w.radius=c.radius;w.startAngle=c.startAngle;w.sweep=c.sweep;}state.objects.push(w);wallMap.set(c.id,w.id);created.push(w.id);}}
+    if(createDoors){for(const c of p.doors||[]){const wallId=wallMap.get(c.wallCandidateId);if(!wallId)continue;state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId,t:c.t,width:c.width,doorType:c.doorType||'hingedSingle',hinge:c.hinge||'start',swing:c.swing||1,slideDirection:1,recognizedFromCad:true,sourceRegionId:region.id,recognitionConfidence:c.confidence||null});}}
+    if(createStairs){for(const c of p.stairs||[])state.objects.push({id:uid('stair'),type:'stair',layerId:'stairs',stairType:'straight',polygon:c.polygon.map(q=>({...q})),axis:{...c.axis},axisBounds:{...c.axisBounds},treadCount:c.treadCount,recognizedFromCad:true,sourceRegionId:region.id,recognitionConfidence:c.confidence||null});}
+    if(createSpaces){for(const c of p.spaces||[]){const wallIds=(c.wallIds||[]).map(id=>wallMap.get(id)).filter(Boolean);state.objects.push({id:uid('space'),type:'space',layerId:'spaces',spaceUuid:makeStableUuid(),seed:polygonCentroid(c.polygon),polygon:c.polygon.map(q=>({...q})),wallIds,areaM2:c.area/1e6,invalid:false,recognizedFromCad:true,sourceRegionId:region.id,recognitionConfidence:c.confidence||null});}}
+    state.recognitionHistory.push({at:new Date().toISOString(),regionId:region.id,sourceLines:p.lines.length,sourceArcs:p.arcs?.length||0,walls:p.walls.length,spaces:p.spaces.length,doors:p.doors.length,stairs:p.stairs.length,thicknesses:p.thicknessClusters.map(x=>x.value),applied:{walls:createWalls,spaces:createSpaces,doors:createDoors,stairs:createStairs},accepted:{walls:createWalls?p.walls.map(candidateSignature):[],spaces:createSpaces?p.spaces.map(candidateSignature):[],doors:createDoors?p.doors.map(candidateSignature):[],stairs:createStairs?p.stairs.map(candidateSignature):[]}});state.wallRecognitionPreview=null;dom.recognitionBackdrop.hidden=true;dom.recognitionApplyBtn.disabled=false;markDirty(true);rebuildObjectSnapIndex();openRegionInPlan(region);renderPrimaryPanel();renderProperties();render();
   }
 
   function renderPrimaryPanel(){if(state.toolset==='plan')renderPlanObjectsPanel();else renderCadLayersPanel();}
-  function renderPlanObjectsPanel(){dom.primaryControls.hidden=true;dom.primaryControls.innerHTML='';dom.primaryList.className='panel-list';dom.primaryList.innerHTML='';const groups=[['wall','group.walls','wall'],['door','group.doors','door'],['window','group.windows','window'],['space','group.spaces','space'],['dimension','group.dimensions','dimension']];let any=false;for(const[type,key,icon]of groups){const count=state.objects.filter(o=>o.type===type).length;if(!count)continue;any=true;dom.primaryList.appendChild(summaryRow(icon,t(key),t('panel.objects',{count})));}const cadCount=state.objects.filter(isCadObject).length;if(cadCount){any=true;dom.primaryList.appendChild(summaryRow('vector',t('group.cadGeometry'),t('panel.hiddenCad',{count:cadCount})));}if(!any)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noPlanObjects'))}</div>`;}
+  function renderPlanObjectsPanel(){dom.primaryControls.hidden=true;dom.primaryControls.innerHTML='';dom.primaryList.className='panel-list';dom.primaryList.innerHTML='';const groups=[['wall','group.walls','wall'],['door','group.doors','door'],['window','group.windows','window'],['space','group.spaces','space'],['stair','group.stairs','architecture'],['dimension','group.dimensions','dimension']];let any=false;for(const[type,key,icon]of groups){const count=state.objects.filter(o=>o.type===type).length;if(!count)continue;any=true;dom.primaryList.appendChild(summaryRow(icon,t(key),t('panel.objects',{count})));}const cadCount=state.objects.filter(isCadObject).length;if(cadCount){any=true;dom.primaryList.appendChild(summaryRow('vector',t('group.cadGeometry'),t('panel.hiddenCad',{count:cadCount})));}if(!any)dom.primaryList.innerHTML=`<div class="section-copy">${escapeHtml(t('panel.noPlanObjects'))}</div>`;}
   function summaryRow(icon,title,meta){const row=document.createElement('div');row.className='list-row';row.innerHTML=`<div class="object-swatch"><span class="ui-icon icon-${icon}" aria-hidden="true"></span></div><div class="row-main"><div class="row-title">${escapeHtml(title)}</div><div class="row-meta">${escapeHtml(meta)}</div></div><span></span>`;return row;}
   function scrollLayerRowInsideList(row){if(!row||!dom.primaryList)return;const list=dom.primaryList,top=row.offsetTop,bottom=top+row.offsetHeight,viewTop=list.scrollTop,viewBottom=viewTop+list.clientHeight;if(top<viewTop)list.scrollTop=Math.max(0,top-4);else if(bottom>viewBottom)list.scrollTop=Math.max(0,bottom-list.clientHeight+4);}
+  function configureCadManagerSplitter(splitter,layersSection){
+    const apply=()=>{layersSection.style.flexBasis=`${(state.inspectorSplit*100).toFixed(2)}%`;};
+    apply();
+    splitter.tabIndex=0;splitter.setAttribute('role','separator');splitter.setAttribute('aria-orientation','horizontal');splitter.setAttribute('aria-label',t('panel.resizeManagers'));
+    let dragging=false,pointerId=null,containerRect=null;
+    const move=e=>{if(!dragging||e.pointerId!==pointerId)return;const h=Math.max(1,containerRect.height-9),ratio=(e.clientY-containerRect.top)/h;state.inspectorSplit=clamp(ratio,.28,.78);apply();};
+    const end=e=>{if(!dragging||e.pointerId!==pointerId)return;dragging=false;splitter.classList.remove('dragging');try{splitter.releasePointerCapture?.(pointerId);}catch(_){}persistInspectorSplit(state.inspectorSplit);pointerId=null;};
+    splitter.addEventListener('pointerdown',e=>{e.preventDefault();dragging=true;pointerId=e.pointerId;containerRect=dom.primaryList.getBoundingClientRect();splitter.classList.add('dragging');splitter.setPointerCapture?.(pointerId);});
+    splitter.addEventListener('pointermove',move);splitter.addEventListener('pointerup',end);splitter.addEventListener('pointercancel',end);
+    splitter.addEventListener('dblclick',()=>{persistInspectorSplit(.64);apply();});
+    splitter.addEventListener('keydown',e=>{if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Home')return;e.preventDefault();if(e.key==='Home')persistInspectorSplit(.64);else persistInspectorSplit(state.inspectorSplit+(e.key==='ArrowDown'?.04:-.04));apply();});
+  }
   function renderCadLayersPanel(){
     const oldLayerList=dom.primaryList.querySelector('.cad-layer-list');
     const oldRegionList=dom.primaryList.querySelector('.cad-region-list');
@@ -1432,6 +1617,7 @@
 
     const layersSection=document.createElement('section');
     layersSection.className='cad-manager-section cad-layer-manager';
+    layersSection.style.flexBasis=`${(state.inspectorSplit*100).toFixed(2)}%`;
     const layerList=document.createElement('div');
     layerList.className='cad-layer-list';
     layersSection.appendChild(layerList);
@@ -1463,7 +1649,8 @@
         shown++;
         if(!state.cadLayerVisibility.has(layer))state.cadLayerVisibility.set(layer,true);
         const visible=cadLayerVisible(layer),row=document.createElement('div');
-        row.className=`list-row cad-layer-row ${selectedLayers.has(layer)?'selected':''}`;
+        const filterForced=Boolean(filter&&selectedLayers.has(layer)&&!layer.toLocaleLowerCase().includes(filter));
+        row.className=`list-row cad-layer-row ${selectedLayers.has(layer)?'selected':''} ${filterForced?'filter-forced':''}`.trim();
         row.dataset.layer=layer;
 
         const eye=document.createElement('button');
@@ -1531,17 +1718,18 @@
       regionList.appendChild(row);
     }
     regionSection.append(regionHeader,regionList);
-    dom.primaryList.append(layersSection,regionSection);
+    const splitter=document.createElement('div');splitter.className='cad-manager-splitter';configureCadManagerSplitter(splitter,layersSection);
+    dom.primaryList.append(layersSection,splitter,regionSection);
 
     requestAnimationFrame(()=>{
-      layerList.scrollTop=previousLayerScroll;
       regionList.scrollTop=previousRegionScroll;
+      layerList.scrollTop=previousLayerScroll;
       if(selectedLayer){
         const row=layerList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`);
-        if(row){
-          const top=row.offsetTop,bottom=top+row.offsetHeight,viewTop=layerList.scrollTop,viewBottom=viewTop+layerList.clientHeight;
-          if(top<viewTop)layerList.scrollTop=Math.max(0,top-4);
-          else if(bottom>viewBottom)layerList.scrollTop=Math.max(0,bottom-layerList.clientHeight+4);
+        if(row&&state.layerRevealRequested){
+          const target=row.offsetTop-(layerList.clientHeight-row.offsetHeight)/2;
+          layerList.scrollTop=Math.max(0,Math.min(target,layerList.scrollHeight-layerList.clientHeight));
+          state.layerRevealRequested=false;
         }
       }
     });
@@ -1556,12 +1744,14 @@
   function configureVisibilityButton(button,visible,kind){const showKey=kind==='reference'?'tooltip.showReference':'tooltip.showLayer',hideKey=kind==='reference'?'tooltip.hideReference':'tooltip.hideLayer';button.innerHTML=iconMarkup(visible?'eye':'eye-off');button.setAttribute('aria-label',t(visible?hideKey:showKey));button.dataset.tooltipTitleKey=visible?hideKey:showKey;delete button.dataset.tooltipKey;delete button.dataset.shortcut;}
 
   function localizedObjectType(type){const key=type==='cadLine'?'value.cadLine':`value.${type}`;return t(key);}
-  function localizedToolName(tool){const keys={select:'tool.select',constraint:'tool.constraint',line:'tool.line',wall:'tool.wall',door:'tool.door',window:'tool.window',space:'tool.space',region:'tool.region',measure:'tool.measure',delete:'tool.delete'};return t(keys[tool]||`tool.${tool}`);}
+  function localizedToolName(tool){const keys={select:'tool.select',constraint:'tool.constraint',line:'tool.line',wall:'tool.wall',door:'tool.door',window:'tool.window',space:'tool.space',region:'tool.region',measure:'tool.measure',trim:'tool.trim',extend:'tool.extend',delete:'tool.delete'};return t(keys[tool]||`tool.${tool}`);}
   function wallConstraintSummary(wall){const c=ensureWallConstraints(wall),parts=[];if(c.reference)parts.push(t(`constraint.${c.reference.type}`));if(c.orientation)parts.push(t(`constraint.${c.orientation}`));if(Number.isFinite(c.fixedAngle))parts.push(t('constraint.fixedAngleValue',{value:formatNumber(c.fixedAngle,1)}));if(Number.isFinite(c.fixedLength))parts.push(t('constraint.fixedLengthValue',{value:formatNumber(c.fixedLength,1)}));if(c.fixed)parts.push(t('constraint.fixed'));for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)parts.push(t(att.kind==='coincident'?'constraint.endpointCoincident':'constraint.pointOnLine',{endpoint:ep.toUpperCase()}));}return parts.length?parts.join(' · '):t('constraint.none');}
   function renderProperties(){dom.propertiesPanel.innerHTML='';const ids=selectionIds();if(ids.size>1){propertyText(t('property.selection'),t('value.objectsSelected',{count:ids.size}));if(state.toolset==='cad'){const layers=new Set([...ids].map(id=>state.objects.find(o=>o.id===id)).filter(Boolean).filter(o=>o.type!=='space').map(cadLayerForObject));propertyText(t('property.layers'),layers.size?`${layers.size}`:'—');}return;}const onlyId=ids.size===1?[...ids][0]:state.selectedObjectId,obj=state.objects.find(o=>o.id===onlyId);if(obj){state.selectedObjectId=obj.id;propertyText(t('property.type'),localizedObjectType(obj.type));
-      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);propertyText(t('property.layer'),layer);propertyActions([{label:cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),run:()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer))},{label:t('action.soloLayer'),run:()=>soloLayer(layer)},{label:t('action.showInLayers'),run:()=>{switchInspector('primary');renderCadLayersPanel();}}]);}
-      if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){if(obj.type==='wall'){setWallLengthConstraintFromInput(obj,v);return;}pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){if(obj.type==='wall'){setWallAngleConstraintFromInput(obj,v);return;}pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
+      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);propertyText(t('property.layer'),layer);propertyActions([{label:cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),run:()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer))},{label:t('action.soloLayer'),run:()=>soloLayer(layer)},{label:t('action.showInLayers'),run:()=>{state.layerRevealRequested=true;switchInspector('primary');renderCadLayersPanel();}}]);}
+      if(((obj.type==='wall'&&!isArcWall(obj))||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){if(obj.type==='wall'){setWallLengthConstraintFromInput(obj,v);return;}pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){if(obj.type==='wall'){setWallAngleConstraintFromInput(obj,v);return;}pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
       if(obj.type==='wall'){
+        propertyText(t('property.wallType'),t(isArcWall(obj)?'wallType.arc':'wallType.straight'));
+        if(isArcWall(obj)){propertyText(t('property.length'),`${formatNumber(wallLength(obj),2)} mm`);propertyText(t('property.radius'),`${formatNumber(obj.radius,2)} mm`);}
         propertyNumber(t('property.thickness'),obj.thickness,v=>{if(v>0){pushHistory();obj.thickness=v;markDirty(true);updateAll();}},'mm');
         const connected=Boolean(obj.attachments?.a||obj.attachments?.b),c=ensureWallConstraints(obj);propertyText(t('property.joint'),connected?t('value.connected'):t('value.free'));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°${state.baseAxisWallId===obj.id?` · ${t('value.thisWall')}`:''}`);
         const items=[];
@@ -1574,9 +1764,10 @@
         if(state.baseAxisWallId===obj.id)items.push({label:t('constraint.baseAxis'),run:clearBaseAxis});
         propertyConstraintList(items);
       }
-      if(obj.type==='door'||obj.type==='window'){propertyNumber(t('property.width'),obj.width,v=>{if(v>0){pushHistory();obj.width=v;markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');if(obj.type==='door'){propertyText(t('property.openingSide'),`${obj.hinge==='end'?t('value.hingeEnd'):t('value.hingeStart')} · ${obj.swing===-1?t('value.swingReverse'):t('value.swingNormal')}`);propertyActions([{label:t('action.flipHinge'),run:()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();}},{label:t('action.flipSwing'),run:()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();}}]);}}
+      if(obj.type==='door'||obj.type==='window'){propertyNumber(t('property.width'),obj.width,v=>{if(v>0){pushHistory();obj.width=v;markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');if(obj.type==='door'){const dt=obj.doorType||'hingedSingle';propertyText(t('property.doorType'),t(`doorType.${dt}`));if(dt.startsWith('hinged')){propertyText(t('property.openingSide'),`${obj.hinge==='end'?t('value.hingeEnd'):t('value.hingeStart')} · ${obj.swing===-1?t('value.swingReverse'):t('value.swingNormal')}`);propertyActions([{label:t('action.flipHinge'),run:()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();}},{label:t('action.flipSwing'),run:()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();}}]);}else propertyActions([{label:t('action.flipSlide'),run:()=>{pushHistory();obj.slideDirection=obj.slideDirection===-1?1:-1;markDirty(true);updateAll();}}]);}}
       if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(g.associated)propertyNumber(t('property.length'),g.len,v=>applyNumericLabelEdit({objectId:obj.id,kind:'dimensionLength'},v),'mm');else propertyText(t('property.length'),`${formatNumber(g.len,2)} mm`);if(g.associated)propertyText(t('property.association'),t('value.wallLinked'));propertyNumber(t('property.offset'),g.offset,v=>{pushHistory();obj.offset=v;markDirty(true);updateAll();},'mm');}}
       if(obj.type==='space'){propertyText(t('property.area'),`${formatNumber(obj.areaM2||Math.abs(polygonArea(obj.polygon||[]))/1e6,2)} m²`);propertyText(t('property.spaceId'),obj.spaceUuid||'—');propertyText(t('property.boundaryWalls'),String(obj.wallIds?.length||0));if(obj.invalid)propertyText(t('property.status'),t('space.invalid'));}
+      if(obj.type==='stair'){propertyText(t('property.treads'),String(obj.treadCount||'—'));propertyText(t('property.status'),obj.recognizedFromCad?t('value.recognizedFromCad'):t('value.free'));}
       if(obj.type==='cadCircle')propertyText(t('property.length'),`R ${formatNumber(obj.radius,2)} mm`);if(obj.source)propertyText(t('property.source'),obj.source);return;}
     const ref=state.references.find(r=>r.id===state.selectedReferenceId);if(ref){propertyText(t('property.reference'),ref.name);propertyText(t('property.type'),ref.type==='dxf'?'DXF':ref.type==='linkedCadRegion'?t('value.linkedCadReference'):t('value.image'));if(ref.type==='linkedCadRegion'){const region=state.drawingRegions.find(x=>x.id===ref.regionId);if(region)propertyText(t('property.region'),region.name);propertyText(t('property.layers'),String(ref.visibleLayers?.size||0));}else{propertyText(t('property.scale'),`${formatNumber(ref.scale,6)}×`);propertyText(t('property.origin'),`${formatNumber(ref.origin.x,1)}, ${formatNumber(ref.origin.y,1)}`);}propertyText(t('property.opacity'),`${Math.round(ref.opacity*100)}%`);return;}
     propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);propertyText(t('property.document'),currentDocumentName());propertyText(t('property.toolset'),t(state.toolset==='plan'?'value.planTools':'value.cadTools'));propertyText(t('property.units'),INTERNAL_UNIT);propertyText(t('property.tool'),localizedToolName(state.activeTool));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°`);if(state.cadMapping)propertyText(t('property.mapping'),mappingSummary());}
@@ -1596,12 +1787,14 @@
   }
   function updateAll(){updateUndoRedo();updateEmptyState();updateContextBar();updateDocumentStatus();updateCompactViewerState();updateAxisStatus();renderToolRail();renderPrimaryPanel();renderReferences();renderProperties();render();}
 
-  function resetProject(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedReferenceId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.hoveredObjectId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;rebuildObjectSnapIndex();setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
+  function resetProject(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedReferenceId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.hoveredObjectId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.activeCadLayer='0';state.sourceDxfName=null;state.sourceDxfFingerprint=null;state.sourceDxfSize=0;state.sourceDxfLastModified=0;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.projectFileName=null;state.recognitionHistory=[];state.dirty=false;rebuildObjectSnapIndex();setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
 
-  function createSample(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',a,b,thickness:th};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId:innerV.id,t:.48,width:900,hinge:'start',swing:1},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
+  function createSample(){if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.selectedObjectIds.clear();state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',a,b,thickness:th,geometry:'straight',attachments:{}};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',wallId:innerV.id,t:.48,width:900,doorType:'hingedSingle',hinge:'start',swing:1,slideDirection:1},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
 
   function runCommand(raw){const command=String(raw||'').trim().toUpperCase();if(!command)return;if(state.commandPending==='zoom'){if(command==='E'||command==='EXTENTS'){fitAll();setCommandStatus(t('command.zoomExtents'),'strong');state.commandPending=null;return;}setCommandStatus(t('command.unknown',{command}),'error');return;}
     if(command==='L'||command==='LINE'){setTool('line','draw');setCommandStatus(t('command.line'),'strong');}
+    else if(command==='TR'||command==='TRIM'){setTool('trim','modify');setCommandStatus(t('command.trim'),'strong');}
+    else if(command==='EX'||command==='EXTEND'){setTool('extend','modify');setCommandStatus(t('command.extend'),'strong');}
     else if(command==='E'||command==='ERASE'){if(state.selectedObjectId){deleteObjectById(state.selectedObjectId);setCommandStatus('ERASE','strong');}else{setTool('delete','modify');setCommandStatus(t('command.erase'),'strong');}}
     else if(command==='DI'||command==='DIST'){setTool('measure','dimension');setCommandStatus(t('command.distance'),'strong');}
     else if(command==='Z'||command==='ZOOM'){state.commandPending='zoom';setCommandStatus(t('command.zoom'),'strong');}
@@ -1611,6 +1804,7 @@
     else if(command==='DOOR'){setTool('door','architecture');if(state.cadMapping)setCommandStatus('DOOR','strong');}
     else if(command==='WINDOW'){setTool('window','architecture');if(state.cadMapping)setCommandStatus('WINDOW','strong');}
     else setCommandStatus(t('command.unknown',{command}),'error');}
+  function finishContinuousCommand(){if(state.activeTool==='line'&&state.toolset==='cad'){state.drawStart=null;state.previewEnd=null;setTool('select','select');setCommandStatus(t('command.finished'),'strong');return true;}return false;}
   function setCommandStatus(text,kind=''){dom.commandStatus.className=`command-status ${kind}`.trim();dom.commandStatus.textContent=text;}
 
   function dxfPair(code,value){return`${code}\n${value}\n`;}
@@ -1618,9 +1812,18 @@
   function dxfLine(layer,a,b){return dxfPair(0,'LINE')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,a.x.toFixed(4))+dxfPair(20,a.y.toFixed(4))+dxfPair(30,'0')+dxfPair(11,b.x.toFixed(4))+dxfPair(21,b.y.toFixed(4))+dxfPair(31,'0');}
   function dxfCircle(layer,c,r){return dxfPair(0,'CIRCLE')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,c.x.toFixed(4))+dxfPair(20,c.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,r.toFixed(4));}
   function dxfArc(layer,c,r,startDeg,endDeg){return dxfPair(0,'ARC')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,c.x.toFixed(4))+dxfPair(20,c.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,r.toFixed(4))+dxfPair(50,startDeg.toFixed(6))+dxfPair(51,endDeg.toFixed(6));}
-  function dxfText(layer,p,text,height=180){return dxfPair(0,'TEXT')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,p.x.toFixed(4))+dxfPair(20,p.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,height.toFixed(2))+dxfPair(1,String(text).replace(/[\r\n]/g,' '));}
+  function dxfText(layer,p,text,height=180,rotation=0){return dxfPair(0,'TEXT')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,p.x.toFixed(4))+dxfPair(20,p.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,Number(height||180).toFixed(2))+dxfPair(50,Number(rotation||0).toFixed(4))+dxfPair(1,String(text).replace(/[\r\n]/g,' '));}
+  function dxfDoorEntities(obj,layer){
+    const g=openingGeometry(obj);if(!g)return'';const type=obj.doorType||'hingedSingle',swing=obj.swing===-1?-1:1,dir=obj.slideDirection===-1?-1:1;let out='';
+    const emitLeaf=(hinge,other)=>{const width=Math.max(1,distance(hinge,other)),closed={x:(other.x-hinge.x)/width,y:(other.y-hinge.y)/width},open=rotate90(closed,swing),leaf={x:hinge.x+open.x*width,y:hinge.y+open.y*width};out+=dxfLine(layer,hinge,leaf);let a0=(Math.atan2(closed.y,closed.x)*180/Math.PI+360)%360,a1=(a0+swing*90+360)%360;if(swing<0)[a0,a1]=[a1,a0];out+=dxfArc(layer,hinge,width,a0,a1);};
+    if(type==='hingedSingle'){const hinge=obj.hinge==='end'?g.p2:g.p1,other=obj.hinge==='end'?g.p1:g.p2;emitLeaf(hinge,other);}
+    else if(type==='hingedDouble'){const mid=wallPointAt(g.wall,(g.t1+g.t2)/2);emitLeaf(g.p1,mid);emitLeaf(g.p2,mid);}
+    else if(type==='slidingSingle'||type==='pocket'){const wallHalf=(g.wall.thickness||150)/2,off=(type==='pocket'?.22:.72)*wallHalf*dir,panelLen=g.width*.82,shift=dir*g.width*.34,center=wallPointAt(g.wall,clamp((obj.t??.5)+shift/Math.max(wallLength(g.wall),1),0,1)),tg=wallTangentAt(g.wall,obj.t??.5),a={x:center.x-tg.ux*panelLen/2+g.nx*off,y:center.y-tg.uy*panelLen/2+g.ny*off},b={x:center.x+tg.ux*panelLen/2+g.nx*off,y:center.y+tg.uy*panelLen/2+g.ny*off};out+=dxfLine(layer,a,b);if(type==='pocket')out+=dxfLine(layer,g.p1,g.p2);}
+    else if(type==='slidingDouble'){const wallHalf=(g.wall.thickness||150)/2,off=.68*wallHalf*dir,tg=wallTangentAt(g.wall,obj.t??.5),half=g.width*.45;for(const sign of[-1,1]){const c={x:g.center.x+tg.ux*sign*g.width*.22+g.nx*off,y:g.center.y+tg.uy*sign*g.width*.22+g.ny*off};out+=dxfLine(layer,{x:c.x-tg.ux*half/2,y:c.y-tg.uy*half/2},{x:c.x+tg.ux*half/2,y:c.y+tg.uy*half/2});}}
+    return out;
+  }
   function exportDxf(){if(hasSemanticObjects()&&!state.cadMapping){openMappingDialog('export');return;}exportDxfNow();}
-  function exportDxfNow(){const m=state.cadMapping||defaultCadMapping();let entities='';const layers=new Set(['0']);for(const o of state.objects){if(o.type==='cadLine'||o.type==='line'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfLine(layer,o.a,o.b);}else if(o.type==='cadCircle'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfCircle(layer,o.center,o.radius);}else if(o.type==='cadText'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfText(layer,o.point,o.text||'');}else if(o.type==='wall'){layers.add(m.wallLayer);if(m.wallRepresentation==='outline'||m.wallRepresentation==='both')for(const[a,b]of wallOutlineVisibleWorld(o))entities+=dxfLine(m.wallLayer,a,b);if(m.wallRepresentation==='centerline'||m.wallRepresentation==='both')entities+=dxfLine(m.wallLayer,o.a,o.b);}else if(o.type==='door'){const d=doorGeometry(o);if(d){layers.add(m.doorLayer);entities+=dxfLine(m.doorLayer,d.hinge,d.leafEnd);let a0=(Math.atan2(d.closed.y,d.closed.x)*180/Math.PI+360)%360,a1=(a0+d.swing*90+360)%360;if(d.swing<0)[a0,a1]=[a1,a0];entities+=dxfArc(m.doorLayer,d.hinge,d.width,a0,a1);}}else if(o.type==='window'){/* emitted below */}else if(o.type==='dimension'){const g=dimensionGeometry(o);if(g){layers.add(m.dimensionLayer);entities+=dxfLine(m.dimensionLayer,g.d1,g.d2);entities+=dxfLine(m.dimensionLayer,g.p1,g.d1);entities+=dxfLine(m.dimensionLayer,g.p2,g.d2);entities+=dxfText(m.dimensionLayer,{x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2},`${formatNumber(g.len,1)} mm`,140);}}}
+  function exportDxfNow(){const m=state.cadMapping||defaultCadMapping();let entities='';const layers=new Set(['0']);for(const o of state.objects){if(o.type==='cadLine'||o.type==='line'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfLine(layer,o.a,o.b);}else if(o.type==='cadCircle'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfCircle(layer,o.center,o.radius);}else if(o.type==='cadArc'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfArc(layer,o.center,o.radius,o.startAngle||0,(o.startAngle||0)+(o.sweep||0));}else if(o.type==='cadText'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfText(layer,o.point,o.text||'',o.height||180,o.rotation||0);}else if(o.type==='wall'){layers.add(m.wallLayer);if(m.wallRepresentation==='outline'||m.wallRepresentation==='both')for(const[a,b]of wallOutlineVisibleWorld(o))entities+=dxfLine(m.wallLayer,a,b);if(m.wallRepresentation==='centerline'||m.wallRepresentation==='both'){if(isArcWall(o)){let a0=normalizeAngle(o.startAngle||0),a1=normalizeAngle((o.startAngle||0)+(o.sweep||0));if((o.sweep||0)<0)[a0,a1]=[a1,a0];entities+=dxfArc(m.wallLayer,o.center,o.radius,a0,a1);}else entities+=dxfLine(m.wallLayer,o.a,o.b);}}else if(o.type==='door'){layers.add(m.doorLayer);entities+=dxfDoorEntities(o,m.doorLayer);}else if(o.type==='window'){/* emitted below */}else if(o.type==='dimension'){const g=dimensionGeometry(o);if(g){layers.add(m.dimensionLayer);entities+=dxfLine(m.dimensionLayer,g.d1,g.d2);entities+=dxfLine(m.dimensionLayer,g.p1,g.d1);entities+=dxfLine(m.dimensionLayer,g.p2,g.d2);entities+=dxfText(m.dimensionLayer,{x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2},`${formatNumber(g.len,1)} mm`,140);}}}
     // windows are added in a separate pass to keep the main loop readable after semantic conversion.
     for(const o of state.objects){if(o.type!=='window')continue;const g=openingGeometry(o);if(!g)continue;layers.add(m.windowLayer);const off=Math.min(50,(g.wall.thickness||150)*.35);for(const sign of[-1,1])entities+=dxfLine(m.windowLayer,{x:g.p1.x+g.nx*off*sign,y:g.p1.y+g.ny*off*sign},{x:g.p2.x+g.nx*off*sign,y:g.p2.y+g.ny*off*sign});}
     let layerTable=dxfPair(0,'TABLE')+dxfPair(2,'LAYER')+dxfPair(70,layers.size);for(const name of layers){layerTable+=dxfPair(0,'LAYER')+dxfPair(2,sanitizeLayer(name))+dxfPair(70,0)+dxfPair(62,7)+dxfPair(6,'CONTINUOUS');}layerTable+=dxfPair(0,'ENDTAB');
@@ -1632,8 +1835,8 @@
   function addContextMenuItem(label,run,{danger=false,disabled=false}={}){const b=document.createElement('button');b.className=`context-menu-item ${danger?'danger':''}`;b.textContent=label;b.disabled=disabled;b.addEventListener('click',()=>{hideContextMenu();run();});contextMenu.appendChild(b);}
   function addContextMenuDivider(){const d=document.createElement('div');d.className='context-menu-divider';contextMenu.appendChild(d);}
   function duplicateObject(obj){if(!obj||obj.type==='space')return;pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;state.objects.push(copy);state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
-  function showCanvasContextMenu(e){if(isCompactViewer())return;e.preventDefault();hideTooltip();const raw=screenCssToWorld(fromPointerEvent(e)),obj=hitObject(raw);if(obj){state.selectedObjectId=obj.id;state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();addContextMenuItem(t('action.properties'),()=>switchInspector('properties'));if(obj.type==='door'){addContextMenuDivider();addContextMenuItem(t('action.flipHinge'),()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();});addContextMenuItem(t('action.flipSwing'),()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();});}if(obj.type==='wall'){addContextMenuDivider();const connected=Boolean(obj.attachments?.a||obj.attachments?.b);addContextMenuItem(connected?t('action.detachJoint'):t('action.attachJoint'),()=>{pushHistory();if(connected)detachWallConnections(obj);else if(!attachTouchingWallEndpoints(obj)){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();});}
-      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);addContextMenuDivider();addContextMenuItem(cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer)));addContextMenuItem(t('action.soloLayer'),()=>soloLayer(layer));addContextMenuItem(t('action.showInLayers'),()=>{switchInspector('primary');renderCadLayersPanel();});}
+  function showCanvasContextMenu(e){if(isCompactViewer())return;e.preventDefault();hideTooltip();const raw=screenCssToWorld(fromPointerEvent(e)),obj=hitObject(raw);if(obj){state.selectedObjectId=obj.id;state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();addContextMenuItem(t('action.properties'),()=>switchInspector('properties'));if(obj.type==='door'){addContextMenuDivider();const dt=obj.doorType||'hingedSingle';if(dt.startsWith('hinged')){addContextMenuItem(t('action.flipHinge'),()=>{pushHistory();obj.hinge=obj.hinge==='end'?'start':'end';markDirty(true);updateAll();});addContextMenuItem(t('action.flipSwing'),()=>{pushHistory();obj.swing=obj.swing===-1?1:-1;markDirty(true);updateAll();});}else addContextMenuItem(t('action.flipSlide'),()=>{pushHistory();obj.slideDirection=obj.slideDirection===-1?1:-1;markDirty(true);updateAll();});}if(obj.type==='wall'){addContextMenuDivider();const connected=Boolean(obj.attachments?.a||obj.attachments?.b);addContextMenuItem(connected?t('action.detachJoint'):t('action.attachJoint'),()=>{pushHistory();if(connected)detachWallConnections(obj);else if(!attachTouchingWallEndpoints(obj)){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();});}
+      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);addContextMenuDivider();addContextMenuItem(cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer)));addContextMenuItem(t('action.soloLayer'),()=>soloLayer(layer));addContextMenuItem(t('action.showInLayers'),()=>{state.layerRevealRequested=true;switchInspector('primary');renderCadLayersPanel();});}
       if(obj.type!=='space'){addContextMenuDivider();addContextMenuItem(t('action.duplicate'),()=>duplicateObject(obj));}addContextMenuItem(t('action.delete'),()=>deleteObjectById(obj.id),{danger:true});
     }else{if(state.toolset==='cad'){addContextMenuItem(t('action.defineRegion'),()=>setTool('region','select'));addContextMenuItem(t('action.fit'),fitAll);if(state.sourceDxfOutlierCount>0)addContextMenuItem(t('action.fitAllEntities'),fitFullExtents);addContextMenuDivider();addContextMenuItem(t('action.showAllLayers'),showAllCadLayers);}else{addContextMenuItem(t('action.selectTool'),()=>setTool('select','plan'));addContextMenuItem(t('action.fit'),fitAll);}}
     if(!contextMenu.childElementCount)return;contextMenu.hidden=false;const margin=8,rect=contextMenu.getBoundingClientRect();contextMenu.style.left=`${Math.min(e.clientX,window.innerWidth-rect.width-margin)}px`;contextMenu.style.top=`${Math.min(e.clientY,window.innerHeight-rect.height-margin)}px`;
@@ -1648,7 +1851,7 @@
 
   function isTyping(){const a=document.activeElement;return a&&(['INPUT','TEXTAREA','SELECT'].includes(a.tagName)||a.isContentEditable);}
   function canvasShortcutContext(){const a=document.activeElement;return !a||a===document.body||a===host||a===canvas;}
-  function cancelTransient(){state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;clearConstraintInteraction();if(state.activeTool==='constraint')state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
+  function cancelTransient(){const wasDrawing=state.activeTool==='line'||state.activeTool==='trim'||state.activeTool==='extend';state.drawStart=null;state.arcDraft=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;clearConstraintInteraction();if(state.activeTool==='constraint'||wasDrawing)state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
 
   dom.startPlanBtn.addEventListener('click',()=>switchToolset('plan',{skipMapping:true}));
   dom.startCadBtn.addEventListener('click',()=>switchToolset('cad',{skipMapping:true}));
@@ -1663,13 +1866,16 @@
   document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>{applyTheme(button.dataset.themeChoice);dom.appearanceMenu.hidden=true;}));
   document.querySelectorAll('.inspector-tab').forEach(b=>b.addEventListener('click',()=>switchInspector(b.dataset.tab)));
 
+  dom.openProjectBtn.addEventListener('click',()=>dom.projectFileInput.click());
+  dom.projectFileInput.addEventListener('change',async()=>{const file=dom.projectFileInput.files?.[0];if(file)await openProjectFile(file);dom.projectFileInput.value='';});
+  dom.saveProjectBtn.addEventListener('click',saveProjectFile);
   dom.openRefBtn.addEventListener('click',()=>dom.referenceFileInput.click());dom.emptyOpenBtn.addEventListener('click',()=>state.toolset==='cad'?dom.dxfEditFileInput.click():dom.referenceFileInput.click());dom.addReferenceBtn.addEventListener('click',()=>dom.referenceFileInput.click());
   dom.referenceFileInput.addEventListener('change',()=>openReferenceFile(dom.referenceFileInput.files?.[0]));
   dom.openDxfBtn.addEventListener('click',()=>dom.dxfEditFileInput.click());dom.dxfEditFileInput.addEventListener('change',()=>openEditableDxf(dom.dxfEditFileInput.files?.[0]));
   dom.fitBtn.addEventListener('click',fitAll);dom.fullExtentsBtn?.addEventListener('click',fitFullExtents);dom.newBtn.addEventListener('click',resetProject);dom.undoBtn.addEventListener('click',undo);dom.redoBtn.addEventListener('click',redo);dom.exportDxfBtn.addEventListener('click',exportDxf);
   dom.emptyPrimaryBtn.addEventListener('click',()=>setTool(state.toolset==='plan'?'wall':'line',state.toolset==='plan'?'plan':'draw'));
   dom.mappingSettingsBtn.addEventListener('click',()=>openMappingDialog('settings'));dom.mappingApplyBtn.addEventListener('click',applyMapping);dom.mappingCancelBtn.addEventListener('click',cancelMapping);dom.recognitionApplyBtn.addEventListener('click',applyWallRecognition);dom.recognitionCancelBtn.addEventListener('click',cancelWallRecognition);
-  dom.gridToggle.addEventListener('click',()=>{state.grid=!state.grid;dom.gridToggle.classList.toggle('active',state.grid);render();});dom.snapToggle.addEventListener('click',()=>{state.snap=!state.snap;dom.snapToggle.classList.toggle('active',state.snap);});dom.orthoToggle.addEventListener('click',()=>{state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();});
+  dom.gridToggle.addEventListener('click',()=>{state.grid=!state.grid;dom.gridToggle.classList.toggle('active',state.grid);render();});dom.snapToggle.addEventListener('click',()=>{state.snap=!state.snap;dom.snapToggle.classList.toggle('active',state.snap);});dom.orthoToggle.addEventListener('click',()=>{state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();});dom.polarToggle.addEventListener('click',()=>{state.polar=!state.polar;dom.polarToggle.classList.toggle('active',state.polar);render();});
   dom.dialogCancelBtn.addEventListener('click',()=>{dom.dialogBackdrop.hidden=true;state.calibration=null;state.previewEnd=null;updateAll();});dom.dialogApplyBtn.addEventListener('click',applyCalibration);dom.dialogInput.addEventListener('keydown',e=>{if(e.key==='Enter')applyCalibration();if(e.key==='Escape')dom.dialogCancelBtn.click();});
   dom.commandInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const raw=dom.commandInput.value;dom.commandInput.value='';runCommand(raw);}else if(e.key==='Escape'){e.preventDefault();dom.commandInput.value='';cancelTransient();host.focus();}});
 
@@ -1680,20 +1886,26 @@
   window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change',()=>{if(state.theme==='system'){updateThemeMeta();render();}});
   window.addEventListener('keydown',e=>{
     if(state.view!=='workspace'){if(e.key==='Escape')dom.appearanceMenu.hidden=true;return;}
+    if(e.key==='Shift'&&!isTyping()){state.shiftDown=true;render();}
     if(e.code==='Space'&&!isTyping()&&canvasShortcutContext()){if(!state.spaceDown)state.spaceGesture={used:false,started:performance.now()};state.spaceDown=true;e.preventDefault();}
     if(!isTyping()&&e.key==='F3'){e.preventDefault();state.snap=!state.snap;dom.snapToggle.classList.toggle('active',state.snap);render();}
     if(!isTyping()&&e.key==='F7'){e.preventDefault();state.grid=!state.grid;dom.gridToggle.classList.toggle('active',state.grid);render();}
     if(!isTyping()&&e.key==='F8'){e.preventDefault();state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();}
+    if(!isTyping()&&e.key==='F10'){e.preventDefault();state.polar=!state.polar;dom.polarToggle.classList.toggle('active',state.polar);render();}
+    if(!isTyping()&&e.key==='Enter'&&state.toolset==='cad'&&state.activeTool==='line'&&state.drawStart){e.preventDefault();finishContinuousCommand();}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&!isTyping()){e.preventDefault();saveProjectFile();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!isTyping()){e.preventDefault();e.shiftKey?redo():undo();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&!isTyping()){e.preventDefault();redo();}
     if(e.key==='Escape'){hideTooltip();hideContextMenu();if(state.selectionDrag){state.selectionDrag=null;render();}else if(state.activeTool==='constraint'){cancelTransient();}else if(state.activeTool==='select'&&selectionIds().size){clearMultiSelection();renderPrimaryPanel();renderProperties();render();}else cancelTransient();}
     if((e.key==='Delete'||e.key==='Backspace')&&!isTyping()&&selectionIds().size){e.preventDefault();deleteSelectedObjects();}
     if(state.toolset==='cad'&&!isTyping()&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&/^[a-zA-Z]$/.test(e.key)){e.preventDefault();dom.commandInput.focus();dom.commandInput.value=e.key.toUpperCase();}
   });
-  window.addEventListener('keyup',e=>{if(e.code==='Space'){const gesture=state.spaceGesture;state.spaceDown=false;state.spaceGesture=null;if(!state.pan)host.dataset.pan='false';if(gesture&&!gesture.used&&(performance.now()-gesture.started)<420&&state.view==='workspace'&&state.toolset==='plan'&&!isTyping()&&canvasShortcutContext())setTool('select','plan');}});
+  window.addEventListener('keyup',e=>{if(e.key==='Shift'){state.shiftDown=false;render();}if(e.code==='Space'){const gesture=state.spaceGesture;state.spaceDown=false;state.spaceGesture=null;if(!state.pan)host.dataset.pan='false';if(gesture&&!gesture.used&&(performance.now()-gesture.started)<420&&state.view==='workspace'&&state.toolset==='plan'&&!isTyping()&&canvasShortcutContext())setTool('select','plan');}});
   window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();});
 
-  applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');
-  dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.commandBar.hidden=true;i18n.apply(document);state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
+  applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');applyShortcutMetadata(dom.polarToggle,'polar','tooltip.polar');
+  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,applyTrimExtendAtPoint});}
+
+  dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.commandBar.hidden=true;i18n.apply(document);state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();
