@@ -18,6 +18,9 @@
       'action.redo': 'Redo',
       'action.drawWall': 'Draw Wall',
       'action.cadMapping': 'CAD mapping',
+      'action.back': 'Back',
+      'action.home': 'Home',
+      'action.appearance': 'Appearance',
       'aria.drawingTools': 'Drawing tools',
       'aria.canvas': 'Drawing canvas',
       'aria.toolset': 'Tool set',
@@ -32,6 +35,15 @@
       'start.cadAction': 'Start with CAD Tools →',
       'start.sample': 'Open sample and look around',
       'start.note': 'This choice only selects the first toolbox. It does not lock the project into a separate format.',
+      'start.continueKicker': 'Current work',
+      'start.continueTitle': 'Continue current drawing',
+      'start.continueAction': 'Continue →',
+      'start.continueDetail': '{toolset} · {objects} objects · {references} references',
+      'appearance.title': 'Appearance',
+      'appearance.theme': 'Theme',
+      'appearance.system': 'System',
+      'appearance.light': 'Light',
+      'appearance.dark': 'Dark',
 
       'context.tool': 'Tool',
       'context.select': 'Select',
@@ -202,7 +214,8 @@
       'tooltip.showLayer': 'Show this layer.',
       'tooltip.hideReference': 'Hide this reference.',
       'tooltip.showReference': 'Show this reference.',
-      'tooltip.scaleReference': 'Match the reference scale using a known real-world distance.'
+      'tooltip.scaleReference': 'Match the reference scale using a known real-world distance.',
+      'tooltip.home': 'Return to the start screen without discarding the current drawing.'
     },
 
     ko: {
@@ -221,6 +234,9 @@
       'action.redo': '다시 실행',
       'action.drawWall': '벽 그리기',
       'action.cadMapping': 'CAD 표현',
+      'action.back': '뒤로',
+      'action.home': '홈',
+      'action.appearance': '화면',
       'aria.drawingTools': '도면 도구',
       'aria.canvas': '도면 작업 영역',
       'aria.toolset': '도구 세트',
@@ -235,6 +251,15 @@
       'start.cadAction': 'CAD Tools로 시작 →',
       'start.sample': '샘플 도면으로 둘러보기',
       'start.note': '여기서 고르는 것은 첫 공구함뿐입니다. 프로젝트 형식을 나누거나 기능을 잠그지 않습니다.',
+      'start.continueKicker': '현재 작업',
+      'start.continueTitle': '현재 도면 계속하기',
+      'start.continueAction': '계속하기 →',
+      'start.continueDetail': '{toolset} · 객체 {objects}개 · 참조 도면 {references}개',
+      'appearance.title': '화면',
+      'appearance.theme': '테마',
+      'appearance.system': '시스템',
+      'appearance.light': '라이트',
+      'appearance.dark': '다크',
 
       'context.tool': '도구',
       'context.select': '선택',
@@ -405,7 +430,8 @@
       'tooltip.showLayer': '이 레이어를 표시합니다.',
       'tooltip.hideReference': '이 참조 도면을 숨깁니다.',
       'tooltip.showReference': '이 참조 도면을 표시합니다.',
-      'tooltip.scaleReference': '알고 있는 실제 거리로 참조 도면의 축척을 맞춥니다.'
+      'tooltip.scaleReference': '알고 있는 실제 거리로 참조 도면의 축척을 맞춥니다.',
+      'tooltip.home': '현재 도면은 유지한 채 시작 화면으로 돌아갑니다.'
     }
   };
 

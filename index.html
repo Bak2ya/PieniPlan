@@ -6,11 +6,18 @@
   <meta name="theme-color" content="#17191d" />
   <link rel="manifest" href="manifest.webmanifest" />
   <title>PieniPlan</title>
+  <script>try{const t=localStorage.getItem('pieniplan-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(_){}</script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="appShell" class="app-shell plan-tools" aria-hidden="true">
     <header class="topbar">
+      <button id="backBtn" class="toolbar-button compact-button" data-i18n="action.back">Back</button>
+      <button id="homeBtn" class="icon-button home-button" aria-label="Home"
+              data-i18n-aria="action.home" data-tooltip-title-key="action.home" data-tooltip-key="tooltip.home">
+        <span class="ui-icon icon-house" aria-hidden="true"></span>
+      </button>
+
       <div class="brand-block" aria-label="PieniPlan">
         <div class="brand-name">PieniPlan</div>
         <div class="brand-subtitle">Small Web Floor Plan Editor</div>
@@ -39,6 +46,7 @@
       <div class="topbar-spacer"></div>
 
       <div class="topbar-actions">
+        <button id="appearanceBtn" class="toolbar-button compact-button" data-i18n="action.appearance">Appearance</button>
         <button id="undoBtn" class="icon-button" aria-label="Undo"
                 data-i18n-aria="action.undo" data-tooltip-title-key="action.undo"
                 data-tooltip-key="tooltip.undo" data-shortcut="Ctrl/Cmd+Z">
@@ -157,11 +165,21 @@
   </div>
 
   <section id="startScreen" class="start-screen" aria-labelledby="startTitle">
+    <button id="startAppearanceBtn" class="toolbar-button start-appearance-button" data-i18n="action.appearance">Appearance</button>
     <div class="start-panel">
       <div class="start-brand">PieniPlan</div>
       <div class="start-subtitle">Small Web Floor Plan Editor</div>
       <h1 id="startTitle" data-i18n="start.title">One drawing. Choose the tools you need.</h1>
       <p class="start-intro" data-i18n="start.intro">Both paths use the same real-world coordinates and can end as the same DXF. You can switch tools later without starting over.</p>
+
+      <button id="continueWorkBtn" class="continue-work-card" hidden>
+        <span class="continue-work-main">
+          <span class="continue-work-kicker" data-i18n="start.continueKicker">Current work</span>
+          <strong data-i18n="start.continueTitle">Continue current drawing</strong>
+          <span id="continueWorkDetail" class="continue-work-detail"></span>
+        </span>
+        <span class="continue-work-action" data-i18n="start.continueAction">Continue →</span>
+      </button>
 
       <div class="start-cards">
         <button id="startPlanBtn" class="start-card plan-card">
@@ -188,6 +206,15 @@
       <div class="start-note" data-i18n="start.note">This choice only selects the first toolbox. It does not lock the project into a separate format.</div>
     </div>
   </section>
+
+  <div id="appearanceMenu" class="appearance-menu" role="menu" aria-label="Appearance" data-i18n-aria="appearance.title" hidden>
+    <div class="appearance-title" data-i18n="appearance.title">Appearance</div>
+    <div class="appearance-options" role="group" aria-label="Theme" data-i18n-aria="appearance.theme">
+      <button class="appearance-option" data-theme-choice="system" data-i18n="appearance.system">System</button>
+      <button class="appearance-option" data-theme-choice="light" data-i18n="appearance.light">Light</button>
+      <button class="appearance-option" data-theme-choice="dark" data-i18n="appearance.dark">Dark</button>
+    </div>
+  </div>
 
   <div id="dialogBackdrop" class="dialog-backdrop" hidden>
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">

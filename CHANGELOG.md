@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.1 · Build 4 — 2026-09-15
+
+Navigation and appearance refinement for the unified Plan/CAD prototype.
+
+- connected PieniPlan screen/tool-set navigation to the browser History API
+- browser Back/Forward now restores PieniPlan start/workspace/tool-set states; mouse thumb Back/Forward works when the browser/OS maps those buttons to browser navigation
+- added explicit in-app Back and Home controls
+- returning to the start screen preserves the current in-memory drawing instead of clearing it
+- added a Continue current drawing card on the start screen
+- added System / Light / Dark appearance selection
+- appearance preference is persisted locally and applied before the main stylesheet paints when possible
+- kept drawing Undo/Redo fully separate from navigation Back/Forward
+
 ## v0.3.0 · Build 3 — 2026-09-15
 
 Prototype of the unified Plan/CAD product direction.

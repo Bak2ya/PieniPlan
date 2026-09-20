@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.3.0';
-  const BUILD = 3;
+  const VERSION = '0.3.1';
+  const BUILD = 4;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -15,6 +15,7 @@
 
   const dom = {
     appShell: $('appShell'), startScreen: $('startScreen'), startPlanBtn: $('startPlanBtn'), startCadBtn: $('startCadBtn'), startSampleBtn: $('startSampleBtn'),
+    continueWorkBtn: $('continueWorkBtn'), continueWorkDetail: $('continueWorkDetail'), backBtn: $('backBtn'), homeBtn: $('homeBtn'), appearanceBtn: $('appearanceBtn'), startAppearanceBtn: $('startAppearanceBtn'), appearanceMenu: $('appearanceMenu'),
     planToolsBtn: $('planToolsBtn'), cadToolsBtn: $('cadToolsBtn'), toolRail: $('toolRail'), toolPopover: $('toolPopover'),
     newBtn: $('newBtn'), openRefBtn: $('openRefBtn'), emptyOpenBtn: $('emptyOpenBtn'), addReferenceBtn: $('addReferenceBtn'),
     openDxfBtn: $('openDxfBtn'), dxfEditFileInput: $('dxfEditFileInput'), referenceFileInput: $('referenceFileInput'),
@@ -119,8 +120,114 @@
     mappingPendingAction: null,
     pendingToolAfterMapping: null,
     commandPending: null,
-    sourceDxfName: null
+    sourceDxfName: null,
+    view: 'start',
+    workspaceVisited: false,
+    theme: 'system'
   };
+
+  const THEME_STORAGE_KEY = 'pieniplan-theme';
+  const ROUTE_MARKER = 'pieniplan';
+
+  function safeReadTheme() {
+    try {
+      const value = localStorage.getItem(THEME_STORAGE_KEY);
+      return ['system','light','dark'].includes(value) ? value : 'system';
+    } catch (_) { return 'system'; }
+  }
+
+  function resolvedTheme(theme = state.theme) {
+    if (theme === 'light' || theme === 'dark') return theme;
+    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  function updateThemeMeta() {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', resolvedTheme() === 'light' ? '#f7f8fa' : '#17191d');
+  }
+
+  function applyTheme(theme, { persist = true } = {}) {
+    state.theme = ['system','light','dark'].includes(theme) ? theme : 'system';
+    if (state.theme === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.dataset.theme = state.theme;
+    document.querySelectorAll('[data-theme-choice]').forEach(button => button.classList.toggle('active', button.dataset.themeChoice === state.theme));
+    if (persist) {
+      try { localStorage.setItem(THEME_STORAGE_KEY, state.theme); } catch (_) {}
+    }
+    updateThemeMeta();
+    render();
+  }
+
+  function positionAppearanceMenu(owner) {
+    const menu = dom.appearanceMenu;
+    const rect = owner.getBoundingClientRect();
+    menu.hidden = false;
+    const m = menu.getBoundingClientRect();
+    const margin = 10;
+    let left = rect.right - m.width;
+    let top = rect.bottom + 7;
+    left = Math.max(margin, Math.min(window.innerWidth - m.width - margin, left));
+    if (top + m.height > window.innerHeight - margin) top = rect.top - m.height - 7;
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(Math.max(margin, top))}px`;
+  }
+
+  function toggleAppearanceMenu(owner) {
+    if (!dom.appearanceMenu.hidden) { dom.appearanceMenu.hidden = true; return; }
+    positionAppearanceMenu(owner);
+  }
+
+  function hasCurrentWork() {
+    return state.workspaceVisited || state.objects.length > 0 || state.references.length > 0 || Boolean(state.sourceDxfName);
+  }
+
+  function updateContinueCard() {
+    const show = hasCurrentWork();
+    dom.continueWorkBtn.hidden = !show;
+    if (!show) return;
+    dom.continueWorkDetail.textContent = t('start.continueDetail', {
+      toolset: t(state.toolset === 'plan' ? 'value.planTools' : 'value.cadTools'),
+      objects: state.objects.length,
+      references: state.references.length
+    });
+  }
+
+  function writeRoute(view, toolset, mode = 'push') {
+    const payload = { [ROUTE_MARKER]: true, view, toolset: toolset || state.toolset };
+    const method = mode === 'replace' ? 'replaceState' : 'pushState';
+    history[method](payload, '', location.href);
+  }
+
+  function showStartScreen({ historyMode = 'push' } = {}) {
+    state.view = 'start';
+    updateContinueCard();
+    dom.startScreen.hidden = false;
+    dom.appShell.setAttribute('aria-hidden', 'true');
+    dom.appShell.inert = true;
+    dom.appearanceMenu.hidden = true;
+    if (historyMode !== 'none') writeRoute('start', state.toolset, historyMode);
+  }
+
+  function showWorkspace({ historyMode = 'push' } = {}) {
+    state.view = 'workspace';
+    state.workspaceVisited = true;
+    dom.startScreen.hidden = true;
+    dom.appShell.removeAttribute('aria-hidden');
+    dom.appShell.inert = false;
+    dom.appearanceMenu.hidden = true;
+    if (historyMode !== 'none') writeRoute('workspace', state.toolset, historyMode);
+    setTimeout(resizeCanvas, 0);
+  }
+
+  function applyRoute(route) {
+    if (!route || !route[ROUTE_MARKER]) return;
+    if (route.view === 'start') {
+      showStartScreen({ historyMode: 'none' });
+      return;
+    }
+    const toolset = route.toolset === 'cad' ? 'cad' : 'plan';
+    switchToolset(toolset, { skipMapping: true, historyMode: 'none' });
+  }
 
   function uid(prefix) { return `${prefix}-${state.nextId++}`; }
   function deg(radValue) { return radValue * 180 / Math.PI; }
@@ -487,12 +594,13 @@
 
   function openCategory(category,button){state.activeCategory=category;renderToolRail();const items=cadToolCatalog[category]||[];dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(t(button.dataset.categoryKey))}</div>`;for(const item of items){const b=document.createElement('button');b.className=`tool-item ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;b.addEventListener('click',()=>setTool(item.id,category));dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-220));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
 
-  function switchToolset(next,{skipMapping=false}={}){
-    if(next===state.toolset){dom.startScreen.hidden=true;dom.appShell.removeAttribute('aria-hidden');return;}
+  function switchToolset(next,{skipMapping=false,historyMode='push'}={}){
     if(next==='cad'&&!skipMapping&&hasSemanticObjects()&&!state.cadMapping){openMappingDialog('switch-cad');return;}
+    const sameWorkspace=next===state.toolset&&state.view==='workspace';
+    const changed=next!==state.toolset;
     state.toolset=next;dom.appShell.classList.toggle('plan-tools',next==='plan');dom.appShell.classList.toggle('cad-tools',next==='cad');dom.planToolsBtn.classList.toggle('active',next==='plan');dom.cadToolsBtn.classList.toggle('active',next==='cad');dom.commandBar.hidden=next!=='cad';
-    state.activeCategory='select';state.activeTool='select';state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;host.dataset.tool='select';dom.toolPopover.hidden=true;
-    updateEmptyState();renderToolRail();renderPrimaryPanel();renderProperties();updateContextBar();render();setTimeout(resizeCanvas,0);dom.startScreen.hidden=true;dom.appShell.removeAttribute('aria-hidden');
+    if(changed){state.activeCategory='select';state.activeTool='select';state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
+    updateEmptyState();renderToolRail();renderPrimaryPanel();renderProperties();updateContextBar();render();showWorkspace({historyMode:sameWorkspace?'none':historyMode});
   }
 
   function updateEmptyState(){const plan=state.toolset==='plan';dom.emptyKicker.textContent=plan?'Plan Tools':'CAD Tools';dom.emptyTitle.textContent=t(plan?'empty.planTitle':'empty.cadTitle');dom.emptyCopy.textContent=t(plan?'empty.planCopy':'empty.cadCopy');dom.emptyPrimaryBtn.textContent=t(plan?'empty.planPrimary':'empty.cadPrimary');dom.primaryInspectorTab.textContent=t(plan?'tab.objects':'tab.layers');dom.primaryPanelTitle.textContent=t(plan?'panel.planObjects':'panel.cadLayers');dom.primaryPanelSubtitle.textContent=t(plan?'panel.planObjectsSub':'panel.cadLayersSub');}
@@ -631,8 +739,14 @@
   dom.startPlanBtn.addEventListener('click',()=>switchToolset('plan',{skipMapping:true}));
   dom.startCadBtn.addEventListener('click',()=>switchToolset('cad',{skipMapping:true}));
   dom.startSampleBtn.addEventListener('click',createSample);
+  dom.continueWorkBtn.addEventListener('click',()=>switchToolset(state.toolset,{skipMapping:true}));
+  dom.backBtn.addEventListener('click',()=>history.back());
+  dom.homeBtn.addEventListener('click',()=>showStartScreen());
   dom.planToolsBtn.addEventListener('click',()=>switchToolset('plan'));
   dom.cadToolsBtn.addEventListener('click',()=>switchToolset('cad'));
+  dom.appearanceBtn.addEventListener('click',e=>{e.stopPropagation();toggleAppearanceMenu(dom.appearanceBtn);});
+  dom.startAppearanceBtn.addEventListener('click',e=>{e.stopPropagation();toggleAppearanceMenu(dom.startAppearanceBtn);});
+  document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>{applyTheme(button.dataset.themeChoice);dom.appearanceMenu.hidden=true;}));
   document.querySelectorAll('.inspector-tab').forEach(b=>b.addEventListener('click',()=>switchInspector(b.dataset.tab)));
 
   dom.openRefBtn.addEventListener('click',()=>dom.referenceFileInput.click());dom.emptyOpenBtn.addEventListener('click',()=>dom.referenceFileInput.click());dom.addReferenceBtn.addEventListener('click',()=>dom.referenceFileInput.click());
@@ -648,7 +762,10 @@
   canvas.addEventListener('pointermove',onPointerMove);canvas.addEventListener('pointerdown',onPointerDown);canvas.addEventListener('pointerup',onPointerUp);canvas.addEventListener('pointercancel',onPointerUp);canvas.addEventListener('wheel',onWheel,{passive:false});canvas.addEventListener('contextmenu',e=>e.preventDefault());
   host.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';});host.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files?.[0];if(file)openReferenceFile(file);});
   window.addEventListener('resize',resizeCanvas);
+  window.addEventListener('popstate',e=>applyRoute(e.state));
+  window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change',()=>{if(state.theme==='system'){updateThemeMeta();render();}});
   window.addEventListener('keydown',e=>{
+    if(state.view!=='workspace'){if(e.key==='Escape')dom.appearanceMenu.hidden=true;return;}
     if(e.code==='Space'&&!isTyping()){state.spaceDown=true;e.preventDefault();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!isTyping()){e.preventDefault();e.shiftKey?redo():undo();}
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&!isTyping()){e.preventDefault();redo();}
@@ -658,7 +775,7 @@
   });
   window.addEventListener('keyup',e=>{if(e.code==='Space'){state.spaceDown=false;if(!state.pan)host.dataset.pan='false';}});
   window.addEventListener('beforeunload',e=>{if(state.objects.length||state.references.length){e.preventDefault();e.returnValue='';}});
-  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;});
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;});
 
-  dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.commandBar.hidden=true;i18n.apply(document);installTooltips();updateEmptyState();renderToolRail();updateAll();setCommandStatus(t('command.ready'));setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
+  dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.commandBar.hidden=true;i18n.apply(document);state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();

@@ -11,11 +11,14 @@ The same drawing can be approached with two tool sets:
 
 Choosing one on the start screen only selects the first toolbox. You can switch at any time without converting the project into a different file format.
 
-## v0.3.0 · Build 3 prototype
+## v0.3.1 · Build 4 prototype
 
 Implemented in this prototype:
 
 - start screen with Plan Tools / CAD Tools entry paths
+- browser History navigation so browser Back/Forward and standard mouse thumb Back/Forward can move between PieniPlan start/workspace/tool-set history when the browser maps those buttons to navigation
+- in-app Back and Home controls; returning Home keeps the current in-memory drawing and shows a Continue current drawing card
+- System / Light / Dark appearance selection with the choice persisted in the browser
 - shared canvas, mm world coordinates, Zoom / Pan / GRID / SNAP / ORTHO
 - exact wall Length / Angle / Thickness input
 - door and window placement on walls with exact width
@@ -37,7 +40,7 @@ This is still an early prototype, not a full CAD replacement.
 - DXF editing currently focuses on common basic 2D entities.
 - MOVE / COPY / OFFSET / TRIM / EXTEND and many other CAD commands are not implemented yet.
 - Space/room recognition and FACMAP export are not implemented yet.
-- Project save/load is not implemented yet.
+- Project save/load is not implemented yet. Returning Home preserves the current drawing only for the current page session; reload/browser close still loses unsaved project state.
 - DXF export is intentionally basic and should be validated with real production drawings before relying on it for critical work.
 
 ## Run
