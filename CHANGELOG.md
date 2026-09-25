@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.13.0 · Build 14 — 2026-09-25
+
+- 프로젝트 `저장`과 portable file `다운로드`를 분리했습니다. File System Access 지원 브라우저는 기존처럼 같은 `.pieniplan` 파일을 갱신하고, 미지원 브라우저는 자동 다운로드하지 않고 IndexedDB 기반 browser-local project storage에 저장합니다. File 메뉴에 **프로젝트 파일 다운로드**를 별도 제공했습니다.
+- CAD/Plan 공통 Command 문법을 보강했습니다. 캔버스에 포커스가 있어도 명령을 입력해 Enter로 실행할 수 있고, 아무 명령도 입력하지 않은 상태에서 **Enter는 마지막 명령을 반복**합니다.
+- Plan Command feedback 위치를 command input 자체에 anchor하도록 수정해 울트라와이드/대형 모니터에서도 메시지가 오른쪽 아래로 떠버리지 않게 했습니다.
+- Floor와 CAD Drawing Region의 관계를 **1 Floor ↔ 1 Region**으로 강제하는 isolation/migration을 추가했습니다. 다른 Region을 Plan으로 열거나 재인식할 때 현재 Floor에 결과를 누적하지 않고 대응 Floor를 재사용하거나 새로 만듭니다.
+- 사용자 제공 창의관 프로젝트에서 `6F` 하나에 `６Ｆ`와 `5F`의 자동 인식 결과가 섞여 있던 실제 상태를 확인하고, 명확한 Floor/Region 이름과 `sourceRegionId`를 이용해 로드 시 보수적으로 분리·복구하도록 했습니다. 해당 fixture에서 6F source 151개와 5F source 176개의 recognized semantic object가 각각 올바른 Floor로 분리되는 회귀 테스트를 통과했습니다.
+- architectural recognition에 **Junction Solver**를 추가했습니다. L-corner와 T-junction의 wall endpoint를 실제 교점까지 정규화하고 host wall은 유지하며 branch만 붙입니다. pure interior X crossing은 기존 결정대로 자동 분절하지 않습니다.
+- DXF에 실제 ARC entity가 없고 LINE chain으로 분해된 문 여닫이 호를 보수적으로 복원하는 **segmented door swing recognition**을 추가했습니다.
+- 사용자 제공 창의관 프로젝트의 실제 CAD line subset을 Build 14 인식기에 통과시킨 결과: `６Ｆ` region에서 123 wall / 18 space / 3 door / 13 stair, `5F` region에서 153 wall / 25 space / 9 door / 20 stair 후보를 생성했고 safety limit에 걸리지 않았습니다. 실제 브라우저에서의 시각적 정확도/오검출은 사용자 실기 확인이 남아 있습니다.
+- Build 10~12 회귀 smoke test와 Build 14 command/status, junction solver, segmented door, 실제 Floor/Region migration smoke test를 모두 통과했습니다. JS syntax와 i18n EN/KO 439/439 parity도 확인했습니다.
+
 ## v0.12.0 · Build 13 — 2026-09-25
 
 - `.pieniplan` 저장을 브라우저 다운로드와 분리했습니다. File System Access를 지원하는 브라우저에서는 처음 선택한 프로젝트 파일 핸들을 유지해 이후 `Ctrl/Cmd+S`가 같은 파일을 직접 갱신하며, 지원하지 않는 브라우저에서만 다운로드 저장으로 대체합니다.
