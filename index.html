@@ -6,51 +6,40 @@
   <meta name="theme-color" content="#17191d" />
   <link rel="manifest" href="manifest.webmanifest" />
   <title>PieniPlan</title>
+  <script>try{const t=localStorage.getItem('pieniplan-theme');if(t==='light'||t==='dark'||t==='black')document.documentElement.dataset.theme=t;}catch(_){}</script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="appShell" class="app-shell plan-tools" aria-hidden="true">
     <header class="topbar">
-      <div class="brand-block" aria-label="PieniPlan">
-        <div class="brand-name">PieniPlan</div>
-        <div class="brand-subtitle">Small Web Floor Plan Editor</div>
+      <div class="topbar-zone topbar-left">
+        <button id="homeBtn" class="brand-home" aria-label="Home" data-i18n-aria="action.home" data-tooltip-title-key="action.home" data-tooltip-key="tooltip.home">
+          <span class="pieni-logo" aria-hidden="true">P</span>
+          <span class="brand-name">PieniPlan</span>
+        </button>
+        <div class="toolset-switch" role="group" aria-label="Mode" data-i18n-aria="aria.toolset">
+          <button id="planToolsBtn" class="toolset-button active" data-toolset="plan"><span>Plan Mode</span></button>
+          <button id="cadToolsBtn" class="toolset-button" data-toolset="cad"><span>CAD Mode</span></button>
+        </div>
       </div>
 
-      <div class="toolset-switch" role="group" aria-label="Tool set" data-i18n-aria="aria.toolset">
-        <button id="planToolsBtn" class="toolset-button active" data-toolset="plan">
-          <span class="ui-icon icon-house" aria-hidden="true"></span>
-          <span>Plan Tools</span>
-        </button>
-        <button id="cadToolsBtn" class="toolset-button" data-toolset="cad">
-          <span class="ui-icon icon-pen-ruler" aria-hidden="true"></span>
-          <span>CAD Tools</span>
-        </button>
+      <div class="topbar-document" aria-live="polite">
+        <span id="documentTitle" class="document-title">New Drawing</span>
+        <span id="documentDirtyDot" class="document-dirty-dot" hidden aria-label="Unsaved changes"></span>
       </div>
 
-      <div class="topbar-actions topbar-actions-left">
-        <button id="newBtn" class="toolbar-button" data-i18n="action.new">New</button>
-        <button id="openDxfBtn" class="toolbar-button cad-only" data-i18n="action.openDxfEdit">Open DXF</button>
-        <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
-        <button id="openRefBtn" class="toolbar-button primary" data-i18n="action.openReference">Open Reference</button>
-        <input id="referenceFileInput" type="file" accept=".dxf,image/*,.pdf" hidden />
-        <button id="fitBtn" class="toolbar-button" data-i18n="action.fit">Fit</button>
+      <div class="topbar-zone topbar-right">
+        <button id="undoBtn" class="icon-button" aria-label="Undo" data-i18n-aria="action.undo" data-tooltip-title-key="action.undo" data-tooltip-key="tooltip.undo" data-shortcut="Ctrl/Cmd+Z"><span class="ui-icon icon-undo" aria-hidden="true"></span></button>
+        <button id="redoBtn" class="icon-button" aria-label="Redo" data-i18n-aria="action.redo" data-tooltip-title-key="action.redo" data-tooltip-key="tooltip.redo" data-shortcut="Ctrl/Cmd+Shift+Z"><span class="ui-icon icon-redo" aria-hidden="true"></span></button>
+        <button id="viewMenuBtn" class="icon-button" aria-label="View" data-tooltip-title="View"><span class="ui-icon icon-viewport" aria-hidden="true"></span></button>
+        <button id="fileMenuBtn" class="icon-button" aria-label="File" data-tooltip-title="File"><span class="ui-icon icon-folder" aria-hidden="true"></span></button>
+        <button id="settingsMenuBtn" class="icon-button" aria-label="Settings" data-tooltip-title="Settings"><span class="ui-icon icon-settings" aria-hidden="true"></span></button>
       </div>
 
-      <div class="topbar-spacer"></div>
-
-      <div class="topbar-actions">
-        <button id="undoBtn" class="icon-button" aria-label="Undo"
-                data-i18n-aria="action.undo" data-tooltip-title-key="action.undo"
-                data-tooltip-key="tooltip.undo" data-shortcut="Ctrl/Cmd+Z">
-          <span class="ui-icon icon-undo" aria-hidden="true"></span>
-        </button>
-        <button id="redoBtn" class="icon-button" aria-label="Redo"
-                data-i18n-aria="action.redo" data-tooltip-title-key="action.redo"
-                data-tooltip-key="tooltip.redo" data-shortcut="Ctrl/Cmd+Shift+Z">
-          <span class="ui-icon icon-redo" aria-hidden="true"></span>
-        </button>
-        <button id="exportDxfBtn" class="toolbar-button" data-i18n="action.exportDxf">Export DXF</button>
-      </div>
+      <input id="projectFileInput" type="file" accept=".pieniplan,application/json" hidden />
+      <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
+      <input id="referenceFileInput" type="file" accept=".dxf,image/*,.pdf" hidden />
+      <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="fullExtentsBtn" hidden></button><button id="mappingSettingsBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
     </header>
 
     <div class="contextbar" id="contextBar">
@@ -69,7 +58,7 @@
       <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas" data-i18n-aria="aria.canvas">
         <canvas id="drawingCanvas"></canvas>
         <div id="emptyState" class="empty-state">
-          <div class="empty-kicker" id="emptyKicker">Plan Tools</div>
+          <div class="empty-kicker" id="emptyKicker">Plan Mode</div>
           <div class="empty-title" id="emptyTitle" data-i18n="empty.planTitle">Draw a real-size floor plan without CAD complexity.</div>
           <div class="empty-copy" id="emptyCopy" data-i18n="empty.planCopy">Use walls, doors and windows directly, or add a DXF/image reference and trace it with exact dimensions.</div>
           <div class="empty-actions">
@@ -77,10 +66,37 @@
             <button id="emptyOpenBtn" class="toolbar-button" data-i18n="action.openReference">Open Reference</button>
           </div>
         </div>
+        <div id="mobileViewerBadge" class="mobile-viewer-badge" data-i18n="mobile.viewerOnly" hidden>Viewer only</div>
         <div id="progressToast" class="progress-toast" hidden>
           <div class="progress-title" id="progressTitle" data-i18n="progress.readingDxf">Reading DXF…</div>
           <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
           <div class="progress-detail" id="progressDetail"></div>
+        </div>
+
+        <div id="canvasHud" class="canvas-hud" aria-label="Drawing command and status">
+          <div class="hud-cad-only status-group coord-group">
+            <span id="statusX">X 0</span>
+            <span id="statusY">Y 0</span>
+            <span class="status-divider"></span>
+            <span id="statusUnits">mm</span>
+          </div>
+          <div id="commandBar" class="commandbar">
+            <span class="command-label">Command</span>
+            <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="L, TR, EX, DI, Z …" aria-label="Command" />
+            <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
+          </div>
+          <div class="hud-spacer"></div>
+          <div class="hud-cad-only hud-status-actions">
+            <button id="gridToggle" class="status-toggle active" data-tooltip-title="GRID" data-tooltip-key="tooltip.grid">GRID</button>
+            <button id="snapToggle" class="status-toggle active" data-tooltip-title="SNAP" data-tooltip-key="tooltip.snap">SNAP</button>
+            <button id="orthoToggle" class="status-toggle" data-tooltip-title="ORTHO" data-tooltip-key="tooltip.ortho">ORTHO</button>
+            <button id="polarToggle" class="status-toggle" data-tooltip-title="POLAR" data-tooltip-key="tooltip.polar">POLAR</button>
+            <span class="status-divider"></span>
+            <span id="statusAxis" class="status-axis">AXIS 0°</span>
+            <span class="status-divider"></span>
+            <span id="statusZoom">100%</span>
+          </div>
         </div>
       </section>
 
@@ -97,8 +113,8 @@
                 <div id="primaryPanelTitle" class="panel-title">Objects</div>
                 <div id="primaryPanelSubtitle" class="panel-subtitle">Floor-plan objects</div>
               </div>
-              <button id="mappingSettingsBtn" class="small-button cad-only" data-i18n="action.cadMapping">CAD mapping</button>
             </div>
+            <div id="primaryControls" class="primary-controls" hidden></div>
             <div id="primaryList" class="panel-list"></div>
           </section>
 
@@ -130,54 +146,40 @@
       </aside>
     </main>
 
-    <div id="commandBar" class="commandbar" hidden>
-      <div class="command-label">Command:</div>
-      <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
-             placeholder="L, E, DI, Z …" aria-label="Command" />
-      <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
-    </div>
-
-    <footer class="statusbar">
-      <div class="status-group coord-group">
-        <span id="statusX">X 0</span>
-        <span id="statusY">Y 0</span>
-        <span class="status-divider"></span>
-        <span id="statusUnits">mm</span>
-      </div>
-      <div class="status-spacer"></div>
-      <button id="gridToggle" class="status-toggle active"
-              data-tooltip-title="GRID" data-tooltip-key="tooltip.grid">GRID</button>
-      <button id="snapToggle" class="status-toggle active"
-              data-tooltip-title="SNAP" data-tooltip-key="tooltip.snap">SNAP</button>
-      <button id="orthoToggle" class="status-toggle"
-              data-tooltip-title="ORTHO" data-tooltip-key="tooltip.ortho">ORTHO</button>
-      <span class="status-divider"></span>
-      <span id="statusZoom">100%</span>
-    </footer>
   </div>
 
   <section id="startScreen" class="start-screen" aria-labelledby="startTitle">
+    <button id="startAppearanceBtn" class="toolbar-button start-appearance-button" data-i18n="action.appearance">Appearance</button>
     <div class="start-panel">
       <div class="start-brand">PieniPlan</div>
       <div class="start-subtitle">Small Web Floor Plan Editor</div>
       <h1 id="startTitle" data-i18n="start.title">One drawing. Choose the tools you need.</h1>
       <p class="start-intro" data-i18n="start.intro">Both paths use the same real-world coordinates and can end as the same DXF. You can switch tools later without starting over.</p>
 
+      <button id="continueWorkBtn" class="continue-work-card" hidden>
+        <span class="continue-work-main">
+          <span class="continue-work-kicker" data-i18n="start.continueKicker">Current work</span>
+          <strong data-i18n="start.continueTitle">Continue current drawing</strong>
+          <span id="continueWorkDetail" class="continue-work-detail"></span>
+        </span>
+        <span class="continue-work-action" data-i18n="start.continueAction">Continue →</span>
+      </button>
+
       <div class="start-cards">
         <button id="startPlanBtn" class="start-card plan-card">
           <span class="start-card-icon ui-icon icon-house" aria-hidden="true"></span>
-          <span class="start-card-kicker">Plan Tools</span>
+          <span class="start-card-kicker">Plan Mode</span>
           <strong data-i18n="start.planTitle">Quick floor plan</strong>
           <span data-i18n="start.planCopy">Draw with walls, doors and windows while keeping exact dimensions. CAD structure stays out of the way.</span>
-          <span class="start-card-action" data-i18n="start.planAction">Start with Plan Tools →</span>
+          <span class="start-card-action" data-i18n="start.planAction">Start with Plan Mode →</span>
         </button>
 
         <button id="startCadBtn" class="start-card cad-card">
           <span class="start-card-icon ui-icon icon-pen-ruler" aria-hidden="true"></span>
-          <span class="start-card-kicker">CAD Tools</span>
+          <span class="start-card-kicker">CAD Mode</span>
           <strong data-i18n="start.cadTitle">DXF drawing</strong>
           <span data-i18n="start.cadCopy">Open or create DXF geometry with layers, precise drawing tools and a command line for experienced CAD users.</span>
-          <span class="start-card-action" data-i18n="start.cadAction">Start with CAD Tools →</span>
+          <span class="start-card-action" data-i18n="start.cadAction">Start with CAD Mode →</span>
         </button>
       </div>
 
@@ -188,6 +190,42 @@
       <div class="start-note" data-i18n="start.note">This choice only selects the first toolbox. It does not lock the project into a separate format.</div>
     </div>
   </section>
+
+  <div id="viewMenu" class="top-menu" role="menu" hidden>
+    <button id="viewFitAction" class="menu-row" data-i18n="action.fit">Fit</button>
+    <button id="viewAllAction" class="menu-row" data-i18n="action.fitAllEntities">All extents</button>
+  </div>
+
+  <div id="fileMenu" class="top-menu" role="menu" hidden>
+    <button id="fileNewAction" class="menu-row" data-i18n="action.new">New</button>
+    <button id="fileOpenProjectAction" class="menu-row" data-i18n="action.openProject">Open Project</button>
+    <button id="fileSaveProjectAction" class="menu-row" data-i18n="action.saveProject">Save Project</button>
+    <div class="menu-divider"></div>
+    <button id="fileOpenDxfAction" class="menu-row" data-i18n="action.openDxfEdit">Open DXF</button>
+    <button id="fileExportDxfAction" class="menu-row" data-i18n="action.exportDxf">Export DXF</button>
+  </div>
+
+  <div id="settingsMenu" class="top-menu settings-menu" role="menu" hidden>
+    <div class="menu-label" data-i18n="appearance.theme">Theme</div>
+    <div class="settings-theme-row" role="group" aria-label="Theme">
+      <button class="appearance-option" data-theme-choice="light" data-i18n="appearance.light">Light</button>
+      <button class="appearance-option" data-theme-choice="dark" data-i18n="appearance.dark">Dark</button>
+      <button class="appearance-option" data-theme-choice="black" data-i18n="appearance.black">Black</button>
+    </div>
+    <div class="menu-divider"></div>
+    <button id="helpBtn" class="menu-row menu-row-icon"><span class="ui-icon icon-book" aria-hidden="true"></span><span data-i18n="help.title">User Guide</span></button>
+    <button id="aboutBtn" class="menu-row menu-row-icon"><span class="ui-icon icon-info" aria-hidden="true"></span><span data-i18n="about.title">About</span></button>
+  </div>
+
+  <div id="appearanceMenu" class="appearance-menu" role="menu" aria-label="Appearance" data-i18n-aria="appearance.title" hidden>
+    <div class="appearance-title" data-i18n="appearance.title">Appearance</div>
+    <div class="appearance-options" role="group" aria-label="Theme" data-i18n-aria="appearance.theme">
+      <button class="appearance-option" data-theme-choice="system" data-i18n="appearance.system">System</button>
+      <button class="appearance-option" data-theme-choice="light" data-i18n="appearance.light">Light</button>
+      <button class="appearance-option" data-theme-choice="dark" data-i18n="appearance.dark">Dark</button>
+      <button class="appearance-option" data-theme-choice="black" data-i18n="appearance.black">Black</button>
+    </div>
+  </div>
 
   <div id="dialogBackdrop" class="dialog-backdrop" hidden>
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
@@ -228,10 +266,71 @@
         <input id="dimensionLayerInput" class="text-input" value="DIM" />
       </div>
 
-      <div class="mapping-note" data-i18n="mapping.note">Switching back to Plan Tools does not discard CAD information; it simply hides the low-level CAD details.</div>
+      <div class="mapping-note" data-i18n="mapping.note">Switching back to Plan Mode does not discard CAD information; it simply hides the low-level CAD details.</div>
       <div class="dialog-actions">
         <button id="mappingCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
-        <button id="mappingApplyBtn" class="toolbar-button primary" data-i18n="mapping.apply">Apply and open CAD Tools</button>
+        <button id="mappingApplyBtn" class="toolbar-button primary" data-i18n="mapping.apply">Apply and open CAD Mode</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="recognitionBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog recognition-dialog" role="dialog" aria-modal="true" aria-labelledby="recognitionTitle">
+      <div class="dialog-title" id="recognitionTitle">Recognize walls</div>
+      <div class="dialog-copy" id="recognitionCopy"></div>
+      <div id="recognitionStats" class="recognition-stats"></div>
+      <div id="recognitionBreakdown" class="recognition-breakdown"></div>
+      <div class="recognition-options" role="group" aria-label="Recognition options" data-i18n-aria="recognition.options">
+        <label><input id="recognitionCreateWalls" type="checkbox" checked /> <span data-i18n="recognition.createWalls">Create wall structure</span></label>
+        <label><input id="recognitionCreateSpaces" type="checkbox" checked /> <span data-i18n="recognition.createSpaces">Create high-confidence room spaces</span></label>
+        <label><input id="recognitionCreateDoors" type="checkbox" checked /> <span data-i18n="recognition.createDoors">Create high-confidence hinged doors</span></label>
+        <label><input id="recognitionCreateStairs" type="checkbox" checked /> <span data-i18n="recognition.createStairs">Create confirmed stair candidates</span></label>
+      </div>
+      <div class="recognition-note" data-i18n="recognition.note">Candidates stay lightweight until you apply them. Repeated CAD lines are grouped into architectural structure first.</div>
+      <div class="dialog-actions">
+        <button id="recognitionCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="recognitionApplyBtn" class="toolbar-button primary" data-i18n="recognition.apply">Create walls and open Plan Mode</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="dialog-title" id="confirmTitle"></div>
+      <div class="dialog-copy" id="confirmCopy"></div>
+      <div class="dialog-actions">
+        <button id="confirmCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="confirmApplyBtn" class="toolbar-button danger"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="dialog-header-row"><div class="dialog-title" id="helpTitle" data-i18n="help.title">User Guide</div><button id="helpCloseBtn" class="icon-button" aria-label="Close">×</button></div>
+      <div class="help-layout">
+        <nav class="help-nav" aria-label="Guide sections">
+          <button class="help-nav-item active" data-help-section="intro" data-i18n="help.introNav">Overview</button>
+          <button class="help-nav-item" data-help-section="plan" data-i18n="help.planNav">Plan Mode</button>
+          <button class="help-nav-item" data-help-section="cad" data-i18n="help.cadNav">CAD Mode</button>
+          <button class="help-nav-item" data-help-section="files" data-i18n="help.filesNav">Files & projects</button>
+          <button class="help-nav-item" data-help-section="shortcuts" data-i18n="help.shortcutsNav">Shortcuts</button>
+          <button class="help-nav-item" data-help-section="trouble" data-i18n="help.troubleNav">Troubleshooting</button>
+        </nav>
+        <div id="helpContent" class="help-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aboutBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog about-dialog" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+      <div class="dialog-header-row"><div class="dialog-title" id="aboutTitle" data-i18n="about.title">About</div><button id="aboutCloseBtn" class="icon-button" aria-label="Close">×</button></div>
+      <div class="about-content">
+        <div class="about-logo pieni-logo" aria-hidden="true">P</div>
+        <h2>PieniPlan</h2>
+        <p>Small Web Floor Plan Editor</p>
+        <div id="aboutVersion" class="about-version"></div>
+        <div class="about-actions"><a class="toolbar-button" href="https://github.com/Bak2ya/PieniPlan" target="_blank" rel="noreferrer" data-i18n="about.github">View on GitHub</a><a class="toolbar-button" href="https://github.com/Bak2ya/PieniPlan/issues" target="_blank" rel="noreferrer" data-i18n="about.contact">Contact developer</a></div>
       </div>
     </div>
   </div>

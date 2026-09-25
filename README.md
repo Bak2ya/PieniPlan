@@ -2,64 +2,233 @@
 
 **Small Web Floor Plan Editor**
 
-PieniPlan is a browser-based floor-plan and lightweight 2D CAD prototype built around one shared, real-world drawing coordinate system.
+브라우저에서 빠르게 평면도를 만들고, 필요하면 같은 도면을 DXF/CAD 방식으로 더 정밀하게 다룰 수 있는 웹 도면 편집기입니다.
 
-The same drawing can be approached with two tool sets:
+- **바로 실행:** https://bak2ya.github.io/PieniPlan/
+- **GitHub:** https://github.com/Bak2ya/PieniPlan
 
-- **Plan Tools** — walls, doors, windows and exact dimensions without requiring CAD knowledge.
-- **CAD Tools** — editable DXF geometry, layers, precision tools and a command line for experienced CAD users.
+PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표를 공유하는 도면**을 지향합니다.
 
-Choosing one on the start screen only selects the first toolbox. You can switch at any time without converting the project into a different file format.
+- **Plan Mode(빠른도면)** — CAD 구조를 몰라도 벽·문·창·공간·치수를 의미 있는 객체로 다루면서 실제 치수를 정확하게 입력합니다.
+- **CAD Mode** — DXF 객체, 레이어, 정밀 선택, GRID/SNAP/ORTHO/POLAR, 명령 입력을 이용해 DXF를 직접 편집합니다.
 
-## v0.3.0 · Build 3 prototype
+처음 화면의 선택은 어떤 모드로 시작할지만 정합니다. 작업 중 같은 프로젝트에서 Plan Mode와 CAD Mode를 오갈 수 있습니다. Plan Mode는 층별 의미 객체를 정리하고, CAD Mode는 원본/편집 DXF의 세부 형상을 다룹니다.
 
-Implemented in this prototype:
+## 할 수 있는 것
 
-- start screen with Plan Tools / CAD Tools entry paths
-- shared canvas, mm world coordinates, Zoom / Pan / GRID / SNAP / ORTHO
-- exact wall Length / Angle / Thickness input
-- door and window placement on walls with exact width
-- DXF and image references with scale calibration
-- DXF reference layer visibility
-- editable DXF import for common LINE / POLYLINE / CIRCLE / TEXT geometry
-- Plan → CAD representation mapping for wall style and layer names
-- CAD → Plan simplified view that hides low-level CAD structure
-- CAD command input with a small supported alias set (`L`, `E`, `DI`, `Z`, `U`, `REDO`)
-- basic DXF export from the shared drawing
-- Korean / English UI auto-detection
-- local browser processing; no server-side drawing upload
+### Plan Mode · 층별 평면
 
-## Prototype limitations
+- 건물을 **층(Floor)** 단위로 분리해 관리하며 각 층은 안정적인 내부 ID를 가집니다. Drawing Region 이름이 `6F`, `６Ｆ`, `6층`, `지하 2층`처럼 명확하면 처음 연결할 때 층 이름을 자동으로 이어받습니다.
+- 오른쪽 패널은 **층 / 팔레트 / 속성**으로 구성됩니다.
+- Plan Mode의 벽은 실제 semantic 두께 데이터와 별개로 화면에서는 일정한 선 굵기로 읽기 쉽게 표시합니다.
+- 계단은 복잡한 CAD 디딤판 선을 그대로 반복 렌더링하지 않고 의미 객체로 단순화해 표시합니다.
+- CAD Drawing Region을 현재 층에 연결하고, 필요하면 **재인식**해 새 후보를 검토할 수 있습니다.
+- 재인식 시 CAD에서 자동 인식된 벽이 마지막 인식 이후 사용자가 수정되지 않은 상태라면 새 인식 결과로 안전하게 갱신하고, 사용자가 손댄 벽은 그대로 보호합니다.
+- 벽 인식 후에는 짧은 교차점 돌출부를 보수적으로 Trim하고, 확실한 벽의 한쪽 제도선이 짧게 더 이어진 경우 기존 벽 축/두께를 이용해 누락 구간을 제한적으로 복원합니다.
+- 층의 `…` 메뉴는 앱 내부 메뉴로 열리며, 이름 변경은 inline 편집, 삭제는 별도 확인 흐름으로 처리합니다.
+- Plan 렌더링/선택은 현재 층의 Plan 객체를 캐시해 처리하고, 연결된 CAD 참조는 정적 Path cache를 재사용해 대형 원본 DXF의 반복 순회를 줄입니다.
+- Plan Mode의 드래그 Window/Crossing 다중 선택은 현재 층의 의미 객체를 대상으로 동작합니다.
+- 왼쪽 도구막대는 선택/그리기/건축/수정/측정 그룹으로 압축되며, 버튼을 누르면 마지막 사용 도구를 다시 실행하고 길게 누르기·우클릭·모서리 표시로 그룹을 펼칩니다.
+- Plan Mode에서도 `L`, `TR`, `EX`, `E`, `DI`, Undo/Redo 같은 익숙한 명령을 사용할 수 있습니다. 이 명령은 원본 DXF가 아니라 현재 층의 Plan 객체를 편집합니다.
+- 공간 topology에서는 끝점/T자 접합을 의미 있는 junction으로 사용하고, 단순히 내부에서 교차해 계속 진행하는 X자 교차는 자동 분절점으로 만들지 않습니다.
+- 분절된 직선 체인이 하나의 원호로 설명될 때 보수적으로 Arc Wall 후보로 복원합니다.
+- A4/A3 같은 종이 규격은 편집 모델에 강제하지 않습니다. 출력 레이아웃은 별도 출력/FacilityManager 단계의 책임으로 둡니다.
+- 실제 치수 기반 **직선 벽 / 곡선 벽(Arc Wall)** 그리기
+- 벽 길이·각도·두께와 곡선 벽 반지름/호 길이 편집
+- 벽에 붙는 문 / 창문 배치와 폭 조절
+- 문 종류
+  - 일반 여닫이문
+  - 양개 여닫이문
+  - 슬라이딩문
+  - 양개 슬라이딩문
+  - 포켓 도어
+- 여닫이문의 경첩·열림 방향, 슬라이딩문의 이동 방향 전환
+- 곡선 벽에서도 벽의 접선/법선을 기준으로 문·창 배치
+- 닫힌 벽 경계를 찾아 공간 지정
+- 벽을 따라 움직이는 연결 치수
+- 화면의 길이·각도·폭 숫자를 더블클릭해 직접 입력
+- SNAP과 별개로 유지되는 Constraint(제약)
+  - 일치
+  - 수평 / 수직
+  - 평행 / 직각
+  - 각도 / 길이 고정
+  - 위치 고정
+- 살짝 회전된 실제 건물에 맞추는 **기준축(Base Axis)**
+- DXF / 이미지 참조 도면을 같은 실제 좌표계에서 트레이싱
+- CAD 도면 영역에서 **건축 구조 인식**을 실행해 단순화된 벽·방·문·계단 후보를 확인한 뒤 Plan 객체로 생성
 
-This is still an early prototype, not a full CAD replacement.
+### CAD Mode
 
-- PDF appears in the planned reference workflow but is not parsed yet.
-- DXF editing currently focuses on common basic 2D entities.
-- MOVE / COPY / OFFSET / TRIM / EXTEND and many other CAD commands are not implemented yet.
-- Space/room recognition and FACMAP export are not implemented yet.
-- Project save/load is not implemented yet.
-- DXF export is intentionally basic and should be validated with real production drawings before relying on it for critical work.
+- 기존 DXF 열기 및 편집
+- 새 DXF 도면 작성
+- 레이어 표시 / 숨김 / 단독 보기 / 검색
+- 객체를 선택하면 해당 레이어를 **레이어 목록 내부에서 자동으로 찾아 표시**
+- 레이어 목록과 도면 영역 목록의 높이를 Splitter로 직접 조절
+- 왼쪽 → 오른쪽 **Window Selection**
+- 오른쪽 → 왼쪽 **Crossing Selection**
+- GRID / SNAP / ORTHO / POLAR
+- Base Axis를 기준으로 한 ORTHO/POLAR 방향 추적
+- `Shift`를 누르는 동안 ORTHO 상태 임시 반전
+- 연속 LINE 그리기와 마우스 Preview
+- 캔버스 아래쪽에는 한 줄짜리 compact command/status HUD를 오버레이해 작업 면적을 덜 차지합니다. 명령 입력은 평소 짧게 유지되고 포커스될 때 확장됩니다.
+- `TR / TRIM` 잘라내기
+- `EX / EXTEND` 연장
+- TRIM/EXTEND 사용 중 `Shift`로 반대 동작 임시 사용
+- 도면에 속한 TEXT/MTEXT/Attribute는 Zoom에 맞춰 실제 크기로 확대·축소되며, 너무 작아지면 LOD로 숨김
+- 도면 일부를 **도면 영역**으로 지정
+  - 화면 맞춤
+  - 이름 변경
+  - 해당 영역만 DXF 내보내기
+  - Plan Mode에서 같은 좌표의 벡터 참조로 열기
+  - 현재 표시 CAD 도형에서 건축 구조 인식
 
-## Run
+## 상단바와 설정
 
-PieniPlan is a static web app. Use GitHub Pages or another local/static HTTP server.
+현재 상단은 작업에 필요한 정보만 남기고, 명령/상태 정보는 캔버스 안쪽 HUD로 분리했습니다.
 
-For a quick local test with Python:
+- 왼쪽: PieniPlan 홈 + `Plan Mode | CAD Mode`
+- 가운데: 현재 프로젝트/도면 이름, 저장되지 않은 변경이 있으면 상태 점 표시
+- 오른쪽: Undo / Redo / 보기 / 파일 / 설정 아이콘
+- 보기: 화면 맞춤 / 전체 요소 보기
+- 파일: 새 도면 / 프로젝트 열기 / 프로젝트 저장 / DXF 열기 / DXF 내보내기
+- 설정: Light / Dark / Black을 즉시 변경, 별도 **사용 안내**와 **정보** 창 제공
+- CAD Mode의 좌표/GRID/SNAP/ORTHO/POLAR/배율과 Command는 페이지 하단 고정 행이 아니라 도면 위 한 줄 HUD입니다. Plan Mode에서는 CAD 전용 상태값을 숨기고 compact Command만 남깁니다.
+
+앱 안의 사용 안내에는 두 모드의 목적, 주요 기능, 파일 흐름, 단축키, 인식/스냅과 문제 해결을 정리합니다.
+
+## `.pieniplan` 프로젝트 저장
+
+PieniPlan 작업 상태는 `.pieniplan` 프로젝트 파일로 저장하고 다시 열 수 있습니다. 원본 DXF와 같은 폴더에 함께 보관하면 관리하기 편합니다.
+
+프로젝트 파일에는 현재 작업에 필요한 상태가 포함됩니다.
+
+- 현재 CAD/Plan 객체
+- CAD 레이어 표시 상태
+- 삭제·편집된 CAD 상태
+- 도면 영역
+- Plan 벽·문·창·공간·계단·치수
+- 기준축과 제약
+- 건축 구조 인식 결과/판단 기록
+- 원본 DXF 파일명과 식별용 정보
+
+브라우저 보안 때문에 `.pieniplan` 파일이 같은 폴더의 DXF를 자동으로 읽는 방식은 사용하지 않습니다. 프로젝트 파일 자체가 현재 작업 상태를 복원하며, 원본 DXF 정보는 출처 확인용으로 함께 기록합니다.
+
+Chromium 계열처럼 브라우저가 직접 파일 쓰기를 지원하면 처음 프로젝트 파일을 선택/저장한 뒤 `Ctrl/Cmd+S`에서 같은 파일을 갱신합니다. 이 기능을 지원하지 않는 브라우저에서는 웹 보안 제약 때문에 다운로드 저장으로 대체됩니다. Command의 단독 `S`는 저장 명령으로 사용하지 않으며 CAD 문법의 STRETCH 용도로 예약되어 있습니다.
+
+## 간단한 사용법
+
+### 빠른 평면도 만들기
+
+1. 시작 화면에서 **빠른 평면도**를 선택합니다.
+2. 왼쪽 **벽**에서 직선 벽 또는 곡선 벽을 선택합니다.
+3. 문을 누르면 필요한 문 종류를 선택할 수 있습니다.
+4. 객체를 선택하면 나타나는 핸들을 끌어 위치·크기·곡률을 조절합니다.
+5. 표시되는 길이·각도·폭 숫자를 더블클릭하면 정확한 값을 직접 입력할 수 있습니다.
+6. **제약** 도구로 일치·수평·수직·평행·직각·각도·길이·위치 고정을 적용합니다.
+7. 벽으로 둘러싸인 곳은 **공간 지정**으로 공간 객체를 만듭니다.
+8. 필요하면 CAD Mode로 전환해 같은 도면을 더 세밀하게 편집합니다.
+
+### CAD에서 LINE 그리기
+
+명령창에서 `L` 또는 `LINE`을 입력하고 Enter를 누릅니다.
+
+1. 시작점을 클릭합니다.
+2. 마우스를 움직이면 다음 선을 미리 볼 수 있습니다.
+3. 끝점을 클릭하면 즉시 선 하나가 확정됩니다.
+4. 방금 끝점에서 계속 다음 선을 그릴 수 있습니다.
+5. `Enter` 또는 `Esc`로 종료합니다.
+
+현재 활성 레이어가 숨겨져 있으면 그리기 시작 시 자동으로 표시합니다.
+
+### DXF 일부를 Plan Mode로 가져오기
+
+1. CAD Mode에서 필요한 레이어만 켭니다.
+2. **선택 → 도면 영역**으로 필요한 층이나 범위를 지정합니다.
+3. 오른쪽 **도면 영역** 목록에서 해당 행의 `…` 메뉴를 엽니다.
+4. 목적에 따라 다음 중 하나를 선택합니다.
+   - **Plan Mode에서 참조로 열기** — 현재 CAD를 같은 좌표와 축척의 벡터 밑그림으로 사용합니다.
+   - **구조 인식해서 Plan Mode로 열기** — 현재 표시 도형을 분석해 벽·방·문·계단 후보를 미리 확인합니다.
+   - **이 영역 DXF 내보내기** — 지정 범위만 별도 DXF로 저장합니다.
+
+### 건축 구조 인식
+
+구조 인식은 CAD 선 하나를 Plan 벽 하나로 단순 변환하지 않습니다.
+
+- 여러 겹의 평행 제도선을 먼저 하나의 **Wall Band**로 묶습니다.
+- 반복되는 벽 두께와 건물의 주 방향을 참고해 같은 벽 조각을 병합합니다.
+- 문 때문에 끊긴 정도의 작은 간격은 건축적으로 같은 벽인지 검토합니다.
+- 일정 간격으로 반복되는 계단 디딤판 패턴은 벽 후보에서 분리합니다.
+- 벽 후보가 만드는 닫힌 경계를 이용해 방/공간 후보를 찾고, 공간 구조를 다시 벽 판단에 활용합니다.
+- 원호가 겹쳐 표현된 곡선 벽도 곡선 벽 후보로 분석합니다.
+- 결과는 **적용 전까지 가벼운 Preview**로만 유지됩니다.
+- 병합 후에도 후보가 비정상적으로 많으면 적용을 막고, 레이어를 더 정리하거나 도면 영역을 줄이도록 안내합니다.
+
+자동 인식은 도면 작성 방식에 따라 결과가 달라질 수 있으므로 원본 CAD는 유지하고 Preview를 확인한 뒤 적용하는 흐름을 사용합니다.
+
+## 주요 조작
+
+- `Ctrl/Cmd + Z` — Undo
+- `Ctrl/Cmd + Shift + Z` — Redo
+- `Delete / Backspace` — 선택 객체 삭제
+- `Esc` — 현재 작업 취소 / 선택 해제
+- `Space` 짧게 누르기 — Plan Mode에서 선택으로 복귀
+- `Space`를 누른 채 Drag — Pan
+- `F3` — SNAP
+- `F7` — GRID
+- `F8` — ORTHO
+- `F10` — POLAR
+- `Shift` — 그리는 동안 ORTHO 상태 임시 반전
+
+CAD 명령창에서 현재 지원하는 주요 Alias:
+
+- `L / LINE`
+- `TR / TRIM`
+- `EX / EXTEND`
+- `E / ERASE`
+- `DI / DIST`
+- `Z / ZOOM` → `E / EXTENTS`
+- `U / UNDO`
+- `REDO`
+
+## 참조 도면
+
+DXF와 이미지를 참조 도면으로 추가할 수 있습니다. 일반 참조 도면은 실제 길이를 알고 있는 두 점을 지정한 뒤 실제 거리를 입력해 축척을 맞출 수 있습니다.
+
+PDF 참조는 예정된 기능이며 현재는 직접 파싱하지 않습니다.
+
+## 화면 모드
+
+- 시스템
+- 라이트
+- 다크
+- 블랙(OLED)
+
+아주 좁은 화면이나 모바일에서는 편집 UI를 억지로 축소하지 않고 **Viewer 중심**으로 동작합니다.
+
+## 현재 범위
+
+PieniPlan은 아직 개발 중입니다. 현재 다음 영역은 계속 확장 중입니다.
+
+- 자동 저장 및 브라우저 복구
+- PDF Reference 직접 읽기
+- MOVE / COPY / ROTATE / OFFSET 등 더 많은 CAD 편집 명령
+- 더 다양한 DXF Entity의 완전한 round-trip 보존
+- 문·계단·복잡한 곡선 구조 자동 인식 고도화
+- 자유 SPLINE을 semantic Wall로 편집하는 기능
+- FACMAP 내보내기와 FacilityManager 연계
+
+## 로컬에서 실행하기
+
+PieniPlan은 정적 웹앱입니다.
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000/`.
+그 뒤 브라우저에서 `http://localhost:8000/`을 엽니다.
 
-Opening `index.html` directly with `file://` may prevent the DXF Web Worker from loading in some browsers.
-
-## Reference files
-
-- DXF can be opened as an **editable drawing** in CAD Tools.
-- DXF can also be added as a **reference underlay** for tracing.
-- Images can be added as reference underlays and calibrated from a known real-world distance.
+브라우저에 따라 `file://`로 `index.html`을 직접 열면 DXF Web Worker가 제한될 수 있습니다.
 
 ## Third-party notices
 
-PieniPlan includes a small local subset of Font Awesome Free SVG icons. See `THIRD_PARTY_LICENSES.md`.
+PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
