@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.13.1 · Build 15 — 2026-09-26
+
+- **DXF 내보내기 저장 UX**를 수정했습니다. `showSaveFilePicker`를 지원하는 브라우저에서는 운영체제의 Save As 창으로 위치와 파일명을 직접 선택하고, 미지원 브라우저에서는 PieniPlan 자체 filename dialog에서 이름을 먼저 확인한 뒤 브라우저 다운로드 위치를 사용한다는 점을 명확히 안내합니다. 전체 DXF와 Drawing Region DXF가 같은 흐름을 사용합니다.
+- DXF 내보내기는 프로젝트 저장과 별개 동작으로 정리해 export 자체가 project dirty state를 임의로 clean 처리하지 않게 했습니다.
+- **재인식 의미를 additive update에서 automatic-recognition-layer rebuild로 변경**했습니다. 현재 Region의 자동 인식 Wall/Door/Space/Stair를 현재 체크 옵션 기준으로 교체하며, 체크 해제한 종류의 이전 자동 인식 객체는 제거됩니다.
+- 자동 인식 객체에 baseline signature/source metadata를 기록해 **사용자가 직접 만든 객체나 인식 후 수동 수정한 객체는 재인식 시 보존**합니다. legacy recognized Wall/Door도 기존 recognition history/source IDs와 비교해 가능한 범위에서 보호합니다. 복제한 객체는 recognition-owned metadata를 제거합니다.
+- 재인식 창은 해당 Region에서 마지막으로 적용한 Wall/Room/Door/Stair 체크 상태를 기억하고, 설명 문구도 “선택한 자동 인식 레이어를 다시 생성하며 직접 작업은 유지”하는 의미로 변경했습니다.
+- architectural cleanup 마지막 단계에 **endpoint gap healing**을 추가했습니다. L/T endpoint를 실제 교점으로 제한적으로 snap/extend하고, 작은 collinear gap을 연결한 뒤 Junction Solver/overrun trim을 다시 수행합니다. pure interior X crossing은 계속 자동 split하지 않습니다.
+- 시작 화면 마지막 줄에 `PieniPlan v0.13.1 · Build 15`를 표시해 실행 중인 빌드를 바로 확인할 수 있게 했습니다.
+- 사용자 제공 Build 14 창의관 프로젝트 subset으로 `5F`의 기존 자동 인식 Stair 20개가 stair 체크 해제 재인식 후 제거되고, 선택한 Wall/Door/Space는 다시 생성되는 회귀를 검증했습니다. 수동 수정 recognized Door 보존, L/T/collinear gap healing, pure-X 비변경도 synthetic test로 확인했습니다.
+- Build 10~12 회귀, Build 14 회귀, Build 15 smoke, JS syntax, i18n EN/KO 446/446 parity를 통과했습니다. 실제 대형 도면에서 junction/recognition의 시각적 정확도와 native Save As/fallback 브라우저별 동작은 사용자 실기 확인이 남아 있습니다.
+
 ## v0.13.0 · Build 14 — 2026-09-25
 
 - 프로젝트 `저장`과 portable file `다운로드`를 분리했습니다. File System Access 지원 브라우저는 기존처럼 같은 `.pieniplan` 파일을 갱신하고, 미지원 브라우저는 자동 다운로드하지 않고 IndexedDB 기반 browser-local project storage에 저장합니다. File 메뉴에 **프로젝트 파일 다운로드**를 별도 제공했습니다.

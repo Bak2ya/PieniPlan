@@ -188,6 +188,7 @@
       </div>
 
       <div class="start-note" data-i18n="start.note">This choice only selects the first toolbox. It does not lock the project into a separate format.</div>
+      <div id="startVersion" class="start-version" aria-label="PieniPlan version"></div>
     </div>
   </section>
 
@@ -302,6 +303,22 @@
       <div class="dialog-actions">
         <button id="confirmCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
         <button id="confirmApplyBtn" class="toolbar-button danger"></button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div id="exportSaveBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog export-save-dialog" role="dialog" aria-modal="true" aria-labelledby="exportSaveTitle">
+      <div class="dialog-title" id="exportSaveTitle" data-i18n="exportDxf.fallbackTitle">Save DXF</div>
+      <div class="dialog-copy" id="exportSaveCopy" data-i18n="exportDxf.fallbackCopy">This browser cannot choose an exact save location. Choose a file name below; continuing will save it using the browser's download location.</div>
+      <label class="field-label" for="exportSaveName" data-i18n="exportDxf.fileName">File name</label>
+      <input id="exportSaveName" class="text-input" type="text" autocomplete="off" spellcheck="false" />
+      <div class="export-save-location-note" data-i18n="exportDxf.fallbackLocation">The browser controls the download folder in this environment.</div>
+      <div class="dialog-actions">
+        <button id="exportSaveCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="exportSaveApplyBtn" class="toolbar-button primary" data-i18n="exportDxf.saveAction">Save DXF</button>
       </div>
     </div>
   </div>
