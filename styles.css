@@ -653,3 +653,21 @@ html, body { overscroll-behavior:none; }
   .workspace { grid-row:2; grid-template-columns:minmax(0,1fr); }
   .contextbar, .tool-rail, .inspector, .canvas-hud { display:none !important; }
 }
+
+
+/* Build 17 — floating contextual HUD: tool activation never changes canvas layout height. */
+.app-shell { grid-template-rows:52px minmax(0,1fr); }
+.workspace { grid-row:2; }
+.contextbar.context-floating {
+  position:absolute; z-index:17; left:10px; top:10px; width:max-content; max-width:min(720px,calc(100% - 20px));
+  min-height:34px; padding:5px 8px; gap:9px; border:1px solid color-mix(in srgb,var(--border-strong) 78%,transparent);
+  border-radius:8px; background:color-mix(in srgb,var(--surface) 90%,transparent); box-shadow:0 5px 18px rgba(0,0,0,.16);
+  backdrop-filter:blur(10px); flex-wrap:wrap; pointer-events:auto;
+}
+.contextbar.context-floating .context-title-wrap { align-items:center; }
+.contextbar.context-floating #contextToolName { font-size:11px; }
+.contextbar.context-floating .context-field input { width:76px; height:24px; }
+.contextbar.context-floating .context-hint { margin-left:2px; max-width:280px; font-size:9.5px; }
+.contextbar.context-floating[hidden] { display:none !important; }
+
+@media (max-width:720px){.app-shell{grid-template-rows:44px minmax(0,1fr)}}

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.14.0 · Build 17 — 2026-09-26
+
+- Plan Mode의 사용자 모델을 `Line`과 `Wall` 두 종류에서 **하나의 semantic `선` 경계 모델**로 통합했습니다. `L` 명령과 왼쪽 선 도구가 같은 Plan boundary를 생성하며, 기존 room/opening/topology/DXF 호환을 위해 내부 저장은 wall-compatible semantic object를 사용합니다. 구형 Plan `type: line` 객체는 로드 시 semantic boundary로 보수적으로 마이그레이션합니다.
+- 기존 수동 곡선 작성 기능을 잃지 않도록 **그리기 그룹의 `곡선`**으로 유지했습니다. Plan UI에서는 `벽`이라는 별도 그리기 객체를 노출하지 않습니다.
+- 왼쪽 Plan tool rail의 `건축/벽` 성격 그룹을 **`요소`**로 정리했습니다. 문·창·공간 지정이 이 그룹에 들어가고, 문은 여닫이/양개/미닫이/양개 미닫이/포켓 종류를 같은 그룹형 선택에서 사용합니다.
+- 자동 인식이나 수동 작성으로 만들어진 직선 Plan 경계의 L/T 접합을 **persistent Junction attachment**로 보강했습니다. 단순히 좌표만 일치시키지 않고 연결 관계를 남기며, 공유 corner endpoint를 끌거나 연결된 선을 이동할 때 이웃 선의 공유 endpoint가 함께 따라가 접합이 쉽게 벌어지지 않습니다. T branch의 point-on-line 관계도 host 위를 유지합니다.
+- Plan Mode `Shift` 문법을 정리했습니다. 기존 직선 endpoint를 Shift+drag하면 원래 선 각도를 정확히 유지한 채 길이만 바뀌고, 기존 선에서 새 선을 시작하면 그 선의 접선 방향을 기준으로 45° 단위에 스냅합니다. 독립 새 선은 Base Axis 기준 45° 단위를 사용합니다. CAD Mode의 기존 Shift/ORTHO 문법은 유지합니다.
+- 기존 top Context Bar를 제거하고 캔버스 **왼쪽 위 Floating Context HUD**로 이동했습니다. `L` 등 도구를 시작/종료해도 workspace row나 canvas 높이가 바뀌지 않아 도면과 pointer 위치가 레이아웃 reflow로 흔들리지 않습니다.
+- 문 직접 조작을 wall-local/line-local 축 기준으로 정리했습니다. 선택한 문의 **가운데 점 drag = host 선을 따라 위치 이동**, 여닫이문 몸체를 host 선에 수직으로 drag = 열림 방향 반전, host 선을 따라 drag = 경첩 방향 반전입니다. 미닫이문은 선 방향 gesture로 이동 방향을 반전합니다.
+- 오른쪽 Plan 속성에서는 내부 wall-compatible 저장 형식을 그대로 노출하지 않고 사용자에게 `선`/`선 종류`로 표시합니다.
+- Build 17 smoke에서 floating HUD 무 reflow, semantic line 생성, legacy line migration, persistent junction parent/child follow와 joined-line body move, Shift local 45° snap/endpoint angle lock, door direct gesture, 곡선 도구 접근을 검증했습니다. Build 10/11 및 Build 12(새 semantic-line 계약으로 기대값 갱신), Build 14/15/16 회귀도 통과했습니다.
+
 ## v0.13.2 · Build 16 — 2026-09-26
 
 - Plan Mode의 얇은 semantic wall 중심선이 접합점에서 실제 endpoint보다 반 두께만큼 더 그려지던 시각적 overlap을 제거했습니다. 화면에 보이는 선 끝과 실제 wall geometry/selection handle이 일치합니다.

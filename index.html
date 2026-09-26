@@ -42,21 +42,19 @@
       <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="fullExtentsBtn" hidden></button><button id="mappingSettingsBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
     </header>
 
-    <div class="contextbar" id="contextBar">
-      <div class="context-title-wrap">
-        <span class="context-label" data-i18n="context.tool">Tool</span>
-        <strong id="contextToolName">Select</strong>
-      </div>
-      <div id="contextFields" class="context-fields"></div>
-      <div id="contextHint" class="context-hint">Click an object to inspect it.</div>
-    </div>
-
     <main class="workspace">
       <aside id="toolRail" class="tool-rail" aria-label="Drawing tools" data-i18n-aria="aria.drawingTools"></aside>
       <div id="toolPopover" class="tool-popover" hidden></div>
 
       <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas" data-i18n-aria="aria.canvas">
         <canvas id="drawingCanvas"></canvas>
+        <div class="contextbar context-floating" id="contextBar">
+          <div class="context-title-wrap">
+            <strong id="contextToolName">Select</strong>
+          </div>
+          <div id="contextFields" class="context-fields"></div>
+          <div id="contextHint" class="context-hint">Click an object to inspect it.</div>
+        </div>
         <div id="emptyState" class="empty-state">
           <div class="empty-kicker" id="emptyKicker">Plan Mode</div>
           <div class="empty-title" id="emptyTitle" data-i18n="empty.planTitle">Draw a real-size floor plan without CAD complexity.</div>

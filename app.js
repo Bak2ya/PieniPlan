@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.13.2';
-  const BUILD = 16;
+  const VERSION = '0.14.0';
+  const BUILD = 17;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -53,10 +53,13 @@
       { id: 'constraint', labelKey: 'tool.constraint', ready: true, tooltipKey: 'tooltip.constraintTool' }
     ],
     draw: [
-      { id: 'line', labelKey: 'tool.line', ready: true, note: 'L' }
+      { id: 'line', labelKey: 'tool.line', ready: true, note: 'L' },
+      // Curved boundaries remain available as a second drawing primitive. The user-facing
+      // model is still one Plan line/boundary concept; `wall` is only the legacy internal
+      // tool id used by the existing three-point arc implementation.
+      { id: 'wall', labelKey: 'tool.arcLine', ready: true }
     ],
     architecture: [
-      { id: 'wall', labelKey: 'tool.wall', ready: true },
       { id: 'door', labelKey: 'tool.door', ready: true },
       { id: 'window', labelKey: 'tool.window', ready: true },
       { id: 'space', labelKey: 'tool.space', ready: true, tooltipKey: 'tooltip.defineSpace' }
@@ -74,7 +77,7 @@
   const planCategories = [
     { id: 'select', labelKey: 'category.select', icon: 'select' },
     { id: 'draw', labelKey: 'category.draw', icon: 'draw' },
-    { id: 'architecture', labelKey: 'category.architecture', icon: 'architecture' },
+    { id: 'architecture', labelKey: 'category.elements', icon: 'architecture' },
     { id: 'modify', labelKey: 'category.modify', icon: 'modify' },
     { id: 'dimension', labelKey: 'category.dimension', icon: 'dimension' }
   ];
@@ -167,6 +170,7 @@
     hoveredObjectId: null,
     dragEdit: null,
     drawStart: null,
+    drawReferenceAngle: null,
     previewEnd: null,
     previewOpening: null,
     measureStart: null,
@@ -372,11 +376,11 @@
   function positionTopMenu(menu,owner){if(!menu||!owner)return;const r=owner.getBoundingClientRect();menu.hidden=false;const b=menu.getBoundingClientRect(),margin=8;let left=Math.min(window.innerWidth-b.width-margin,Math.max(margin,r.right-b.width));let top=r.bottom+6;if(top+b.height>window.innerHeight-margin)top=r.top-b.height-6;menu.style.left=`${Math.round(left)}px`;menu.style.top=`${Math.round(Math.max(margin,top))}px`;}
   function toggleTopMenu(menu,owner){const opening=menu.hidden;closeTopMenus(opening?menu:null);if(opening)positionTopMenu(menu,owner);else menu.hidden=true;}
   function helpHtml(section){const ko=i18n.language==='ko';const data={
-    intro:ko?`<h2>PieniPlan 사용 안내</h2><p>PieniPlan은 하나의 실제 좌표계에서 <strong>Plan Mode</strong>와 <strong>CAD Mode</strong>를 오가며 작업하는 웹 평면도 편집기입니다.</p><h3>두 모드의 역할</h3><ul><li><strong>Plan Mode</strong>: 복잡한 CAD 표현을 층별 벽·문·창·공간·계단 같은 의미 객체로 단순화해 빠르게 읽고 수정합니다.</li><li><strong>CAD Mode</strong>: 원본 DXF의 실제 geometry와 layer를 확인하고 정밀하게 수정합니다.</li></ul><p>Plan Mode는 출력 용지(A4/A3)에 종속되지 않습니다. 실제 치수와 공간 구조를 보존하고, 인쇄 레이아웃은 연동 제품에서 별도로 정하는 방향입니다.</p>`:`<h2>PieniPlan User Guide</h2><p>PieniPlan is a web floor-plan editor with <strong>Plan Mode</strong> and <strong>CAD Mode</strong> sharing one real-world coordinate system.</p><h3>Two modes</h3><ul><li><strong>Plan Mode</strong>: simplifies CAD detail into floor-based semantic walls, doors, windows, spaces and stairs.</li><li><strong>CAD Mode</strong>: inspects and edits original DXF geometry and layers.</li></ul>`,
-    plan:ko?`<h2>Plan Mode</h2><p>건물의 층별 평면을 구조화하는 모드입니다. 오른쪽 <strong>층</strong> 탭에서 현재 층을 바꾸고, <strong>팔레트</strong>에서 벽·문·창·공간·치수 도구를 바로 선택할 수 있습니다.</p><h3>도구와 명령</h3><p>왼쪽 도구막대는 선택·그리기·건축 요소·수정·측정처럼 성격이 가까운 도구를 묶어 표시합니다. Plan Mode에서도 기존 CAD 경험을 이어갈 수 있도록 <kbd>L</kbd>, <kbd>TR</kbd>, <kbd>EX</kbd>, <kbd>E</kbd>, <kbd>DI</kbd>, Undo/Redo 같은 공통 명령을 사용할 수 있습니다. TRIM/EXTEND는 원본 DXF가 아니라 현재 층의 Plan 선/직선 벽을 편집합니다.</p><h3>CAD 구조 인식</h3><ul><li>여러 평행 제도선을 하나의 Wall Band로 병합</li><li>작은 끝점/코너 오차를 제한적으로 연결</li><li>문 개구부와 여닫이 호를 문 후보로 인식하고, DXF에서 짧은 선분으로 분해된 여닫이 호도 보수적으로 복원</li><li>반복 계단선을 하나의 계단 의미 객체로 축약</li><li>분절된 원호/곡선은 가능한 경우 하나의 의미 곡선으로 복원</li><li>T자/끝점/L자 접합은 실제 교점까지 정규화하되 단순 X자 교차는 자동으로 벽을 쪼개지 않음</li><li>벽 끝이 교차점을 짧게 지나친 경우 다음 유효 접합이 없으면 보수적으로 교차점까지 정리</li><li>확실한 벽의 한쪽 제도선이 짧게 더 이어진 경우 기존 벽 두께/축을 이용해 누락 구간을 제한적으로 복원</li></ul><h3>편집</h3><p>클릭 선택과 Window/Crossing 드래그 다중 선택을 지원합니다. SNAP은 배치 보조이고 Constraint는 지속 관계입니다. 수평/수직/평행/직각/길이/각도/기준축 제약을 사용할 수 있습니다.</p><p><strong>재인식</strong>은 현재 층에 1:1로 연결된 CAD 영역의 <strong>자동 인식 레이어를 다시 생성</strong>합니다. 체크 해제한 자동 인식 종류는 기존 결과도 제거하며, 직접 만든 객체와 수동으로 수정한 인식 객체는 유지합니다. 다른 CAD 영역의 결과를 같은 층에 누적하지 않습니다.</p>`:`<h2>Plan Mode</h2><p>Plan Mode structures a building as separate floors and semantic objects. The grouped tool rail exposes shared draw/modify commands while preserving Plan semantics. LINE, TRIM, EXTEND, ERASE and DIST are available from the command entry without editing the raw DXF.</p><p><strong>Re-recognize</strong> rebuilds the automatic recognition layer for the linked CAD region. Unchecked automatic object types are removed, while user-created and manually changed objects are preserved.</p>`,
+    intro:ko?`<h2>PieniPlan 사용 안내</h2><p>PieniPlan은 하나의 실제 좌표계에서 <strong>Plan Mode</strong>와 <strong>CAD Mode</strong>를 오가며 작업하는 웹 평면도 편집기입니다.</p><h3>두 모드의 역할</h3><ul><li><strong>Plan Mode</strong>: 복잡한 CAD 표현을 층별 연결선과 문·창·공간·계단 같은 의미 요소로 단순화해 빠르게 읽고 수정합니다.</li><li><strong>CAD Mode</strong>: 원본 DXF의 실제 geometry와 layer를 확인하고 정밀하게 수정합니다.</li></ul><p>Plan Mode는 출력 용지(A4/A3)에 종속되지 않습니다. 실제 치수와 공간 구조를 보존하고, 인쇄 레이아웃은 연동 제품에서 별도로 정하는 방향입니다.</p>`:`<h2>PieniPlan User Guide</h2><p>PieniPlan is a web floor-plan editor with <strong>Plan Mode</strong> and <strong>CAD Mode</strong> sharing one real-world coordinate system.</p><h3>Two modes</h3><ul><li><strong>Plan Mode</strong>: simplifies CAD detail into connected plan lines with semantic doors, windows, spaces and stairs.</li><li><strong>CAD Mode</strong>: inspects and edits original DXF geometry and layers.</li></ul>`,
+    plan:ko?`<h2>Plan Mode</h2><p>건물의 층별 평면을 구조화하는 모드입니다. 오른쪽 <strong>층</strong> 탭에서 현재 층을 바꾸고, <strong>팔레트</strong>에서 문·창·공간 같은 요소를 배치합니다. Plan Mode에서는 사용자에게 선과 벽을 별도 객체로 나누지 않습니다. <kbd>L</kbd> 또는 <strong>그리기 → 선</strong>으로 만든 선이 평면 경계가 되고, 문·창·공간 관계와 필요한 속성을 그 선에 연결합니다. 곡선 경계도 <strong>그리기 → 곡선</strong>에서 만들 수 있습니다.</p><h3>도구와 명령</h3><p>왼쪽 도구막대는 <strong>선택 · 그리기 · 요소 · 수정 · 측정</strong>으로 묶습니다. Plan Mode에서도 <kbd>L</kbd>, <kbd>TR</kbd>, <kbd>EX</kbd>, <kbd>E</kbd>, <kbd>DI</kbd>, Undo/Redo 같은 공통 명령을 사용할 수 있으며 원본 DXF가 아니라 현재 층의 Plan 모델만 편집합니다. 도구별 길이·각도 입력은 캔버스 왼쪽 위의 floating HUD에 표시되어 작업 중 캔버스 높이가 바뀌지 않습니다.</p><h3>Shift와 접합</h3><ul><li>기존 직선의 끝점을 <kbd>Shift</kbd>와 함께 끌면 현재 각도를 그대로 유지한 채 길이만 바뀝니다.</li><li>기존 선에서 새 선을 시작하고 <kbd>Shift</kbd>를 누르면 기존 선을 기준으로 45° 단위 방향에 스냅합니다.</li><li>독립적인 새 선은 기준축 기준 45° 단위를 사용합니다.</li><li>L/T 접합은 지속적인 Junction 관계로 유지되어 연결된 직선의 끝점이나 선을 움직여도 이웃 선과 접합이 함께 따라갑니다.</li></ul><h3>문 직접 조작</h3><p>선택한 문은 가운데 점을 끌어 host 선을 따라 위치를 옮깁니다. 여닫이문 몸체를 선에 수직으로 끌면 열림 방향을, 선을 따라 끌면 경첩 방향을 반전합니다. 벽이 기울어져 있어도 화면 X/Y가 아니라 host 선의 로컬 축을 사용합니다.</p><h3>CAD 구조 인식</h3><ul><li>여러 평행 제도선을 하나의 Wall Band로 해석한 뒤 Plan 경계선으로 단순화</li><li>작은 끝점/코너 오차를 제한적으로 연결</li><li>문 개구부와 여닫이 호를 문 후보로 인식하고, DXF에서 짧은 선분으로 분해된 여닫이 호도 보수적으로 복원</li><li>반복 계단선을 하나의 계단 의미 객체로 축약</li><li>분절된 원호/곡선은 가능한 경우 하나의 의미 곡선으로 복원</li><li>T자/끝점/L자 접합은 실제 교점까지 정규화하되 단순 X자 교차는 자동 분절하지 않음</li><li>짧은 overrun과 명확한 누락 구간만 보수적으로 정리</li></ul><h3>편집</h3><p>클릭 선택과 Window/Crossing 드래그 다중 선택을 지원합니다. SNAP은 배치 보조이고 Constraint는 지속 관계입니다. 수평/수직/평행/직각/길이/각도/기준축 제약을 사용할 수 있습니다.</p><p><strong>재인식</strong>은 현재 층에 1:1로 연결된 CAD 영역의 <strong>자동 인식 레이어를 다시 생성</strong>합니다. 체크 해제한 자동 인식 종류는 기존 결과도 제거하며, 직접 만든 객체와 수동으로 수정한 인식 객체는 유지합니다. 다른 CAD 영역의 결과를 같은 층에 누적하지 않습니다.</p>`:`<h2>Plan Mode</h2><p>Plan Mode uses connected plan lines as the floor-plan boundary model and attaches semantic elements such as doors, windows and spaces. LINE, TRIM, EXTEND, ERASE and DIST edit the Plan model without modifying raw DXF. A floating context HUD appears over the canvas without resizing it.</p><p><strong>Shift</strong> preserves an existing line's exact angle during endpoint edits. When drawing from an existing line, Shift snaps to 45° increments relative to that line; independent lines use the base axis. Straight L/T joins keep a persistent junction relationship during editing.</p><p>For hinged doors, drag the center handle to move along the host line, drag across the host line to flip swing, and drag along the host line to flip the hinge side.</p><p><strong>Re-recognize</strong> rebuilds the automatic recognition layer for the linked CAD region. Unchecked automatic object types are removed, while user-created and manually changed objects are preserved.</p>`,
     cad:ko?`<h2>CAD Mode</h2><p>DXF 원본의 geometry/layer를 직접 확인·수정합니다. 참조 DXF를 Plan Mode에서 보고 다시 CAD Mode로 돌아갈 때는 불필요한 변환 설정 창을 띄우지 않습니다.</p><h3>현재 주요 명령</h3><ul><li>LINE (L)</li><li>TRIM (TR) / EXTEND (EX), Shift로 반대 명령 임시 사용</li><li>ERASE (E), DIST (DI), ZOOM (Z), EXTENTS (E)</li><li>F3 SNAP, F7 GRID, F8 ORTHO, F10 POLAR</li></ul><p>Plan에서 새로 만든 의미 객체를 CAD/DXF로 변환할 때만 CAD 표현 설정이 필요할 수 있습니다.</p>`:`<h2>CAD Mode</h2><p>Work directly with DXF geometry and layers. Returning from a referenced CAD drawing does not require mapping settings; mapping is for Plan-to-CAD conversion.</p>`,
     files:ko?`<h2>파일과 프로젝트</h2><ul><li><strong>새 도면</strong>: 현재 작업을 초기화합니다.</li><li><strong>프로젝트 열기/저장</strong>: .pieniplan 작업 상태에 층, Plan/CAD 객체, 레이어, 참조, 카메라와 인식 이력을 저장합니다. 직접 파일 쓰기를 지원하는 브라우저에서는 처음 선택한 프로젝트 파일을 이후 저장에서 갱신합니다. 지원하지 않는 브라우저에서는 다운로드하지 않고 이 브라우저의 로컬 프로젝트 저장소에 저장합니다.</li><li><strong>프로젝트 파일 다운로드</strong>: 다른 기기나 브라우저로 옮길 수 있는 .pieniplan 파일이 필요할 때 명시적으로 다운로드합니다.</li><li><strong>DXF 열기</strong>: CAD Mode에서 편집 가능한 DXF를 엽니다.</li><li><strong>DXF 내보내기</strong>: 현재 도면을 DXF로 생성합니다. 지원 브라우저에서는 운영체제의 저장 창에서 위치와 파일명을 직접 정하며, 지원하지 않는 브라우저에서는 파일명을 먼저 확인한 뒤 브라우저 다운로드 위치를 사용한다고 안내합니다.</li></ul><p>원본 DXF는 자동으로 덮어쓰지 않습니다.</p>`:`<h2>Files & projects</h2><p>.pieniplan stores the editable project state. Browsers with direct file access update the chosen project file in place. Other browsers save the working project in browser-local storage without silently downloading a file. Use Download Project File when you explicitly need a portable .pieniplan file. DXF export is separate and never silently overwrites the source DXF. When the browser supports a native Save As picker, you choose the location and file name; otherwise PieniPlan asks for the file name and clearly explains that the browser controls the download location.</p>`,
-    shortcuts:ko?`<h2>단축키</h2><table class="help-shortcuts"><tr><td><kbd>Ctrl/Cmd+Z</kbd></td><td>실행 취소</td></tr><tr><td><kbd>Ctrl/Cmd+Shift+Z</kbd></td><td>다시 실행</td></tr><tr><td><kbd>Ctrl/Cmd+S</kbd></td><td>프로젝트 저장</td></tr><tr><td><kbd>Delete</kbd></td><td>선택 객체 삭제</td></tr><tr><td><kbd>Esc</kbd></td><td>현재 작업 취소 / 선택 해제</td></tr><tr><td><kbd>F3</kbd></td><td>SNAP</td></tr><tr><td><kbd>F7</kbd></td><td>GRID</td></tr><tr><td><kbd>F8</kbd></td><td>ORTHO</td></tr><tr><td><kbd>F10</kbd></td><td>POLAR</td></tr><tr><td><kbd>L</kbd></td><td>LINE</td></tr><tr><td><kbd>TR</kbd> / <kbd>EX</kbd></td><td>TRIM / EXTEND</td></tr><tr><td><kbd>Enter</kbd></td><td>빈 커맨드에서 마지막 명령 반복 / 진행 중 단계 확정</td></tr><tr><td><kbd>S</kbd></td><td>STRETCH 예약(현재 미지원) · 저장은 Ctrl/Cmd+S</td></tr></table>`:`<h2>Shortcuts</h2><table class="help-shortcuts"><tr><td><kbd>Ctrl/Cmd+Z</kbd></td><td>Undo</td></tr><tr><td><kbd>Ctrl/Cmd+Shift+Z</kbd></td><td>Redo</td></tr><tr><td><kbd>Ctrl/Cmd+S</kbd></td><td>Save project</td></tr><tr><td><kbd>F3/F7/F8/F10</kbd></td><td>SNAP / GRID / ORTHO / POLAR</td></tr><tr><td><kbd>Enter</kbd></td><td>Repeat the last command when idle / confirm the current command step</td></tr><tr><td><kbd>S</kbd></td><td>Reserved for STRETCH (not implemented yet); save with Ctrl/Cmd+S</td></tr></table>`,
+    shortcuts:ko?`<h2>단축키</h2><table class="help-shortcuts"><tr><td><kbd>Ctrl/Cmd+Z</kbd></td><td>실행 취소</td></tr><tr><td><kbd>Ctrl/Cmd+Shift+Z</kbd></td><td>다시 실행</td></tr><tr><td><kbd>Ctrl/Cmd+S</kbd></td><td>프로젝트 저장</td></tr><tr><td><kbd>Delete</kbd></td><td>선택 객체 삭제</td></tr><tr><td><kbd>Esc</kbd></td><td>현재 작업 취소 / 선택 해제</td></tr><tr><td><kbd>F3</kbd></td><td>SNAP</td></tr><tr><td><kbd>F7</kbd></td><td>GRID</td></tr><tr><td><kbd>F8</kbd></td><td>ORTHO</td></tr><tr><td><kbd>F10</kbd></td><td>POLAR</td></tr><tr><td><kbd>Shift</kbd></td><td>Plan: 기존 선 각도 유지 / 새 선 45° 스냅 · CAD: ORTHO 임시 반전</td></tr><tr><td><kbd>L</kbd></td><td>LINE</td></tr><tr><td><kbd>TR</kbd> / <kbd>EX</kbd></td><td>TRIM / EXTEND</td></tr><tr><td><kbd>Enter</kbd></td><td>빈 커맨드에서 마지막 명령 반복 / 진행 중 단계 확정</td></tr><tr><td><kbd>S</kbd></td><td>STRETCH 예약(현재 미지원) · 저장은 Ctrl/Cmd+S</td></tr></table>`:`<h2>Shortcuts</h2><table class="help-shortcuts"><tr><td><kbd>Ctrl/Cmd+Z</kbd></td><td>Undo</td></tr><tr><td><kbd>Ctrl/Cmd+Shift+Z</kbd></td><td>Redo</td></tr><tr><td><kbd>Ctrl/Cmd+S</kbd></td><td>Save project</td></tr><tr><td><kbd>F3/F7/F8/F10</kbd></td><td>SNAP / GRID / ORTHO / POLAR</td></tr><tr><td><kbd>Shift</kbd></td><td>Plan: preserve an edited line angle / 45° draw snap · CAD: temporary ORTHO inversion</td></tr><tr><td><kbd>Enter</kbd></td><td>Repeat the last command when idle / confirm the current command step</td></tr><tr><td><kbd>S</kbd></td><td>Reserved for STRETCH (not implemented yet); save with Ctrl/Cmd+S</td></tr></table>`,
     trouble:ko?`<h2>문제 해결</h2><h3>Plan 인식이 이상할 때</h3><p>관련 없는 CAD 레이어를 숨기고 도면 영역을 좁힌 뒤 재인식하세요. 자동 인식은 원본 CAD를 수정하지 않습니다.</p><h3>문자가 너무 작거나 클 때</h3><p>CAD TEXT/MTEXT는 DXF의 문자 높이와 실제 도면 scale을 따릅니다. 너무 축소된 화면에서는 성능을 위해 작은 문자를 생략할 수 있습니다.</p><h3>저장되지 않은 변경</h3><p>상단 파일명 옆 점이 보이면 마지막 프로젝트 저장 상태와 현재 작업이 다릅니다.</p>`:`<h2>Troubleshooting</h2><p>Hide unrelated CAD layers and re-run recognition on a smaller drawing region if architectural recognition produces poor candidates.</p>`};return data[section]||data.intro;}
   function openHelp(section='intro'){closeTopMenus();dom.helpBackdrop.hidden=false;document.querySelectorAll('.help-nav-item').forEach(b=>b.classList.toggle('active',b.dataset.helpSection===section));dom.helpContent.innerHTML=helpHtml(section);}
   function openAbout(){closeTopMenus();dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;dom.aboutBackdrop.hidden=false;}
@@ -1127,7 +1131,7 @@
 
   function drawPreview() {
     let start=null,end=null,color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),width=1.5;
-    if(state.activeTool==='line'||state.activeTool==='wall'){start=state.drawStart;end=state.previewEnd;if(state.activeTool==='wall')width=Math.max(2,currentWallThickness()*state.camera.zoom);}else if(state.activeTool==='measure'){start=state.measureStart;end=state.previewEnd;color=getComputedStyle(document.documentElement).getPropertyValue('--dimension').trim();}
+    if(state.activeTool==='line'||state.activeTool==='wall'){start=state.drawStart;end=state.previewEnd;if(state.activeTool==='wall')width=state.toolset==='plan'?2:Math.max(2,currentWallThickness()*state.camera.zoom);}else if(state.activeTool==='measure'){start=state.measureStart;end=state.previewEnd;color=getComputedStyle(document.documentElement).getPropertyValue('--dimension').trim();}
     if(!start||!end)return;if(state.activeTool==='measure'){drawDimension({p1:start,p2:end,offset:Math.max(250,Math.min(600,distance(start,end)*.08))},color);return;}
     ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.globalAlpha=.72;ctx.lineCap='butt';
     if(state.activeTool==='wall'&&state.toolSettings.wallType==='arc'&&state.arcDraft?.a&&state.arcDraft?.b){const g=circleFromThreePoints(state.arcDraft.a,state.arcDraft.b,end);if(g){const tmp={...g,a:state.arcDraft.a,b:state.arcDraft.b,geometry:'arc'};const steps=Math.max(8,Math.ceil(Math.abs(g.sweep)/6));ctx.beginPath();for(let i=0;i<=steps;i++){const p=toScreenCss(wallPointAt(tmp,i/steps));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();const bp=toScreenCss(end);ctx.font='11px system-ui';ctx.fillStyle=color;ctx.fillText(`R ${formatNumber(g.radius,1)} mm · ${formatNumber(wallLength(tmp),1)} mm`,bp.x+8,bp.y-8);ctx.restore();return;}}
@@ -1151,14 +1155,14 @@
     dom.contextBar.hidden=!shouldShow;
     if(!shouldShow){dom.contextFields.innerHTML='';return;}
     const keys={select:'context.select',constraint:'context.constraint',line:'context.line',wall:'context.wall',door:'context.door',window:'context.window',space:'context.space',region:'context.region',measure:'context.measure',trim:'tool.trim',extend:'tool.extend',delete:'context.delete'};
-    dom.contextToolName.textContent=state.activeTool==='constraint'&&state.constraintMode?`${t('context.constraint')} · ${constraintModeLabel(state.constraintMode)}`:t(keys[state.activeTool]||`tool.${state.activeTool}`);
+    dom.contextToolName.textContent=state.activeTool==='constraint'&&state.constraintMode?`${t('context.constraint')} · ${constraintModeLabel(state.constraintMode)}`:(state.toolset==='plan'&&state.activeTool==='wall'?t('tool.arcLine'):t(keys[state.activeTool]||`tool.${state.activeTool}`));
     dom.contextFields.innerHTML='';
     let hint=t('hint.select');
     if(state.calibration){dom.contextToolName.textContent=t('context.calibration');dom.contextHint.textContent=state.calibration.p1?t('hint.calibrationSecond'):t('hint.calibrationFirst');return;}
     if(state.activeTool==='line'||state.activeTool==='wall'){
       dom.contextFields.appendChild(contextNumberField(t('context.length'),'length','','mm'));
       dom.contextFields.appendChild(contextNumberField(t('context.angle'),'angle','','°'));
-      if(state.activeTool==='wall')dom.contextFields.appendChild(contextNumberField(t('context.thickness'),'thickness',String(state.toolSettings.wallThickness),'mm'));
+      if(state.activeTool==='wall'&&state.toolset==='cad')dom.contextFields.appendChild(contextNumberField(t('context.thickness'),'thickness',String(state.toolSettings.wallThickness),'mm'));
       hint=(state.activeTool==='wall'&&state.toolSettings.wallType==='arc'&&state.arcDraft)?t('hint.arcWallCurve'):(state.drawStart?t('hint.segmentEnd'):t('hint.segmentStart'));
     }else if(state.activeTool==='door'||state.activeTool==='window'){
       const value=state.activeTool==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth;
@@ -1184,13 +1188,13 @@
   function commitNumericSegment(){if(!state.drawStart)return;const lengthInput=document.querySelector('[data-context="length"]');const angleInput=document.querySelector('[data-context="angle"]');const explicitLength=String(lengthInput?.value||'').trim()!=='';const explicitAngle=String(angleInput?.value||'').trim()!=='';let len=Number(lengthInput?.value),ang=Number(angleInput?.value);if(!Number.isFinite(len)||len<=0)len=state.previewEnd?distance(state.drawStart,state.previewEnd):NaN;if(!Number.isFinite(ang))ang=state.previewEnd?angleDeg(state.drawStart,state.previewEnd):0;if(!Number.isFinite(len)||len<=0)return;const end={x:state.drawStart.x+Math.cos(rad(ang))*len,y:state.drawStart.y+Math.sin(rad(ang))*len};const obj=commitSegment(state.drawStart,end,state.activeTool);if(obj?.type==='wall'){const c=ensureWallConstraints(obj);if(explicitLength)c.fixedLength=len;if(explicitAngle)c.fixedAngle=angleDelta(ang,baseAxisAngle());enforceWallConstraints(obj);syncDependentsOfWall(obj.id);updateAll();}}
 
   function categoryRepresentative(cat,catalog){const items=(catalog[cat.id]||[]).filter(x=>x.ready);if(!items.length)return null;const active=items.find(x=>x.id===state.activeTool);if(active){toolCategoryMemory[state.toolset][cat.id]=active.id;return active;}const remembered=items.find(x=>x.id===toolCategoryMemory[state.toolset][cat.id]);return remembered||items[0];}
-  function activateRepresentative(item,category,button){if(!item?.ready)return;if(state.toolset==='plan'&&item.id==='constraint'){setTool('constraint',category);openPlanConstraintPalette(button);return;}setTool(item.id,category);}
+  function activateRepresentative(item,category,button){if(!item?.ready)return;if(state.toolset==='plan'&&item.id==='constraint'){setTool('constraint',category);openPlanConstraintPalette(button);return;}if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);return;}setTool(item.id,category);}
   function renderToolRail(){
     dom.toolRail.innerHTML='';const categories=state.toolset==='plan'?planCategories:cadCategories,catalog=state.toolset==='plan'?planToolCatalog:cadToolCatalog;
-    for(const cat of categories){const items=catalog[cat.id]||[],active=items.some(x=>x.id===state.activeTool),rep=categoryRepresentative(cat,catalog),icon=toolIconFallback[rep?.id]||cat.icon,label=rep?t(rep.labelKey):t(cat.labelKey);const b=document.createElement('button');b.className=`tool-category grouped ${active?'active':''}`;b.dataset.category=cat.id;b.dataset.categoryKey=cat.labelKey;b.dataset.representative=rep?.id||'';b.innerHTML=`<span class="tool-icon ui-icon icon-${icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(label)}</span>`;b.setAttribute('aria-label',`${label} · ${t(cat.labelKey)}`);
+    for(const cat of categories){const items=catalog[cat.id]||[],active=items.some(x=>x.id===state.activeTool),rep=categoryRepresentative(cat,catalog),icon=(state.toolset==='plan'&&rep?.id==='wall')?'vector':(toolIconFallback[rep?.id]||cat.icon),label=(state.toolset==='plan'&&cat.id==='architecture')?t(cat.labelKey):(rep?t(rep.labelKey):t(cat.labelKey));const b=document.createElement('button');b.className=`tool-category grouped ${active?'active':''}`;b.dataset.category=cat.id;b.dataset.categoryKey=cat.labelKey;b.dataset.representative=rep?.id||'';b.innerHTML=`<span class="tool-icon ui-icon icon-${icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(label)}</span>`;b.setAttribute('aria-label',`${label} · ${t(cat.labelKey)}`);
       let holdTimer=null,longOpened=false;const open=()=>{longOpened=true;openToolCategory(cat.id,b,catalog);};b.addEventListener('pointerdown',()=>{longOpened=false;holdTimer=setTimeout(open,420);});b.addEventListener('pointerup',()=>{if(holdTimer)clearTimeout(holdTimer);});b.addEventListener('pointerleave',()=>{if(holdTimer)clearTimeout(holdTimer);});b.addEventListener('contextmenu',e=>{e.preventDefault();open();});b.addEventListener('click',e=>{if(longOpened)return;const corner=e.offsetX>=b.clientWidth-18&&e.offsetY>=b.clientHeight-18;if(corner){openToolCategory(cat.id,b,catalog);return;}activateRepresentative(rep,cat.id,b);});dom.toolRail.appendChild(b);}
   }
-  function openToolCategory(category,button,catalog){state.activeCategory=category;renderToolRail();const items=catalog[category]||[];dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(t(button.dataset.categoryKey))}</div>`;for(const item of items){const b=document.createElement('button');b.className=`tool-item ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;if(item.ready&&item.note)b.dataset.shortcut=item.note;b.addEventListener('click',()=>{if(!item.ready)return;if(state.toolset==='plan'&&item.id==='constraint')openPlanConstraintPalette(button);else if(state.toolset==='plan'&&item.id==='wall')openPlanWallPalette(button);else if(state.toolset==='plan'&&item.id==='door')openPlanDoorPalette(button);else setTool(item.id,category);});dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-250));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
+  function openToolCategory(category,button,catalog){state.activeCategory=category;renderToolRail();const items=catalog[category]||[];dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(t(button.dataset.categoryKey))}</div>`;for(const item of items){const b=document.createElement('button');b.className=`tool-item ${state.activeTool===item.id?'active':''}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;if(item.ready&&item.note)b.dataset.shortcut=item.note;b.addEventListener('click',()=>{if(!item.ready)return;if(state.toolset==='plan'&&item.id==='constraint')openPlanConstraintPalette(button);else if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);}else if(state.toolset==='plan'&&item.id==='door')openPlanDoorPalette(button);else setTool(item.id,category);});dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-250));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
 
   function openPlanTypePalette(button,catalog,selected,onPick,title){dom.toolPopover.innerHTML=`<div class="tool-popover-title">${escapeHtml(title)}</div>`;for(const item of catalog){const b=document.createElement('button');b.className=`tool-item ${selected===item.id?'active':''}`;b.innerHTML=`<span>${escapeHtml(t(item.labelKey))}</span>`;b.addEventListener('click',()=>{onPick(item.id);dom.toolPopover.hidden=true;});dom.toolPopover.appendChild(b);}const top=Math.min(button.offsetTop,Math.max(8,host.clientHeight-220));dom.toolPopover.style.top=`${top}px`;dom.toolPopover.hidden=false;}
   function openPlanWallPalette(button){openPlanTypePalette(button,wallTypeCatalog,state.toolSettings.wallType,id=>{state.toolSettings.wallType=id;setTool('wall','plan');},t('tool.wall'));}
@@ -1215,7 +1219,7 @@
   function applyTrimExtendAtPoint(raw,mode){const obj=hitObject(raw);if(!obj)return false;const actual=state.shiftDown?(mode==='trim'?'extend':'trim'):mode;let ok=false;if(state.toolset==='cad'&&obj.type==='cadLine')ok=actual==='trim'?trimCadLineAtClick(obj,raw):extendCadLineAtClick(obj,raw);else if(state.toolset==='plan'&&(obj.type==='line'||(obj.type==='wall'&&!isArcWall(obj))))ok=actual==='trim'?trimPlanLinearAtClick(obj,raw):extendPlanLinearAtClick(obj,raw);setCommandStatus(ok?t(actual==='trim'?'command.trimApplied':'command.extendApplied'):t(actual==='trim'?'command.trimNoBoundary':'command.extendNoBoundary'),ok?'strong':'error');return ok;}
   function setTool(tool,category=null){
     if(state.toolset==='cad'&&['wall','door','window'].includes(tool)&&!state.cadMapping){state.pendingToolAfterMapping={tool,category:category||'architecture'};openMappingDialog('tool');return;}
-    state.activeTool=tool;{const catalog=state.toolset==='plan'?planToolCatalog:cadToolCatalog;for(const [group,items] of Object.entries(catalog))if(items.some(item=>item.id===tool)){toolCategoryMemory[state.toolset][group]=tool;break;}}if(state.toolset==='cad'&&['line','trim','extend'].includes(tool))ensureActiveCadLayerVisible();if(tool!=='constraint')clearConstraintInteraction();if(category&&category!=='plan')state.activeCategory=category;state.drawStart=null;state.arcDraft=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.snapIndicator=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();
+    state.activeTool=tool;{const catalog=state.toolset==='plan'?planToolCatalog:cadToolCatalog;for(const [group,items] of Object.entries(catalog))if(items.some(item=>item.id===tool)){toolCategoryMemory[state.toolset][group]=tool;break;}}if(state.toolset==='cad'&&['line','trim','extend'].includes(tool))ensureActiveCadLayerVisible();if(tool!=='constraint')clearConstraintInteraction();if(category&&category!=='plan')state.activeCategory=category;state.drawStart=null;state.drawReferenceAngle=null;state.arcDraft=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.snapIndicator=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;renderToolRail();updateContextBar();renderProperties();render();
   }
 
   function openCategory(category,button){openToolCategory(category,button,cadToolCatalog);}
@@ -1225,7 +1229,7 @@
     const sameWorkspace=next===state.toolset&&state.view==='workspace';
     const changed=next!==state.toolset;
     state.toolset=next;dom.appShell.classList.toggle('plan-tools',next==='plan');dom.appShell.classList.toggle('cad-tools',next==='cad');dom.planToolsBtn.classList.toggle('active',next==='plan');dom.cadToolsBtn.classList.toggle('active',next==='cad');dom.commandBar.hidden=false;
-    if(changed){state.activeCategory='select';state.activeTool='select';clearConstraintInteraction();state.drawStart=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
+    if(changed){state.activeCategory='select';state.activeTool='select';clearConstraintInteraction();state.drawStart=null;state.drawReferenceAngle=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
     updateEmptyState();renderToolRail();renderPrimaryPanel();renderProperties();updateContextBar();render();showWorkspace({historyMode:sameWorkspace?'none':historyMode});
   }
 
@@ -1243,7 +1247,29 @@
   function redo(){if(!state.future.length)return;state.history.push(historySnapshot());restoreHistorySnapshot(state.future.pop());updateAll();}
   function updateUndoRedo(){dom.undoBtn.disabled=!state.history.length;dom.redoBtn.disabled=!state.future.length;}
 
-  function commitSegment(a,b,type){if(distance(a,b)<.001)return null;pushHistory();let obj;if(type==='wall'){obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),geometry:'straight',attachments:{},floorId:state.activeFloorId};}else{obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};if(obj.type==='cadLine')state.cadLayerVisibility.set(obj.cadLayer,true);else obj.floorId=state.activeFloorId;}state.objects.push(obj);if(obj.type==='wall'){refreshSpaces();}state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart={...obj.b};state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();return obj;}
+  function commitSegment(a,b,type){
+    if(distance(a,b)<.001)return null;
+    pushHistory();
+    let obj;
+    const semanticPlanEdge=state.toolset==='plan'&&(type==='line'||type==='wall');
+    if(semanticPlanEdge){
+      // Plan Mode exposes one drawing primitive: a semantic floor-plan edge. Internally it
+      // remains a wall-compatible object so rooms, openings, topology and DXF export share
+      // one geometry model instead of diverging Line vs Wall behavior.
+      obj={id:uid('wall'),type:'wall',planRole:'boundary',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),geometry:'straight',attachments:{},floorId:state.activeFloorId};
+    }else if(type==='wall'){
+      obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...a},b:{...b},thickness:currentWallThickness(),geometry:'straight',attachments:{},floorId:state.activeFloorId};
+    }else{
+      obj={id:uid('cadLine'),type:state.toolset==='cad'?'cadLine':'line',cadLayer:state.activeCadLayer||'0',layerId:'drawing',a:{...a},b:{...b}};
+      if(obj.type==='cadLine')state.cadLayerVisibility.set(obj.cadLayer,true);else obj.floorId=state.activeFloorId;
+    }
+    state.objects.push(obj);
+    if(obj.type==='wall'){
+      repairPersistentPlanJunctions(obj.floorId||state.activeFloorId);
+      refreshSpaces();
+    }
+    state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart={...obj.b};state.drawReferenceAngle=obj.type==='wall'&&!isArcWall(obj)?angleDeg(obj.a,obj.b):null;state.previewEnd={...obj.b};markDirty(true);rebuildObjectSnapIndex();updateAll();return obj;
+  }
   function commitMeasurement(a,b){const len=distance(a,b);if(len<.001)return;let obj=null;if(state.toolset==='plan'){let best=null,bestScore=Infinity;for(const wall of getPlanObjects().filter(o=>o.type==='wall')){const p1=wallProjectPoint(a,wall),p2=wallProjectPoint(b,wall),tol=Math.max((wall.thickness||150),18/state.camera.zoom);if(p1.distance<=tol&&p2.distance<=tol){const score=p1.distance+p2.distance;if(score<bestScore){bestScore=score;best={wall,t1:p1.t,t2:p2.t,p1:p1.point,p2:p2.point};}}}if(!best){alert(t('alert.dimensionNeedsWall'));state.measureStart=null;state.previewEnd=null;updateContextBar();render();return;}const attachedLen=distance(best.p1,best.p2);obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',wallId:best.wall.id,t1:best.t1,t2:best.t2,offset:Math.max(250,Math.min(600,attachedLen*.08))};}else obj={id:uid('dimension'),type:'dimension',layerId:'dimensions',p1:{...a},p2:{...b},offset:Math.max(250,Math.min(600,len*.08))};pushHistory();state.objects.push(obj);state.selectedObjectId=obj.id;state.measureStart=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();updateAll();}
 
   function nearestWallProjection(p){let best=null,bestD=Infinity;for(const wall of getPlanObjects().filter(o=>o.type==='wall')){const pr=wallProjectPoint(p,wall),threshold=Math.max((wall.thickness||150)/2,18/state.camera.zoom);if(pr.distance<threshold&&pr.distance<bestD){bestD=pr.distance;best={wall,t:pr.t,point:pr.point,distance:pr.distance};}}return best;}
@@ -1265,6 +1291,46 @@
   function detachWallConnections(wall){if(!wall||wall.type!=='wall')return;wall.attachments={};}
   function enforceWallAttachments(wall){if(!wall?.attachments)return;for(const endpoint of['a','b']){const att=wall.attachments[endpoint],target=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');if(target)wall[endpoint]=wallPointAt(target,att.t);}}
   function attachTouchingWallEndpoints(wall){if(!wall||wall.type!=='wall')return false;let changed=false;for(const endpoint of['a','b'])changed=attachWallEndpoint(wall,endpoint)||changed;return changed;}
+  function repairPersistentPlanJunctions(floorId=null){
+    const walls=state.objects.filter(o=>o.type==='wall'&&!isArcWall(o)&&(!floorId||o.floorId===floorId));
+    let changed=false;
+    const validIds=new Set(walls.map(w=>w.id));
+    // Drop stale cross-floor/removed references, but preserve valid explicit constraints.
+    for(const wall of walls){
+      wall.attachments=wall.attachments||{};
+      for(const ep of ['a','b']){
+        const att=wall.attachments[ep],target=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
+        if(att&&(!target||!validIds.has(target.id)||(wall.floorId&&target.floorId&&wall.floorId!==target.floorId))){delete wall.attachments[ep];changed=true;}
+      }
+    }
+    // Endpoint↔endpoint L/corner joins are directed deterministically to avoid attachment cycles.
+    for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){
+      const a=walls[i],b=walls[j],tol=Math.max(6,Math.min(30,Math.max(a.thickness||150,b.thickness||150)*.10));
+      for(const ea of ['a','b'])for(const eb of ['a','b']){
+        if(distance(a[ea],b[eb])>tol)continue;
+        const child=a.id.localeCompare(b.id)>0?a:b,parent=child===a?b:a,cep=child===a?ea:eb,pep=child===a?eb:ea;
+        if(child.attachments?.[cep])continue;
+        child[cep]={...parent[pep]};child.attachments[cep]={wallId:parent.id,t:pep==='a'?0:1,kind:'coincident',targetEndpoint:pep,autoJunction:true};changed=true;
+      }
+    }
+    // T joins: terminal endpoint belongs to the continuous host wall and follows it persistently.
+    for(const branch of walls)for(const ep of ['a','b']){
+      if(branch.attachments?.[ep])continue;
+      const p=branch[ep];let best=null,bestD=Infinity;
+      for(const hostWall of walls){if(hostWall===branch)continue;const pr=wallProjectPoint(p,hostWall),tol=Math.max(6,Math.min(30,Math.max(branch.thickness||150,hostWall.thickness||150)*.10));if(pr.t<=.002||pr.t>=.998||pr.distance>tol||pr.distance>=bestD)continue;bestD=pr.distance;best={wall:hostWall,pr};}
+      if(best){branch[ep]={...best.pr.point};branch.attachments[ep]={wallId:best.wall.id,t:best.pr.t,kind:'pointOnLine',targetEndpoint:null,autoJunction:true};changed=true;}
+    }
+    return changed;
+  }
+  function migrateLegacyPlanLinesToEdges(){
+    let changed=false;
+    for(const o of state.objects){
+      if(o.type!=='line'||!o.floorId)continue;
+      o.type='wall';o.id=o.id||uid('wall');o.planRole=o.planRole||'boundary';o.layerId='walls';o.thickness=Number(o.thickness)||state.toolSettings.wallThickness||150;o.geometry='straight';o.attachments=o.attachments||{};changed=true;
+    }
+    if(changed)for(const floor of state.floors||[])repairPersistentPlanJunctions(floor.id);
+    return changed;
+  }
   function syncDependentsOfWall(parentId,visited=new Set()){if(visited.has(parentId))return;visited.add(parentId);const parent=state.objects.find(o=>o.id===parentId&&o.type==='wall');if(!parent)return;for(const wall of getPlanObjects()){if(wall.type!=='wall'||wall.id===parentId)continue;let changed=false;for(const endpoint of['a','b']){const att=wall.attachments?.[endpoint];if(att?.wallId===parentId){wall[endpoint]=wallPointAt(parent,att.t);changed=true;}}const c=ensureWallConstraints(wall);if(c.reference?.wallId===parentId){enforceWallConstraints(wall);changed=true;}if(changed)syncDependentsOfWall(wall.id,visited);}refreshSpaces();}
 
   function detectClosedWallFaces(){
@@ -1302,10 +1368,17 @@
     if(best){state.snapIndicator=best;return{x:best.x,y:best.y};}
     return p;
   }
-  function effectiveOrtho(){return Boolean(state.ortho)!==Boolean(state.shiftDown);}
+  function effectiveOrtho(){return state.toolset==='plan'?Boolean(state.ortho):(Boolean(state.ortho)!==Boolean(state.shiftDown));}
+  function snapDirectionToStep(start,p,base,step=45){const dx=p.x-start.x,dy=p.y-start.y,len=Math.hypot(dx,dy);if(len<1e-9)return p;const ang=angleDeg(start,p),relative=angleDelta(ang,base),snapped=Math.round(relative/step)*step,a=rad(base+snapped);return{x:start.x+Math.cos(a)*len,y:start.y+Math.sin(a)*len};}
   function constrainTracking(start,p){
     if(!start)return p;
     const base=baseAxisAngle(),dx=p.x-start.x,dy=p.y-start.y,len=Math.hypot(dx,dy);if(len<1e-9)return p;
+    // In Plan Mode Shift is a deliberate angle lock, not a temporary ORTHO toggle.
+    // When a new edge starts from an existing edge, 45° increments are local to that edge.
+    if(state.toolset==='plan'&&state.activeTool==='line'&&state.shiftDown){
+      const reference=Number.isFinite(state.drawReferenceAngle)?state.drawReferenceAngle:base;
+      return snapDirectionToStep(start,p,reference,45);
+    }
     if(effectiveOrtho()){
       const a=rad(base),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux,du=dx*ux+dy*uy,dv=dx*vx+dy*vy;
       return Math.abs(du)>=Math.abs(dv)?{x:start.x+ux*du,y:start.y+uy*du}:{x:start.x+vx*dv,y:start.y+vy*dv};
@@ -1317,6 +1390,16 @@
     return p;
   }
   function constrainOrtho(start,p){return constrainTracking(start,p);}
+  function constrainEndpointToOriginalAngle(src,endpoint,p){
+    if(!src?.a||!src?.b||!['a','b'].includes(endpoint))return p;
+    const anchor=endpoint==='a'?src.b:src.a,target=endpoint==='a'?src.a:src.b,dx=target.x-anchor.x,dy=target.y-anchor.y,len=Math.hypot(dx,dy);if(len<1e-9)return p;const ux=dx/len,uy=dy/len,dot=(p.x-anchor.x)*ux+(p.y-anchor.y)*uy;return{x:anchor.x+ux*dot,y:anchor.y+uy*dot};
+  }
+  function planDrawReferenceAt(raw,point){
+    if(state.toolset!=='plan')return null;let wall=null;
+    const snapId=state.snapIndicator?.objectId;if(snapId)wall=state.objects.find(o=>o.id===snapId&&o.type==='wall');
+    if(!wall){let bestD=10/state.camera.zoom;for(const w of getPlanObjects().filter(o=>o.type==='wall')){const pr=wallProjectPoint(raw,w);if(pr.distance<bestD){bestD=pr.distance;wall=w;point={...pr.point};}}}
+    if(!wall)return{point,angle:null};const pr=wallProjectPoint(point,wall),tan=wallTangentAt(wall,pr.t);return{point:{...pr.point},angle:deg(Math.atan2(tan.uy,tan.ux))};
+  }
 
   function hitHandle(p,obj){const tol=9/state.camera.zoom;if(!obj)return null;if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){if(distance(p,obj.a)<=tol)return'a';if(distance(p,obj.b)<=tol)return'b';if(obj.type==='wall'&&isArcWall(obj)&&distance(p,arcControlPoint(obj))<=tol)return'arcControl';}if(obj.type==='door'||obj.type==='window'){const g=openingGeometry(obj);if(g){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';if(distance(p,g.center)<=tol)return'center';}}if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(!g.associated){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';}const c={x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2};if(distance(p,c)<=tol)return'offset';}}return null;}
   function objectBodyDistance(p,o){if(o.type==='door'){const g=openingGeometry(o);if(!g)return Infinity;const type=o.doorType||'hingedSingle';if(type.startsWith('hinged')){const d=doorGeometry(o);return d?Math.min(pointSegmentDistance(p,g.p1,g.p2),pointSegmentDistance(p,d.hinge,d.leafEnd)):pointSegmentDistance(p,g.p1,g.p2);}return pointSegmentDistance(p,g.p1,g.p2);}if(o.type==='window'){const g=openingGeometry(o);return g?pointSegmentDistance(p,g.p1,g.p2):Infinity;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?pointSegmentDistance(p,g.d1,g.d2):Infinity;}if(o.type==='space')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='stair')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='cadCircle')return Math.abs(distance(p,o.center)-o.radius);if(o.type==='cadArc')return projectPointToCadArc(p,o).distance;if(o.type==='wall'&&isArcWall(o)){const d=wallProjectPoint(p,o).distance;return state.toolset==='plan'?d:Math.max(0,d-(o.thickness||150)/2);}if(o.a&&o.b){let d=pointSegmentDistance(p,o.a,o.b);if(o.type==='wall'&&state.toolset!=='plan')d=Math.max(0,d-(o.thickness||150)/2);return d;}return Infinity;}
@@ -1329,8 +1412,8 @@
   function applyObjectDrag(p){const d=state.dragEdit;if(!d)return;const obj=state.objects.find(o=>o.id===d.objectId);if(!obj)return;const src=d.snapshot,delta={x:p.x-d.start.x,y:p.y-d.start.y};ensureDragHistory();
     if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&src.a&&src.b){
       if(obj.type==='wall'&&isArcWall(src)&&d.mode==='arcControl'){obj.a={...src.a};obj.b={...src.b};applyArcFromControl(obj,p);}
-      else if(d.mode==='a'){obj.a={...p};if(obj.type==='wall'&&isArcWall(src)){const control=wallPointAt(src,.5);applyArcFromControl(obj,control);}}
-      else if(d.mode==='b'){obj.b={...p};if(obj.type==='wall'&&isArcWall(src)){const control=wallPointAt(src,.5);applyArcFromControl(obj,control);}}
+      else if(d.mode==='a'){const q=(state.toolset==='plan'&&state.shiftDown&&!isArcWall(src))?constrainEndpointToOriginalAngle(src,'a',p):p;obj.a={...q};if(obj.type==='wall'&&isArcWall(src)){const control=wallPointAt(src,.5);applyArcFromControl(obj,control);}}
+      else if(d.mode==='b'){const q=(state.toolset==='plan'&&state.shiftDown&&!isArcWall(src))?constrainEndpointToOriginalAngle(src,'b',p):p;obj.b={...q};if(obj.type==='wall'&&isArcWall(src)){const control=wallPointAt(src,.5);applyArcFromControl(obj,control);}}
       else{obj.a={x:src.a.x+delta.x,y:src.a.y+delta.y};obj.b={x:src.b.x+delta.x,y:src.b.y+delta.y};if(obj.type==='wall'&&isArcWall(src)){obj.center={x:src.center.x+delta.x,y:src.center.y+delta.y};}}
       if(obj.type==='wall'){
         // SNAP is only a placement aid. Persistent endpoint relationships live in attachments/constraints.
@@ -1341,21 +1424,51 @@
             const att=obj.attachments?.[endpoint],parent=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
             if(!parent)continue;
             const desired={x:src[endpoint].x+delta.x,y:src[endpoint].y+delta.y};
-            if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){att.t=att.targetEndpoint==='a'?0:1;obj[endpoint]={...parent[att.targetEndpoint]};}
-            else{const pr=wallProjectPoint(desired,parent);att.t=pr.t;obj[endpoint]={...pr.point};}
+            if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){
+              // Moving a joined Plan line moves the shared corner node too. The neighboring
+              // line stretches/rotates through that endpoint instead of visually detaching.
+              parent[att.targetEndpoint]={...desired};
+              enforceWallConstraints(parent,{changed:att.targetEndpoint});
+              att.t=att.targetEndpoint==='a'?0:1;
+              obj[endpoint]={...parent[att.targetEndpoint]};
+              syncDependentsOfWall(parent.id);
+            }else{const pr=wallProjectPoint(desired,parent);att.t=pr.t;obj[endpoint]={...pr.point};}
           }
         }else if((d.mode==='a'||d.mode==='b')&&obj.attachments?.[d.mode]){
           const att=obj.attachments[d.mode],parent=state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
           if(parent){
-            if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){att.t=att.targetEndpoint==='a'?0:1;obj[d.mode]={...parent[att.targetEndpoint]};}
-            else{const pr=wallProjectPoint(p,parent);att.t=pr.t;obj[d.mode]={...pr.point};}
+            if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){
+              // A shared corner is one persistent junction. Dragging either side's endpoint
+              // moves the common node instead of visually pulling the two walls apart.
+              const q=(state.toolset==='plan'&&state.shiftDown&&!isArcWall(src))?constrainEndpointToOriginalAngle(src,d.mode,p):p;
+              parent[att.targetEndpoint]={...q};att.t=att.targetEndpoint==='a'?0:1;obj[d.mode]={...q};syncDependentsOfWall(parent.id);
+            }else{
+              const requested=(state.toolset==='plan'&&state.shiftDown&&!isArcWall(src))?constrainEndpointToOriginalAngle(src,d.mode,p):p;
+              const pr=wallProjectPoint(requested,parent);att.t=pr.t;obj[d.mode]={...pr.point};
+            }
           }
         }
         enforceWallConstraints(obj,{changed:d.mode==='a'?'a':d.mode==='b'?'b':'body'});
         syncDependentsOfWall(obj.id);refreshSpaces();
       }
     }
-    else if(obj.type==='door'||obj.type==='window'){const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const pr=wallProjectPoint(p,wall);if(d.mode==='center'||d.mode==='body'){obj.t=pr.t;if(obj.type==='door'){const signed=signedDistanceToWall(p,wall),threshold=Math.max((wall.thickness||150)*.8,45/state.camera.zoom);if(Math.abs(signed)>threshold)obj.swing=signed>=0?1:-1;}}else if(d.mode==='p1'||d.mode==='p2'){const g0=openingGeometry(src);if(g0){const opposite=d.mode==='p1'?g0.p2:g0.p1;const pp=wallProjectPoint(p,wall);const po=wallProjectPoint(opposite,wall);const len=wallLength(wall);obj.t=clamp((pp.t+po.t)/2,0,1);obj.width=Math.max(100,Math.abs(pp.t-po.t)*len);}}}}
+    else if(obj.type==='door'||obj.type==='window'){
+      const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const pr=wallProjectPoint(p,wall);
+        if(d.mode==='center'){obj.t=pr.t;}
+        else if(d.mode==='body'&&obj.type==='door'){
+          const tg=wallTangentAt(wall,src.t??.5),dx=p.x-d.start.x,dy=p.y-d.start.y,along=dx*tg.ux+dy*tg.uy,across=dx*(-tg.uy)+dy*tg.ux,threshold=14/state.camera.zoom;
+          if(!d.gestureResolved&&Math.max(Math.abs(along),Math.abs(across))>=threshold){
+            const type=src.doorType||'hingedSingle';
+            if(type.startsWith('hinged')){
+              if(Math.abs(across)>Math.abs(along)){obj.swing=src.swing===-1?1:-1;d.gestureResolved='swing';}
+              else{obj.hinge=src.hinge==='end'?'start':'end';d.gestureResolved='hinge';}
+            }else if(Math.abs(along)>=Math.abs(across)){obj.slideDirection=src.slideDirection===-1?1:-1;d.gestureResolved='slide';}
+          }
+        }
+        else if(d.mode==='body'){obj.t=pr.t;}
+        else if(d.mode==='p1'||d.mode==='p2'){const g0=openingGeometry(src);if(g0){const opposite=d.mode==='p1'?g0.p2:g0.p1,pp=wallProjectPoint(p,wall),po=wallProjectPoint(opposite,wall),len=wallLength(wall);obj.t=clamp((pp.t+po.t)/2,0,1);obj.width=Math.max(100,Math.abs(pp.t-po.t)*len);}}
+      }
+    }
     else if(obj.type==='dimension'){const g0=dimensionGeometry(src);if(g0){if(g0.associated){const base={x:(g0.p1.x+g0.p2.x)/2,y:(g0.p1.y+g0.p2.y)/2};obj.offset=(p.x-base.x)*g0.nx+(p.y-base.y)*g0.ny;}else if(d.mode==='p1')obj.p1={...p};else if(d.mode==='p2')obj.p2={...p};else if(d.mode==='offset'){const base={x:(obj.p1.x+obj.p2.x)/2,y:(obj.p1.y+obj.p2.y)/2},v={x:obj.p2.x-obj.p1.x,y:obj.p2.y-obj.p1.y},len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len;obj.offset=(p.x-base.x)*nx+(p.y-base.y)*ny;}else{obj.p1={x:g0.p1.x+delta.x,y:g0.p1.y+delta.y};obj.p2={x:g0.p2.x+delta.x,y:g0.p2.y+delta.y};}}}
     markDirty(true);rebuildObjectSnapIndex();renderProperties();render();}
 
@@ -1372,7 +1485,7 @@
     if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){state.regionDrag.current={...p};render();return;}
     if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){state.selectionDrag.current={...p};updateSelectionDragPreview();render();return;}
     if(state.pan){const dx=(s.x-state.pan.startScreen.x)/state.camera.zoom,dy=(s.y-state.pan.startScreen.y)/state.camera.zoom;state.camera.cx=state.pan.startCamera.cx-dx;state.camera.cy=state.pan.startCamera.cy+dy;render();return;}
-    if(state.dragEdit){applyObjectDrag(nearestSnap(p,state.dragEdit.objectId));return;}
+    if(state.dragEdit){const dragged=state.objects.find(o=>o.id===state.dragEdit.objectId);applyObjectDrag((dragged?.type==='door'||dragged?.type==='window')?p:nearestSnap(p,state.dragEdit.objectId));return;}
     if(state.activeTool==='constraint')updateConstraintHover(p);else updateHover(p);
     if(state.activeTool==='door'||state.activeTool==='window')state.previewOpening=nearestWallProjection(p);else state.previewOpening=null;
     const start=state.drawStart||state.measureStart||state.calibration?.p1;if(start)p=constrainOrtho(start,nearestSnap(p));else p=nearestSnap(p);state.previewEnd=p;render();}
@@ -1388,9 +1501,12 @@
       if(state.activeTool==='wall'&&state.toolset==='plan'&&state.toolSettings.wallType==='arc'){
         if(!state.drawStart){state.drawStart=p;state.previewEnd=p;state.arcDraft=null;updateContextBar();render();return;}
         if(!state.arcDraft){state.arcDraft={a:{...state.drawStart},b:{...constrainOrtho(state.drawStart,p)}};state.previewEnd=p;updateContextBar();render();return;}
-        const g=circleFromThreePoints(state.arcDraft.a,state.arcDraft.b,p);if(g){pushHistory();const obj={id:uid('wall'),type:'wall',layerId:'walls',a:{...state.arcDraft.a},b:{...state.arcDraft.b},thickness:currentWallThickness(),geometry:'arc',...g,attachments:{}};state.objects.push(obj);state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart=null;state.arcDraft=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();refreshSpaces();updateAll();}return;
+        const g=circleFromThreePoints(state.arcDraft.a,state.arcDraft.b,p);if(g){pushHistory();const obj={id:uid('wall'),type:'wall',planRole:'boundary',layerId:'walls',a:{...state.arcDraft.a},b:{...state.arcDraft.b},thickness:currentWallThickness(),geometry:'arc',...g,attachments:{},floorId:state.activeFloorId};state.objects.push(obj);state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);state.drawStart=null;state.drawReferenceAngle=null;state.arcDraft=null;state.previewEnd=null;markDirty(true);rebuildObjectSnapIndex();refreshSpaces();updateAll();}return;
       }
-      if(!state.drawStart){state.drawStart=p;state.previewEnd=p;updateContextBar();render();}else commitSegment(state.drawStart,constrainOrtho(state.drawStart,p),state.activeTool);return;
+      if(!state.drawStart){
+        if(state.toolset==='plan'&&state.activeTool==='line'){const ref=planDrawReferenceAt(raw,p);p=ref.point;state.drawReferenceAngle=ref.angle;}
+        state.drawStart=p;state.previewEnd=p;updateContextBar();render();
+      }else commitSegment(state.drawStart,constrainOrtho(state.drawStart,p),state.activeTool);return;
     }
     if(state.activeTool==='measure'){if(!state.measureStart){state.measureStart=p;state.previewEnd=p;updateContextBar();render();}else commitMeasurement(state.measureStart,constrainOrtho(state.measureStart,p));return;}
     if(state.activeTool==='space'&&state.toolset==='plan'){commitSpace(raw);return;}
@@ -1517,16 +1633,16 @@
       if(!skipConfirm&&(state.dirty||state.objects.length||state.references.length)&&!confirm(t('confirm.openProject')))return;
       const raw=JSON.parse(await file.text());if(raw?.format!=='PieniPlan'||!raw.drawing)throw new Error(t('project.invalid'));
       const d=raw.drawing,refs=[];for(const rr of d.references||[]){const ref=await hydrateReference(rr);if(ref)refs.push(ref);}
-      state.objects=Array.isArray(d.objects)?d.objects:[];state.drawingRegions=Array.isArray(d.drawingRegions)?d.drawingRegions:[];state.references=refs;state.cadLayerVisibility=new Map(Array.isArray(d.cadLayerVisibility)?d.cadLayerVisibility:[['0',true]]);state.activeCadLayer=d.activeCadLayer||'0';state.cadMapping=d.cadMapping||null;state.baseAxisAngle=Number(d.baseAxisAngle)||0;state.baseAxisWallId=d.baseAxisWallId||null;state.camera=d.camera&&Number.isFinite(d.camera.zoom)?{...d.camera}:{cx:0,cy:0,zoom:.12};state.toolSettings={...state.toolSettings,...(d.toolSettings||{})};state.recognitionHistory=Array.isArray(d.recognitionHistory)?d.recognitionHistory:[];state.floors=Array.isArray(d.floors)&&d.floors.length?d.floors:[{id:'floor_1',name:'1F',sourceRegionId:null}];state.activeFloorId=d.activeFloorId||state.floors[0].id;ensureFloorModel();repairDefaultFloorNamesFromRegions();const floorIsolationChanged=repairFloorRegionIsolation();state.nextId=Math.max(Number(d.nextId)||1,state.objects.length+state.references.length+state.drawingRegions.length+1);
+      state.objects=Array.isArray(d.objects)?d.objects:[];state.drawingRegions=Array.isArray(d.drawingRegions)?d.drawingRegions:[];state.references=refs;state.cadLayerVisibility=new Map(Array.isArray(d.cadLayerVisibility)?d.cadLayerVisibility:[['0',true]]);state.activeCadLayer=d.activeCadLayer||'0';state.cadMapping=d.cadMapping||null;state.baseAxisAngle=Number(d.baseAxisAngle)||0;state.baseAxisWallId=d.baseAxisWallId||null;state.camera=d.camera&&Number.isFinite(d.camera.zoom)?{...d.camera}:{cx:0,cy:0,zoom:.12};state.toolSettings={...state.toolSettings,...(d.toolSettings||{})};state.recognitionHistory=Array.isArray(d.recognitionHistory)?d.recognitionHistory:[];state.floors=Array.isArray(d.floors)&&d.floors.length?d.floors:[{id:'floor_1',name:'1F',sourceRegionId:null}];state.activeFloorId=d.activeFloorId||state.floors[0].id;ensureFloorModel();const legacyEdgeChanged=migrateLegacyPlanLinesToEdges();repairDefaultFloorNamesFromRegions();const floorIsolationChanged=repairFloorRegionIsolation();let junctionRepairChanged=false;for(const floor of state.floors)junctionRepairChanged=repairPersistentPlanJunctions(floor.id)||junctionRepairChanged;state.nextId=Math.max(Number(d.nextId)||1,state.objects.length+state.references.length+state.drawingRegions.length+1);
       if(Array.isArray(d.planLayerVisibility)){const vis=new Map(d.planLayerVisibility);for(const l of planLayers)l.visible=vis.get(l.id)!==false;}
       const src=raw.sourceDxf||{};state.sourceDxfName=src.name||null;state.sourceDxfFingerprint=src.fingerprint||null;state.sourceDxfSize=Number(src.size)||0;state.sourceDxfLastModified=Number(src.lastModified)||0;state.sourceDxfMainBounds=src.mainBounds||null;state.sourceDxfFullBounds=src.fullBounds||null;state.sourceDxfOutlierCount=Number(src.outlierCount)||0;state.projectFileName=file.name;state.projectFileHandle=handle;state.projectLocalKey=localKey;
-      state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;state.selectedRegionId=null;state.wallRecognitionPreview=null;state.history=[];state.future=[];state.layerFilter='';state.layerRevealRequested=false;state.dirty=Boolean(floorIsolationChanged);rebuildObjectSnapIndex();refreshSpaces();switchToolset(d.toolset==='cad'?'cad':'plan',{skipMapping:true});updateAll();setCommandStatus(restoredLocal?t('project.restoredLocal',{name:file.name}):t('project.opened',{name:file.name}),'strong');
+      state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;state.selectedRegionId=null;state.wallRecognitionPreview=null;state.history=[];state.future=[];state.layerFilter='';state.layerRevealRequested=false;state.dirty=Boolean(floorIsolationChanged||legacyEdgeChanged||junctionRepairChanged);rebuildObjectSnapIndex();refreshSpaces();switchToolset(d.toolset==='cad'?'cad':'plan',{skipMapping:true});updateAll();setCommandStatus(restoredLocal?t('project.restoredLocal',{name:file.name}):t('project.opened',{name:file.name}),'strong');
     }catch(err){console.error(err);alert(t('project.openFailed',{message:String(err?.message||err)}));}
   }
   function showProgress(title,ratio,detail){dom.progressToast.hidden=false;dom.progressTitle.textContent=title;dom.progressBar.style.width=`${clamp(ratio,0,1)*100}%`;dom.progressDetail.textContent=detail;}
   function hideProgress(){dom.progressToast.hidden=true;}
 
-  function beginCalibration(refId){const ref=state.references.find(r=>r.id===refId);if(!ref)return;state.selectedReferenceId=refId;state.calibration={refId,p1:null,p2:null};state.drawStart=null;state.measureStart=null;state.previewEnd=null;updateContextBar();render();}
+  function beginCalibration(refId){const ref=state.references.find(r=>r.id===refId);if(!ref)return;state.selectedReferenceId=refId;state.calibration={refId,p1:null,p2:null};state.drawStart=null;state.drawReferenceAngle=null;state.measureStart=null;state.previewEnd=null;updateContextBar();render();}
   function openCalibrationDialog(){const c=state.calibration;if(!c?.p1||!c?.p2)return;const measured=distance(c.p1,c.p2);dom.dialogTitle.textContent=t('dialog.calibrate');dom.dialogCopy.textContent=t('dialog.calibrationCopy',{distance:formatNumber(measured,2)});dom.dialogInput.value=String(Math.round(measured*100)/100);dom.dialogBackdrop.hidden=false;setTimeout(()=>{dom.dialogInput.focus();dom.dialogInput.select();},0);}
   function applyCalibration(){const actual=Number(dom.dialogInput.value),c=state.calibration;if(!c||!Number.isFinite(actual)||actual<=0)return;const ref=state.references.find(r=>r.id===c.refId);if(!ref)return;const current=distance(c.p1,c.p2);if(current<=0)return;const localAnchor=referenceWorldToLocal(ref,c.p1),newScale=ref.scale*(actual/current);ref.scale=newScale;ref.origin={x:c.p1.x-localAnchor.x*newScale,y:c.p1.y-localAnchor.y*newScale};state.calibration=null;dom.dialogBackdrop.hidden=true;state.previewEnd=null;markDirty(true);updateAll();}
 
@@ -1920,6 +2036,7 @@
     if(createStairs){for(const c of p.stairs||[]){const o={id:uid('stair'),type:'stair',layerId:'stairs',stairType:'straight',polygon:c.polygon.map(q=>({...q})),axis:{...c.axis},axisBounds:{...c.axisBounds},treadCount:c.treadCount,recognizedFromCad:true,sourceRegionId:region.id,recognitionSourceIds:[...(c.sourceIds||[])],recognitionConfidence:c.confidence||null,floorId:floor.id};stampRecognitionBaseline(o);state.objects.push(o);}}
     if(createSpaces){for(const c of p.spaces||[]){const wallIds=(c.wallIds||[]).map(id=>wallMap.get(id)).filter(Boolean);const o={id:uid('space'),type:'space',layerId:'spaces',spaceUuid:makeStableUuid(),seed:polygonCentroid(c.polygon),polygon:c.polygon.map(q=>({...q})),wallIds,areaM2:c.area/1e6,invalid:false,recognizedFromCad:true,sourceRegionId:region.id,recognitionConfidence:c.confidence||null,floorId:floor.id};stampRecognitionBaseline(o);state.objects.push(o);}}
 
+    repairPersistentPlanJunctions(floor.id);
     state.recognitionHistory.push({at:new Date().toISOString(),regionId:region.id,sourceLines:p.lines.length,sourceArcs:p.arcs?.length||0,walls:p.walls.length,spaces:p.spaces.length,doors:p.doors.length,stairs:p.stairs.length,thicknesses:p.thicknessClusters.map(x=>x.value),applied:{walls:createWalls,spaces:createSpaces,doors:createDoors,stairs:createStairs},accepted:{walls:createWalls?p.walls.map(candidateSignature):[],spaces:createSpaces?p.spaces.map(candidateSignature):[],doors:createDoors?p.doors.map(candidateSignature):[],stairs:createStairs?p.stairs.map(candidateSignature):[]}});
     state.wallRecognitionPreview=null;dom.recognitionBackdrop.hidden=true;dom.recognitionApplyBtn.disabled=false;markDirty(true);rebuildObjectSnapIndex();openRegionInPlan(region);renderPrimaryPanel();renderProperties();render();
   }
@@ -2090,18 +2207,18 @@
 
   function renderReferenceLayerControls(ref){const section=document.createElement('div');section.className='panel-section';const heading=document.createElement('div');heading.className='section-heading';heading.textContent=t('panel.dxfLayers',{count:ref.layers.length});section.appendChild(heading);const actions=document.createElement('div');actions.style.cssText='display:flex;gap:5px;margin:8px 0;';const all=document.createElement('button');all.className='mini-action';all.textContent=t('action.all');const none=document.createElement('button');none.className='mini-action';none.textContent=t('action.none');all.addEventListener('click',()=>{ref.visibleLayers=new Set(ref.layers);renderReferences();render();});none.addEventListener('click',()=>{ref.visibleLayers=new Set();renderReferences();render();});actions.append(all,none);section.appendChild(actions);const list=document.createElement('div');list.style.cssText='display:grid;gap:5px;max-height:220px;overflow:auto;';for(const layer of ref.layers){const label=document.createElement('label');label.style.cssText='display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px;align-items:center;font-size:9.5px;color:var(--text-2);';const cb=document.createElement('input');cb.type='checkbox';cb.checked=ref.visibleLayers.has(layer);cb.addEventListener('change',()=>{cb.checked?ref.visibleLayers.add(layer):ref.visibleLayers.delete(layer);render();});const text=document.createElement('span');text.textContent=layer;text.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';label.append(cb,text);list.appendChild(label);}section.appendChild(list);dom.referenceList.appendChild(section);}
   function iconMarkup(name){return`<span class="ui-icon icon-${name}" aria-hidden="true"></span>`;}
-  function renderPlanPalette(){dom.referenceList.innerHTML='';const grid=document.createElement('div');grid.className='palette-grid';const items=[['wall','wall','tool.wall'],['door','door','tool.door'],['window','window','tool.window'],['space','space','tool.space'],['measure','dimension','tool.measure']];for(const [tool,icon,key] of items){const b=document.createElement('button');b.className='palette-item';b.innerHTML=`<span class="ui-icon icon-${icon}" aria-hidden="true"></span><span>${escapeHtml(t(key))}</span>`;b.addEventListener('click',()=>{if(tool==='wall'){const rail=[...dom.toolRail.querySelectorAll('.tool-direct')].find(x=>x.textContent.includes(t('tool.wall')));if(rail)openPlanWallPalette(rail);else setTool('wall','plan');}else if(tool==='door'){const rail=[...dom.toolRail.querySelectorAll('.tool-direct')].find(x=>x.textContent.includes(t('tool.door')));if(rail)openPlanDoorPalette(rail);else setTool('door','plan');}else setTool(tool,'plan');});grid.append(b);}dom.referenceList.append(grid);const floor=activeFloor(),region=floor?.sourceRegionId?state.drawingRegions.find(r=>r.id===floor.sourceRegionId):null;if(region){const ref=state.references.find(r=>r.type==='linkedCadRegion'&&r.regionId===region.id);const section=document.createElement('div');section.className='floor-reference-section';section.innerHTML=`<div class="section-heading">${escapeHtml(t('panel.referenceOpacity'))}</div>`;const range=document.createElement('input');range.type='range';range.min='.05';range.max='1';range.step='.05';range.value=String(ref?.opacity??.35);range.addEventListener('input',()=>{if(ref){ref.opacity=Number(range.value);markDirty(true);render();}});section.append(range);dom.referenceList.append(section);}}
+  function renderPlanPalette(){dom.referenceList.innerHTML='';const grid=document.createElement('div');grid.className='palette-grid';const items=[['door','door','tool.door'],['window','window','tool.window'],['space','space','tool.space']];for(const [tool,icon,key] of items){const b=document.createElement('button');b.className='palette-item';b.innerHTML=`<span class="ui-icon icon-${icon}" aria-hidden="true"></span><span>${escapeHtml(t(key))}</span>`;b.addEventListener('click',()=>{if(tool==='door'){const rail=dom.toolRail.querySelector('.tool-category[data-category="architecture"]');if(rail)openPlanDoorPalette(rail);else setTool('door','architecture');}else setTool(tool,'architecture');});grid.append(b);}dom.referenceList.append(grid);const floor=activeFloor(),region=floor?.sourceRegionId?state.drawingRegions.find(r=>r.id===floor.sourceRegionId):null;if(region){const ref=state.references.find(r=>r.type==='linkedCadRegion'&&r.regionId===region.id);const section=document.createElement('div');section.className='floor-reference-section';section.innerHTML=`<div class="section-heading">${escapeHtml(t('panel.referenceOpacity'))}</div>`;const range=document.createElement('input');range.type='range';range.min='.05';range.max='1';range.step='.05';range.value=String(ref?.opacity??.35);range.addEventListener('input',()=>{if(ref){ref.opacity=Number(range.value);markDirty(true);render();}});section.append(range);dom.referenceList.append(section);}}
 
   function configureVisibilityButton(button,visible,kind){const showKey=kind==='reference'?'tooltip.showReference':'tooltip.showLayer',hideKey=kind==='reference'?'tooltip.hideReference':'tooltip.hideLayer';button.innerHTML=iconMarkup(visible?'eye':'eye-off');button.setAttribute('aria-label',t(visible?hideKey:showKey));button.dataset.tooltipTitleKey=visible?hideKey:showKey;delete button.dataset.tooltipKey;delete button.dataset.shortcut;}
 
-  function localizedObjectType(type){const key=type==='cadLine'?'value.cadLine':`value.${type}`;return t(key);}
+  function localizedObjectType(type){if(state.toolset==='plan'&&type==='wall')return t('value.planEdge');const key=type==='cadLine'?'value.cadLine':`value.${type}`;return t(key);}
   function localizedToolName(tool){const keys={select:'tool.select',constraint:'tool.constraint',line:'tool.line',wall:'tool.wall',door:'tool.door',window:'tool.window',space:'tool.space',region:'tool.region',measure:'tool.measure',trim:'tool.trim',extend:'tool.extend',delete:'tool.delete'};return t(keys[tool]||`tool.${tool}`);}
   function wallConstraintSummary(wall){const c=ensureWallConstraints(wall),parts=[];if(c.reference)parts.push(t(`constraint.${c.reference.type}`));if(c.orientation)parts.push(t(`constraint.${c.orientation}`));if(Number.isFinite(c.fixedAngle))parts.push(t('constraint.fixedAngleValue',{value:formatNumber(c.fixedAngle,1)}));if(Number.isFinite(c.fixedLength))parts.push(t('constraint.fixedLengthValue',{value:formatNumber(c.fixedLength,1)}));if(c.fixed)parts.push(t('constraint.fixed'));for(const ep of['a','b']){const att=wall.attachments?.[ep];if(att)parts.push(t(att.kind==='coincident'?'constraint.endpointCoincident':'constraint.pointOnLine',{endpoint:ep.toUpperCase()}));}return parts.length?parts.join(' · '):t('constraint.none');}
   function renderProperties(){dom.propertiesPanel.innerHTML='';const ids=selectionIds();if(ids.size>1){propertyText(t('property.selection'),t('value.objectsSelected',{count:ids.size}));if(state.toolset==='cad'){const layers=new Set([...ids].map(id=>state.objects.find(o=>o.id===id)).filter(Boolean).filter(o=>o.type!=='space').map(cadLayerForObject));propertyText(t('property.layers'),layers.size?`${layers.size}`:'—');}return;}const onlyId=ids.size===1?[...ids][0]:state.selectedObjectId,obj=state.objects.find(o=>o.id===onlyId);if(obj){state.selectedObjectId=obj.id;propertyText(t('property.type'),localizedObjectType(obj.type));
       if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);propertyText(t('property.layer'),layer);propertyActions([{label:cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),run:()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer))},{label:t('action.soloLayer'),run:()=>soloLayer(layer)},{label:t('action.showInLayers'),run:()=>{state.layerRevealRequested=true;switchInspector('primary');renderCadLayersPanel();}}]);}
       if(((obj.type==='wall'&&!isArcWall(obj))||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){propertyNumber(t('property.length'),distance(obj.a,obj.b),v=>{if(v>0){if(obj.type==='wall'){setWallLengthConstraintFromInput(obj,v);return;}pushHistory();const ang=rad(angleDeg(obj.a,obj.b));obj.b={x:obj.a.x+Math.cos(ang)*v,y:obj.a.y+Math.sin(ang)*v};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'mm');propertyNumber(t('property.angle'),angleDeg(obj.a,obj.b),v=>{if(Number.isFinite(v)){if(obj.type==='wall'){setWallAngleConstraintFromInput(obj,v);return;}pushHistory();const len=distance(obj.a,obj.b),a=rad(v);obj.b={x:obj.a.x+Math.cos(a)*len,y:obj.a.y+Math.sin(a)*len};markDirty(true);rebuildObjectSnapIndex();updateAll();}},'°');propertyText(t('property.start'),`${formatNumber(obj.a.x,1)}, ${formatNumber(obj.a.y,1)}`);propertyText(t('property.end'),`${formatNumber(obj.b.x,1)}, ${formatNumber(obj.b.y,1)}`);}
       if(obj.type==='wall'){
-        propertyText(t('property.wallType'),t(isArcWall(obj)?'wallType.arc':'wallType.straight'));
+        propertyText(t(state.toolset==='plan'?'property.edgeType':'property.wallType'),t(state.toolset==='plan'?(isArcWall(obj)?'edgeType.arc':'edgeType.straight'):(isArcWall(obj)?'wallType.arc':'wallType.straight')));
         if(isArcWall(obj)){propertyText(t('property.length'),`${formatNumber(wallLength(obj),2)} mm`);propertyText(t('property.radius'),`${formatNumber(obj.radius,2)} mm`);}
         propertyNumber(t('property.thickness'),obj.thickness,v=>{if(v>0){pushHistory();obj.thickness=v;markDirty(true);updateAll();}},'mm');
         const connected=Boolean(obj.attachments?.a||obj.attachments?.b),c=ensureWallConstraints(obj);propertyText(t('property.joint'),connected?t('value.connected'):t('value.free'));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°${state.baseAxisWallId===obj.id?` · ${t('value.thisWall')}`:''}`);
@@ -2154,12 +2271,12 @@
     else if(command==='U'||command==='UNDO'){state.lastCommand='U';undo();setCommandStatus(t('command.undo'),'strong');}
     else if(command==='REDO'){state.lastCommand='REDO';redo();setCommandStatus(t('command.redo'),'strong');}
     else if(command==='S'||command==='STRETCH'){setCommandStatus(t('command.stretchNotReady'),'error');}
-    else if(command==='WALL'){state.lastCommand='WALL';setTool('wall','architecture');if(plan||state.cadMapping)setCommandStatus('WALL','strong');}
+    else if(command==='WALL'){state.lastCommand=plan?'L':'WALL';setTool(plan?'line':'wall',plan?'draw':'architecture');if(plan||state.cadMapping)setCommandStatus(plan?t('command.line'):'WALL','strong');}
     else if(command==='DOOR'){state.lastCommand='DOOR';setTool('door','architecture');if(plan||state.cadMapping)setCommandStatus('DOOR','strong');}
     else if(command==='WINDOW'){state.lastCommand='WINDOW';setTool('window','architecture');if(plan||state.cadMapping)setCommandStatus('WINDOW','strong');}
     else setCommandStatus(t('command.unknown',{command}),'error');}
 
-  function finishContinuousCommand(){if(state.activeTool==='line'){state.drawStart=null;state.previewEnd=null;setTool('select','select');setCommandStatus(t('command.finished'),'strong');return true;}return false;}
+  function finishContinuousCommand(){if(state.activeTool==='line'){state.drawStart=null;state.drawReferenceAngle=null;state.previewEnd=null;setTool('select','select');setCommandStatus(t('command.finished'),'strong');return true;}return false;}
   function setCommandStatus(text,kind=''){dom.commandStatus.className=`command-status ${kind}`.trim();dom.commandStatus.textContent=text;dom.commandStatus.classList.toggle('visible',Boolean(kind)||text!==t('command.ready'));}
 
   function dxfPair(code,value){return`${code}\n${value}\n`;}
@@ -2206,7 +2323,7 @@
 
   function isTyping(){const a=document.activeElement;return a&&(['INPUT','TEXTAREA','SELECT'].includes(a.tagName)||a.isContentEditable);}
   function canvasShortcutContext(){const a=document.activeElement;return !a||a===document.body||a===host||a===canvas;}
-  function cancelTransient(){const wasDrawing=state.activeTool==='line'||state.activeTool==='trim'||state.activeTool==='extend';state.drawStart=null;state.arcDraft=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;clearConstraintInteraction();if(state.activeTool==='constraint'||wasDrawing)state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
+  function cancelTransient(){const wasDrawing=state.activeTool==='line'||state.activeTool==='trim'||state.activeTool==='extend';state.drawStart=null;state.drawReferenceAngle=null;state.arcDraft=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.selectionDrag=null;state.snapIndicator=null;state.commandPending=null;clearConstraintInteraction();if(state.activeTool==='constraint'||wasDrawing)state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
 
   dom.startPlanBtn.addEventListener('click',()=>switchToolset('plan',{skipMapping:true}));
   dom.startCadBtn.addEventListener('click',()=>switchToolset('cad',{skipMapping:true}));
@@ -2244,7 +2361,7 @@
   dom.referenceFileInput.addEventListener('change',()=>openReferenceFile(dom.referenceFileInput.files?.[0]));
   dom.openDxfBtn.addEventListener('click',()=>dom.dxfEditFileInput.click());dom.dxfEditFileInput.addEventListener('change',()=>openEditableDxf(dom.dxfEditFileInput.files?.[0]));
   dom.fitBtn.addEventListener('click',fitAll);dom.fullExtentsBtn?.addEventListener('click',fitFullExtents);dom.newBtn.addEventListener('click',resetProject);dom.undoBtn.addEventListener('click',undo);dom.redoBtn.addEventListener('click',redo);dom.exportDxfBtn.addEventListener('click',exportDxf);
-  dom.emptyPrimaryBtn.addEventListener('click',()=>setTool(state.toolset==='plan'?'wall':'line',state.toolset==='plan'?'plan':'draw'));
+  dom.emptyPrimaryBtn.addEventListener('click',()=>setTool('line','draw'));
   dom.mappingSettingsBtn.addEventListener('click',()=>openMappingDialog('settings'));dom.mappingApplyBtn.addEventListener('click',applyMapping);dom.mappingCancelBtn.addEventListener('click',cancelMapping);dom.recognitionApplyBtn.addEventListener('click',applyWallRecognition);dom.recognitionCancelBtn.addEventListener('click',cancelWallRecognition);
   dom.gridToggle.addEventListener('click',()=>{state.grid=!state.grid;dom.gridToggle.classList.toggle('active',state.grid);render();});dom.snapToggle.addEventListener('click',()=>{state.snap=!state.snap;dom.snapToggle.classList.toggle('active',state.snap);});dom.orthoToggle.addEventListener('click',()=>{state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();});dom.polarToggle.addEventListener('click',()=>{state.polar=!state.polar;dom.polarToggle.classList.toggle('active',state.polar);render();});
   dom.dialogCancelBtn.addEventListener('click',()=>{dom.dialogBackdrop.hidden=true;state.calibration=null;state.previewEnd=null;updateAll();});dom.dialogApplyBtn.addEventListener('click',applyCalibration);dom.dialogInput.addEventListener('keydown',e=>{if(e.key==='Enter')applyCalibration();if(e.key==='Escape')dom.dialogCancelBtn.click();});
@@ -2278,7 +2395,7 @@
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();if(!e.target.closest('.floor-action-menu')&&!e.target.closest('.floor-row .mini-action'))closeFloorActionMenu();});
 
   applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');applyShortcutMetadata(dom.polarToggle,'polar','tooltip.polar');
-  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,downloadProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,applyTrimExtendAtPoint,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addFloor,renderPlanFloorPanel,getPlanObjects,detectClosedWallFaces,getLinkedCadRenderCache,runCommand,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
+  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,downloadProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,applyTrimExtendAtPoint,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addFloor,renderPlanFloorPanel,getPlanObjects,detectClosedWallFaces,getLinkedCadRenderCache,runCommand,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
 
   dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.confirmBackdrop.hidden=true;if(dom.exportSaveBackdrop)dom.exportSaveBackdrop.hidden=true;dom.commandBar.hidden=false;i18n.apply(document);state.browserSavedMeta=readBrowserSavedMeta();state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();if(dom.aboutVersion)dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;if(dom.startVersion)dom.startVersion.textContent=`PieniPlan v${VERSION} · Build ${BUILD}`;setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();
