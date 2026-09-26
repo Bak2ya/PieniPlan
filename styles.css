@@ -671,3 +671,18 @@ html, body { overscroll-behavior:none; }
 .contextbar.context-floating[hidden] { display:none !important; }
 
 @media (max-width:720px){.app-shell{grid-template-rows:44px minmax(0,1fr)}}
+
+
+/* Build 19 — floor/space hierarchy and editable space metadata */
+.floor-tree-group { display:flex; flex-direction:column; gap:2px; }
+.floor-space-list { display:flex; flex-direction:column; gap:2px; margin:0 0 4px 13px; padding-left:8px; border-left:1px solid color-mix(in srgb,var(--border) 78%,transparent); }
+.floor-space-row { min-height:34px; display:grid; grid-template-columns:14px minmax(0,1fr); align-items:center; gap:4px; padding:4px 7px 4px 2px; border:1px solid transparent; border-radius:6px; color:var(--text-2); cursor:pointer; }
+.floor-space-row:hover { background:color-mix(in srgb,var(--surface-2) 82%,transparent); border-color:var(--border); }
+.floor-space-row.selected { color:var(--text); background:var(--plan-soft); border-color:color-mix(in srgb,var(--plan-accent) 45%,var(--border)); }
+.floor-space-branch { color:var(--text-3); font:11px ui-monospace,SFMono-Regular,Menlo,monospace; align-self:start; padding-top:2px; }
+.floor-space-main { min-width:0; }
+.floor-space-name { font-size:10.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.floor-space-meta { margin-top:2px; color:var(--text-3); font-size:8.8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.space-inline-rename { width:100%; }
+.property-value > input[type="text"], .property-value > input[type="number"], .property-value > select { width:100%; min-width:0; height:27px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); padding:0 7px; font:inherit; font-size:10px; outline:none; }
+.property-value > input:focus, .property-value > select:focus { border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent); }

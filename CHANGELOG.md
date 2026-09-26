@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.16.0 · Build 19 — 2026-09-26
+
+- Space identity를 면적 중심에서 **이름 + stable UUID + 공간 유형** 중심으로 바꿨습니다. 새 공간은 층별 `공간 1`, `공간 2`(영문 UI는 `Space N`)로 생성되고 면적은 secondary value로 표시합니다.
+- 활성 Floor 아래에 Space child tree를 추가했습니다. 공간 row에서 선택을 동기화하고 double-click inline rename을 지원하며, Properties에서 이름과 `미지정/강의실/사무실/복도/화장실/계단실/창고/공용공간/기계실/기타` 유형을 편집할 수 있습니다. 사용자가 이름/유형을 편집한 recognized Space는 재인식 ownership에서 detach되어 보호됩니다.
+- 공간 폐합 실패를 generic alert로 끝내지 않고 **의심되는 열린 경계 위치를 red dashed overlay + endpoint circles + gap 거리 label**로 표시합니다. 현재 층 semantic wall endpoint를 기준으로 진단하며 Door leaf/swing geometry는 room boundary hole로 판정하지 않습니다. 실제 사용자 제공 창의관 6F fixture에서도 약 81 mm gap candidate를 검출했습니다.
+- selected Space는 stronger fill과 padded name chip으로 강조합니다. Hinged Door는 leaf/arc뿐 아니라 **개폐 부채꼴 내부 전체**를 selection hit area로 사용합니다.
+- Door의 `hinge`와 world-relative `swingSide`를 분리했습니다. host-tangent hinge gesture는 현재 opening side를 보존한 채 hinge만 반전하고, host-normal gesture만 opening side를 반전합니다. 일반 `양개 여닫이문`은 두 leaf가 같은 wall side로 열리며, `양방향 여닫이문`과 `양개 양방향 여닫이문`을 추가해 양쪽 swing을 표시합니다.
+- portable project 기본 확장자를 **`.ppln`**으로 줄였습니다. 기존 `.pieniplan` 파일은 계속 열 수 있고 새 portable download는 `.ppln`으로 생성합니다.
+- `프로젝트 저장` 경로를 다시 정리해 **새 파일 picker/download를 호출하지 않도록** 했습니다. 이미 writable handle로 연 프로젝트만 같은 파일을 갱신하고, 그 외(Safari 포함)는 IndexedDB browser-local storage에 저장합니다. portable 파일 다운로드는 별도 메뉴 action에서만 수행합니다.
+- Build19 smoke PASS: Space 생성/metadata/tree, 80 mm open-gap 진단, hinge flip world-side 보존, same-side double hinged, double-acting 양쪽 swing, door sector hit-test, Build18 Point-on-Edge 회귀. Build10/11 원본 smoke와 Build18 supersession-aware smoke도 PASS, JS syntax PASS, EN/KO 474/474 parity PASS. 사용자 제공 프로젝트 fixture에서 5F 기존 25 Space metadata migration 및 6F gap scan을 추가 검증했습니다.
+- 실제 Safari 저장 persistence UX, 실제 6F 클릭 위치에서 gap diagnostic의 우선순위, 복잡한 곡선/다중 문 geometry의 selection 감각은 실사용 확인이 계속 필요합니다.
+
 ## v0.15.0 · Build 18 — 2026-09-26
 
 - Build 17의 persistent junction을 **Endpoint↔Endpoint node**와 **Endpoint↔Segment Point-on-Edge constraint**로 분리했습니다. 중간 접합은 host의 저장된 `t` 비율에 매달리지 않고, host가 이동·연장·축소·회전할 때 branch의 기존 방향을 가능한 한 유지하는 새 교점을 계산합니다. pure interior X crossing은 계속 자동 연결하지 않습니다.
