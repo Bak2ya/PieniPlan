@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.17.0 · Build 20
+- Fixed Space face detection at Plan-line interior crossings by using virtual topology nodes only for room/space analysis. Editing X-crossings remain non-junctions.
+- Reduced false open-boundary warnings by excluding endpoints already touching another semantic boundary. Added a floating “Clear markers” action and Esc dismissal.
+- Added collapsible Floor → Space trees and per-Space `…` management for rename, type, manual/calculated area, and delete.
+- Separated geometry-calculated area from optional manual display area so scanned plans and facility-register values can coexist without changing Plan geometry.
+
+
 ## v0.16.0 · Build 19 — 2026-09-26
 
 - Space identity를 면적 중심에서 **이름 + stable UUID + 공간 유형** 중심으로 바꿨습니다. 새 공간은 층별 `공간 1`, `공간 2`(영문 UI는 `Space N`)로 생성되고 면적은 secondary value로 표시합니다.

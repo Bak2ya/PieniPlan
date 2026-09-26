@@ -248,3 +248,11 @@ python3 -m http.server 8000
 ## Third-party notices
 
 PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
+
+
+## Build 20 — Space boundary & management refinement
+
+- Space detection treats geometric Plan-line crossings as virtual topology nodes without turning them into persistent editing junctions.
+- Open-boundary diagnostics ignore endpoints that already touch another boundary and can be dismissed from a floating control or with Esc.
+- Floor space trees are collapsible. Each Space has a compact action menu for rename, type, manual display area / calculated area, and delete.
+- Manual area is stored separately from drawing-calculated area, so scanned/legacy facility records can preserve an official area without distorting geometry.
