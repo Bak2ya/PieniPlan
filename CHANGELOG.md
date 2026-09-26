@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.19.0 · Build 22
+- Added a CAD **Working Area** model. The original CAD geometry remains single-source; selecting a Drawing Region activates a cached working set for CAD rendering, selection/hit-testing, snap filtering, TR/EX cutter candidates and layer counts instead of treating every floor/region as simultaneously active.
+- Plan → CAD now enters the active Floor's linked Drawing Region automatically. CAD can return to **Full drawing** at any time, and a Region `…` menu can activate **Edit this region only**.
+- CAD Mode no longer draws Plan semantic geometry by default. **Plan overlay** is opt-in and, when enabled, is limited to the Floor linked to the active CAD Region.
+- Plan Mode renders only the active Floor's linked CAD Region. Other floor-linked CAD references are excluded from the render/reference path; external references remain independent.
+- CAD Reference inspector no longer lists internal Floor `linkedCadRegion` views as if they were duplicated external reference drawings.
+- Added a revision/region CAD working-set cache and reused it in linked-region rendering so repeated render/hit workflows do not rebuild the active CAD subset on every pointer frame.
+- Added CAD Mode TR destructive preview: hover shows the exact segment that will be removed in red with cut markers before click. Preview/cutter calculation respects the active working Region.
+- Verified against the user-provided Changui Hall project data: 104,498 raw CAD objects total; 6F region bounds include 7,867 (7.53%) and 5F 11,204 (10.72%). These counts demonstrate the working-set reduction; real Safari frame-time/memory improvement still requires user runtime validation.
+- Build 22 smoke, Build 10 and Build 11 regression suites pass; JS syntax passes; EN/KO i18n key parity is 504/504.
+
+## v0.18.0 · Build 21
+- Reworked Plan command activation so the typed command, active pointer command, and last-command repeat are separate states. `TR → EX` / `EX → TR` now tears down the previous command before the next click; command-input Enter no longer leaks to the global handler.
+- Removed Plan Shift TR/EX inversion. In Plan Mode Shift is reserved for geometry constraints; CAD Mode keeps its existing temporary TRIM/EXTEND behavior.
+- EXTEND now attaches only to the exact boundary intersected by the extension ray. It no longer performs a nearby-wall reattachment pass, and stale automatic coincident dependents at the extended endpoint are detached before the exact relation is created.
+- Expanded Plan Shift geometry: drawing/endpoints evaluate GLOBAL 45° and connected/reference 45° candidates together; whole-line movement can lock to GLOBAL horizontal/vertical or connected-line parallel/perpendicular axes.
+- Added Space Designation mode feedback and hover face preview so the prospective closed area is visible before click. Existing spaces are identified instead of duplicated.
+- Refined direct door manipulation zones: the whole frame/opening span moves the door along its host; leaf/arc stroke proximity controls hinge/swing gestures; swing-sector interior remains selectable but does not flip on drag.
+- Added semantic Fire Door and Fire Shutter elements. `FD`/`FS` are PieniPlan semantic markers only and are not presented as statutory symbols or fire-rating claims.
+- Separated drawing-calculated area from managed area. Geometry updates do not overwrite managed area. FACMAP v0.2.0 documents that PieniPlan owns drawing area while FacilityManager owns authoritative managed/official area; legacy FACMAP v0.1 `areaM2` is treated as drawing area only.
+- Added a compact persisted recent-edit log (up to 100 entries) to `.ppln` debug metadata to make command/EX/junction regressions easier to reproduce.
+- Added Build 21 regression coverage for TR→EX state transitions, Plan Shift semantics, exact-boundary EX, stale dependent detachment, combined GLOBAL/REF angle candidates, Shift body-axis constraints, Space hover/HUD, door interaction zones, fire elements, managed-area migration and edit-log ring behavior.
+
 ## v0.17.0 · Build 20
 - Fixed Space face detection at Plan-line interior crossings by using virtual topology nodes only for room/space analysis. Editing X-crossings remain non-junctions.
 - Reduced false open-boundary warnings by excluding endpoints already touching another semantic boundary. Added a floating “Clear markers” action and Esc dismissal.

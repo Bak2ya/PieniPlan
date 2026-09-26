@@ -34,10 +34,10 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 - 왼쪽 도구막대는 **선택 / 그리기 / 요소 / 수정** 4그룹으로 압축됩니다. `거리`는 선택 그룹, `문·창·공간 지정`은 요소, `이동·복사·TR·EX·삭제`는 수정 그룹에 들어갑니다. 문은 여닫이·양개·미닫이 등 자주 쓰는 종류를 같은 그룹에서 고릅니다. 버튼을 누르면 마지막 사용 도구를 다시 실행하고 길게 누르기·우클릭·모서리 표시로 그룹을 펼칩니다.
 - Plan Mode에서도 `L`, `M`, `CO`, `TR`, `EX`, `E`, `DI`, Undo/Redo 같은 익숙한 명령을 사용할 수 있습니다. 이 명령은 원본 DXF가 아니라 현재 층의 Plan 객체를 편집합니다. `TR`에서는 커서가 가리키는 **실제 삭제 예정 구간만 빨간 반투명 overlay**로 먼저 보여주고 클릭할 때 확정합니다.
 - 직선 선끼리의 접합은 편집 자유도에 따라 구분합니다. **Endpoint↔Endpoint는 같은 persistent Junction node**를 공유하고, **Endpoint↔Segment 중간 접합은 Point-on-Edge 제약**으로 유지합니다. 중간 접합은 host 선의 특정 비율 위치에 고정되지 않고 선 위에서 이동할 수 있으며, host 이동·길이 변경·회전 시 branch의 기존 수평/수직/각도를 가능한 한 유지한 새 교점을 계산합니다. 단순 interior X crossing은 자동 연결하지 않습니다.
-- Plan Mode에서 `Shift`는 각도 보조키입니다. 기존 선 끝점을 끌 때는 **그 선의 현재 각도를 그대로 유지**하고 길이만 바꾸며, 기존 선에서 새 선을 시작하면 그 선을 기준으로 0/45/90/…° 방향에 스냅합니다. 독립적으로 시작한 새 선은 기준축 기준 45° 단위를 사용합니다.
+- Plan Mode에서 `Shift`는 **기하 제약 전용키**입니다. 그리기/끝점 편집에서는 GLOBAL 0/45/90/…°와 연결선 기준 REF 0/45/90/…° 후보를 동시에 평가하며, 기존 선의 현재 각도도 후보에 포함합니다. 선 전체를 이동할 때는 GLOBAL 수평·수직과 연결선의 평행·수직 방향 중 포인터 이동 방향에 가장 가까운 축으로 제한해 주변 선이 불필요하게 뒤틀리는 것을 줄입니다. Plan에서는 Shift가 TR/EX를 서로 뒤집지 않습니다.
 - `L` 같은 도구를 실행할 때 길이·각도 입력은 캔버스 **왼쪽 위 Floating Context HUD**에만 나타납니다. HUD가 열리고 닫혀도 캔버스 높이나 도면 좌표는 바뀌지 않습니다.
-- 선택한 여닫이문은 **가운데 점을 끌어 선을 따라 위치 이동**합니다. 문 몸체를 선에 수직인 방향으로 끌면 열림 방향만 반전되고, 선을 따라 끌면 **현재 열림 면을 유지한 채 경첩만 반전**됩니다. 이 판단은 화면 수평/수직이 아니라 host 선의 로컬 축을 사용합니다. 여닫이문의 개폐 부채꼴 내부도 선택 영역으로 사용합니다.
-- 공간 topology에서는 끝점/T자 접합을 의미 있는 junction으로 사용하고, 단순히 내부에서 교차해 계속 진행하는 X자 교차는 자동 분절점으로 만들지 않습니다.
+- 문 직접 조작은 **선택 영역과 드래그 조작 영역을 분리**합니다. 문틀/개구부 span 전체를 끌면 host 선을 따라 위치 이동하고, 문짝 또는 개폐호 stroke 근처를 끌 때만 열림/경첩 방향 gesture가 동작합니다. 부채꼴 내부는 넓게 선택할 수 있지만 그 내부를 끌었다고 방향이 뒤집히지는 않습니다. 가운데 점은 위치 이동 affordance로 남고, 판단은 화면 X/Y가 아니라 host 선의 로컬 축을 사용합니다.
+- 공간 face 분석에서는 실제 Plan 선의 interior crossing을 **가상 topology node**로 사용해 닫힌 면을 찾습니다. 다만 편집 topology에서는 단순 X crossing을 persistent Junction이나 실제 split으로 만들지 않아, 공간 계산 때문에 선들이 서로 끌려다니지 않습니다.
 - 분절된 직선 체인이 하나의 원호로 설명될 때 보수적으로 Arc Wall 후보로 복원합니다.
 - A4/A3 같은 종이 규격은 편집 모델에 강제하지 않습니다. 출력 레이아웃은 별도 출력/FacilityManager 단계의 책임으로 둡니다.
 - 실제 치수 기반 **직선 / 곡선 평면 경계선** 그리기
@@ -51,10 +51,13 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
   - 슬라이딩문
   - 양개 슬라이딩문
   - 포켓 도어
+  - 방화문
+  - 방화셔터
 - 여닫이문의 경첩·열림 방향, 슬라이딩문의 이동 방향 전환
+- 방화문/방화셔터 semantic 요소. 현재 `FD`/`FS` 표시는 PieniPlan 내부 식별용이며 법정 도면 기호나 성능 등급을 주장하지 않습니다.
 - 곡선에서도 선의 접선/법선을 기준으로 문·창 배치
 - 닫힌 평면 경계를 찾아 공간 지정
-- 공간은 면적값이 아니라 `공간 1`, `공간 2` 같은 안정적인 이름으로 식별하고, 면적은 계산된 보조정보로 표시합니다. 활성 층 아래 트리에서 공간을 선택·이름 변경할 수 있고 `미지정/강의실/사무실/복도/화장실/계단실/창고/공용공간/기계실/기타` 유형을 지정할 수 있습니다. 닫힘 실패 시 의심되는 미세 gap을 빨간 진단 overlay로 표시합니다.
+- 공간은 면적값이 아니라 `공간 1`, `공간 2` 같은 안정적인 이름으로 식별합니다. **도면 계산 면적**과 사용자가 입력하는 **관리 면적**은 별도 값으로 유지하며 geometry를 고쳐도 관리 면적을 자동 변경하지 않습니다. 활성 층 아래 트리에서 공간을 선택·이름 변경할 수 있고 `미지정/강의실/사무실/복도/화장실/계단실/창고/공용공간/기계실/기타` 유형을 지정할 수 있습니다. 공간 지정 도구에서는 hover한 닫힌 face를 반투명 preview로 보여주고, 닫힘 실패 시 의심되는 미세 gap을 빨간 진단 overlay로 표시합니다.
 - 선을 따라 움직이는 연결 치수
 - 화면의 길이·각도·폭 숫자를 더블클릭해 직접 입력
 - SNAP과 별개로 유지되는 Constraint(제약)
@@ -128,6 +131,10 @@ PieniPlan의 portable 프로젝트 파일 기본 확장자는 `.ppln`입니다. 
 
 직접 쓰기 권한이 있는 파일 핸들로 연 프로젝트는 `Ctrl/Cmd+S`에서 그 파일을 갱신합니다. 그 외의 프로젝트, 특히 Safari처럼 일반 로컬 파일 직접 쓰기를 제공하지 않는 환경에서는 **프로젝트 저장이 다운로드를 만들지 않고 browser-local project storage에 저장**됩니다. 다른 기기나 브라우저로 옮길 `.ppln` 파일이 필요할 때만 File 메뉴의 **프로젝트 파일 다운로드**를 사용합니다. Command의 단독 `S`는 저장 명령으로 사용하지 않으며 CAD 문법의 STRETCH 용도로 예약되어 있습니다.
 
+## FacilityManager 연동 면적 원칙
+
+PieniPlan은 공간 geometry에서 **도면 계산 면적**을 제공하지만, 이 값을 FacilityManager의 공식/관리 면적으로 자동 승격하지 않습니다. FacilityManager의 **관리 면적**은 시설대장·행정자료·사용자 확정값을 보존하는 별도 값이며 새 도면을 가져와도 자동 덮어쓰지 않습니다. PieniPlan 프로젝트에서 참고용 관리 면적을 입력할 수 있지만 geometry 변화와 분리됩니다. FACMAP v0.2.0은 이 책임 경계를 명시합니다.
+
 ## 간단한 사용법
 
 ### 빠른 평면도 만들기
@@ -135,7 +142,7 @@ PieniPlan의 portable 프로젝트 파일 기본 확장자는 `.ppln`입니다. 
 1. 시작 화면에서 **빠른 평면도**를 선택합니다.
 2. 왼쪽 **그리기**에서 `선` 또는 `곡선`을 선택합니다. `L` 명령도 같은 Plan 선을 만듭니다.
 3. **요소 → 문**을 누르면 여닫이문·양개문·미닫이문 등 필요한 문 종류를 선택할 수 있습니다.
-4. 객체를 선택하면 나타나는 핸들을 끌어 위치·크기·곡률을 조절합니다. 문은 가운데 점으로 위치를 옮기고, 문 몸체를 host 선의 수직/평행 방향으로 끌어 열림/경첩 방향을 뒤집을 수 있습니다.
+4. 객체를 선택하면 나타나는 핸들을 끌어 위치·크기·곡률을 조절합니다. 문은 문틀/개구부 전체를 잡아 host 선을 따라 위치 이동하고, 문짝/개폐호 stroke 근처에서만 열림/경첩 방향 gesture를 사용합니다.
 5. 표시되는 길이·각도·폭 숫자를 더블클릭하면 정확한 값을 직접 입력할 수 있습니다.
 6. **선택 → 제약**으로 일치·수평·수직·평행·직각·각도·길이·위치 고정을 적용합니다. 거리 확인도 **선택 → 거리**에서 사용합니다.
 7. 선으로 둘러싸인 곳은 **요소 → 공간 지정**으로 공간 객체를 만듭니다.
@@ -190,7 +197,7 @@ PieniPlan의 portable 프로젝트 파일 기본 확장자는 `.ppln`입니다. 
 - `F7` — GRID
 - `F8` — ORTHO
 - `F10` — POLAR
-- `Shift` — **Plan Mode:** 기존 선 끝점 편집 시 현재 각도를 유지한 채 길이만 변경. 기존 선에서 새 선을 이을 때는 그 선 기준 45° 단위, 독립 새 선은 기준축 기준 45° 단위로 각도 스냅. **CAD Mode:** ORTHO 상태 임시 반전
+- `Shift` — **Plan Mode:** GLOBAL 45° + 연결선 기준 REF 45° 기하 후보를 동시에 사용. 선 전체 이동은 GLOBAL 수평/수직 + 연결선 평행/수직 축으로 제한. TR/EX 명령 반전에는 사용하지 않음. **CAD Mode:** ORTHO 상태 임시 반전
 - `Enter` — 진행 중 단계 확정 / 빈 Command에서 마지막 명령 반복
 - `Ctrl/Cmd + S` — 프로젝트 저장 (자동 다운로드 아님)
 
@@ -250,9 +257,30 @@ python3 -m http.server 8000
 PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
 
 
+## Build 22 — CAD Region working set & CAD TR preview
+
+- CAD geometry is kept as one source model. Floor-linked references store Region/view state rather than copying the DXF geometry per floor.
+- CAD Mode can work in **Full drawing** or a specific Drawing Region. A Region working set is cached and reused for rendering, selection/hit-test, snap filtering, layer counts and TR/EX cutter candidates.
+- Switching from Plan to CAD automatically activates the current Floor's linked Region. Use **Full drawing** to return to the complete CAD.
+- Plan semantic geometry is hidden in CAD by default. **Plan overlay** is optional and limited to the Floor associated with the current CAD Region.
+- Plan Mode renders only the active Floor's linked CAD reference; linked references for other floors no longer participate in normal rendering.
+- Internal floor-linked CAD views are not repeated in CAD's external Reference list.
+- CAD `TR` now previews the exact segment to be removed in red before click, matching Plan Mode's destructive-preview principle.
+
+## Build 21 — Command, constraint & semantic workflow refinement
+
+- TR/EX command activation is now state-machine based: typed command, active execution command and last-command repeat are separate states. Switching `TR → EX` or `EX → TR` clears the previous transient operation before the next click.
+- Plan Shift is geometry-only: GLOBAL/REF 45° candidates are combined for drawing/endpoints, and whole-line movement can lock to global horizontal/vertical or connected-line parallel/perpendicular axes.
+- EX attaches only to the exact intersected boundary and does not perform a nearby-wall reattachment pass. Stale automatic dependents at the extended endpoint are detached conservatively.
+- Space Designation has a floating mode HUD and hover face preview.
+- Door frame/opening span is the move zone; leaf/arc strokes are direction-gesture zones; swing-sector interior is selection-only.
+- Added Fire Door / Fire Shutter semantic elements without claiming a legal-standard symbol.
+- Space drawing area and managed area are separated, matching FACMAP v0.2.0 / FacilityManager ownership.
+- Recent edit operations are retained in a compact 100-entry debug log inside `.ppln` for reproducible editing diagnostics.
+
 ## Build 20 — Space boundary & management refinement
 
 - Space detection treats geometric Plan-line crossings as virtual topology nodes without turning them into persistent editing junctions.
 - Open-boundary diagnostics ignore endpoints that already touch another boundary and can be dismissed from a floating control or with Esc.
-- Floor space trees are collapsible. Each Space has a compact action menu for rename, type, manual display area / calculated area, and delete.
-- Manual area is stored separately from drawing-calculated area, so scanned/legacy facility records can preserve an official area without distorting geometry.
+- Floor space trees are collapsible. Each Space has a compact action menu for rename, type, managed area / calculated drawing area, and delete.
+- Managed/reference area is stored separately from drawing-calculated area, so scanned/legacy facility records can coexist without distorting geometry or silently redefining FacilityManager official area.

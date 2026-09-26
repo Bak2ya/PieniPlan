@@ -707,3 +707,11 @@ html, body { overscroll-behavior:none; }
 .space-gap-notice-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .space-gap-clear { flex:none; min-height:25px; border:1px solid color-mix(in srgb,var(--danger) 42%,var(--border)); border-radius:5px; background:transparent; color:var(--danger); padding:3px 7px; cursor:pointer; font-size:9px; }
 .space-gap-clear:hover { background:color-mix(in srgb,var(--danger) 11%,transparent); }
+
+/* Build 22: CAD region working-set controls */
+.cad-scope-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 7px; border:1px solid var(--border); border-radius:7px; background:color-mix(in srgb,var(--surface-2) 72%,transparent); }
+.cad-scope-copy { min-width:0; display:flex; align-items:baseline; gap:6px; font-size:9.5px; color:var(--text-2); }
+.cad-scope-copy strong { color:var(--text); font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-scope-actions { display:flex; gap:5px; flex:0 0 auto; }
+.cad-scope-actions .mini-action.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+.region-row.compact.active-scope { box-shadow:inset 2px 0 0 var(--accent); }
