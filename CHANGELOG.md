@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.13.2 · Build 16 — 2026-09-26
+
+- Plan Mode의 얇은 semantic wall 중심선이 접합점에서 실제 endpoint보다 반 두께만큼 더 그려지던 시각적 overlap을 제거했습니다. 화면에 보이는 선 끝과 실제 wall geometry/selection handle이 일치합니다.
+- Plan wall hit-test가 semantic wall thickness까지 선택 범위로 사용하던 문제를 수정해, 보이는 중심선 기준의 일정한 화면 픽셀 tolerance로 선택합니다. 두꺼운 wall 데이터 때문에 멀리 떨어진 위치에서 다른 벽이 잡히는 현상을 줄였습니다.
+- pointer 좌표를 canvas CSS 좌표로 변환할 때 실제 `getBoundingClientRect()`와 backing-canvas CSS 크기의 비율을 보정하고, Canvas host에 `ResizeObserver`를 추가했습니다. Retina/browser zoom/inspector·context 레이아웃 변화 후에도 render/hit/snap 좌표가 같은 변환을 사용합니다.
+- Architectural cleanup 마지막에 exact endpoint junction pass를 추가해 가까운 L/T terminal endpoint를 실제 line-line intersection으로 한 번 더 정규화합니다. Pure interior X crossing은 계속 자동 분절하지 않습니다.
+- 연결된 wall 여부 판단은 같은 Floor의 wall만 사용하도록 제한해 다른 층 semantic geometry가 Plan join 표현에 영향을 주지 않게 했습니다.
+- Build 10~12 회귀와 Build 16 coordinate/selection/junction smoke를 통과했습니다. 실제 창의관 fresh recognition에서 남는 인식 누락/접합 품질은 계속 실기 비교가 필요합니다.
+- DEV/GitHub ZIP 생성 시 디렉터리 `755`, 일반 파일 `644` 권한을 명시해 macOS Finder에서 하위 폴더가 권한 오류로 열리지 않던 패키징 회귀를 방지합니다.
+
 ## v0.13.1 · Build 15 — 2026-09-26
 
 - **DXF 내보내기 저장 UX**를 수정했습니다. `showSaveFilePicker`를 지원하는 브라우저에서는 운영체제의 Save As 창으로 위치와 파일명을 직접 선택하고, 미지원 브라우저에서는 PieniPlan 자체 filename dialog에서 이름을 먼저 확인한 뒤 브라우저 다운로드 위치를 사용한다는 점을 명확히 안내합니다. 전체 DXF와 Drawing Region DXF가 같은 흐름을 사용합니다.

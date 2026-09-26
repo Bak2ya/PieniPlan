@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.13.1';
-  const BUILD = 15;
+  const VERSION = '0.13.2';
+  const BUILD = 16;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -736,9 +736,26 @@
     return { x: state.camera.cx + (p.x - w / 2) / state.camera.zoom, y: state.camera.cy - (p.y - h / 2) / state.camera.zoom };
   }
 
-  function fromPointerEvent(e) {
+  function canvasPointerMetrics() {
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const { w, h } = cssCanvasSize();
+    return {
+      rect, w, h,
+      scaleX: rect.width > 0 ? w / rect.width : 1,
+      scaleY: rect.height > 0 ? h / rect.height : 1
+    };
+  }
+
+  function clientToCanvasCss(clientX, clientY) {
+    const m = canvasPointerMetrics();
+    return {
+      x: (clientX - m.rect.left) * m.scaleX,
+      y: (clientY - m.rect.top) * m.scaleY
+    };
+  }
+
+  function fromPointerEvent(e) {
+    return clientToCanvasCss(e.clientX, e.clientY);
   }
 
   function referenceLocalToWorld(ref, p) { return { x: ref.origin.x + p.x * ref.scale, y: ref.origin.y + p.y * ref.scale }; }
@@ -747,14 +764,28 @@
   function resizeCanvas() {
     const r = host.getBoundingClientRect();
     const dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.width = Math.max(1, Math.round(r.width * dpr));
-    canvas.height = Math.max(1, Math.round(r.height * dpr));
-    canvas.style.width = `${r.width}px`;
-    canvas.style.height = `${r.height}px`;
+    const pixelW = Math.max(1, Math.round(r.width * dpr));
+    const pixelH = Math.max(1, Math.round(r.height * dpr));
+    const changed = canvas.width !== pixelW || canvas.height !== pixelH || Number(canvas.dataset.dpr || 0) !== dpr;
+    if (changed) {
+      canvas.width = pixelW;
+      canvas.height = pixelH;
+      canvas.dataset.dpr = String(dpr);
+    }
+    // CSS owns the visual size. Keeping it at 100% avoids stale explicit pixel sizes
+    // when the inspector/context layout changes without a window resize.
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    canvas.dataset.dpr = String(dpr);
     render();
   }
+
+  let canvasResizeRaf = 0;
+  const canvasResizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+    cancelAnimationFrame(canvasResizeRaf);
+    canvasResizeRaf = requestAnimationFrame(resizeCanvas);
+  }) : null;
+  canvasResizeObserver?.observe(host);
 
   function render() {
     const { w, h } = cssCanvasSize();
@@ -921,6 +952,7 @@
     const tol = Math.max(2, (wall.thickness || 150) * .12);
     for (const other of state.objects) {
       if (other === wall || other.type !== 'wall') continue;
+      if (wall.floorId && other.floorId && wall.floorId !== other.floorId) continue;
       if (distance(p, other.a) <= tol || distance(p, other.b) <= tol) return true;
       const pr = wallProjectPoint(p, other);
       if (pr.distance <= tol && pr.t > .001 && pr.t < .999) return true;
@@ -956,12 +988,12 @@
     return merged;
   }
 
-  function wallVisibleSegments(wall) {
+  function wallVisibleSegments(wall,{extendConnectedEnds=true}={}) {
     const gaps=wallOpeningIntervals(wall),spans=[];let t0=0;
     for(const[ga,gb]of gaps){if(ga>t0)spans.push([t0,ga]);t0=Math.max(t0,gb);}if(t0<1)spans.push([t0,1]);
     if(isArcWall(wall))return spans.map(([a,b])=>({kind:'arc',t0:a,t1:b}));
     const v=wallVector(wall),h=(wall.thickness||150)/2;
-    return spans.map(([a,b])=>{let p1=wallPointAt(wall,a),p2=wallPointAt(wall,b);if(a<=1e-9&&wallEndpointConnected(wall,'a'))p1={x:p1.x-v.ux*h,y:p1.y-v.uy*h};if(b>=1-1e-9&&wallEndpointConnected(wall,'b'))p2={x:p2.x+v.ux*h,y:p2.y+v.uy*h};return{kind:'line',a:p1,b:p2,t0:a,t1:b};});
+    return spans.map(([a,b])=>{let p1=wallPointAt(wall,a),p2=wallPointAt(wall,b);if(extendConnectedEnds&&a<=1e-9&&wallEndpointConnected(wall,'a'))p1={x:p1.x-v.ux*h,y:p1.y-v.uy*h};if(extendConnectedEnds&&b>=1-1e-9&&wallEndpointConnected(wall,'b'))p2={x:p2.x+v.ux*h,y:p2.y+v.uy*h};return{kind:'line',a:p1,b:p2,t0:a,t1:b};});
   }
   function dimensionGeometry(obj) {
     if(obj.wallId){const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const p1=wallPointAt(wall,Number.isFinite(obj.t1)?obj.t1:0),p2=wallPointAt(wall,Number.isFinite(obj.t2)?obj.t2:1),v={x:p2.x-p1.x,y:p2.y-p1.y};const len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len,off=Number(obj.offset)||0;return{p1,p2,d1:{x:p1.x+nx*off,y:p1.y+ny*off},d2:{x:p2.x+nx*off,y:p2.y+ny*off},nx,ny,len,offset:off,associated:true,wall};}}
@@ -1001,7 +1033,7 @@
     const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
     const styles=getComputedStyle(document.documentElement),stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
     ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=selected?3:preview||hovered?2.6:2.2;ctx.lineCap='round';ctx.lineJoin='round';
-    for(const seg of wallVisibleSegments(obj)){
+    for(const seg of wallVisibleSegments(obj,{extendConnectedEnds:false})){
       if(seg.kind==='line'){const a=toScreenCss(seg.a),b=toScreenCss(seg.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
       else{const steps=Math.max(4,Math.ceil(Math.abs(obj.sweep)*(seg.t1-seg.t0)/7));ctx.beginPath();for(let i=0;i<=steps;i++){const p=toScreenCss(wallPointAt(obj,seg.t0+(seg.t1-seg.t0)*i/steps));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();}
     }
@@ -1287,7 +1319,7 @@
   function constrainOrtho(start,p){return constrainTracking(start,p);}
 
   function hitHandle(p,obj){const tol=9/state.camera.zoom;if(!obj)return null;if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){if(distance(p,obj.a)<=tol)return'a';if(distance(p,obj.b)<=tol)return'b';if(obj.type==='wall'&&isArcWall(obj)&&distance(p,arcControlPoint(obj))<=tol)return'arcControl';}if(obj.type==='door'||obj.type==='window'){const g=openingGeometry(obj);if(g){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';if(distance(p,g.center)<=tol)return'center';}}if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(!g.associated){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';}const c={x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2};if(distance(p,c)<=tol)return'offset';}}return null;}
-  function objectBodyDistance(p,o){if(o.type==='door'){const g=openingGeometry(o);if(!g)return Infinity;const type=o.doorType||'hingedSingle';if(type.startsWith('hinged')){const d=doorGeometry(o);return d?Math.min(pointSegmentDistance(p,g.p1,g.p2),pointSegmentDistance(p,d.hinge,d.leafEnd)):pointSegmentDistance(p,g.p1,g.p2);}return pointSegmentDistance(p,g.p1,g.p2);}if(o.type==='window'){const g=openingGeometry(o);return g?pointSegmentDistance(p,g.p1,g.p2):Infinity;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?pointSegmentDistance(p,g.d1,g.d2):Infinity;}if(o.type==='space')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='stair')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='cadCircle')return Math.abs(distance(p,o.center)-o.radius);if(o.type==='cadArc')return projectPointToCadArc(p,o).distance;if(o.type==='wall'&&isArcWall(o))return Math.max(0,wallProjectPoint(p,o).distance-(o.thickness||150)/2);if(o.a&&o.b){let d=pointSegmentDistance(p,o.a,o.b);if(o.type==='wall')d=Math.max(0,d-(o.thickness||150)/2);return d;}return Infinity;}
+  function objectBodyDistance(p,o){if(o.type==='door'){const g=openingGeometry(o);if(!g)return Infinity;const type=o.doorType||'hingedSingle';if(type.startsWith('hinged')){const d=doorGeometry(o);return d?Math.min(pointSegmentDistance(p,g.p1,g.p2),pointSegmentDistance(p,d.hinge,d.leafEnd)):pointSegmentDistance(p,g.p1,g.p2);}return pointSegmentDistance(p,g.p1,g.p2);}if(o.type==='window'){const g=openingGeometry(o);return g?pointSegmentDistance(p,g.p1,g.p2):Infinity;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?pointSegmentDistance(p,g.d1,g.d2):Infinity;}if(o.type==='space')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='stair')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='cadCircle')return Math.abs(distance(p,o.center)-o.radius);if(o.type==='cadArc')return projectPointToCadArc(p,o).distance;if(o.type==='wall'&&isArcWall(o)){const d=wallProjectPoint(p,o).distance;return state.toolset==='plan'?d:Math.max(0,d-(o.thickness||150)/2);}if(o.a&&o.b){let d=pointSegmentDistance(p,o.a,o.b);if(o.type==='wall'&&state.toolset!=='plan')d=Math.max(0,d-(o.thickness||150)/2);return d;}return Infinity;}
   function hitObject(p){const tolerance=9/state.camera.zoom;let best=null,bestD=Infinity,spaceHit=null,objects=state.toolset==='plan'?getPlanObjects():state.objects;for(let i=objects.length-1;i>=0;i--){const o=objects[i];if(state.toolset==='cad'&&o.type!=='space'&&(isCadObject(o)||isSemanticObject(o)||o.type==='line')&&!cadLayerVisible(cadLayerForObject(o)))continue;if(o.type==='space'){if(!spaceHit&&objectBodyDistance(p,o)===0)spaceHit=o;continue;}const d=objectBodyDistance(p,o);if(d<tolerance&&d<bestD){best=o;bestD=d;}}return best||spaceHit;}
   function pointSegmentDistance(p,a,b){return projectPointToSegment(p,a,b).distance;}
 
@@ -1695,6 +1727,35 @@
     }
     return out.filter(w=>w.geometry==='arc'||distance(w.a,w.b)>=250);
   }
+  // Final endpoint pass: Plan Mode renders semantic wall centerlines exactly to their model endpoints,
+  // so L/T joins must share the real line-line intersection instead of merely landing near a host wall.
+  // Pure interior X crossings remain untouched.
+  function normalizeArchitecturalJunctionEndpoints(walls){
+    const out=walls.map(w=>w.geometry==='arc'?w:{...w,a:{...w.a},b:{...w.b}}),straight=out.filter(w=>w.geometry!=='arc');
+    for(let pass=0;pass<2;pass++){
+      let changed=false;
+      for(const w of straight)for(const ep of ['a','b']){
+        const p=w[ep],wa=lineAxis(w);let best=null,bestMove=Infinity;
+        for(const other of straight){
+          if(other===w)continue;const oa=lineAxis(other),angle=angleDiff180(wa.angle,oa.angle);if(angle<12)continue;
+          const hit=infiniteLineIntersection(w.a,w.b,other.a,other.b);if(!hit)continue;
+          const th=Math.max(w.thickness||150,other.thickness||150),tol=Math.max(85,Math.min(280,th*1.18)),move=distance(p,hit.point);if(move>tol||move>=bestMove)continue;
+          const otherLen=Math.max(1,distance(other.a,other.b)),pad=Math.min(.12,tol/otherLen);
+          // The other wall must actually reach this junction (or miss it only by the same small endpoint tolerance).
+          if(hit.u < -pad || hit.u > 1+pad)continue;
+          // Do not turn an interior/interior X crossing into a junction. This pass moves only a terminal endpoint.
+          const selfLen=Math.max(1,distance(w.a,w.b)),selfPad=Math.min(.12,tol/selfLen);
+          if(ep==='a'&&hit.t>selfPad)continue;
+          if(ep==='b'&&hit.t<1-selfPad)continue;
+          best={point:hit.point};bestMove=move;
+        }
+        if(best&&bestMove>.25){w[ep]={...best.point};changed=true;}
+      }
+      if(!changed)break;
+    }
+    return out.filter(w=>w.geometry==='arc'||distance(w.a,w.b)>=250);
+  }
+
   function healArchitecturalEndpointGaps(walls){
     const out=walls.map(w=>w.geometry==='arc'?w:{...w,a:{...w.a},b:{...w.b}}),straight=out.filter(w=>w.geometry!=='arc');
     for(let pass=0;pass<3;pass++){
@@ -1711,7 +1772,7 @@
     return out.filter(w=>w.geometry==='arc'||distance(w.a,w.b)>=250);
   }
   function cleanupArchitecturalWallTopology(walls,sourceLines=[]){
-    const recovered=recoverArchitecturalWallEdgeExtensions(walls,sourceLines),cornered=snapArchitecturalWallCorners(recovered),connected=snapArchitecturalEndpointsToWalls(cornered),junctioned=solveArchitecturalWallJunctions(connected),runs=mergeCollinearArchitecturalRuns(junctioned),trimmed=trimArchitecturalWallOverruns(runs),healed=healArchitecturalEndpointGaps(trimmed),merged=mergeCollinearArchitecturalRuns(healed),resnapped=snapArchitecturalEndpointsToWalls(merged),finalized=solveArchitecturalWallJunctions(resnapped),finalTrim=trimArchitecturalWallOverruns(finalized);return finalTrim.filter(w=>w.geometry==='arc'||distance(w.a,w.b)>=250);
+    const recovered=recoverArchitecturalWallEdgeExtensions(walls,sourceLines),cornered=snapArchitecturalWallCorners(recovered),connected=snapArchitecturalEndpointsToWalls(cornered),junctioned=solveArchitecturalWallJunctions(connected),runs=mergeCollinearArchitecturalRuns(junctioned),trimmed=trimArchitecturalWallOverruns(runs),healed=healArchitecturalEndpointGaps(trimmed),merged=mergeCollinearArchitecturalRuns(healed),resnapped=snapArchitecturalEndpointsToWalls(merged),finalized=solveArchitecturalWallJunctions(resnapped),finalTrim=trimArchitecturalWallOverruns(finalized),exact=normalizeArchitecturalJunctionEndpoints(finalTrim),cleanEnd=trimArchitecturalWallOverruns(exact);return cleanEnd.filter(w=>w.geometry==='arc'||distance(w.a,w.b)>=250);
   }
 
   function arcAnglesComparable(a,b){return Math.sign(a.sweep||1)===Math.sign(b.sweep||1)&&Math.abs(angleDelta(a.startAngle||0,b.startAngle||0))<=9&&Math.abs(Math.abs(a.sweep||0)-Math.abs(b.sweep||0))<=16;}
@@ -2217,7 +2278,7 @@
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();if(!e.target.closest('.floor-action-menu')&&!e.target.closest('.floor-row .mini-action'))closeFloorActionMenu();});
 
   applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');applyShortcutMetadata(dom.polarToggle,'polar','tooltip.polar');
-  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,downloadProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,applyTrimExtendAtPoint,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addFloor,renderPlanFloorPanel,getPlanObjects,detectClosedWallFaces,getLinkedCadRenderCache,runCommand,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,cleanupArchitecturalWallTopology,detectSegmentedDoorCandidates,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
+  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,downloadProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,applyTrimExtendAtPoint,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addFloor,renderPlanFloorPanel,getPlanObjects,detectClosedWallFaces,getLinkedCadRenderCache,runCommand,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
 
   dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.confirmBackdrop.hidden=true;if(dom.exportSaveBackdrop)dom.exportSaveBackdrop.hidden=true;dom.commandBar.hidden=false;i18n.apply(document);state.browserSavedMeta=readBrowserSavedMeta();state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();if(dom.aboutVersion)dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;if(dom.startVersion)dom.startVersion.textContent=`PieniPlan v${VERSION} · Build ${BUILD}`;setCommandStatus(t('command.ready'));updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();

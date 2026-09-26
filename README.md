@@ -20,16 +20,16 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 
 - 건물을 **층(Floor)** 단위로 분리해 관리하며 각 층은 안정적인 내부 ID를 가집니다. Drawing Region 이름이 `6F`, `６Ｆ`, `6층`, `지하 2층`처럼 명확하면 처음 연결할 때 층 이름을 자동으로 이어받습니다.
 - 오른쪽 패널은 **층 / 팔레트 / 속성**으로 구성됩니다.
-- Plan Mode의 벽은 실제 semantic 두께 데이터와 별개로 화면에서는 일정한 선 굵기로 읽기 쉽게 표시합니다.
+- Plan Mode의 벽은 실제 semantic 두께 데이터와 별개로 화면에서는 일정한 선 굵기로 읽기 쉽게 표시합니다. **화면에 보이는 중심선은 실제 semantic endpoint에서 정확히 끝나며**, 선택 판정도 이 보이는 중심선을 기준으로 일정한 화면 픽셀 허용범위를 사용합니다.
 - 계단은 복잡한 CAD 디딤판 선을 그대로 반복 렌더링하지 않고 의미 객체로 단순화해 표시합니다.
 - CAD Drawing Region은 Plan Floor와 **1:1로 연결**합니다. 다른 층의 Region을 열거나 재인식해도 기존 Floor에 결과를 섞지 않고 대응 Floor를 재사용하거나 새로 만듭니다.
 - 기존 프로젝트에서 한 Floor에 여러 Region의 자동 인식 결과가 섞여 있으면, 명확한 층 이름과 `sourceRegionId`를 기준으로 로드 시 보수적으로 Floor를 분리·복구합니다.
 - **재인식은 현재 CAD Region의 자동 인식 레이어를 현재 선택 옵션으로 다시 생성**합니다. 체크를 끈 Wall/Door/Space/Stair의 기존 자동 인식 객체는 제거되며, 사용자가 직접 만든 객체와 인식 후 수동 수정한 객체는 보호합니다.
-- 벽 인식 후에는 **Junction Solver + endpoint gap healing**이 L/T 접합을 실제 교점까지 정규화하고, 작은 collinear gap/근접 endpoint를 제한적으로 연결하며, 의미 없는 짧은 overrun tail을 Trim합니다. 단순 X crossing은 host wall을 불필요하게 쪼개지 않습니다.
+- 벽 인식 후에는 **Junction Solver + endpoint gap healing + final exact endpoint pass**가 L/T 접합을 실제 교점까지 정규화하고, 작은 collinear gap/근접 endpoint를 제한적으로 연결하며, 의미 없는 짧은 overrun tail을 Trim합니다. 단순 X crossing은 host wall을 불필요하게 쪼개지 않습니다.
 - 확실한 벽의 한쪽 제도선이 짧게 더 이어진 경우 기존 벽 축/두께를 이용해 누락 구간을 제한적으로 복원합니다.
 - 실제 DXF `ARC`가 없어도 짧은 LINE chain이 90° 전후의 문 여닫이 호로 설명되면 보수적으로 Door candidate로 복원합니다.
 - 층의 `…` 메뉴는 앱 내부 메뉴로 열리며, 이름 변경은 inline 편집, 삭제는 별도 확인 흐름으로 처리합니다.
-- Plan 렌더링/선택은 현재 층의 Plan 객체를 캐시해 처리하고, 연결된 CAD 참조는 정적 Path cache를 재사용해 대형 원본 DXF의 반복 순회를 줄입니다.
+- Plan 렌더링/선택은 현재 층의 Plan 객체를 캐시해 처리하고, 연결된 CAD 참조는 정적 Path cache를 재사용해 대형 원본 DXF의 반복 순회를 줄입니다. Canvas resize/Retina/browser zoom에서도 렌더 좌표와 pointer 좌표가 같은 변환을 사용하도록 보정합니다.
 - Plan Mode의 드래그 Window/Crossing 다중 선택은 현재 층의 의미 객체를 대상으로 동작합니다.
 - 왼쪽 도구막대는 선택/그리기/건축/수정/측정 그룹으로 압축되며, 버튼을 누르면 마지막 사용 도구를 다시 실행하고 길게 누르기·우클릭·모서리 표시로 그룹을 펼칩니다.
 - Plan Mode에서도 `L`, `TR`, `EX`, `E`, `DI`, Undo/Redo 같은 익숙한 명령을 사용할 수 있습니다. 이 명령은 원본 DXF가 아니라 현재 층의 Plan 객체를 편집합니다.
