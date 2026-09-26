@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.15.0 · Build 18 — 2026-09-26
+
+- Build 17의 persistent junction을 **Endpoint↔Endpoint node**와 **Endpoint↔Segment Point-on-Edge constraint**로 분리했습니다. 중간 접합은 host의 저장된 `t` 비율에 매달리지 않고, host가 이동·연장·축소·회전할 때 branch의 기존 방향을 가능한 한 유지하는 새 교점을 계산합니다. pure interior X crossing은 계속 자동 연결하지 않습니다.
+- Plan Mode `TR`에 destructive preview를 추가했습니다. hover한 위치에서 실제 삭제될 segment만 빨간색·굵은 반투명 overlay로 표시하고 cut point를 함께 보여준 뒤 클릭 시 확정합니다. `Esc`는 취소하며 Shift로 임시 Extend를 사용하는 동안에는 빨간 삭제 preview를 숨깁니다.
+- Plan tool rail을 **선택 / 그리기 / 요소 / 수정** 4그룹으로 정리했습니다. `거리(DI)`는 선택으로 이동했고, 수정 그룹은 `이동(M) / 복사(CO) / 잘라내기(TR) / 연장(EX) / 삭제(E)`를 포함합니다.
+- Plan Mode에서 배경 CAD/reference 스냅을 기본 비활성으로 바꿨습니다. `Ctrl`을 누르는 동안에만 reference endpoint/midpoint/intersection을 스냅 후보로 허용하고 별도 `REF` marker로 구분합니다. `Shift`는 기존 각도 제약 역할을 유지하며 `Ctrl+Shift` 조합도 지원합니다. macOS의 Ctrl-click context menu는 해당 편집 gesture 중 억제합니다.
+- Move/Copy는 Plan semantic 객체에 직접 적용되며 Copy는 recognition ownership metadata를 제거해 새 user-created 객체로 취급합니다. Door/Window copy는 host 위 center 이동 문법을 사용합니다.
+- Build 18 smoke에서 4-group rail, M/CO/DI command routing, Point-on-Edge 방향 보존/비율 비고정, TR preview interval, Ctrl-only reference midpoint/intersection snap을 검증했습니다. Build 10/11은 원본 회귀 PASS, Build 12/14/15/16/17은 이후 제품 계약에 의해 폐기된 Version/Plan primitive/rail 기대값만 갱신한 supersession-aware 회귀에서 나머지 기능이 PASS했습니다. JS syntax와 EN/KO key parity도 확인했습니다.
+- 실제 대형 창의관 CAD에서 Ctrl을 누른 상태의 dense reference intersection 후보 성능과 Point-on-Edge 연쇄 제약 감각은 실사용 확인이 계속 필요합니다.
+
 ## v0.14.0 · Build 17 — 2026-09-26
 
 - Plan Mode의 사용자 모델을 `Line`과 `Wall` 두 종류에서 **하나의 semantic `선` 경계 모델**로 통합했습니다. `L` 명령과 왼쪽 선 도구가 같은 Plan boundary를 생성하며, 기존 room/opening/topology/DXF 호환을 위해 내부 저장은 wall-compatible semantic object를 사용합니다. 구형 Plan `type: line` 객체는 로드 시 semantic boundary로 보수적으로 마이그레이션합니다.
