@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/pieniplan-logo-github.png" width="144" alt="PieniPlan icon">
+</p>
+
 # PieniPlan
 
 **Small Web Floor Plan Editor**
@@ -6,6 +10,7 @@
 
 - **바로 실행:** https://bak2ya.github.io/PieniPlan/
 - **GitHub:** https://github.com/Bak2ya/PieniPlan
+- **GitHub Social Preview asset:** `assets/pieniplan-social-preview.png` (repository Settings에서 수동 지정)
 
 PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표를 공유하는 도면**을 지향합니다.
 
@@ -19,7 +24,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 ### Plan Mode · 층별 평면
 
 - 건물을 **층(Floor)** 단위로 분리해 관리하며 각 층은 안정적인 내부 ID를 가집니다. Drawing Region 이름이 `6F`, `６Ｆ`, `6층`, `지하 2층`처럼 명확하면 처음 연결할 때 층 이름을 자동으로 이어받습니다.
-- 오른쪽 패널은 **층 / 참조 도면 / 속성**으로 구성됩니다. `참조 도면`에서는 현재 층에 연결된 CAD Region의 표시/숨김, 불투명도, 레이어 표시를 제어할 수 있습니다.
+- 오른쪽 패널은 **층 / 참조 도면 / 속성**으로 구성됩니다. 각 층 바로 아래에는 그 층의 CAD/이미지/DXF 밑그림이 붙어서 보이며 **눈 + 불투명도 슬라이더 + 숫자 % 입력**으로 각 층마다 독립 제어합니다. Plan의 `참조 도면` 탭은 파일/기준 치수 같은 상세 관리에 집중하고 DXF 레이어 목록은 CAD Mode에서 관리합니다.
 - Plan Mode에서는 사용자에게 `선`과 `벽`을 따로 나누지 않습니다. `L` 명령과 왼쪽 **선** 도구는 같은 semantic 평면 경계선을 만들고, 내부적으로 필요한 두께·공간 경계·문/창 host 속성은 그 선의 속성으로 유지합니다. 화면에 보이는 선은 실제 endpoint에서 정확히 끝나며, 선택 판정도 보이는 선을 기준으로 일정한 화면 픽셀 허용범위를 사용합니다.
 - 계단은 복잡한 CAD 디딤판 선을 그대로 반복 렌더링하지 않고 의미 객체로 단순화해 표시합니다.
 - CAD Drawing Region은 Plan Floor와 **1:1로 연결**합니다. 다른 층의 Region을 열거나 재인식해도 기존 Floor에 결과를 섞지 않고 대응 Floor를 재사용하거나 새로 만듭니다.
@@ -73,7 +78,6 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 
 ### CAD Mode
 
-- **Build 27 Plan performance / Layer UI repair:** Plan과 CAD snap index를 분리하고, CAD segment는 policy를 통과한 후보만 intersection 계산에 참여합니다. Plan drag는 104k CAD index/working-set을 매 frame 재생성하지 않으며 raw CAD underlay도 cache된 render path를 사용합니다. CAD Layer inspector는 글자/행/hit area를 키우고 lock/lock-open/pencil/trash를 같은 local outline icon 계열로 통일했습니다. Build26 CAD Core 기능 범위는 그대로 유지합니다.
 - **Build 26 CAD Core foundation:** CAD 객체는 하나의 Context 정책에서 render / inspect / select / snap / modify 권한을 분리합니다. Plan Overlay와 외부 Reference는 CAD source와 같은 수정 대상으로 취급하지 않으며, locked layer 객체도 보거나 선택할 수는 있지만 수정은 차단합니다.
 - 실제 **CAD Layer 정의**를 지원합니다. 빈 레이어 생성, 이름 변경, 안전한 삭제, current layer, lock/unlock, 선택 객체의 레이어 재지정이 가능하며, 기존 `전체 도면 AND Region-local` 표시 상태는 별도 visibility 정책으로 유지됩니다.
 - CAD 속성에서 **Metric / Imperial** 표시 체계를 선택할 수 있습니다. 내부 geometry는 mm 기준을 유지하고 길이 입력/표시는 UnitService에서 변환합니다. 초기 기본값은 한국어 + Metric입니다.
@@ -325,3 +329,13 @@ PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합
 - Open-boundary diagnostics ignore endpoints that already touch another boundary and can be dismissed from a floating control or with Esc.
 - Floor space trees are collapsible. Each Space has a compact action menu for rename, type, managed area / calculated drawing area, and delete.
 - Managed/reference area is stored separately from drawing-calculated area, so scanned/legacy facility records can coexist without distorting geometry or silently redefining FacilityManager official area.
+
+
+### v0.23.0 · Build 28
+
+- Applied the final PieniPlan blueprint icon to the app header, start screen, About, favicon/PWA assets and GitHub README.
+- Moved Plan reference visibility/opacity controls directly under each Floor; opacity supports slider + numeric percent and is independent per placement.
+- Plan Reference no longer exposes DXF layer checklists; detailed layer work stays in CAD Mode.
+- Added **Known dimension** calibration: use a selected straight Plan segment or pick two reference points, enter the real length, and optionally scale the current Floor together with the image/DXF underlay while keeping the first point fixed.
+- External references imported from Plan Mode are placed on the active Floor; legacy project-level references remain compatible.
+- PDF tracing is planned to use the same placement/calibration model, but this build intentionally exposes only DXF/image import until a real PDF renderer is integrated.

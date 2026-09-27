@@ -1,4 +1,4 @@
-PieniPlan v0.22.1 · Build 27 — DEV SOURCE
+PieniPlan v0.23.0 · Build 28 — DEV SOURCE
 
 빠른 실행
 - GitHub Pages: https://bak2ya.github.io/PieniPlan/
@@ -18,8 +18,8 @@ GitHub에 공개할 때
 - `_AI_NOT_GITHUB/00_READ_FIRST_AI.md`부터 숫자 순서대로 읽습니다.
 
 현재 기준
-- Release Version: v0.22.1
-- App Build: 27
+- Release Version: v0.23.0
+- App Build: 28
 - Master: v2.4.0 · Build 15
 - 내부 작업 단위: mm
 - 좁은 모바일 폭: Viewer only
@@ -31,13 +31,11 @@ GitHub에 공개할 때
 - FACMAP: v0.2.0. PieniPlan은 도면 계산 면적을, FacilityManager는 관리/공식 면적을 소유한다.
 - Re-recognition: selected CAD auto-recognition layer rebuild; unchecked auto types removed, user/manual edits preserved
 - Start screen: current Version · Build visible on the last line
+- Plan references: each Floor owns quick visibility + opacity controls; detailed DXF layer visibility is managed in CAD Mode
+- Known dimension: image/DXF reference calibration can optionally scale the current Floor together, anchored at the first calibration point
+- Branding: final blueprint PieniPlan icon is used in app/start/About/favicon/PWA/README; GitHub social preview asset is included
+- PDF reference rendering remains planned; Build 28 intentionally does not advertise/select PDF until a renderer is integrated
 
-
-Build 27 핵심
-- Build26 사용자 실기에서 확인된 Plan Mode performance regression을 수정했다. Plan/CAD snap index를 분리하고 CAD intersection 후보를 policy 적용 후 계산하며, Plan drag는 dense CAD index/working-set을 매 frame 재생성하지 않는다.
-- Plan raw CAD underlay는 cache된 geometry/viewport bitmap 경로를 사용해 Plan redraw마다 104k CAD object를 개별 순회/그리기하지 않는다.
-- CAD Layer inspector의 font/row/hit target을 키우고 lock/lock-open/pencil/trash를 같은 local Tabler-style outline icon 계열로 통일했다. `L`/`·` 임시 표기는 제거했다.
-- Build26 CAD Core 기능/데이터 의미는 그대로 유지하는 PATCH다. BUILD27 smoke 59/59, core 5/5, JS syntax, synthetic 104k performance harness PASS. 실제 Safari/사용자 프로젝트 재검증은 남아 있다.
 
 Build 26 핵심
 - Astra A1의 Command Registry/Session/typed-input foundation을 Build25 실제 코드에 통합하고, native transaction은 history recorder가 없으면 fail-closed하도록 강화했다. Persistent commit과 transient finalize를 분리하고 U/REDO의 session 재진입 ownership을 정리했다.

@@ -1,13 +1,19 @@
 # Changelog
 
+## v0.23.0 · Build 28 — 2026-09-27
+- Reworked Plan reference information architecture: every Floor now shows its linked CAD/DXF/image placements directly underneath with visibility, opacity slider and editable percentage. Per-placement opacity/visibility remains independent across Floors.
+- Removed duplicate DXF layer checklists from Plan References. Linked CAD underlays now follow the authoritative CAD Full-drawing AND Region-local layer visibility; layer editing stays in CAD Mode.
+- Added **Known dimension** uniform calibration for image/DXF tracing. Use a selected straight Plan segment or pick two reference points, enter the actual length, and optionally scale the current Floor Plan together around the first point. Other Floors and `managedAreaM2` are protected.
+- Calibration Undo now restores reference transform through lightweight reference-view history without duplicating large DXF entity arrays into every history entry.
+- Applied the approved PieniPlan blueprint icon to app header, start screen, About, favicon, Apple touch/PWA icons and GitHub README; added a 1280×640 GitHub Social Preview asset.
+- PDF tracing remains a planned use of the same placement/calibration architecture, but Build28 does not expose PDF import until an actual renderer is integrated.
+- Preserved Build27 Plan/CAD snap isolation and large-DXF underlay caching. Verification: Build28 smoke **64/64 PASS**, core **5/5 PASS**, JS syntax PASS, EN/KO parity **570/570**, synthetic 104k performance check PASS. Actual Safari/real-project UX validation remains user-device work.
+
 ## v0.22.1 · Build 27 — 2026-09-27
-- Fixed the Build26 Plan-mode performance regression on projects that also contain very large CAD sources. Plan and CAD now keep separate snap indexes, and CAD snap candidates are policy-filtered before segment-intersection pairing.
-- Plan pointer editing no longer rebuilds the dense CAD snap index or invalidates the CAD working-set cache on every drag frame. Plan-space refreshes use the active-floor Plan set instead of scanning the full mixed object array.
-- Added a cached Plan CAD-underlay render path so an unlinked raw CAD background is not re-walked object-by-object on every Plan redraw. The underlying CAD geometry remains single-source.
-- Synthetic 104k-CAD + 24-Plan-wall regression check: Build26 measured ~536 ms average Plan drag step in the same harness; Build27 measured ~21 ms including the first full-history snapshot, with ~15.8 ms steady drag average. Plan nearest-snap dropped from ~2.75 ms to ~0.11 ms average. These are synthetic Chromium measurements, not a claim about Safari device performance.
-- Enlarged the CAD Layer inspector’s type, row height and action hit targets. Replaced temporary `L` / `·` lock state and text-like rename/delete glyphs with local monochrome Tabler-style lock/lock-open/pencil/trash icons.
-- Preserved Build26 CAD Context/Selection/Layer/Unit/native-LINE contracts and the existing global AND Region-local layer visibility behavior. No new CAD command or status-bar product grammar is introduced in this patch.
-- Verification: Build27 smoke **59/59 PASS**, Build26 command/context/unit core **5/5 PASS**, JS syntax PASS, and the 104k synthetic Plan/CAD performance regression harness completes. Actual Safari + the user's real 104k project remains the final runtime validation step.
+- Fixed the Build26 Plan Mode performance regression without undoing the CAD 104k gains: Plan and CAD now keep separate snap indexes, and CAD intersection work applies Context eligibility before pairwise intersection calculation.
+- Prevented Plan pointer/drag paths from rebuilding or scanning dense CAD working sets every frame. Linked raw-CAD underlays reuse cached geometry/viewport rendering instead of repeatedly walking the full source drawing.
+- Enlarged CAD Layer inspector typography, row height and hit targets. Replaced temporary `L` / `·` / glyph actions with consistent local Tabler-style eye/lock/lock-open/pencil/trash outline icons; long layer names ellipsize without pushing action controls.
+- Added Plan-vs-massive-CAD snap regression coverage and kept CAD policy-before-intersection coverage. Build27 smoke **58/58 PASS**, command/context/unit core **5/5 PASS**, JS syntax PASS and synthetic 104k performance harness PASS. Actual Safari/user-project validation remained required.
 
 ## v0.22.0 · Build 26 — 2026-09-27
 - Integrated the accepted Astra A1 command foundation into the Build25 application instead of treating A1 as an all-or-nothing patch. Command Registry/Session/typed-input parsing are adopted; transaction/session ownership was hardened before native command expansion.

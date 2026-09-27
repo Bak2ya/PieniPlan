@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#17191d" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+  <meta name="application-name" content="PieniPlan" />
   <title>PieniPlan</title>
   <script>try{const t=localStorage.getItem('pieniplan-theme');if(t==='light'||t==='dark'||t==='black')document.documentElement.dataset.theme=t;}catch(_){}</script>
   <link rel="stylesheet" href="styles.css" />
@@ -14,7 +18,7 @@
     <header class="topbar">
       <div class="topbar-zone topbar-left">
         <button id="homeBtn" class="brand-home" aria-label="Home" data-i18n-aria="action.home" data-tooltip-title-key="action.home" data-tooltip-key="tooltip.home">
-          <span class="pieni-logo" aria-hidden="true">P</span>
+          <img class="pieni-logo pieni-logo-image" src="assets/pieniplan-icon-64.png" alt="" aria-hidden="true" />
           <span class="brand-name">PieniPlan</span>
         </button>
         <div class="toolset-switch" role="group" aria-label="Mode" data-i18n-aria="aria.toolset">
@@ -38,7 +42,7 @@
 
       <input id="projectFileInput" type="file" accept=".ppln,.pieniplan,application/json" hidden />
       <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
-      <input id="referenceFileInput" type="file" accept=".dxf,image/*,.pdf" hidden />
+      <input id="referenceFileInput" type="file" accept=".dxf,image/*" hidden />
       <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
     </header>
 
@@ -161,7 +165,7 @@
   <section id="startScreen" class="start-screen" aria-labelledby="startTitle">
     <button id="startAppearanceBtn" class="toolbar-button start-appearance-button" data-i18n="action.appearance">Appearance</button>
     <div class="start-panel">
-      <div class="start-brand">PieniPlan</div>
+      <div class="start-brand"><img class="start-brand-logo" src="assets/pieniplan-icon-192.png" alt="" aria-hidden="true" /><span>PieniPlan</span></div>
       <div class="start-subtitle">Small Web Floor Plan Editor</div>
       <h1 id="startTitle" data-i18n="start.title">One drawing. Choose the tools you need.</h1>
       <p class="start-intro" data-i18n="start.intro">Both paths use the same real-world coordinates and can end as the same DXF. You can switch tools later without starting over.</p>
@@ -245,6 +249,13 @@
       <div class="dialog-copy" id="dialogCopy"></div>
       <label class="field-label" for="dialogInput" data-i18n="dialog.actualDistance">Actual distance (mm)</label>
       <input id="dialogInput" class="text-input" type="number" step="0.01" min="0.0001" />
+      <label id="dialogScaleFloorRow" class="calibration-scope-option" hidden>
+        <input id="dialogScaleFloor" type="checkbox" />
+        <span>
+          <strong data-i18n="dialog.scaleCurrentFloor">Scale current floor together</strong>
+          <small data-i18n="dialog.scaleCurrentFloorCopy">Keep the traced Plan geometry aligned with the reference.</small>
+        </span>
+      </label>
       <div class="dialog-actions">
         <button id="dialogCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
         <button id="dialogApplyBtn" class="toolbar-button primary" data-i18n="action.applyScale">Apply scale</button>
@@ -354,7 +365,7 @@
     <div class="dialog about-dialog" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
       <div class="dialog-header-row"><div class="dialog-title" id="aboutTitle" data-i18n="about.title">About</div><button id="aboutCloseBtn" class="icon-button" aria-label="Close">×</button></div>
       <div class="about-content">
-        <div class="about-logo pieni-logo" aria-hidden="true">P</div>
+        <img class="about-logo pieni-logo-image" src="assets/pieniplan-icon-192.png" alt="" aria-hidden="true" />
         <h2>PieniPlan</h2>
         <p>Small Web Floor Plan Editor</p>
         <div id="aboutVersion" class="about-version"></div>

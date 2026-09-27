@@ -215,14 +215,15 @@ button:disabled { opacity:.42; cursor:default; }
 .cad-region-manager { display:grid; grid-template-rows:auto minmax(0,1fr); }
 .cad-section-header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:30px; padding:4px 6px; border-bottom:1px solid var(--border); background:color-mix(in srgb,var(--surface-2) 72%,transparent); }
 .cad-region-list { min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-gutter:stable; padding:2px 3px; }
-.app-shell.cad-tools #primaryList .cad-layer-row { min-height:28px; height:28px; border-color:transparent; border-radius:4px; background:transparent; padding:2px 4px; gap:5px; }
+.app-shell.cad-tools #primaryList .cad-layer-row { min-height:34px; height:34px; border-color:transparent; border-radius:5px; background:transparent; padding:3px 5px; gap:6px; }
 .app-shell.cad-tools #primaryList .cad-layer-row:hover { background:var(--surface-2); }
 .app-shell.cad-tools #primaryList .cad-layer-row.selected { background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 30%,transparent); }
-.cad-layer-row .eye-button { width:22px; height:22px; }
+.cad-layer-row .eye-button { width:28px; height:28px; }
+.cad-layer-row .eye-button .ui-icon { width:16px; height:16px; }
 .cad-layer-row .row-main { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:7px; }
-.cad-layer-row .row-title { font-size:10px; line-height:1; }
-.cad-layer-row .row-meta { margin-top:0; font-size:8.5px; line-height:1; text-align:right; }
-.cad-layer-row .layer-active { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.cad-layer-row .row-title { font-size:11.5px; line-height:1.15; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-layer-row .row-meta { margin-top:0; font-size:9.5px; line-height:1.15; text-align:right; min-width:3.4em; }
+.cad-layer-row .layer-active { width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
 .canvas-number-editor { position:absolute; z-index:45; height:28px; min-width:92px; border:1px solid var(--accent); border-radius:6px; background:var(--surface); color:var(--text); padding:0 7px; box-shadow:0 8px 18px rgba(0,0,0,.24),0 0 0 2px var(--accent-soft); font-size:11px; text-align:center; outline:none; }
 
 .list-row { border:1px solid var(--border); border-radius:7px; background:var(--surface-2); min-height:38px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; padding:6px 7px; }
@@ -268,7 +269,8 @@ button:disabled { opacity:.42; cursor:default; }
 
 .start-screen { position:fixed; inset:0; z-index:300; display:grid; place-items:center; padding:28px; background:radial-gradient(circle at 50% 25%, color-mix(in srgb,var(--surface-3) 60%,transparent), transparent 58%), var(--bg); }
 .start-panel { width:min(880px,100%); }
-.start-brand { text-align:center; font-size:24px; font-weight:760; letter-spacing:.01em; }
+.start-brand { display:flex; align-items:center; justify-content:center; gap:10px; text-align:center; font-size:24px; font-weight:760; letter-spacing:.01em; }
+.start-brand-logo { width:46px; height:46px; object-fit:contain; flex:0 0 auto; }
 .start-subtitle { text-align:center; margin-top:5px; color:var(--text-3); font-size:11px; }
 .start-panel h1 { margin:32px 0 8px; text-align:center; font-size:25px; line-height:1.2; letter-spacing:-.015em; }
 .start-intro { max-width:650px; margin:0 auto 24px; text-align:center; color:var(--text-2); font-size:12.5px; line-height:1.65; }
@@ -521,7 +523,8 @@ button:disabled { opacity:.42; cursor:default; }
 .topbar-right { justify-self:end; }
 .brand-home { display:flex; align-items:center; gap:7px; border:0; background:transparent; color:var(--text); padding:4px 6px; border-radius:7px; cursor:pointer; }
 .brand-home:hover { background:var(--surface-2); }
-.pieni-logo { width:26px; height:26px; border-radius:7px; display:grid; place-items:center; font-weight:800; font-size:13px; background:var(--text); color:var(--surface); letter-spacing:-.04em; }
+.pieni-logo { width:26px; height:26px; border-radius:7px; display:block; flex:0 0 auto; }
+.pieni-logo-image { object-fit:cover; background:transparent; }
 .brand-home .brand-name { font-size:14px; }
 .topbar-document { justify-self:center; display:flex; align-items:center; min-width:0; max-width:min(36vw,520px); gap:7px; }
 .document-title { font-size:12px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -556,7 +559,7 @@ button:disabled { opacity:.42; cursor:default; }
 .help-shortcuts td:first-child { width:180px; color:var(--text); }
 .about-dialog { width:min(430px,calc(100vw - 32px)); }
 .about-content { text-align:center; padding:12px 4px 6px; }
-.about-logo { width:54px; height:54px; margin:0 auto 12px; border-radius:13px; font-size:24px; }
+.about-logo { width:64px; height:64px; margin:0 auto 12px; border-radius:15px; object-fit:cover; }
 .about-content h2 { margin:0; font-size:20px; }
 .about-content p { margin:5px 0; color:var(--text-2); font-size:12px; }
 .about-version { margin:12px 0 16px; color:var(--text-3); font-size:11px; }
@@ -573,8 +576,24 @@ button:disabled { opacity:.42; cursor:default; }
 .palette-item { min-height:62px; border:1px solid var(--border); background:var(--surface-2); border-radius:8px; color:var(--text); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:10px; }
 .palette-item:hover { border-color:var(--border-strong); background:var(--surface-3); }
 .palette-item .ui-icon { width:18px; height:18px; }
-.floor-reference-section { margin:2px 10px 10px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
-.plan-reference-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.floor-reference-list { display:grid; gap:5px; margin:4px 0 3px 28px; }
+.floor-reference-placement { display:grid; grid-template-columns:26px minmax(0,1fr) auto; grid-template-rows:auto auto; gap:5px 7px; align-items:center; min-height:55px; padding:6px 7px; border-left:2px solid color-mix(in srgb,var(--plan-accent) 34%,transparent); border-radius:6px; background:color-mix(in srgb,var(--surface-2) 88%,transparent); }
+.floor-reference-placement.selected { background:var(--plan-soft); }
+.floor-reference-placement > .eye-button { grid-column:1; grid-row:1 / span 2; align-self:center; }
+.floor-reference-main { grid-column:2; grid-row:1; min-width:0; border:0; background:transparent; color:inherit; padding:0; text-align:left; cursor:pointer; display:flex; align-items:baseline; gap:5px; }
+.floor-reference-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; font-weight:600; }
+.floor-reference-type { color:var(--text-3); font-size:9px; flex:0 0 auto; }
+.floor-reference-opacity { grid-column:2 / 4; grid-row:2; min-width:0; display:grid; grid-template-columns:minmax(72px,1fr) 42px 10px; gap:5px; align-items:center; }
+.floor-reference-opacity input[type=range] { width:100%; min-width:0; }
+.floor-reference-opacity-number { width:42px; height:25px; border:1px solid var(--border); border-radius:5px; background:var(--surface-1); color:var(--text); font:inherit; font-size:10px; text-align:right; padding:0 4px; font-variant-numeric:tabular-nums; }
+.floor-reference-opacity > span { color:var(--text-3); font-size:9.5px; }
+.floor-reference-actions { grid-column:3; grid-row:1; display:flex; gap:4px; justify-content:flex-end; }
+.calibration-scope-option { display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px; align-items:start; margin-top:10px; padding:9px; border:1px solid var(--border); border-radius:7px; background:var(--surface-2); cursor:pointer; }
+.calibration-scope-option input { margin-top:2px; }
+.calibration-scope-option span { display:grid; gap:2px; }
+.calibration-scope-option strong { font-size:11px; font-weight:650; }
+.calibration-scope-option small { color:var(--text-3); font-size:9.5px; line-height:1.4; }
+
 .icon-settings { --icon-url:url('vendor/tabler/settings.svg'); }
 .icon-folder { --icon-url:url('vendor/tabler/folder.svg'); }
 .icon-viewport { --icon-url:url('vendor/tabler/viewport.svg'); }
@@ -713,8 +732,8 @@ html, body { overscroll-behavior:none; }
 
 /* Build 22: CAD region working-set controls */
 .cad-scope-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 7px; border:1px solid var(--border); border-radius:7px; background:color-mix(in srgb,var(--surface-2) 72%,transparent); }
-.cad-scope-copy { min-width:0; display:flex; align-items:baseline; gap:6px; font-size:9.5px; color:var(--text-2); }
-.cad-scope-copy strong { color:var(--text); font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-scope-copy { min-width:0; display:flex; align-items:baseline; gap:6px; font-size:10.5px; color:var(--text-2); }
+.cad-scope-copy strong { color:var(--text); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cad-scope-actions { display:flex; gap:5px; flex:0 0 auto; }
 .cad-scope-actions .mini-action.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
 .region-row.compact.active-scope { box-shadow:inset 2px 0 0 var(--accent); }
@@ -726,10 +745,10 @@ html, body { overscroll-behavior:none; }
 .cad-scope-host[hidden] { display:none !important; }
 .cad-scope-card { display:grid; gap:5px; padding:8px 9px; border:1px solid var(--border); border-radius:8px; background:color-mix(in srgb,var(--surface-2) 72%,transparent); }
 .cad-scope-top { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:8px; min-width:0; }
-.cad-scope-label { color:var(--text-2); font-size:9.5px; font-weight:650; white-space:nowrap; }
-.cad-scope-select { width:100%; min-width:0; height:28px; border:1px solid var(--border-strong); border-radius:6px; background:var(--surface); color:var(--text); padding:0 7px; font-size:10px; outline:none; }
+.cad-scope-label { color:var(--text-2); font-size:10.5px; font-weight:650; white-space:nowrap; }
+.cad-scope-select { width:100%; min-width:0; height:32px; border:1px solid var(--border-strong); border-radius:6px; background:var(--surface); color:var(--text); padding:0 8px; font-size:11px; outline:none; }
 .cad-scope-select:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
-.cad-scope-meta { color:var(--text-3); font-size:8.8px; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-scope-meta { color:var(--text-3); font-size:9.8px; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .app-shell.plan-tools .cad-scope-host { display:none !important; }
 
 /* The layer filter is its own row. Scope is no longer squeezed beside it. */
@@ -771,7 +790,7 @@ html, body { overscroll-behavior:none; }
 .cad-layer-manager { grid-template-rows:auto minmax(0,1fr); }
 .cad-layer-section-header { min-height:38px; }
 .cad-layer-heading-wrap { min-width:0; display:grid; gap:2px; }
-.cad-layer-scope-note { color:var(--text-3); font-size:8.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-layer-scope-note { color:var(--text-3); font-size:9.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cad-layers-all-on { flex:none; }
 .cad-layer-row.inherited-off { opacity:.52; }
 .cad-layer-row.inherited-off .eye-button { cursor:not-allowed; }
@@ -852,44 +871,15 @@ html, body { overscroll-behavior:none; }
 .canvas-hud #statusUnits { min-width:18px; }
 
 /* Build 26 P1 — real CAD layer definition controls. */
-.cad-layer-header-actions { display:flex; align-items:center; gap:5px; flex:none; }
+.cad-layer-header-actions { display:flex; align-items:center; gap:6px; flex:none; }
+.app-shell.cad-tools .cad-section-header .section-heading { font-size:11.5px; }
+.app-shell.cad-tools .cad-layer-header-actions .mini-action { height:28px; padding:0 8px; font-size:10px; }
+.app-shell.cad-tools .layer-search { height:32px; font-size:11.5px; padding:0 10px; }
 .cad-layer-row .row-main { min-width:0; }
-.cad-layer-row-actions { display:flex; align-items:center; gap:2px; flex:none; }
-.cad-layer-compact-action { width:20px; height:20px; min-width:20px; padding:0; border:0; border-radius:4px; background:transparent; color:var(--text-3); font:600 10px/20px system-ui; text-align:center; }
+.cad-layer-row-actions { display:flex; align-items:center; gap:3px; flex:none; }
+.cad-layer-compact-action { width:26px; height:26px; min-width:26px; padding:0; border:0; border-radius:5px; background:transparent; color:var(--text-3); display:grid; place-items:center; cursor:pointer; }
+.cad-layer-compact-action .ui-icon { width:15px; height:15px; }
 .cad-layer-compact-action:hover:not(:disabled) { background:var(--surface-3); color:var(--text-1); }
 .cad-layer-compact-action.active { color:var(--accent); background:var(--accent-soft); }
 .cad-layer-compact-action:disabled { opacity:.25; cursor:default; }
-.cad-layer-name-input { width:100%; min-width:0; height:22px; border:1px solid var(--accent); border-radius:4px; background:var(--surface-1); color:var(--text-1); font:500 10px system-ui; padding:2px 5px; outline:none; }
-
-
-/* Build 27 — Plan/CAD snap isolation and readable CAD layer controls. */
-@media (min-width:901px) {
-  .app-shell.cad-tools .workspace { grid-template-columns:54px minmax(0,1fr) 306px; }
-}
-.app-shell.cad-tools .inspector-tab { font-size:11.5px; }
-.app-shell.cad-tools .cad-scope-host { padding:9px 11px 0; }
-.app-shell.cad-tools .cad-scope-card { gap:6px; padding:9px 10px; }
-.app-shell.cad-tools .cad-scope-label { font-size:10.5px; }
-.app-shell.cad-tools .cad-scope-select { height:32px; font-size:11.5px; padding-inline:8px; }
-.app-shell.cad-tools .cad-scope-meta { font-size:9.6px; }
-.app-shell.cad-tools .layer-search { height:32px; font-size:11.5px; padding-inline:9px; }
-.app-shell.cad-tools .cad-layer-section-header { min-height:42px; padding:5px 7px; }
-.app-shell.cad-tools .cad-layer-heading-wrap { gap:3px; }
-.app-shell.cad-tools .cad-layer-heading-wrap .section-heading,
-.app-shell.cad-tools .cad-region-manager .section-heading { font-size:11.5px; }
-.app-shell.cad-tools .cad-layer-scope-note { font-size:9.5px; }
-.app-shell.cad-tools .cad-layer-header-actions { gap:6px; }
-.app-shell.cad-tools .cad-layer-header-actions .mini-action,
-.app-shell.cad-tools .cad-region-manager .mini-action { height:28px; padding-inline:8px; font-size:10.5px; }
-.app-shell.cad-tools #primaryList .cad-layer-row { min-height:34px; height:34px; padding:3px 5px; gap:6px; }
-.app-shell.cad-tools .cad-layer-row .eye-button { width:26px; height:26px; }
-.app-shell.cad-tools .cad-layer-row .eye-button .ui-icon { font-size:15px; }
-.app-shell.cad-tools .cad-layer-row .row-main { gap:8px; }
-.app-shell.cad-tools .cad-layer-row .row-title { font-size:11.7px; line-height:1.1; }
-.app-shell.cad-tools .cad-layer-row .row-meta { font-size:9.8px; line-height:1.1; }
-.app-shell.cad-tools .cad-layer-row .layer-active { width:7px; height:7px; }
-.app-shell.cad-tools .cad-layer-row-actions { gap:3px; }
-.app-shell.cad-tools .cad-layer-compact-action { width:26px; height:26px; min-width:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border-radius:5px; font:inherit; }
-.app-shell.cad-tools .cad-layer-compact-action .ui-icon { font-size:14px; }
-.app-shell.cad-tools .cad-layer-name-input { height:26px; font-size:11.5px; padding:2px 6px; }
-.app-shell.cad-tools .cad-layer-row.filter-forced .row-title::after { font-size:9px; }
+.cad-layer-name-input { width:100%; min-width:0; height:28px; border:1px solid var(--accent); border-radius:5px; background:var(--surface-1); color:var(--text-1); font:500 11.5px system-ui; padding:3px 6px; outline:none; }
