@@ -73,6 +73,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 
 ### CAD Mode
 
+- **Build 27 Plan performance / Layer UI repair:** Plan과 CAD snap index를 분리하고, CAD segment는 policy를 통과한 후보만 intersection 계산에 참여합니다. Plan drag는 104k CAD index/working-set을 매 frame 재생성하지 않으며 raw CAD underlay도 cache된 render path를 사용합니다. CAD Layer inspector는 글자/행/hit area를 키우고 lock/lock-open/pencil/trash를 같은 local outline icon 계열로 통일했습니다. Build26 CAD Core 기능 범위는 그대로 유지합니다.
 - **Build 26 CAD Core foundation:** CAD 객체는 하나의 Context 정책에서 render / inspect / select / snap / modify 권한을 분리합니다. Plan Overlay와 외부 Reference는 CAD source와 같은 수정 대상으로 취급하지 않으며, locked layer 객체도 보거나 선택할 수는 있지만 수정은 차단합니다.
 - 실제 **CAD Layer 정의**를 지원합니다. 빈 레이어 생성, 이름 변경, 안전한 삭제, current layer, lock/unlock, 선택 객체의 레이어 재지정이 가능하며, 기존 `전체 도면 AND Region-local` 표시 상태는 별도 visibility 정책으로 유지됩니다.
 - CAD 속성에서 **Metric / Imperial** 표시 체계를 선택할 수 있습니다. 내부 geometry는 mm 기준을 유지하고 길이 입력/표시는 UnitService에서 변환합니다. 초기 기본값은 한국어 + Metric입니다.

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.22.1 · Build 27 — 2026-09-27
+- Fixed the Build26 Plan-mode performance regression on projects that also contain very large CAD sources. Plan and CAD now keep separate snap indexes, and CAD snap candidates are policy-filtered before segment-intersection pairing.
+- Plan pointer editing no longer rebuilds the dense CAD snap index or invalidates the CAD working-set cache on every drag frame. Plan-space refreshes use the active-floor Plan set instead of scanning the full mixed object array.
+- Added a cached Plan CAD-underlay render path so an unlinked raw CAD background is not re-walked object-by-object on every Plan redraw. The underlying CAD geometry remains single-source.
+- Synthetic 104k-CAD + 24-Plan-wall regression check: Build26 measured ~536 ms average Plan drag step in the same harness; Build27 measured ~21 ms including the first full-history snapshot, with ~15.8 ms steady drag average. Plan nearest-snap dropped from ~2.75 ms to ~0.11 ms average. These are synthetic Chromium measurements, not a claim about Safari device performance.
+- Enlarged the CAD Layer inspector’s type, row height and action hit targets. Replaced temporary `L` / `·` lock state and text-like rename/delete glyphs with local monochrome Tabler-style lock/lock-open/pencil/trash icons.
+- Preserved Build26 CAD Context/Selection/Layer/Unit/native-LINE contracts and the existing global AND Region-local layer visibility behavior. No new CAD command or status-bar product grammar is introduced in this patch.
+- Verification: Build27 smoke **59/59 PASS**, Build26 command/context/unit core **5/5 PASS**, JS syntax PASS, and the 104k synthetic Plan/CAD performance regression harness completes. Actual Safari + the user's real 104k project remains the final runtime validation step.
+
 ## v0.22.0 · Build 26 — 2026-09-27
 - Integrated the accepted Astra A1 command foundation into the Build25 application instead of treating A1 as an all-or-nothing patch. Command Registry/Session/typed-input parsing are adopted; transaction/session ownership was hardened before native command expansion.
 - Native transactions now fail closed when no history recorder exists. Persistent commit and transient finalization are separated, and U/REDO no longer depend on recursively cancelling the Session that is executing them.

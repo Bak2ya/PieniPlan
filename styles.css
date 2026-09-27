@@ -369,6 +369,9 @@ button:disabled { opacity:.42; cursor:default; }
 .icon-redo { --icon-url:url('vendor/tabler/redo.svg'); }
 .icon-eye { --icon-url:url('vendor/tabler/eye.svg'); }
 .icon-eye-off { --icon-url:url('vendor/tabler/eye-off.svg'); }
+.icon-lock { --icon-url:url('vendor/tabler/lock.svg'); }
+.icon-lock-open { --icon-url:url('vendor/tabler/lock-open.svg'); }
+.icon-trash { --icon-url:url('vendor/tabler/trash.svg'); }
 .icon-house { --icon-url:url('vendor/tabler/home.svg'); }
 .icon-pen-ruler { --icon-url:url('vendor/tabler/ruler-measure.svg'); }
 .icon-door { --icon-url:url('vendor/tabler/door.svg'); }
@@ -857,3 +860,36 @@ html, body { overscroll-behavior:none; }
 .cad-layer-compact-action.active { color:var(--accent); background:var(--accent-soft); }
 .cad-layer-compact-action:disabled { opacity:.25; cursor:default; }
 .cad-layer-name-input { width:100%; min-width:0; height:22px; border:1px solid var(--accent); border-radius:4px; background:var(--surface-1); color:var(--text-1); font:500 10px system-ui; padding:2px 5px; outline:none; }
+
+
+/* Build 27 — Plan/CAD snap isolation and readable CAD layer controls. */
+@media (min-width:901px) {
+  .app-shell.cad-tools .workspace { grid-template-columns:54px minmax(0,1fr) 306px; }
+}
+.app-shell.cad-tools .inspector-tab { font-size:11.5px; }
+.app-shell.cad-tools .cad-scope-host { padding:9px 11px 0; }
+.app-shell.cad-tools .cad-scope-card { gap:6px; padding:9px 10px; }
+.app-shell.cad-tools .cad-scope-label { font-size:10.5px; }
+.app-shell.cad-tools .cad-scope-select { height:32px; font-size:11.5px; padding-inline:8px; }
+.app-shell.cad-tools .cad-scope-meta { font-size:9.6px; }
+.app-shell.cad-tools .layer-search { height:32px; font-size:11.5px; padding-inline:9px; }
+.app-shell.cad-tools .cad-layer-section-header { min-height:42px; padding:5px 7px; }
+.app-shell.cad-tools .cad-layer-heading-wrap { gap:3px; }
+.app-shell.cad-tools .cad-layer-heading-wrap .section-heading,
+.app-shell.cad-tools .cad-region-manager .section-heading { font-size:11.5px; }
+.app-shell.cad-tools .cad-layer-scope-note { font-size:9.5px; }
+.app-shell.cad-tools .cad-layer-header-actions { gap:6px; }
+.app-shell.cad-tools .cad-layer-header-actions .mini-action,
+.app-shell.cad-tools .cad-region-manager .mini-action { height:28px; padding-inline:8px; font-size:10.5px; }
+.app-shell.cad-tools #primaryList .cad-layer-row { min-height:34px; height:34px; padding:3px 5px; gap:6px; }
+.app-shell.cad-tools .cad-layer-row .eye-button { width:26px; height:26px; }
+.app-shell.cad-tools .cad-layer-row .eye-button .ui-icon { font-size:15px; }
+.app-shell.cad-tools .cad-layer-row .row-main { gap:8px; }
+.app-shell.cad-tools .cad-layer-row .row-title { font-size:11.7px; line-height:1.1; }
+.app-shell.cad-tools .cad-layer-row .row-meta { font-size:9.8px; line-height:1.1; }
+.app-shell.cad-tools .cad-layer-row .layer-active { width:7px; height:7px; }
+.app-shell.cad-tools .cad-layer-row-actions { gap:3px; }
+.app-shell.cad-tools .cad-layer-compact-action { width:26px; height:26px; min-width:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border-radius:5px; font:inherit; }
+.app-shell.cad-tools .cad-layer-compact-action .ui-icon { font-size:14px; }
+.app-shell.cad-tools .cad-layer-name-input { height:26px; font-size:11.5px; padding:2px 6px; }
+.app-shell.cad-tools .cad-layer-row.filter-forced .row-title::after { font-size:9px; }

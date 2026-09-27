@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.22.0';
-  const BUILD = 26;
+  const VERSION = '0.22.1';
+  const BUILD = 27;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -234,7 +234,9 @@
     projectLocalKey: null,
     browserSavedMeta: null,
     dirty: false,
-    objectSnapIndex: null,
+    planSnapIndex: null,
+    planSnapIndexFloorId: null,
+    cadSnapIndex: null,
     snapIndicator: null,
     trimPreview: null,
     spaceGapDiagnostic: null,
@@ -310,6 +312,8 @@
   const commandConsole=commandConsoleModule.create({input:dom.commandInput,status:dom.commandStatus,history:dom.commandHistory,suggestions:dom.commandSuggestions,getPlanMode:()=>state.toolset==='plan',readyText:()=>t('command.ready')});
 
   const linkedCadRenderCache = new WeakMap();
+  let planCadUnderlayCache={revision:-1,key:null,layers:new Map()};
+  let planCadUnderlayBitmapCache={key:null,canvas:null};
   let planObjectCache = { revision:-1, count:-1, floorId:null, objects:[] };
   function getPlanObjects(){const revision=state.cadRenderRevision||0,count=state.objects.length,floorId=state.activeFloorId;if(planObjectCache.revision===revision&&planObjectCache.count===count&&planObjectCache.floorId===floorId)return planObjectCache.objects;const objects=state.objects.filter(o=>(isSemanticObject(o)||o.type==='line')&&objectOnActiveFloor(o));planObjectCache={revision,count,floorId,objects};return objects;}
 
@@ -498,7 +502,7 @@
   function showAppConfirm({title,copy,confirmLabel,onConfirm,danger=true}){state.confirmAction=typeof onConfirm==='function'?onConfirm:null;dom.confirmTitle.textContent=title;dom.confirmCopy.textContent=copy;dom.confirmApplyBtn.textContent=confirmLabel;dom.confirmApplyBtn.classList.toggle('danger',danger);dom.confirmBackdrop.hidden=false;dom.confirmApplyBtn.focus();}
   function hideAppConfirm(){dom.confirmBackdrop.hidden=true;state.confirmAction=null;}
   function deleteFloor(floor){ensureFloorModel();if(state.floors.length<=1){setCommandStatus(t('floor.keepOne'),'error');return;}showAppConfirm({title:t('floor.deleteTitle',{name:floor.name}),copy:t('floor.deleteConfirm',{name:floor.name}),confirmLabel:t('floor.deleteAction',{name:floor.name}),onConfirm:()=>{pushHistory();state.objects=state.objects.filter(o=>!o.floorId||o.floorId!==floor.id);state.floors=state.floors.filter(f=>f.id!==floor.id);state.expandedFloorIds.delete(floor.id);state.activeFloorId=state.floors[0].id;state.expandedFloorIds.add(state.activeFloorId);clearMultiSelection();markDirty(true);rebuildObjectSnapIndex();updateAll();}});}
-  function setActiveFloor(id){if(!state.floors.some(f=>f.id===id))return;state.activeFloorId=id;state.expandedFloorIds.add(id);clearSpaceGapDiagnostic({silent:true});clearMultiSelection();const f=activeFloor();if(f?.sourceRegionId){const r=state.drawingRegions.find(x=>x.id===f.sourceRegionId);if(r)fitBounds(r);}updateAll();}
+  function setActiveFloor(id){if(!state.floors.some(f=>f.id===id))return;state.activeFloorId=id;state.expandedFloorIds.add(id);clearSpaceGapDiagnostic({silent:true});clearMultiSelection();rebuildPlanSnapIndex();const f=activeFloor();if(f?.sourceRegionId){const r=state.drawingRegions.find(x=>x.id===f.sourceRegionId);if(r)fitBounds(r);}updateAll();}
 
   function positionAppearanceMenu(owner) {
     const menu = dom.appearanceMenu;
@@ -1191,9 +1195,35 @@
   function cadPointText(point,{precision=1}={}){return `${cadLengthText(point?.x??0,{precision})}, ${cadLengthText(point?.y??0,{precision})}`;}
 
 
+  function getPlanCadUnderlayCache(region){
+    const revision=state.cadRenderRevision||0,key=region?cadRegionCacheKey(region):'__full__',prev=planCadUnderlayCache;
+    if(prev&&prev.revision===revision&&prev.key===key)return prev;
+    const layers=new Map(),entry=layer=>{if(!layers.has(layer))layers.set(layer,{path:new Path2D(),texts:[]});return layers.get(layer);};
+    for(const obj of cadObjectsForRegion(region)){
+      if(!isCadObject(obj))continue;const layer=obj.cadLayer||'0',data=entry(layer),path=data.path;
+      if(obj.type==='cadLine'||obj.type==='line'){path.moveTo(obj.a.x,obj.a.y);path.lineTo(obj.b.x,obj.b.y);}
+      else if(obj.type==='cadCircle'){path.moveTo(obj.center.x+obj.radius,obj.center.y);path.arc(obj.center.x,obj.center.y,obj.radius,0,Math.PI*2);}
+      else if(obj.type==='cadArc'){const a0=rad(obj.startAngle||0),a1=rad((obj.startAngle||0)+(obj.sweep||0));path.moveTo(obj.center.x+Math.cos(a0)*obj.radius,obj.center.y+Math.sin(a0)*obj.radius);path.arc(obj.center.x,obj.center.y,obj.radius,a0,a1,(obj.sweep||0)<0);}
+      else if(obj.type==='cadText')data.texts.push({point:{...obj.point},text:obj.text||'',height:obj.height||180,rotation:obj.rotation||0});
+    }
+    planCadUnderlayCache={revision,key,layers};return planCadUnderlayCache;
+  }
+  function drawPlanCadUnderlay(region,color){
+    const cache=getPlanCadUnderlayCache(region),{w,h}=cssCanvasSize(),dpr=Math.max(1,window.devicePixelRatio||1),layerRevision=cadContextToken()?.layerRevision||0,regionKey=region?cadRegionCacheKey(region):'__full__';
+    const key=[cache.revision,regionKey,layerRevision,Math.round(state.camera.cx*1000)/1000,Math.round(state.camera.cy*1000)/1000,Math.round(state.camera.zoom*1e6)/1e6,Math.round(w*10)/10,Math.round(h*10)/10,dpr,color].join('|');
+    let bitmap=planCadUnderlayBitmapCache.canvas;
+    if(planCadUnderlayBitmapCache.key!==key||!bitmap){
+      bitmap=document.createElement('canvas');bitmap.width=Math.max(1,Math.round(w*dpr));bitmap.height=Math.max(1,Math.round(h*dpr));const bctx=bitmap.getContext('2d');bctx.setTransform(dpr,0,0,dpr,0,0);bctx.strokeStyle=color;bctx.fillStyle=color;
+      bctx.save();bctx.translate(w/2-state.camera.cx*state.camera.zoom,h/2+state.camera.cy*state.camera.zoom);bctx.scale(state.camera.zoom,-state.camera.zoom);bctx.lineWidth=1/Math.max(state.camera.zoom,.000001);for(const [layer,data] of cache.layers){if(!cadGlobalLayerVisible(layer))continue;bctx.stroke(data.path);}bctx.restore();
+      for(const [layer,data] of cache.layers){if(!cadGlobalLayerVisible(layer))continue;for(const e of data.texts){const rawFontPx=Math.max(1,(Number(e.height)||180)*state.camera.zoom);if(rawFontPx<2)continue;const fontPx=Math.max(8,rawFontPx),sp=toScreenCss(e.point);bctx.save();bctx.translate(sp.x,sp.y);bctx.rotate(-rad(Number(e.rotation)||0));bctx.font=`${Math.min(fontPx,900)}px system-ui`;bctx.fillStyle=color;bctx.textBaseline='alphabetic';bctx.fillText(e.text||'',0,0);bctx.restore();}}
+      planCadUnderlayBitmapCache={key,canvas:bitmap};
+    }
+    ctx.drawImage(bitmap,0,0,w,h);
+  }
+
   function drawPlanWorkspace() {
     const floor=activeFloor(),regionId=floor?.sourceRegionId||null,region=regionId?state.drawingRegions.find(r=>r.id===regionId)||null:null,linkedCadReference=state.references.find(r=>r.type==='linkedCadRegion'&&r.regionId===regionId),styles = getComputedStyle(document.documentElement),muted=styles.getPropertyValue('--cad-muted').trim(),line=styles.getPropertyValue('--line').trim(),wall=styles.getPropertyValue('--wall').trim(),dim=styles.getPropertyValue('--dimension').trim(),sel=styles.getPropertyValue('--selection').trim(),hover=styles.getPropertyValue('--hover').trim(),planObjects=getPlanObjects();
-    if(!linkedCadReference) for (const obj of cadObjectsForRegion(region)) {if (!isCadObject(obj)) continue;if (!cadGlobalLayerVisible(obj.cadLayer)) continue;const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id);drawCadObject(obj, selected ? sel : preview ? hover : muted, selected ? 2 : preview ? 1.8 : 1);}
+    if(!linkedCadReference)drawPlanCadUnderlay(region,muted);
     if(layerVisible('spaces')) for(const obj of planObjects) if(obj.type==='space') drawSpacePlan(obj);
     if(layerVisible('stairs')) for(const obj of planObjects) if(obj.type==='stair') drawStairPlan(obj);
     if(layerVisible('walls')) for(const obj of planObjects) if(obj.type==='wall') drawWallPlan(obj, isSelectedId(obj.id) ? sel : wall);
@@ -1308,7 +1338,7 @@
     return spans.map(([a,b])=>{let p1=wallPointAt(wall,a),p2=wallPointAt(wall,b);if(extendConnectedEnds&&a<=1e-9&&wallEndpointConnected(wall,'a'))p1={x:p1.x-v.ux*h,y:p1.y-v.uy*h};if(extendConnectedEnds&&b>=1-1e-9&&wallEndpointConnected(wall,'b'))p2={x:p2.x+v.ux*h,y:p2.y+v.uy*h};return{kind:'line',a:p1,b:p2,t0:a,t1:b};});
   }
   function dimensionGeometry(obj) {
-    if(obj.wallId){const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const p1=wallPointAt(wall,Number.isFinite(obj.t1)?obj.t1:0),p2=wallPointAt(wall,Number.isFinite(obj.t2)?obj.t2:1),v={x:p2.x-p1.x,y:p2.y-p1.y};const len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len,off=Number(obj.offset)||0;return{p1,p2,d1:{x:p1.x+nx*off,y:p1.y+ny*off},d2:{x:p2.x+nx*off,y:p2.y+ny*off},nx,ny,len,offset:off,associated:true,wall};}}
+    if(obj.wallId){const candidate=cadContext?.getById(obj.wallId)||state.objects.find(o=>o.id===obj.wallId),wall=candidate?.type==='wall'?candidate:null;if(wall){const p1=wallPointAt(wall,Number.isFinite(obj.t1)?obj.t1:0),p2=wallPointAt(wall,Number.isFinite(obj.t2)?obj.t2:1),v={x:p2.x-p1.x,y:p2.y-p1.y};const len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len,off=Number(obj.offset)||0;return{p1,p2,d1:{x:p1.x+nx*off,y:p1.y+ny*off},d2:{x:p2.x+nx*off,y:p2.y+ny*off},nx,ny,len,offset:off,associated:true,wall};}}
     if (obj.p1 && obj.p2) {
       const p1=obj.p1,p2=obj.p2, v={x:p2.x-p1.x,y:p2.y-p1.y};
       const len=Math.max(.000001,Math.hypot(v.x,v.y)), nx=-v.y/len,ny=v.x/len,off=Number(obj.offset)||0;
@@ -1509,7 +1539,7 @@
     input.addEventListener('input',()=>{if(key==='thickness'){const n=Number(input.value);if(Number.isFinite(n)&&n>0)state.toolSettings.wallThickness=n;}if(key==='width'){const n=Number(input.value);if(Number.isFinite(n)&&n>0){if(state.activeTool==='door')state.toolSettings.doorWidth=n;else if(state.activeTool==='window')state.toolSettings.windowWidth=n;}render();}});
     input.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&(state.activeTool==='line'||state.activeTool==='wall')&&state.drawStart){e.preventDefault();commitNumericSegment();}});wrap.append(lab,input,u);return wrap;}
 
-  function commitNumericSegment(){if(!state.drawStart)return;const lengthInput=document.querySelector('[data-context="length"]');const angleInput=document.querySelector('[data-context="angle"]');const explicitLength=String(lengthInput?.value||'').trim()!=='';const explicitAngle=String(angleInput?.value||'').trim()!=='';let len=Number(lengthInput?.value),ang=Number(angleInput?.value);if(!Number.isFinite(len)||len<=0)len=state.previewEnd?distance(state.drawStart,state.previewEnd):NaN;if(!Number.isFinite(ang))ang=state.previewEnd?angleDeg(state.drawStart,state.previewEnd):0;if(!Number.isFinite(len)||len<=0)return;const end={x:state.drawStart.x+Math.cos(rad(ang))*len,y:state.drawStart.y+Math.sin(rad(ang))*len};const obj=commitSegment(state.drawStart,end,state.activeTool);if(obj?.type==='wall'){const c=ensureWallConstraints(obj);if(explicitLength)c.fixedLength=len;if(explicitAngle)c.fixedAngle=angleDelta(ang,baseAxisAngle());enforceWallConstraints(obj);syncDependentsOfWall(obj.id);updateAll();}}
+  function commitNumericSegment(){if(!state.drawStart)return;const lengthInput=document.querySelector('[data-context="length"]');const angleInput=document.querySelector('[data-context="angle"]');const explicitLength=String(lengthInput?.value||'').trim()!=='';const explicitAngle=String(angleInput?.value||'').trim()!=='';let len=Number(lengthInput?.value),ang=Number(angleInput?.value);if(!Number.isFinite(len)||len<=0)len=state.previewEnd?distance(state.drawStart,state.previewEnd):NaN;if(!Number.isFinite(ang))ang=state.previewEnd?angleDeg(state.drawStart,state.previewEnd):0;if(!Number.isFinite(len)||len<=0)return;const end={x:state.drawStart.x+Math.cos(rad(ang))*len,y:state.drawStart.y+Math.sin(rad(ang))*len};const obj=commitSegment(state.drawStart,end,state.activeTool);if(obj?.type==='wall'){const c=ensureWallConstraints(obj);if(explicitLength)c.fixedLength=len;if(explicitAngle)c.fixedAngle=angleDelta(ang,baseAxisAngle());enforceWallConstraints(obj);syncDependentsOfWall(obj.id);refreshSpaces();updateAll();}}
 
   function categoryRepresentative(cat,catalog){const items=(catalog[cat.id]||[]).filter(x=>x.ready);if(!items.length)return null;const active=items.find(x=>x.id===state.activeTool);if(active){toolCategoryMemory[state.toolset][cat.id]=active.id;return active;}const remembered=items.find(x=>x.id===toolCategoryMemory[state.toolset][cat.id]);return remembered||items[0];}
   function activateRepresentative(item,category,button){if(!item?.ready)return;if(state.toolset==='plan'&&item.id==='constraint'){setTool('constraint',category);openPlanConstraintPalette(button);return;}if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);return;}setTool(item.id,category);}
@@ -1740,7 +1770,7 @@
     if(changed)for(const floor of state.floors||[])repairPersistentPlanJunctions(floor.id);
     return changed;
   }
-  function syncDependentsOfWall(parentId,visited=new Set()){if(visited.has(parentId))return;visited.add(parentId);const parent=state.objects.find(o=>o.id===parentId&&o.type==='wall');if(!parent)return;for(const wall of getPlanObjects()){if(wall.type!=='wall'||wall.id===parentId)continue;let changed=false;for(const endpoint of['a','b']){const att=wall.attachments?.[endpoint];if(att?.wallId===parentId){if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){wall[endpoint]={...parent[att.targetEndpoint]};att.t=att.targetEndpoint==='a'?0:1;}else solvePointOnEdgeAttachment(wall,endpoint,parent);changed=true;}}const c=ensureWallConstraints(wall);if(c.reference?.wallId===parentId){enforceWallConstraints(wall);changed=true;}if(changed)syncDependentsOfWall(wall.id,visited);}refreshSpaces();}
+  function syncDependentsOfWall(parentId,visited=new Set()){if(visited.has(parentId))return;visited.add(parentId);const candidate=cadContext?.getById(parentId)||state.objects.find(o=>o.id===parentId);const parent=candidate?.type==='wall'?candidate:null;if(!parent)return;for(const wall of getPlanObjects()){if(wall.type!=='wall'||wall.id===parentId)continue;let changed=false;for(const endpoint of['a','b']){const att=wall.attachments?.[endpoint];if(att?.wallId===parentId){if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){wall[endpoint]={...parent[att.targetEndpoint]};att.t=att.targetEndpoint==='a'?0:1;}else solvePointOnEdgeAttachment(wall,endpoint,parent);changed=true;}}const c=ensureWallConstraints(wall);if(c.reference?.wallId===parentId){enforceWallConstraints(wall);changed=true;}if(changed)syncDependentsOfWall(wall.id,visited);}}
 
   function detectClosedWallFaces(){
     const revision=state.cadRenderRevision||0,floorId=state.activeFloorId,cache=state.spaceFaceCache;
@@ -1768,11 +1798,11 @@
     const walls=getPlanObjects().filter(o=>o.type==='wall'),raw=[];for(const wall of walls)for(const endpoint of['a','b']){if(wall.attachments?.[endpoint])continue;if(endpointTouchesOtherBoundary(wall,endpoint,walls,touchTol))continue;const a=wall[endpoint];let best=null;for(const other of walls){if(other.id===wall.id)continue;const pr=wallProjectPoint(a,other),d=pr.distance;if(d<=touchTol||d>maxGap)continue;if(!best||d<best.distance)best={a:{...a},b:{...pr.point},distance:d,wallId:wall.id,otherWallId:other.id,endpoint,targetT:pr.t};}if(best){best.score=pointToSegmentDistance(p,best.a,best.b)*.08+best.distance;raw.push(best);}}
     const unique=[];for(const g of raw.sort((a,b)=>a.score-b.score)){if(unique.some(u=>(u.wallId===g.otherWallId&&u.otherWallId===g.wallId)||(distance(u.a,g.a)<touchTol&&distance(u.b,g.b)<touchTol)))continue;unique.push(g);if(unique.length>=limit)break;}return unique;
   }
-  function refreshSpaces(){const spaces=state.objects.filter(o=>o.type==='space');if(!spaces.length)return;const faces=detectClosedWallFaces();for(const space of spaces){const face=faces.find(f=>pointInPolygon(space.seed||polygonCentroid(space.polygon||[]),f.polygon));if(face){space.polygon=face.polygon.map(p=>({...p}));space.wallIds=[...face.wallIds];space.areaM2=face.area/1e6;space.invalid=false;}else space.invalid=true;}}
+  function refreshSpaces(){const spaces=getPlanObjects().filter(o=>o.type==='space');if(!spaces.length)return;const faces=detectClosedWallFaces();for(const space of spaces){const face=faces.find(f=>pointInPolygon(space.seed||polygonCentroid(space.polygon||[]),f.polygon));if(face){space.polygon=face.polygon.map(p=>({...p}));space.wallIds=[...face.wallIds];space.areaM2=face.area/1e6;space.invalid=false;}else space.invalid=true;}}
   function commitSpace(p){const face=faceAtPoint(p);if(!face){const candidates=findSpaceBoundaryGapCandidates(p);state.spaceGapDiagnostic={origin:{...p},candidates};setCommandStatus(candidates.length?t('space.openBoundaryDiagnostic',{count:candidates.length}):t('space.openBoundaryUnknown'),'error');render();return;}clearSpaceGapDiagnostic({silent:true});const existing=state.objects.find(o=>o.type==='space'&&objectOnActiveFloor(o)&&o.polygon?.length&&pointInPolygon(p,o.polygon));if(existing){state.spaceHoverPreview=null;selectOnly(existing.id);renderPrimaryPanel();renderProperties();render();return;}pushHistory();const floor=activeFloor(),obj={id:uid('space'),type:'space',layerId:'spaces',spaceUuid:makeStableUuid(),name:nextSpaceName(floor?.id),spaceType:'unspecified',floorId:floor?.id||state.activeFloorId,seed:{...p},polygon:face.polygon.map(q=>({...q})),wallIds:[...face.wallIds],areaM2:face.area/1e6,managedAreaM2:null,managedAreaSource:null,areaMode:'calculated',manualAreaM2:null,invalid:false};state.objects.push(obj);state.spaceHoverPreview=null;selectOnly(obj.id);markDirty(true);updateAll();}
   function commitOpening(kind,projection){if(!projection){alert(t('alert.noWallForOpening'));return;}pushHistory();const width=kind==='door'?state.toolSettings.doorWidth:state.toolSettings.windowWidth,obj={id:uid(kind),type:kind,layerId:kind==='door'?'doors':'windows',wallId:projection.wall.id,t:projection.t,width};if(kind==='door'){obj.doorType=state.toolSettings.doorType||'hingedSingle';obj.hinge='start';obj.swing=1;obj.swingSide=1;obj.slideDirection=1;if(obj.doorType==='fireDoor'){obj.elementKind='door';obj.fireProtection='fireDoor';obj.fireRating=null;}else if(obj.doorType==='fireShutter'){obj.elementKind='fireShutter';obj.fireProtection='fireShutter';obj.fireRating=null;}}state.objects.push(obj);state.selectedObjectId=obj.id;state.selectedObjectIds=new Set([obj.id]);markDirty(true);rebuildObjectSnapIndex();updateAll();}
-  function collectObjectSnapPoints(){
-    const pts=[];for(const o of state.objects){
+  function collectObjectSnapPoints(objects){
+    const pts=[];for(const o of objects||[]){
       if(o.center)pts.push({x:o.center.x,y:o.center.y,objectId:o.id,kind:'center'});
       if(o.type==='cadArc'){for(const t of[0,1]){const ap=cadArcPointAt(o,t);pts.push({...ap,objectId:o.id,kind:'endpoint'});}}
       if(o.point)pts.push({x:o.point.x,y:o.point.y,objectId:o.id,kind:'point'});
@@ -1780,18 +1810,39 @@
       if(o.type==='dimension'){const g=dimensionGeometry(o);if(g)pts.push({...g.p1,objectId:o.id,kind:'dimension'},{...g.p2,objectId:o.id,kind:'dimension'});}
     }return pts;
   }
+  function snapIndexForObjects(objects){
+    const segments=[];for(const o of objects||[]){if(o.a&&o.b&&(o.type==='cadLine'||o.type==='line'||(o.type==='wall'&&!isArcWall(o))))segments.push({a:{...o.a},b:{...o.b},layer:o.cadLayer||'0',objectId:o.id});}
+    const idx=buildSegmentSnapIndex(segments),extras=collectObjectSnapPoints(objects);
+    const addPoint=q=>{const gx=Math.floor(q.x/idx.cellW),gy=Math.floor(q.y/idx.cellH),key=`${gx},${gy}`;if(!idx.cells.has(key))idx.cells.set(key,[]);idx.cells.get(key).push(q);};
+    for(const q of extras)addPoint(q);return(idx.cells.size||idx.segments.length)?idx:null;
+  }
+  function rebuildPlanSnapIndex(){state.planSnapIndex=snapIndexForObjects(getPlanObjects());state.planSnapIndexFloorId=state.activeFloorId||null;return state.planSnapIndex;}
+  function rebuildCadSnapIndex(){state.cadSnapIndex=snapIndexForObjects(state.objects.filter(cadSourceObject));return state.cadSnapIndex;}
+  function invalidatePlanGeometryCaches(){
+    state.spaceFaceCache={revision:-1,floorId:null,faces:[]};
+  }
+  function rebuildActiveSnapIndex({touch=true}={}){
+    if(state.toolset==='cad'){
+      state.cadRenderRevision=(state.cadRenderRevision||0)+1;
+      if(touch)touchCadGeometry();
+      return rebuildCadSnapIndex();
+    }
+    // Plan pointer editing changes geometry in-place but not the Plan/CAD membership set.
+    // Keep the cached active-floor object list and the dense CAD index intact; only the
+    // Plan snap/space-derived geometry needs refreshing. This avoids rescanning a 100k+
+    // CAD source on every drag frame.
+    invalidatePlanGeometryCaches();
+    return rebuildPlanSnapIndex();
+  }
   function rebuildObjectSnapIndex({touch=true}={}){
     state.cadRenderRevision=(state.cadRenderRevision||0)+1;
     if(!cadContext)initializeCadServices();else cadContext.rebuild();
     if(touch)touchCadGeometry();
-    const segments=[];for(const o of state.objects){if(o.a&&o.b&&(o.type==='cadLine'||o.type==='line'||(o.type==='wall'&&!isArcWall(o))))segments.push({a:{...o.a},b:{...o.b},layer:o.cadLayer||'0',objectId:o.id});}
-    const idx=buildSegmentSnapIndex(segments),extras=collectObjectSnapPoints();
-    const addPoint=q=>{const gx=Math.floor(q.x/idx.cellW),gy=Math.floor(q.y/idx.cellH),key=`${gx},${gy}`;if(!idx.cells.has(key))idx.cells.set(key,[]);idx.cells.get(key).push(q);};
-    for(const q of extras)addPoint(q);state.objectSnapIndex=(idx.cells.size||idx.segments.length)?idx:null;
+    rebuildPlanSnapIndex();rebuildCadSnapIndex();
   }
-  function queryObjectSnapIndex(p,threshold,test){
-    const idx=state.objectSnapIndex;if(!idx)return;const gx=Math.floor(p.x/idx.cellW),gy=Math.floor(p.y/idx.cellH),rx=Math.max(1,Math.ceil(threshold/idx.cellW)),ry=Math.max(1,Math.ceil(threshold/idx.cellH)),segments=new Map();
-    for(let dx=-rx;dx<=rx;dx++)for(let dy=-ry;dy<=ry;dy++){const key=`${gx+dx},${gy+dy}`;for(const q of idx.cells.get(key)||[])if(distance(p,q)<=threshold)test(q);for(const seg of idx.segmentCells?.get(key)||[]){if(pointSegmentDistance(p,seg.a,seg.b)<=threshold)segments.set(seg.index,seg);}}
+  function queryObjectSnapIndex(idx,p,threshold,test,{acceptPoint=null,acceptSegment=null}={}){
+    if(!idx)return;const gx=Math.floor(p.x/idx.cellW),gy=Math.floor(p.y/idx.cellH),rx=Math.max(1,Math.ceil(threshold/idx.cellW)),ry=Math.max(1,Math.ceil(threshold/idx.cellH)),segments=new Map();
+    for(let dx=-rx;dx<=rx;dx++)for(let dy=-ry;dy<=ry;dy++){const key=`${gx+dx},${gy+dy}`;for(const q of idx.cells.get(key)||[]){if(acceptPoint&&!acceptPoint(q))continue;if(distance(p,q)<=threshold)test(q);}for(const seg of idx.segmentCells?.get(key)||[]){if(acceptSegment&&!acceptSegment(seg))continue;if(pointSegmentDistance(p,seg.a,seg.b)<=threshold)segments.set(seg.index,seg);}}
     const list=[...segments.values()];for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){if(list[i].objectId&&list[i].objectId===list[j].objectId)continue;const x=segmentIntersection(list[i].a,list[i].b,list[j].a,list[j].b);if(x&&distance(p,x.point)<=threshold)test({...x.point,kind:'intersection',objectIds:[list[i].objectId,list[j].objectId].filter(Boolean)});}
   }
 
@@ -1799,13 +1850,13 @@
     state.snapIndicator=null;if(!state.snap)return p;const threshold=10/state.camera.zoom;let best=null,bestD=threshold,bestPriority=-1;
     const snapPriority=kind=>kind==='intersection'?5:kind==='endpoint'?4:kind==='center'?3:kind==='midpoint'?2:kind==='wall'?1:0;
     const test=(q,kind=q.kind||'endpoint',source='plan')=>{if(excludeObjectId&&(q.objectId===excludeObjectId||q.objectIds?.includes(excludeObjectId)))return;const d=distance(p,q),priority=snapPriority(kind);if(d<bestD-1e-7||(Math.abs(d-bestD)<=1e-7&&priority>bestPriority)){bestD=d;bestPriority=priority;best={x:q.x,y:q.y,kind,objectId:q.objectId||null,objectIds:q.objectIds||null,source};}};
-    if(state.objectSnapIndex)queryObjectSnapIndex(p,threshold,q=>{
-      const ids=q.objectIds||[q.objectId].filter(Boolean);
-      if(state.toolset==='plan'){
-        if(ids.some(id=>{const o=cadContext?.getById(id)||state.objects.find(x=>x.id===id);return o&&(!objectOnActiveFloor(o)||isCadObject(o)||(o.type==='line'&&!o.floorId));}))return;
-      }else if(ids.some(id=>!cadPolicy(id,'snap').allowed))return;
-      test(q,q.kind,state.toolset==='cad'?'cad':'plan');
-    });
+    if(state.toolset==='plan'){
+      if(state.planSnapIndexFloorId!==state.activeFloorId)rebuildPlanSnapIndex();
+      queryObjectSnapIndex(state.planSnapIndex,p,threshold,q=>test(q,q.kind,'plan'));
+    }else{
+      const allowed=id=>!id||cadPolicy(id,'snap').allowed;
+      queryObjectSnapIndex(state.cadSnapIndex,p,threshold,q=>test(q,q.kind,'cad'),{acceptPoint:q=>allowed(q.objectId),acceptSegment:seg=>allowed(seg.objectId)});
+    }
     const wantsWallProjection=state.activeTool==='wall'||(state.dragEdit&&state.objects.find(o=>o.id===state.dragEdit.objectId)?.type==='wall'&&['a','b'].includes(state.dragEdit.mode));
     if(wantsWallProjection){for(const wall of getPlanObjects()){if(wall.type!=='wall'||wall.id===excludeObjectId)continue;const pr=wallProjectPoint(p,wall);if(pr.distance<bestD)test({...pr.point,objectId:wall.id},'wall','plan');}}
     const allowReferenceSnap=state.toolset!=='plan'||state.ctrlDown;
@@ -1870,7 +1921,7 @@
         if(src.attachments)obj.attachments=JSON.parse(JSON.stringify(src.attachments));
         if(d.mode==='body'&&obj.attachments){
           for(const endpoint of['a','b']){
-            const att=obj.attachments?.[endpoint],parent=att&&state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
+            const att=obj.attachments?.[endpoint],candidate=att&&(cadContext?.getById(att.wallId)||state.objects.find(o=>o.id===att.wallId)),parent=candidate?.type==='wall'?candidate:null;
             if(!parent)continue;
             const desired={x:src[endpoint].x+delta.x,y:src[endpoint].y+delta.y};
             if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){
@@ -1884,7 +1935,7 @@
             }else{const pr=wallProjectPoint(desired,parent);att.t=pr.t;obj[endpoint]={...pr.point};}
           }
         }else if((d.mode==='a'||d.mode==='b')&&obj.attachments?.[d.mode]){
-          const att=obj.attachments[d.mode],parent=state.objects.find(o=>o.id===att.wallId&&o.type==='wall');
+          const att=obj.attachments[d.mode],candidate=cadContext?.getById(att.wallId)||state.objects.find(o=>o.id===att.wallId),parent=candidate?.type==='wall'?candidate:null;
           if(parent){
             if(att.kind==='coincident'&&att.targetEndpoint&&parent[att.targetEndpoint]){
               // A shared corner is one persistent junction. Dragging either side's endpoint
@@ -1902,7 +1953,7 @@
       }
     }
     else if(obj.type==='door'||obj.type==='window'){
-      const wall=state.objects.find(o=>o.id===obj.wallId&&o.type==='wall');if(wall){const pr=wallProjectPoint(p,wall);
+      const candidate=cadContext?.getById(obj.wallId)||state.objects.find(o=>o.id===obj.wallId),wall=candidate?.type==='wall'?candidate:null;if(wall){const pr=wallProjectPoint(p,wall);
         if(d.mode==='center'){obj.t=pr.t;}
         else if(d.mode==='body'&&obj.type==='door'){
           const tg=wallTangentAt(wall,src.t??.5),dx=p.x-d.start.x,dy=p.y-d.start.y,along=dx*tg.ux+dy*tg.uy,across=dx*(-tg.uy)+dy*tg.ux,threshold=14/state.camera.zoom;
@@ -1920,7 +1971,7 @@
       }
     }
     else if(obj.type==='dimension'){const g0=dimensionGeometry(src);if(g0){if(g0.associated){const base={x:(g0.p1.x+g0.p2.x)/2,y:(g0.p1.y+g0.p2.y)/2};obj.offset=(p.x-base.x)*g0.nx+(p.y-base.y)*g0.ny;}else if(d.mode==='p1')obj.p1={...p};else if(d.mode==='p2')obj.p2={...p};else if(d.mode==='offset'){const base={x:(obj.p1.x+obj.p2.x)/2,y:(obj.p1.y+obj.p2.y)/2},v={x:obj.p2.x-obj.p1.x,y:obj.p2.y-obj.p1.y},len=Math.max(.000001,Math.hypot(v.x,v.y)),nx=-v.y/len,ny=v.x/len;obj.offset=(p.x-base.x)*nx+(p.y-base.y)*ny;}else{obj.p1={x:g0.p1.x+delta.x,y:g0.p1.y+delta.y};obj.p2={x:g0.p2.x+delta.x,y:g0.p2.y+delta.y};}}}
-    markDirty(true);rebuildObjectSnapIndex();renderProperties();render();}
+    markDirty(true);rebuildActiveSnapIndex();renderProperties();render();}
 
 
   function updatePointerAffordance(p){state.pointerAffordance=null;if(state.activeTool!=='select'||state.dragEdit||isCompactViewer()){delete host.dataset.affordance;return;}const selected=state.objects.find(o=>o.id===state.selectedObjectId);if(selected&&selectionIds().size===1){if(selected.type==='door'){const mode=doorDirectManipulationMode(p,selected);if(mode==='p1'||mode==='p2')state.pointerAffordance='resize';else if(mode==='center')state.pointerAffordance='move';else if(mode==='body')state.pointerAffordance='offset';}else{const h=hitHandle(p,selected);if(h){if((selected.type==='wall'||selected.type==='line'||selected.type==='cadLine')&&(h==='a'||h==='b'))state.pointerAffordance='endpoint';else if(selected.type==='wall'&&h==='arcControl')state.pointerAffordance='offset';else if((selected.type==='door'||selected.type==='window')&&(h==='p1'||h==='p2'))state.pointerAffordance='resize';else if(selected.type==='dimension'&&h==='offset')state.pointerAffordance='offset';else state.pointerAffordance='move';}}}if(!state.pointerAffordance&&hitObject(p))state.pointerAffordance='move';if(state.pointerAffordance)host.dataset.affordance=state.pointerAffordance;else delete host.dataset.affordance;}
@@ -1969,7 +2020,7 @@
     if(state.activeTool==='space'&&state.toolset==='plan'){commitSpace(raw);return;}
     if(state.activeTool==='door'||state.activeTool==='window'){commitOpening(state.activeTool,nearestWallProjection(raw));return;}
   }
-  function onPointerUp(e){if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){const drag=state.selectionDrag,candidates=[...(drag.previewIds||new Set())];state.selectionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}applySelectionSet(candidates,drag.mode);renderPrimaryPanel();renderProperties();render();return;}if(state.dragEdit){const drag=state.dragEdit,hadChange=drag.historyPushed,obj=state.objects.find(o=>o.id===drag.objectId);state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(hadChange&&obj?.type==='wall'){syncDependentsOfWall(obj.id);refreshSpaces();}if(hadChange){recordEdit('drag',{objectId:obj?.id||drag.objectId,mode:drag.mode,tool:state.activeTool});rebuildObjectSnapIndex();updateAll();}state.shiftGuide=null;return;}if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){} }
+  function onPointerUp(e){if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){const drag=state.selectionDrag,candidates=[...(drag.previewIds||new Set())];state.selectionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}applySelectionSet(candidates,drag.mode);renderPrimaryPanel();renderProperties();render();return;}if(state.dragEdit){const drag=state.dragEdit,hadChange=drag.historyPushed,obj=cadContext?.getById(drag.objectId)||state.objects.find(o=>o.id===drag.objectId);state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(hadChange&&obj?.type==='wall'){syncDependentsOfWall(obj.id);refreshSpaces();}if(hadChange){recordEdit('drag',{objectId:obj?.id||drag.objectId,mode:drag.mode,tool:state.activeTool});rebuildActiveSnapIndex();updateAll();}state.shiftGuide=null;return;}if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){} }
   function onWheel(e){e.preventDefault();const s=fromPointerEvent(e),before=screenCssToWorld(s),factor=Math.exp(-e.deltaY*.0014);state.camera.zoom=clamp(state.camera.zoom*factor,.002,8);const after=screenCssToWorld(s);state.camera.cx+=before.x-after.x;state.camera.cy+=before.y-after.y;render();}
 
   function deleteObjectById(id){const target=cadContext?.getById(id)||state.objects.find(o=>o.id===id);if(!target)return false;if(state.toolset==='cad'&&!cadObjectModifiable(target))return false;pushHistory();const childIds=target.type==='wall'?new Set(state.objects.filter(o=>(o.type==='door'||o.type==='window'||o.type==='dimension')&&o.wallId===id).map(o=>o.id)):new Set();state.objects=state.objects.filter(o=>o.id!==id&&!childIds.has(o.id));if(target.type==='wall'){for(const wall of getPlanObjects().filter(o=>o.type==='wall')){for(const endpoint of['a','b'])if(wall.attachments?.[endpoint]?.wallId===id)delete wall.attachments[endpoint];const c=ensureWallConstraints(wall);if(c.reference?.wallId===id)c.reference=null;}if(state.baseAxisWallId===id){state.baseAxisWallId=null;state.baseAxisAngle=0;}refreshSpaces();}state.selectedObjectId=null;state.selectedObjectIds.delete(id);for(const childId of childIds)state.selectedObjectIds.delete(childId);markDirty(true);rebuildObjectSnapIndex();updateAll();return true;}
@@ -2634,9 +2685,9 @@
         }else main.innerHTML=`<div class="row-title" title="${escapeHtml(layer)}">${escapeHtml(layer)}</div><div class="row-meta" title="${escapeHtml(meta)}">${escapeHtml(inheritedOff?meta:String(count))}</div>`;
 
         const actions=document.createElement('div');actions.className='cad-layer-row-actions';
-        const locked=Boolean(cadLayerDefinition(layer).locked),lockBtn=document.createElement('button');lockBtn.className=`cad-layer-compact-action ${locked?'active':''}`;lockBtn.textContent=locked?'L':'·';lockBtn.title=locked?t('layer.unlock'):t('layer.lock');lockBtn.setAttribute('aria-label',lockBtn.title);lockBtn.addEventListener('click',e=>{e.stopPropagation();setCadLayerLocked(layer,!locked);});
-        const renameBtn=document.createElement('button');renameBtn.className='cad-layer-compact-action';renameBtn.textContent='✎';renameBtn.title=t('action.rename');renameBtn.setAttribute('aria-label',t('layer.renameAria',{name:layer}));renameBtn.addEventListener('click',e=>{e.stopPropagation();cadLayerRenameTarget=layer;renderCadLayersPanel();});
-        const deleteBtn=document.createElement('button');deleteBtn.className='cad-layer-compact-action';deleteBtn.textContent='×';deleteBtn.title=t('action.delete');deleteBtn.disabled=layer==='0'||count>0||cadMappingUsesLayer(layer);deleteBtn.addEventListener('click',e=>{e.stopPropagation();deleteCadLayer(layer);});actions.append(lockBtn,renameBtn,deleteBtn);
+        const locked=Boolean(cadLayerDefinition(layer).locked),lockBtn=document.createElement('button');lockBtn.className=`cad-layer-compact-action ${locked?'active':''}`;lockBtn.innerHTML=iconMarkup(locked?'lock':'lock-open');lockBtn.title=locked?t('layer.unlock'):t('layer.lock');lockBtn.setAttribute('aria-label',lockBtn.title);lockBtn.addEventListener('click',e=>{e.stopPropagation();setCadLayerLocked(layer,!locked);});
+        const renameBtn=document.createElement('button');renameBtn.className='cad-layer-compact-action';renameBtn.innerHTML=iconMarkup('pencil');renameBtn.title=t('action.rename');renameBtn.setAttribute('aria-label',t('layer.renameAria',{name:layer}));renameBtn.addEventListener('click',e=>{e.stopPropagation();cadLayerRenameTarget=layer;renderCadLayersPanel();});
+        const deleteBtn=document.createElement('button');deleteBtn.className='cad-layer-compact-action';deleteBtn.innerHTML=iconMarkup('trash');deleteBtn.title=t('action.delete');deleteBtn.setAttribute('aria-label',t('action.delete'));deleteBtn.disabled=layer==='0'||count>0||cadMappingUsesLayer(layer);deleteBtn.addEventListener('click',e=>{e.stopPropagation();deleteCadLayer(layer);});actions.append(lockBtn,renameBtn,deleteBtn);
         const active=document.createElement('span');active.className='layer-active';active.hidden=state.activeCadLayer!==layer;active.title=t('panel.active');
         row.addEventListener('click',e=>{if(e.target.closest('button,input'))return;setActiveCadLayer(layer);});
         row.append(eye,main,actions,active);layerList.appendChild(row);
@@ -2956,7 +3007,7 @@
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();if(!e.target.closest('.floor-action-menu')&&!e.target.closest('.floor-row .mini-action')&&!e.target.closest('.floor-space-row .mini-action'))closeFloorActionMenu();});
 
   applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');applyShortcutMetadata(dom.polarToggle,'polar','tooltip.polar');
-  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,cadCommands,cancelTransient,undo,redo,onPointerDown,onPointerMove,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,downloadProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,constrainEndpointWithShift,constrainBodyMoveDelta,connectedWallAngles,applyTrimExtendAtPoint,extendPlanLinearAtClick,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addFloor,renderPlanFloorPanel,getPlanObjects,detectClosedWallFaces,updateSpaceHoverPreview,findSpaceBoundaryGapCandidates,endpointTouchesOtherBoundary,commitSpace,ensureSpaceMetadata,nextSpaceName,calculatedSpaceAreaM2,displaySpaceAreaM2,usesManualSpaceArea,setSpaceManualArea,setSpaceCalculatedArea,clearSpaceGapDiagnostic,doorSwingSide,doorSwingSectors,doorDirectManipulationMode,hingedLeafGeometry,flipDoorHingePreserveSide,flipDoorSwingSide,getLinkedCadRenderCache,recordEdit,runCommand,commandMatches,renderCommandConsole,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,solvePointOnEdgeAttachment,computePlanTrimSegment,computeCadTrimSegment,updateTrimPreview,activeCadWorkRegion,cadObjectsForRegion,cadWorkObjects,cadObjectInWorkScope,cadSelectableObjects,setCadWorkRegion,renderCadScopeControl,cadGlobalLayerVisible,cadRegionLayerVisible,cadLayerVisible,cadLayerInheritedOff,cadKnownLayers,cadLayerDefinition,cadLayerLocked,createCadLayer,renameCadLayer,deleteCadLayer,setCadLayerLocked,reassignCadObjects,setActiveCadLayer,cadMappingUsesLayer,setCadUnitSystem,cadPolicy,cadContextToken,cadContextTokenCurrent,initializeCadServices,applySelectionSet,deleteSelectedObjects,beginObjectDrag,setCadLayerVisibilityUndoable,showAllCadLayers,serializeCadRegionLayerVisibility,restoreCadRegionLayerVisibility,renderReferences,referencesForRender,cadPlanOverlayObjects,beginCadRegionRotation,cadRotatePreviewDelta,rotatePointAround,commitCadRegionRotation,setCadRotateAbsoluteAngle,buildSegmentSnapIndex,queryReferenceSnapIndex,queryObjectSnapIndex,nearestSnap,parseCadPointText,resolveCadPoint,commitNativeCadLine,startNativeCadLineSession,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
+  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,cadCommands,cancelTransient,undo,redo,onPointerDown,onPointerMove,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,saveProjectFile,downloadProjectFile,makeProjectPayload,dxfDoorEntities,constrainTracking,constrainEndpointWithShift,constrainBodyMoveDelta,connectedWallAngles,applyTrimExtendAtPoint,extendPlanLinearAtClick,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addFloor,renderPlanFloorPanel,getPlanObjects,detectClosedWallFaces,updateSpaceHoverPreview,findSpaceBoundaryGapCandidates,endpointTouchesOtherBoundary,commitSpace,ensureSpaceMetadata,nextSpaceName,calculatedSpaceAreaM2,displaySpaceAreaM2,usesManualSpaceArea,setSpaceManualArea,setSpaceCalculatedArea,clearSpaceGapDiagnostic,doorSwingSide,doorSwingSectors,doorDirectManipulationMode,hingedLeafGeometry,flipDoorHingePreserveSide,flipDoorSwingSide,getLinkedCadRenderCache,recordEdit,runCommand,commandMatches,renderCommandConsole,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,solvePointOnEdgeAttachment,computePlanTrimSegment,computeCadTrimSegment,updateTrimPreview,activeCadWorkRegion,cadObjectsForRegion,cadWorkObjects,cadObjectInWorkScope,cadSelectableObjects,setCadWorkRegion,renderCadScopeControl,cadGlobalLayerVisible,cadRegionLayerVisible,cadLayerVisible,cadLayerInheritedOff,cadKnownLayers,cadLayerDefinition,cadLayerLocked,createCadLayer,renameCadLayer,deleteCadLayer,setCadLayerLocked,reassignCadObjects,setActiveCadLayer,cadMappingUsesLayer,setCadUnitSystem,cadPolicy,cadContextToken,cadContextTokenCurrent,initializeCadServices,applySelectionSet,deleteSelectedObjects,beginObjectDrag,setCadLayerVisibilityUndoable,showAllCadLayers,serializeCadRegionLayerVisibility,restoreCadRegionLayerVisibility,renderReferences,referencesForRender,cadPlanOverlayObjects,beginCadRegionRotation,cadRotatePreviewDelta,rotatePointAround,commitCadRegionRotation,setCadRotateAbsoluteAngle,buildSegmentSnapIndex,queryReferenceSnapIndex,queryObjectSnapIndex,rebuildPlanSnapIndex,rebuildCadSnapIndex,rebuildActiveSnapIndex,nearestSnap,parseCadPointText,resolveCadPoint,commitNativeCadLine,startNativeCadLineSession,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
 
   dom.dialogBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.confirmBackdrop.hidden=true;if(dom.exportSaveBackdrop)dom.exportSaveBackdrop.hidden=true;dom.commandBar.hidden=false;i18n.apply(document);state.browserSavedMeta=readBrowserSavedMeta();state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();if(dom.aboutVersion)dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;if(dom.startVersion)dom.startVersion.textContent=`PieniPlan v${VERSION} · Build ${BUILD}`;renderCommandConsole();updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();
