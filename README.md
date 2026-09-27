@@ -73,6 +73,13 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 
 ### CAD Mode
 
+- **Build 26 CAD Core foundation:** CAD 객체는 하나의 Context 정책에서 render / inspect / select / snap / modify 권한을 분리합니다. Plan Overlay와 외부 Reference는 CAD source와 같은 수정 대상으로 취급하지 않으며, locked layer 객체도 보거나 선택할 수는 있지만 수정은 차단합니다.
+- 실제 **CAD Layer 정의**를 지원합니다. 빈 레이어 생성, 이름 변경, 안전한 삭제, current layer, lock/unlock, 선택 객체의 레이어 재지정이 가능하며, 기존 `전체 도면 AND Region-local` 표시 상태는 별도 visibility 정책으로 유지됩니다.
+- CAD 속성에서 **Metric / Imperial** 표시 체계를 선택할 수 있습니다. 내부 geometry는 mm 기준을 유지하고 길이 입력/표시는 UnitService에서 변환합니다. 초기 기본값은 한국어 + Metric입니다.
+- `LINE`은 새 Command Registry/Session 기반의 첫 native reference command로 동작하며 typed coordinate, Snap/ORTHO/POLAR, active layer, Undo/Redo 경로를 하나의 lifecycle로 통과합니다.
+- 프로젝트 데이터는 future-ready `Sheets[]` 구조를 가지며 여러 출력 Sheet를 수용할 수 있게 준비되어 있습니다. Sheet UI/출력 workflow는 후속 단계입니다.
+- Native DWG는 지원 범위에서 제외합니다. 외부 DWG는 필요 시 DXF로 변환해 가져오며 PieniPlan의 CAD 교환 포맷은 DXF입니다.
+
 - 기존 DXF 열기 및 편집
 - 새 DXF 도면 작성
 - 레이어 표시 / 숨김 / 단독 보기 / 검색. **전체 도면**의 레이어 표시가 상위 gate이고, 특정 Drawing Region에서는 그 Region만의 local 표시 상태를 따로 기억합니다. 실제 표시는 `전체 도면 ON + 현재 Region ON`일 때만 켜지며, Region별 상태는 프로젝트에 저장됩니다. Region의 `모두 켜기`는 local 상태만 복원합니다.

@@ -1,0 +1,90 @@
+PieniPlan v0.22.0 · Build 26 — DEV SOURCE
+
+빠른 실행
+- GitHub Pages: https://bak2ya.github.io/PieniPlan/
+- GitHub 저장소: https://github.com/Bak2ya/PieniPlan
+
+로컬 실행
+1. 이 폴더에서 정적 HTTP 서버를 실행합니다.
+   예: python3 -m http.server 8000
+2. 브라우저에서 http://localhost:8000/ 을 엽니다.
+
+GitHub에 공개할 때
+- 별도로 제공되는 GITHUB_READY ZIP을 사용하는 것이 가장 안전합니다.
+- 이 DEV SOURCE를 직접 올린다면 `_AI_NOT_GITHUB/`는 공개하지 않습니다.
+- 테스트/내부 지속 문서는 공개 패키지에 포함하지 않습니다.
+
+다음 AI / 개발 세션
+- `_AI_NOT_GITHUB/00_READ_FIRST_AI.md`부터 숫자 순서대로 읽습니다.
+
+현재 기준
+- Release Version: v0.22.0
+- App Build: 26
+- Master: v2.4.0 · Build 15
+- 내부 작업 단위: mm
+- 좁은 모바일 폭: Viewer only
+- 프로젝트 작업 상태: `.ppln` schemaVersion 3 (schemaVersion 2 / legacy `.pieniplan` load compatible)
+- 프로젝트 저장: 기존 writable file handle이 있을 때만 같은 파일 갱신, 그 외에는 browser-local save; portable `.ppln`은 별도 Download Project File
+- Plan Mode: 층↔CAD Region 1:1 격리 + 단일 semantic `선` 경계 모델 + `요소` + constraint-aware editing
+- CAD Mode: editable/original DXF detail model
+- DXF export: native Save As picker where available; explicit filename/location fallback notice otherwise
+- FACMAP: v0.2.0. PieniPlan은 도면 계산 면적을, FacilityManager는 관리/공식 면적을 소유한다.
+- Re-recognition: selected CAD auto-recognition layer rebuild; unchecked auto types removed, user/manual edits preserved
+- Start screen: current Version · Build visible on the last line
+
+
+Build 26 핵심
+- Astra A1의 Command Registry/Session/typed-input foundation을 Build25 실제 코드에 통합하고, native transaction은 history recorder가 없으면 fail-closed하도록 강화했다. Persistent commit과 transient finalize를 분리하고 U/REDO의 session 재진입 ownership을 정리했다.
+- CAD document context + byId/revision index를 추가해 render/select/snap/modify 정책을 분리했다. Plan Overlay는 CAD에서 선택/검사할 수 있어도 수정할 수 없고, locked layer 객체는 선택 가능하지만 수정은 차단한다.
+- 기존 Window/Crossing selection과 Snap을 새 Context 정책 위에 연결하고 endpoint/midpoint/center/intersection 정밀 스냅 경계를 정리했다.
+- 실제 CAD Layer definition store를 추가해 빈 레이어 생성, 이름 변경, 삭제(사용 중이면 안전 차단), current layer, lock/unlock, 선택 객체 레이어 재지정을 지원한다. 기존 global AND Region-local visibility 계약은 별도 정책으로 유지한다.
+- Metric/Imperial을 동일한 UnitService 경계로 처리하되 기본 경험은 한국어+Metric이다. 내부 geometry는 canonical mm를 유지한다.
+- `.ppln` schemaVersion 3에 Layer definitions, current layer, unit system, future-ready `sheets: []` shape를 저장한다. multi-sheet는 데이터 구조만 준비했고 Sheet UI는 아직 없다.
+- 첫 native CAD reference command로 LINE을 새 Command Session/Context/Precision/Layer/Undo 경로에 연결했다. cancel은 geometry를 남기지 않고 commit은 정확히 하나의 Undo 기록을 만든다.
+- Native DWG 지원은 제품 범위에서 제외한다. CAD 교환은 DXF, 문서 출력 방향은 PDF로 유지한다.
+- BUILD26 smoke PASS, core unit 5/5 PASS, 100k synthetic performance check 완료. Synthetic 100k에서 commit/Undo/Redo snapshot 비용이 약 0.95s/1.29s/1.29s로 측정되어 전체 JSON snapshot transaction은 여전히 migration용 임시 안전망으로만 유지한다. 실제 Safari/실제 104k 프로젝트 실기는 남아 있다.
+
+Build 25 핵심
+- Astra 대격변 전 bugfix-only baseline. 새 CAD 기능/상태바 UX 재설계는 넣지 않음.
+- CAD 프로젝트에 source outlier가 있을 때 topbar 아래 얇은 interactive bar로 노출되던 legacy `fullExtentsBtn` proxy를 DOM/state/event 경로에서 제거. 정식 `View → All extents`와 context-menu 경로는 유지.
+- CAD 하단 GRID/SNAP/ORTHO/POLAR · AXIS/Zoom · X/Y/units 그룹을 같은 23px baseline/height로 맞춰 Build24의 수직 정렬 흔들림 수정. 최종 status-bar 축약/아이콘/반응형 문법은 Astra CAD Core 이후 재논의.
+- `_AI_NOT_GITHUB/ASTRA_CAD_CORE/`에 Astra Architectural CAD Core 전용 brief, symbol map, deliverable contract, attachment manifest를 추가.
+
+Build 24 핵심
+- CAD Layer 표시를 `전체 도면` 상위 gate + Region별 local state로 계층화했다. 실제 표시 = global AND region-local이며 Region 설정은 `.ppln`에 저장/복원된다. Region의 `모두 켜기`는 local만 초기화하고 global OFF를 우회하지 않는다.
+- Layer panel은 현재 작업 범위에만 적용되는 상태를 명확히 표시하고, 전체 도면에서 숨긴 layer는 Region에서 목록을 유지한 채 흐림/비활성 + 상위 숨김 원인을 보여준다.
+- 좌상단에 잘려 보이던 CAD mapping hidden proxy를 제거하고 CAD `참조 도면`의 명시적 mapping card로 옮겼다. 왼쪽 rail은 약 54px로 compact하게 줄였다.
+- 정적 COMMAND 안내판을 Plan/CAD 공통 persistent Command Console로 교체했다. 최근 로그/history, 현재 prompt, 항상 열린 입력, autocomplete suggestion을 제공하며 CAD X/Y는 계속 오른쪽 고정폭 영역에 둔다.
+- `app.js` 확장을 억제하기 위한 첫 module boundary를 도입했다: CAD layer visibility policy, Region transform, command catalog, Command Console. 세부 계약은 `_AI_NOT_GITHUB/40_CAD_CORE_BOUNDARIES.md`.
+- BUILD24 smoke 43/43 PASS, JS/module syntax PASS, EN/KO 529/529 parity PASS, runtime asset reference PASS. 실제 Safari/창의관 프로젝트의 UI 감각과 persistence는 사용자 실기 검증이 남아 있다.
+
+Build 23 핵심
+- Plan 오른쪽을 `층 / 참조 도면 / 속성`으로 정리하고 중복 Palette를 제거했다. 현재 Floor linked CAD tracing은 참조 도면에서 표시/숨김·불투명도·레이어 표시를 다시 제어할 수 있다.
+- CAD `작업 범위`를 inspector tab 아래 공통 context로 승격해 Layer/Reference/Properties 어디서나 Full drawing/Region과 active object count를 확인한다.
+- Plan/CAD 모두 COMMAND는 canvas 왼쪽 아래. CAD X/Y는 오른쪽 끝 고정폭으로 분리해 좌표 숫자 변화에 따른 HUD reflow를 막는다. 상단 mode switch의 horizontal scrollbar 회귀도 제거했다.
+- Floor tree 접기/펼치기 삼각형을 기존 대비 약 170%로 키우고 28px hit area를 사용한다.
+- 특정 CAD Drawing Region에서만 `RO / ROTATE`를 지원한다. base → reference → target, H/V/numeric absolute target, Shift 90° targeting, live preview/Undo를 지원하며 linked Plan semantic geometry는 자동 회전하지 않는다.
+- BUILD23 smoke 37/37 PASS + JS syntax PASS. 실제 Safari/창의관 104k 프로젝트의 최종 체감은 사용자 실기 검증이 남아 있다.
+
+Build 22 핵심
+- CAD 원본 geometry는 층별로 복제하지 않는다. Source CAD는 하나만 유지하고 Floor는 Drawing Region을 참조한다.
+- CAD Mode에 `작업 범위`를 추가한다. 전체 도면 또는 특정 Drawing Region을 활성화할 수 있고, Region 범위에서는 CAD render/selection/hit-test/snap/TR·EX boundary/layer count가 해당 working set만 사용한다.
+- Region working set은 revision/region 단위로 cache하여 매 pointer/render마다 전체 CAD object array를 다시 만드는 일을 줄인다.
+- Plan→CAD 전환은 활성 Floor의 연결 Region을 자동 작업 범위로 선택한다. 필요하면 `전체 도면`으로 복귀할 수 있다.
+- CAD Mode의 Plan semantic overlay는 기본 OFF이며 사용자가 명시적으로 켤 때만 현재 작업 Region과 연결된 Floor의 Plan 객체를 표시한다.
+- Plan Mode는 활성 Floor의 linked CAD Region만 reference로 렌더한다. 다른 층 linked reference는 render 대상에서 제외한다.
+- CAD 참조 도면 패널에서는 Floor용 linkedCadRegion을 외부 참조처럼 중복 노출하지 않는다.
+- CAD Mode TR에도 클릭 전 빨간 삭제 예정 segment preview와 cut marker를 제공한다.
+- 사용자 실제 창의관 Build20 프로젝트 기준 raw CAD 104,498개 중 Region bounds 후보는 6F 7,867개(7.53%), 5F 11,204개(10.72%)로 확인했다. 이는 working-set 축소 가능성의 데이터 확인이며 실제 Safari 체감 FPS/메모리는 사용자 실기 검증이 필요하다.
+- Build 21 command/EX/Shift/Space/Door/Fire/FACMAP 계약은 회귀 보존한다.
+
+Build 21 핵심
+- Plan Command 상태를 단일 `activeCommand`로 정리해 TR→EX / EX→TR 전환 시 이전 명령이 클릭을 가로채는 문제를 방지한다. Plan Shift는 명령 반전이 아니라 기하 제약에만 사용한다.
+- EX는 실제로 교차한 정확한 boundary에만 접합하고 주변 선을 재검색하지 않는다. stale auto-junction dependent를 분리해 무관한 벽이 함께 끌려오는 회귀를 막는다.
+- Shift 후보를 GLOBAL 45°와 연결선 기준 REF 45°를 동시에 평가하도록 확장하고, 선 전체 이동에서는 GLOBAL 수평/수직 + 연결선 평행/수직 방향으로 이동축을 제한한다.
+- 공간 지정 도구는 Floating HUD와 hover face preview를 제공해 클릭 전에 지정될 공간을 확인할 수 있다.
+- 문틀/개구부 전체는 위치 이동 영역, 문짝/개폐호 stroke 근처만 경첩·열림 방향 조작 영역으로 분리한다. 부채꼴 내부는 선택만 한다.
+- 요소에 방화문과 방화셔터를 추가한다. FD/FS 표시는 PieniPlan 내부 의미 표식이며 법정 도면 기호를 주장하지 않는다.
+- Space는 `도면 계산 면적`과 `관리 면적`을 분리한다. geometry 변화는 관리 면적을 자동 변경하지 않으며 FacilityManager 연동에서도 자동 덮어쓰지 않는다.
+- 최근 편집 작업 100건을 compact debug edit log로 프로젝트에 보존해 TR/EX/접합 문제를 재현하기 쉽게 한다.
+- 배포 ZIP 권한은 폴더 755 / 일반 파일 644로 정규화한다.

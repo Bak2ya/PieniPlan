@@ -847,3 +847,13 @@ html, body { overscroll-behavior:none; }
 .canvas-hud #statusX,
 .canvas-hud #statusY { width:82px; }
 .canvas-hud #statusUnits { min-width:18px; }
+
+/* Build 26 P1 — real CAD layer definition controls. */
+.cad-layer-header-actions { display:flex; align-items:center; gap:5px; flex:none; }
+.cad-layer-row .row-main { min-width:0; }
+.cad-layer-row-actions { display:flex; align-items:center; gap:2px; flex:none; }
+.cad-layer-compact-action { width:20px; height:20px; min-width:20px; padding:0; border:0; border-radius:4px; background:transparent; color:var(--text-3); font:600 10px/20px system-ui; text-align:center; }
+.cad-layer-compact-action:hover:not(:disabled) { background:var(--surface-3); color:var(--text-1); }
+.cad-layer-compact-action.active { color:var(--accent); background:var(--accent-soft); }
+.cad-layer-compact-action:disabled { opacity:.25; cursor:default; }
+.cad-layer-name-input { width:100%; min-width:0; height:22px; border:1px solid var(--accent); border-radius:4px; background:var(--surface-1); color:var(--text-1); font:500 10px system-ui; padding:2px 5px; outline:none; }

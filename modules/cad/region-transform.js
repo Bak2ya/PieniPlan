@@ -13,10 +13,10 @@
 
   function previewDelta(rotation) {
     if (!rotation || rotation.phase !== 'target' || !rotation.base || !Number.isFinite(rotation.referenceAngle) || !Number.isFinite(rotation.targetAngle)) return 0;
-    let delta = rotation.targetAngle - rotation.referenceAngle;
-    while (delta > 180) delta -= 360;
-    while (delta <= -180) delta += 360;
-    return delta;
+    // A1: bounded normalization avoids an unbounded loop for finite huge angles.
+    // Reduce each operand first so subtraction cannot overflow. Preserve (-180,180].
+    const delta = ((rotation.targetAngle % 360) - (rotation.referenceAngle % 360)) % 360;
+    return delta > 180 ? delta - 360 : delta <= -180 ? delta + 360 : delta;
   }
 
   function rotateCadObject(object, base, deltaDeg) {

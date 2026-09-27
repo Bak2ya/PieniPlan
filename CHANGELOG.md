@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.22.0 · Build 26 — 2026-09-27
+- Integrated the accepted Astra A1 command foundation into the Build25 application instead of treating A1 as an all-or-nothing patch. Command Registry/Session/typed-input parsing are adopted; transaction/session ownership was hardened before native command expansion.
+- Native transactions now fail closed when no history recorder exists. Persistent commit and transient finalization are separated, and U/REDO no longer depend on recursively cancelling the Session that is executing them.
+- Added CAD Document Context with by-ID lookup and revisions. Render/inspect/select/snap/modify are explicit purposes rather than one shared eligibility flag. Plan Overlay remains read-only from CAD; locked CAD layers remain visible/selectable but non-modifiable.
+- Moved existing CAD selection onto a dedicated Selection owner while preserving click, Window/Crossing, replace/add/toggle behavior. Existing spatial Snap indexing is reused through Context/byId policy with endpoint/midpoint/center/intersection foundations.
+- Added real CAD Layer definitions separate from visibility: create, rename, delete-unused, current layer, lock/unlock and selected-object layer reassignment. Existing Full drawing AND Region-local visibility remains unchanged.
+- Added UnitService for canonical-mm Metric/Imperial parsing/formatting. Default experience stays Korean + Metric while the architecture treats Imperial as a first-class input/display system.
+- `.ppln` advances to schemaVersion 3 and persists CAD Layer definitions, active CAD layer, unit system and future-ready `sheets: []`; schemaVersion 2 and legacy `.pieniplan` remain load-compatible. Multi-sheet UI is intentionally deferred.
+- Added the first native reference command, `L / LINE`, using the new Session → Context/Precision → active Layer → transaction/history path. Locked active layers reject LINE safely; cancel leaves no object; Undo/Redo are regression-tested.
+- Product scope decision: native DWG support is excluded. PieniPlan uses DXF for CAD interchange; PDF/output and multi-sheet publication remain later milestones. Reference embed-vs-link remains a future user-selectable policy, not silently changed in this build.
+- Verification: Build26 smoke suite PASS, command/context/unit core tests **5/5 PASS**, and 100k synthetic performance check completed. Synthetic full-snapshot commit/Undo/Redo measured roughly **0.95 s / 1.29 s / 1.29 s**, confirming the JSON snapshot transaction remains migration-only until ChangeSet/inverse replaces it. Actual Safari and the user's real 104k drawing still require hands-on validation.
+
 ## v0.21.1 · Build 25 — 2026-09-27
 - Bugfix-only pre-Astra baseline. No new CAD command/status-bar product grammar was finalized in this build.
 - Removed the second topbar sliver at its actual root: the legacy hidden `fullExtentsBtn` proxy was being unhidden whenever source-DXF outliers existed. Clicking that blank control executed **All extents**, fitting distant outliers and making the main drawing appear to disappear. The proxy DOM/state/event path is removed; the explicit **View → All extents** and CAD context-menu action remain available.
