@@ -259,12 +259,18 @@ python3 -m http.server 8000
 
 ## 개발 구조
 
-Build 24부터 CAD 확장을 위해 일부 코어 책임을 `modules/`로 분리했습니다. 현재 `app.js`는 통합 state와 application orchestration을 유지하고, CAD layer visibility policy, Region transform, command catalog, Command Console은 명시적 module API를 사용합니다. 이 분리는 기능을 바꾸기 위한 것이 아니라 이후 건축 CAD command/selection/snap/block/asset 코어를 독립적으로 확장하기 위한 기반입니다.
+Build 24부터 CAD 확장을 위해 일부 코어 책임을 `modules/`로 분리했고, Build 25는 Astra CAD Core 분기 전 bugfix-only 기준선으로 정리했습니다. 현재 `app.js`는 통합 state와 application orchestration을 유지하고, CAD layer visibility policy, Region transform, command catalog, Command Console은 명시적 module API를 사용합니다. 이 분리는 기능을 바꾸기 위한 것이 아니라 이후 건축 CAD command/selection/snap/block/asset 코어를 독립적으로 확장하기 위한 기반입니다.
 
 ## Third-party notices
 
 PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
 
+
+## Build 25 — Pre-Astra Bugfix Baseline
+
+- Removed the legacy hidden `fullExtentsBtn` topbar proxy that could appear as a thin blank bar when DXF outliers existed. The legitimate **All extents** action remains in View/context menus.
+- Normalized the existing CAD bottom status strip to one vertical baseline/height so status controls and X/Y coordinates line up. Final compact/icon/responsive status-bar design is deliberately deferred until after the Architectural CAD Core work.
+- Added internal Astra handoff material under `_AI_NOT_GITHUB/ASTRA_CAD_CORE/`; it is excluded from GitHub-ready delivery.
 
 ## Build 24 — Scoped Layers, Command Console & CAD Core Boundaries
 

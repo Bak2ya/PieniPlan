@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.21.1 · Build 25 — 2026-09-27
+- Bugfix-only pre-Astra baseline. No new CAD command/status-bar product grammar was finalized in this build.
+- Removed the second topbar sliver at its actual root: the legacy hidden `fullExtentsBtn` proxy was being unhidden whenever source-DXF outliers existed. Clicking that blank control executed **All extents**, fitting distant outliers and making the main drawing appear to disappear. The proxy DOM/state/event path is removed; the explicit **View → All extents** and CAD context-menu action remain available.
+- Aligned CAD bottom status controls and coordinates to a shared fixed 23 px baseline/height. GRID/SNAP/ORTHO/POLAR, AXIS/Zoom and X/Y/units now remain vertically aligned without redefining their final visual grammar.
+- Added an internal Astra Architectural CAD Core starter brief/package under `_AI_NOT_GITHUB/ASTRA_CAD_CORE/` with a curated reading order, architecture brief, current-symbol map, deliverable contract, recent decision extract and token-efficient attachment manifest.
+- `BUILD25_SMOKE_TEST.py` passes **45/45**: Build24 regressions plus orphan Full-extents proxy removal and real layout-baseline checks for CAD status/coordinates. JS syntax and runtime asset checks remain clean.
+
 ## v0.21.0 · Build 24 — 2026-09-27
 - Added hierarchical CAD layer visibility by Working Area: **Full drawing** is the parent gate and each Drawing Region keeps its own local layer visibility. Effective visibility is parent AND local; Region state is persisted in `.ppln`.
 - Added Region-local **Turn all on / 모두 켜기** without overriding Full-drawing hidden layers. Parent-hidden layers remain visible in the list as dimmed/disabled inherited state instead of disappearing or losing their local preference.

@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.21.0';
-  const BUILD = 24;
+  const VERSION = '0.21.1';
+  const BUILD = 25;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -27,7 +27,7 @@
     planToolsBtn: $('planToolsBtn'), cadToolsBtn: $('cadToolsBtn'), toolRail: $('toolRail'), toolPopover: $('toolPopover'),
     newBtn: $('newBtn'), openProjectBtn: $('openProjectBtn'), saveProjectBtn: $('saveProjectBtn'), projectFileInput: $('projectFileInput'), openRefBtn: $('openRefBtn'), emptyOpenBtn: $('emptyOpenBtn'), addReferenceBtn: $('addReferenceBtn'),
     openDxfBtn: $('openDxfBtn'), dxfEditFileInput: $('dxfEditFileInput'), referenceFileInput: $('referenceFileInput'),
-    fitBtn: $('fitBtn'), fullExtentsBtn: $('fullExtentsBtn'), undoBtn: $('undoBtn'), redoBtn: $('redoBtn'), exportDxfBtn: $('exportDxfBtn'),
+    fitBtn: $('fitBtn'), undoBtn: $('undoBtn'), redoBtn: $('redoBtn'), exportDxfBtn: $('exportDxfBtn'),
     contextToolName: $('contextToolName'), contextFields: $('contextFields'), contextHint: $('contextHint'),
     emptyState: $('emptyState'), emptyKicker: $('emptyKicker'), emptyTitle: $('emptyTitle'), emptyCopy: $('emptyCopy'), emptyPrimaryBtn: $('emptyPrimaryBtn'),
     primaryInspectorTab: $('primaryInspectorTab'), primaryPanelTitle: $('primaryPanelTitle'), primaryPanelSubtitle: $('primaryPanelSubtitle'), primaryControls: $('primaryControls'), primaryList: $('primaryList'), cadScopeHost: $('cadScopeHost'), mappingSettingsBtn: $('mappingSettingsBtn'), cadMappingCard: $('cadMappingCard'),
@@ -366,7 +366,6 @@
     if (dom.documentStatus) { dom.documentStatus.textContent = name; dom.documentStatus.classList.toggle('dirty', state.dirty); }
     if (dom.documentTitle) dom.documentTitle.textContent=name.replace(/\.(?:ppln|pieniplan)$/i,'');
     if (dom.documentDirtyDot) dom.documentDirtyDot.hidden=!state.dirty;
-    if (dom.fullExtentsBtn) dom.fullExtentsBtn.hidden = !(state.toolset === 'cad' && state.sourceDxfOutlierCount > 0);
   }
 
   function markDirty(value = true) {
@@ -2702,7 +2701,7 @@
   dom.openRefBtn.addEventListener('click',()=>dom.referenceFileInput.click());dom.emptyOpenBtn.addEventListener('click',()=>state.toolset==='cad'?dom.dxfEditFileInput.click():dom.referenceFileInput.click());dom.addReferenceBtn.addEventListener('click',()=>dom.referenceFileInput.click());
   dom.referenceFileInput.addEventListener('change',()=>openReferenceFile(dom.referenceFileInput.files?.[0]));
   dom.openDxfBtn.addEventListener('click',()=>dom.dxfEditFileInput.click());dom.dxfEditFileInput.addEventListener('change',()=>openEditableDxf(dom.dxfEditFileInput.files?.[0]));
-  dom.fitBtn.addEventListener('click',fitAll);dom.fullExtentsBtn?.addEventListener('click',fitFullExtents);dom.newBtn.addEventListener('click',resetProject);dom.undoBtn.addEventListener('click',undo);dom.redoBtn.addEventListener('click',redo);dom.exportDxfBtn.addEventListener('click',exportDxf);
+  dom.fitBtn.addEventListener('click',fitAll);dom.newBtn.addEventListener('click',resetProject);dom.undoBtn.addEventListener('click',undo);dom.redoBtn.addEventListener('click',redo);dom.exportDxfBtn.addEventListener('click',exportDxf);
   dom.emptyPrimaryBtn.addEventListener('click',()=>setTool('line','draw'));
   dom.mappingSettingsBtn.addEventListener('click',()=>openMappingDialog('settings'));dom.mappingApplyBtn.addEventListener('click',applyMapping);dom.mappingCancelBtn.addEventListener('click',cancelMapping);dom.recognitionApplyBtn.addEventListener('click',applyWallRecognition);dom.recognitionCancelBtn.addEventListener('click',cancelWallRecognition);
   dom.gridToggle.addEventListener('click',()=>{state.grid=!state.grid;dom.gridToggle.classList.toggle('active',state.grid);render();});dom.snapToggle.addEventListener('click',()=>{state.snap=!state.snap;dom.snapToggle.classList.toggle('active',state.snap);});dom.orthoToggle.addEventListener('click',()=>{state.ortho=!state.ortho;dom.orthoToggle.classList.toggle('active',state.ortho);render();});dom.polarToggle.addEventListener('click',()=>{state.polar=!state.polar;dom.polarToggle.classList.toggle('active',state.polar);render();});

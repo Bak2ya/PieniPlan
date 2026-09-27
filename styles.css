@@ -806,3 +806,44 @@ html, body { overscroll-behavior:none; }
   .tool-popover { left:56px; }
   .tool-text { max-width:38px; }
 }
+
+
+/* Build 25 — pre-Astra bugfix: remove orphan topbar control and keep CAD HUD groups on one baseline. */
+.canvas-hud .hud-status-actions,
+.canvas-hud .coord-group {
+  flex:0 0 auto;
+  align-self:flex-end;
+  height:23px;
+  min-height:23px;
+  align-items:center;
+  line-height:1;
+}
+.canvas-hud .status-toggle {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:23px;
+  line-height:1;
+}
+.canvas-hud .status-axis,
+.canvas-hud #statusZoom,
+.canvas-hud #statusX,
+.canvas-hud #statusY,
+.canvas-hud #statusUnits {
+  display:inline-flex;
+  align-items:center;
+  height:23px;
+  line-height:23px;
+  font-variant-numeric:tabular-nums;
+}
+.canvas-hud .status-axis,
+.canvas-hud #statusZoom,
+.canvas-hud #statusX,
+.canvas-hud #statusY,
+.canvas-hud #statusUnits { justify-content:flex-end; }
+.canvas-hud .status-axis { min-width:48px; }
+.canvas-hud #statusZoom { min-width:32px; }
+.canvas-hud .coord-group { flex-basis:222px; min-width:222px; }
+.canvas-hud #statusX,
+.canvas-hud #statusY { width:82px; }
+.canvas-hud #statusUnits { min-width:18px; }
