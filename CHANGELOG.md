@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.21.0 · Build 24 — 2026-09-27
+- Added hierarchical CAD layer visibility by Working Area: **Full drawing** is the parent gate and each Drawing Region keeps its own local layer visibility. Effective visibility is parent AND local; Region state is persisted in `.ppln`.
+- Added Region-local **Turn all on / 모두 켜기** without overriding Full-drawing hidden layers. Parent-hidden layers remain visible in the list as dimmed/disabled inherited state instead of disappearing or losing their local preference.
+- Fixed the top-left `CAD mapping` sliver at its root by removing the orphan hidden topbar proxy and moving the mapping action into an explicit CAD References card.
+- Compacted the left tool rail to about 54 px on desktop while preserving tool icons and interaction targets.
+- Replaced the static COMMAND alias board with a persistent Plan/CAD **Command Console** containing recent log/history, current prompt/status, always-visible input and autocomplete suggestions. CAD X/Y stays in the independent fixed-width far-right status area.
+- Introduced the first CAD-core module boundaries after freezing and regression-testing the user-facing changes: CAD layer-visibility policy, Region transforms, command catalog/aliases and Command Console now live under `modules/` and are called from the application orchestrator through explicit APIs.
+- `BUILD24_SMOKE_TEST.py` passes **43/43**: all Build23 regressions plus scoped-layer inheritance/persistence, layer scope UI, mapping-control placement, Command Console/autocomplete, compact rail and module-boundary loading. JS syntax passes for app/i18n/drawing-studio/worker/modules, EN/KO key parity is **529/529**, and local runtime asset references are complete.
+- Real Safari/Retina feel, Changui Hall 104k-object persistence/performance and long-session Command Console ergonomics still require user-device validation.
+
 ## v0.20.0 · Build 23 — 2026-09-27
 - Recovered Plan linked-CAD tracing controls by replacing the duplicate Palette inspector with **Floors / References / Properties**. References now exposes linked Region visibility, opacity and linked-layer visibility.
 - Fixed stale inspector content when switching Plan/CAD modes; CAD References now consistently shows the opt-in Plan overlay plus external references only.

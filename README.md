@@ -75,8 +75,8 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 
 - 기존 DXF 열기 및 편집
 - 새 DXF 도면 작성
-- 레이어 표시 / 숨김 / 단독 보기 / 검색
-- **작업 범위**는 CAD inspector 상단에서 항상 보이는 편집 context입니다. 전체 도면 또는 특정 Drawing Region을 선택하며, Region 모드에서는 렌더/선택/스냅/TR·EX 등 CAD 작업 후보를 해당 working set으로 제한합니다.
+- 레이어 표시 / 숨김 / 단독 보기 / 검색. **전체 도면**의 레이어 표시가 상위 gate이고, 특정 Drawing Region에서는 그 Region만의 local 표시 상태를 따로 기억합니다. 실제 표시는 `전체 도면 ON + 현재 Region ON`일 때만 켜지며, Region별 상태는 프로젝트에 저장됩니다. Region의 `모두 켜기`는 local 상태만 복원합니다.
+- **작업 범위**는 CAD inspector 상단에서 항상 보이는 편집 context입니다. 전체 도면 또는 특정 Drawing Region을 선택하며, Region 모드에서는 렌더/선택/스냅/TR·EX 등 CAD 작업 후보와 Region-local layer view를 해당 working set으로 제한합니다.
 - 특정 Drawing Region이 작업 범위일 때 `RO / ROTATE`로 그 Region의 source CAD를 기준점 → 기준 방향 → 목표 방향 순서로 회전할 수 있습니다. `H`/`V`/숫자 absolute angle도 지원하며 linked Plan semantic 객체는 자동으로 함께 돌지 않습니다.
 - 객체를 선택하면 해당 레이어를 **레이어 목록 내부에서 자동으로 찾아 표시**
 - 레이어 목록과 도면 영역 목록의 높이를 Splitter로 직접 조절
@@ -86,7 +86,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 - Base Axis를 기준으로 한 ORTHO/POLAR 방향 추적
 - `Shift`를 누르는 동안 ORTHO 상태 임시 반전
 - 연속 LINE 그리기와 마우스 Preview
-- 캔버스 아래쪽에는 한 줄짜리 compact command/status HUD를 오버레이합니다. **COMMAND는 Plan/CAD 모두 왼쪽 아래**, CAD X/Y는 오른쪽 끝의 고정폭 숫자 영역에 두어 좌표 자릿수가 변해도 레이아웃이 움직이지 않습니다. 명령 입력은 평소 짧게 유지되고 포커스될 때 확장됩니다.
+- 캔버스 왼쪽 아래에는 Plan/CAD 공통 **Command Console**을 둡니다. 최근 작업/명령 로그, 현재 prompt, 항상 열린 입력창과 autocomplete 후보가 같은 영역에서 이어집니다. CAD X/Y는 오른쪽 끝의 고정폭 숫자 영역에 분리해 좌표 자릿수가 변해도 레이아웃이 움직이지 않습니다.
 - `TR / TRIM` 잘라내기
 - `EX / EXTEND` 연장
 - TRIM/EXTEND 사용 중 `Shift`로 반대 동작 임시 사용
@@ -110,7 +110,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 - 파일: 새 도면 / 프로젝트 열기 / 프로젝트 저장 / **프로젝트 파일 다운로드** / DXF 열기 / DXF 내보내기
 - **DXF 내보내기**는 지원 브라우저에서 운영체제의 `다른 이름으로 저장` 창을 열어 위치와 파일명을 직접 고릅니다. 미지원 브라우저에서는 PieniPlan이 파일명을 먼저 확인한 뒤 브라우저 다운로드 위치를 사용한다는 점을 명확히 안내합니다.
 - 설정: Light / Dark / Black을 즉시 변경, 별도 **사용 안내**와 **정보** 창 제공
-- CAD Mode의 좌표/GRID/SNAP/ORTHO/POLAR/배율과 Command는 페이지 하단 고정 행이 아니라 도면 위 한 줄 HUD입니다. Plan Mode에서는 CAD 전용 상태값을 숨기고 compact Command만 남깁니다.
+- CAD Mode의 좌표/GRID/SNAP/ORTHO/POLAR/배율과 Command는 페이지 하단 고정 행이 아니라 도면 위 HUD입니다. Plan/CAD 모두 왼쪽 아래 Command Console을 공유하고, CAD 전용 X/Y 및 상태값만 별도 영역에 표시합니다.
 
 앱 안의 사용 안내에는 두 모드의 목적, 주요 기능, 파일 흐름, 단축키, 인식/스냅과 문제 해결을 정리합니다. 시작 화면 마지막 줄에는 현재 `Version · Build`를 표시해 캡처만으로도 실행 중인 빌드를 확인할 수 있습니다.
 
@@ -121,7 +121,7 @@ PieniPlan의 portable 프로젝트 파일 기본 확장자는 `.ppln`입니다. 
 프로젝트 파일에는 현재 작업에 필요한 상태가 포함됩니다.
 
 - 현재 CAD/Plan 객체
-- CAD 레이어 표시 상태
+- CAD 전체 레이어 표시 상태 + Drawing Region별 local 레이어 표시 상태
 - 삭제·편집된 CAD 상태
 - 도면 영역
 - Plan 선·문·창·공간·계단·치수
@@ -206,8 +206,11 @@ PieniPlan은 공간 geometry에서 **도면 계산 면적**을 제공하지만, 
 CAD 명령창에서 현재 지원하는 주요 Alias:
 
 - `L / LINE`
+- `M / MOVE` (Plan)
+- `CO / COPY` (Plan)
 - `TR / TRIM`
 - `EX / EXTEND`
+- `RO / ROTATE` (특정 CAD 작업 범위)
 - `E / ERASE`
 - `DI / DIST`
 - `Z / ZOOM` → `E / EXTENTS`
@@ -254,10 +257,22 @@ python3 -m http.server 8000
 
 브라우저에 따라 `file://`로 `index.html`을 직접 열면 DXF Web Worker가 제한될 수 있습니다.
 
+## 개발 구조
+
+Build 24부터 CAD 확장을 위해 일부 코어 책임을 `modules/`로 분리했습니다. 현재 `app.js`는 통합 state와 application orchestration을 유지하고, CAD layer visibility policy, Region transform, command catalog, Command Console은 명시적 module API를 사용합니다. 이 분리는 기능을 바꾸기 위한 것이 아니라 이후 건축 CAD command/selection/snap/block/asset 코어를 독립적으로 확장하기 위한 기반입니다.
+
 ## Third-party notices
 
 PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
 
+
+## Build 24 — Scoped Layers, Command Console & CAD Core Boundaries
+
+- CAD layer visibility now follows **Full drawing parent → Region local** hierarchy. Each Region remembers its own hidden layers, while a Full-drawing OFF state gates every Region without erasing their local preferences.
+- Region layer panels expose **Turn all on / 모두 켜기** for the current local context. A layer hidden by Full drawing remains listed with an inherited disabled state so the reason is visible.
+- Removed the clipped top-left CAD-mapping proxy and moved CAD mapping to a proper References card. The left tool rail is slightly narrower without shrinking the icon language.
+- Replaced the static COMMAND hint board with a persistent Plan/CAD Command Console with history, live prompts, input and autocomplete; CAD coordinates remain fixed on the far right.
+- Began behavior-preserving modularization for future Architectural CAD expansion: layer visibility, Region transform and Command/Console responsibilities now have explicit `modules/` APIs instead of continuing to grow as unrelated `app.js` internals.
 
 ## Build 23 — UI recovery, Working Area & Region Rotate
 

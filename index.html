@@ -39,7 +39,7 @@
       <input id="projectFileInput" type="file" accept=".ppln,.pieniplan,application/json" hidden />
       <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
       <input id="referenceFileInput" type="file" accept=".dxf,image/*,.pdf" hidden />
-      <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="fullExtentsBtn" hidden></button><button id="mappingSettingsBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
+      <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="fullExtentsBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
     </header>
 
     <main class="workspace">
@@ -73,10 +73,16 @@
 
         <div id="canvasHud" class="canvas-hud" aria-label="Drawing command and status">
           <div id="commandBar" class="commandbar">
-            <span class="command-label">Command</span>
-            <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
-                   placeholder="L, M, CO, RO, TR, EX, DI, Z …" aria-label="Command" />
-            <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
+            <div class="command-console-output" aria-live="polite">
+              <div id="commandHistory" class="command-history" hidden></div>
+              <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
+            </div>
+            <div class="command-entry-row">
+              <span class="command-label" data-i18n="command.promptLabel">Command:</span>
+              <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
+                     data-i18n-placeholder="command.inputPlaceholder" placeholder="Type a command…" aria-label="Command" />
+            </div>
+            <div id="commandSuggestions" class="command-suggestions" hidden></div>
           </div>
           <div class="hud-spacer"></div>
           <div class="hud-cad-only hud-status-actions">
@@ -126,6 +132,11 @@
               <button id="addReferenceBtn" class="small-button" data-i18n="action.add">Add</button>
             </div>
             <div id="referenceList" class="panel-list"></div>
+            <div id="cadMappingCard" class="panel-section cad-mapping-card" hidden>
+              <div class="section-heading" data-i18n="panel.cadMappingTitle">Plan → CAD representation</div>
+              <div class="section-copy" data-i18n="panel.cadMappingCopy">Choose how semantic Plan objects are represented when converted to CAD/DXF.</div>
+              <button id="mappingSettingsBtn" class="small-button" data-i18n="action.cadMapping">CAD mapping</button>
+            </div>
             <div id="referenceHelp" class="panel-section muted-section">
               <div class="section-heading" data-i18n="panel.referenceRuleTitle">Reference ≠ Drawing</div>
               <div class="section-copy" data-i18n="panel.referenceRuleCopy">References stay underneath the drawing. They can be calibrated and traced without changing the source.</div>
@@ -356,6 +367,10 @@
 
   <script src="i18n.js"></script>
   <script src="drawing-studio.js"></script>
+  <script src="modules/cad/layer-visibility.js"></script>
+  <script src="modules/cad/region-transform.js"></script>
+  <script src="modules/command/core.js"></script>
+  <script src="modules/command/console.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
