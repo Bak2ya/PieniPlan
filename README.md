@@ -24,7 +24,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 ### Plan Mode · 층별 평면
 
 - 건물을 **층(Floor)** 단위로 분리해 관리하며 각 층은 안정적인 내부 ID를 가집니다. Drawing Region 이름이 `6F`, `６Ｆ`, `6층`, `지하 2층`처럼 명확하면 처음 연결할 때 층 이름을 자동으로 이어받습니다.
-- 오른쪽 패널은 **층 / 참조 도면 / 속성**으로 구성됩니다. 각 층 바로 아래에는 그 층의 CAD/이미지/DXF 밑그림이 붙어서 보이며 **눈 + 불투명도 슬라이더 + 숫자 % 입력**으로 각 층마다 독립 제어합니다. Plan의 `참조 도면` 탭은 파일/기준 치수 같은 상세 관리에 집중하고 DXF 레이어 목록은 CAD Mode에서 관리합니다.
+- Plan 오른쪽 패널은 **층 / 속성**으로 단순화됩니다. Floor는 부모 카드이며, 펼친 Floor 안에서만 `참조 도면 · 이름`의 **보기 + 눈 + 불투명도 슬라이더 + 숫자 % 입력**과 Space 자식 카드가 나타납니다. Floor/Space 목록은 이름을 중심으로 보여주고 세부 정보는 메뉴/속성으로 이동합니다. DXF 레이어 관리는 CAD Mode가 담당합니다.
 - Plan Mode에서는 사용자에게 `선`과 `벽`을 따로 나누지 않습니다. `L` 명령과 왼쪽 **선** 도구는 같은 semantic 평면 경계선을 만들고, 내부적으로 필요한 두께·공간 경계·문/창 host 속성은 그 선의 속성으로 유지합니다. 화면에 보이는 선은 실제 endpoint에서 정확히 끝나며, 선택 판정도 보이는 선을 기준으로 일정한 화면 픽셀 허용범위를 사용합니다.
 - 계단은 복잡한 CAD 디딤판 선을 그대로 반복 렌더링하지 않고 의미 객체로 단순화해 표시합니다.
 - CAD Drawing Region은 Plan Floor와 **1:1로 연결**합니다. 다른 층의 Region을 열거나 재인식해도 기존 Floor에 결과를 섞지 않고 대응 Floor를 재사용하거나 새로 만듭니다.
@@ -40,6 +40,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 - Plan Mode에서도 `L`, `M`, `CO`, `TR`, `EX`, `E`, `DI`, Undo/Redo 같은 익숙한 명령을 사용할 수 있습니다. 이 명령은 원본 DXF가 아니라 현재 층의 Plan 객체를 편집합니다. `TR`에서는 커서가 가리키는 **실제 삭제 예정 구간만 빨간 반투명 overlay**로 먼저 보여주고 클릭할 때 확정합니다.
 - 직선 선끼리의 접합은 편집 자유도에 따라 구분합니다. **Endpoint↔Endpoint는 같은 persistent Junction node**를 공유하고, **Endpoint↔Segment 중간 접합은 Point-on-Edge 제약**으로 유지합니다. 중간 접합은 host 선의 특정 비율 위치에 고정되지 않고 선 위에서 이동할 수 있으며, host 이동·길이 변경·회전 시 branch의 기존 수평/수직/각도를 가능한 한 유지한 새 교점을 계산합니다. 단순 interior X crossing은 자동 연결하지 않습니다.
 - Plan Mode에서 `Shift`는 **기하 제약 전용키**입니다. 그리기/끝점 편집에서는 GLOBAL 0/45/90/…°와 연결선 기준 REF 0/45/90/…° 후보를 동시에 평가하며, 기존 선의 현재 각도도 후보에 포함합니다. 선 전체를 이동할 때는 GLOBAL 수평·수직과 연결선의 평행·수직 방향 중 포인터 이동 방향에 가장 가까운 축으로 제한해 주변 선이 불필요하게 뒤틀리는 것을 줄입니다. Plan에서는 Shift가 TR/EX를 서로 뒤집지 않습니다.
+- Plan에서 `Shift`는 선택 추가키가 아니라 **기하 제약키**입니다. 벽 전체를 Shift로 끌면 GLOBAL 수평/수직과 연결선의 평행/수직 후보를 사용하며, Shift를 먼저 누른 채 클릭해도 직접 constrained drag가 시작됩니다. Plan 다중 선택 toggle은 Ctrl/Cmd를 사용하고, CAD의 selection modifier 문법은 별도로 유지합니다.
 - `L` 같은 도구를 실행할 때 길이·각도 입력은 캔버스 **왼쪽 위 Floating Context HUD**에만 나타납니다. HUD가 열리고 닫혀도 캔버스 높이나 도면 좌표는 바뀌지 않습니다.
 - 문 직접 조작은 **선택 영역과 드래그 조작 영역을 분리**합니다. 문틀/개구부 span 전체를 끌면 host 선을 따라 위치 이동하고, 문짝 또는 개폐호 stroke 근처를 끌 때만 열림/경첩 방향 gesture가 동작합니다. 부채꼴 내부는 넓게 선택할 수 있지만 그 내부를 끌었다고 방향이 뒤집히지는 않습니다. 가운데 점은 위치 이동 affordance로 남고, 판단은 화면 X/Y가 아니라 host 선의 로컬 축을 사용합니다.
 - 공간 face 분석에서는 실제 Plan 선의 interior crossing을 **가상 topology node**로 사용해 닫힌 면을 찾습니다. 다만 편집 topology에서는 단순 X crossing을 persistent Junction이나 실제 split으로 만들지 않아, 공간 계산 때문에 선들이 서로 끌려다니지 않습니다.
@@ -294,7 +295,7 @@ PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합
 
 ## Build 23 — UI recovery, Working Area & Region Rotate
 
-- Plan inspector is now **Floors / References / Properties**. The duplicate Palette tab was removed; Door/Window/Space creation remains in the left Elements group.
+- Plan inspector is now **Floors / Properties**. Reference visibility/opacity is nested under the expanded Floor card, and Space rows are child cards. The separate Plan References tab is no longer part of the primary Plan inspector.
 - The active Floor's linked CAD tracing is controllable again from References: visibility, opacity and linked-layer visibility can be changed without leaving Plan Mode.
 - CAD Working Area is now a persistent inspector context above Layer/Reference/Properties content, with Full drawing/Region selection and active object count.
 - Mode changes rerender the Reference inspector so Plan palette content cannot remain under the CAD Reference title.
@@ -330,6 +331,16 @@ PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합
 - Floor space trees are collapsible. Each Space has a compact action menu for rename, type, managed area / calculated drawing area, and delete.
 - Managed/reference area is stored separately from drawing-calculated area, so scanned/legacy facility records can coexist without distorting geometry or silently redefining FacilityManager official area.
 
+
+### v0.23.1 · Build 29
+
+- Integrated the approved Astra B1 real-project repairs, including the Plan wall/opening derived lookup optimization and bounded data-integrity fixes.
+- Restored **Shift + whole-wall constrained drag** in Plan even when Shift is already held before pointer-down; Plan multi-selection toggle uses Ctrl/Cmd.
+- Reworked the Plan inspector as **Floor parent card → expanded-only Reference Drawing control → nested Space child cards**.
+- Plan primary tabs are now **Floors / Properties**; the separate Plan References tab is removed from the normal Plan inspector.
+- Floor and Space rows show their names prominently without always-visible object counts, area or type metadata.
+- Per-Floor Reference uses **Reference Drawing · name**, View, visibility, opacity slider and editable percent; collapsed Floors hide the Reference controls.
+- Verification: Build29 smoke 66/66, core 5/5, JS syntax 15/15, assets 23/23, EN/KO 571/571. Actual Safari/real-project feel remains device validation.
 
 ### v0.23.0 · Build 28
 

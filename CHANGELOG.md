@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.23.1 · Build 29 — 2026-09-27
+- Integrated all five approved Astra B1 repairs from the real Changui Hall project audit without promoting the Astra candidate itself: Plan wall/opening derived lookup index, active-Floor-only Space refresh with correct Undo cache order, `cadMapping` history restore, duplicate-object-ID preflight before project state swap, and Known-dimension scaling of free-dimension `p1/p2`.
+- Restored the approved Plan **Shift + whole-wall drag** contract. In Plan Mode, Shift is again a geometry-constraint key even when held before pointer-down; Ctrl/Cmd handles selection toggling instead. CAD Mode keeps its existing CAD selection modifier behavior.
+- Rebuilt the Plan Floor inspector hierarchy. A Floor is now the parent card, and a collapsed Floor shows only its name and menu. Expanding it reveals that Floor's Reference Drawing control and nested Space child cards.
+- Simplified Floor/Space rows to emphasize identity: larger names, no always-visible object/space counts, area or type metadata. Detailed actions remain available from each `…` menu / selection context.
+- Removed the separate **References** tab from Plan Mode. Plan now exposes **Floors / Properties**; routine Reference visibility and opacity live inside the expanded Floor, while Reference-specific actions are available through the Floor/reference context.
+- Reworded the per-Floor control as **Reference Drawing · <name>** with a compact **View** action, eye toggle, opacity slider and editable percentage. Reference controls disappear when the Floor is collapsed.
+- Preserved Build28 calibration/reference behavior and Build27 CAD/Plan workload isolation. Verification: Build29 smoke **66/66 PASS**, command/context/unit core **5/5 PASS**, JavaScript syntax **15/15**, local runtime assets **23/23**, EN/KO parity **571/571**, and synthetic 104k performance harness completed. The synthetic first-edit/drag path still includes the known full-document history snapshot cost; actual Safari and the user's real Changui Hall project remain the final runtime validation.
+
 ## v0.23.0 · Build 28 — 2026-09-27
 - Reworked Plan reference information architecture: every Floor now shows its linked CAD/DXF/image placements directly underneath with visibility, opacity slider and editable percentage. Per-placement opacity/visibility remains independent across Floors.
 - Removed duplicate DXF layer checklists from Plan References. Linked CAD underlays now follow the authoritative CAD Full-drawing AND Region-local layer visibility; layer editing stays in CAD Mode.

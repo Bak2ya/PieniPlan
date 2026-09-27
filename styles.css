@@ -883,3 +883,187 @@ html, body { overscroll-behavior:none; }
 .cad-layer-compact-action.active { color:var(--accent); background:var(--accent-soft); }
 .cad-layer-compact-action:disabled { opacity:.25; cursor:default; }
 .cad-layer-name-input { width:100%; min-width:0; height:28px; border:1px solid var(--accent); border-radius:5px; background:var(--surface-1); color:var(--text-1); font:500 11.5px system-ui; padding:3px 6px; outline:none; }
+
+
+/* Build 29 — Plan Floor hierarchy: one parent card, nested Space cards, inline Reference controls. */
+.inspector-tab[hidden] { display:none !important; }
+
+.floor-list {
+  gap:9px;
+  padding:0 10px 12px;
+}
+.floor-tree-group {
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:5px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--surface-2) 82%,var(--surface));
+  transition:border-color .12s ease, background-color .12s ease;
+}
+.floor-tree-group.active {
+  border-color:color-mix(in srgb,var(--plan-accent) 52%,var(--border));
+  background:color-mix(in srgb,var(--plan-soft) 56%,var(--surface-2));
+}
+.floor-tree-group:not(.expanded) { gap:0; }
+
+.floor-row {
+  grid-template-columns:28px minmax(0,1fr) auto;
+  min-height:42px;
+  padding:4px 5px 4px 3px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  gap:7px;
+}
+.floor-row:hover { border-color:transparent; background:color-mix(in srgb,var(--surface-3) 68%,transparent); }
+.floor-tree-group.active .floor-row { background:transparent; }
+.floor-main { min-width:0; }
+.floor-name {
+  font-size:13.5px;
+  line-height:1.2;
+  font-weight:700;
+  color:var(--text);
+}
+.floor-meta { display:none; }
+.floor-more { min-width:30px; min-height:30px; }
+
+.floor-reference-list {
+  display:grid;
+  gap:6px;
+  margin:0;
+  padding:0 3px 1px 3px;
+}
+.floor-reference-placement {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:6px;
+  min-height:0;
+  padding:8px;
+  border:1px solid color-mix(in srgb,var(--border) 88%,transparent);
+  border-left:2px solid color-mix(in srgb,var(--plan-accent) 55%,var(--border));
+  border-radius:7px;
+  background:color-mix(in srgb,var(--surface) 62%,var(--surface-2));
+}
+.floor-reference-placement.selected {
+  background:color-mix(in srgb,var(--plan-soft) 58%,var(--surface-2));
+}
+.floor-reference-header {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  align-items:center;
+  min-width:0;
+}
+.floor-reference-main {
+  min-width:0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  padding:0;
+  text-align:left;
+  cursor:pointer;
+}
+.floor-reference-name {
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11.8px;
+  line-height:1.25;
+  font-weight:650;
+  color:var(--text);
+}
+.floor-reference-view {
+  min-width:42px;
+  min-height:28px;
+  padding-inline:8px;
+}
+.floor-reference-controls {
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  gap:7px;
+  align-items:center;
+}
+.floor-reference-controls > .eye-button {
+  width:28px;
+  height:28px;
+  align-self:center;
+}
+.floor-reference-opacity {
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(64px,1fr) 46px 10px;
+  gap:5px;
+  align-items:center;
+}
+.floor-reference-opacity input[type=range] { width:100%; min-width:0; }
+.floor-reference-opacity-number {
+  width:46px;
+  height:28px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface-1);
+  color:var(--text);
+  font:inherit;
+  font-size:10.5px;
+  text-align:right;
+  padding:0 4px;
+  font-variant-numeric:tabular-nums;
+}
+.floor-reference-opacity > span { color:var(--text-3); font-size:10px; }
+
+.floor-space-list {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin:0;
+  padding:0 3px 2px 28px;
+  border-left:0;
+}
+.floor-space-row {
+  min-height:38px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  padding:5px 5px 5px 9px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--surface) 70%,var(--surface-2));
+  color:var(--text-2);
+}
+.floor-space-row:hover {
+  background:var(--surface-3);
+  border-color:var(--border-strong);
+}
+.floor-space-row.selected {
+  color:var(--text);
+  background:var(--plan-soft);
+  border-color:color-mix(in srgb,var(--plan-accent) 48%,var(--border));
+}
+.floor-space-main { min-width:0; }
+.floor-space-name {
+  font-size:12.3px;
+  line-height:1.2;
+  font-weight:650;
+  color:inherit;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.floor-space-meta, .floor-space-branch { display:none; }
+.floor-space-more { min-width:30px; min-height:30px; opacity:.72; }
+
+@media (max-width:900px) {
+  .floor-space-list { padding-left:22px; }
+}
+
+/* Build 29 visual correction: reset legacy grid placement inside the new Reference header. */
+.floor-reference-header .floor-reference-main { grid-column:auto; grid-row:auto; }
+.floor-reference-controls > .eye-button .ui-icon { width:16px; height:16px; }
+
+.app-shell.plan-tools .inspector-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.app-shell.cad-tools .inspector-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
