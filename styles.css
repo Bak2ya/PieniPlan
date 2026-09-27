@@ -715,3 +715,44 @@ html, body { overscroll-behavior:none; }
 .cad-scope-actions { display:flex; gap:5px; flex:0 0 auto; }
 .cad-scope-actions .mini-action.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
 .region-row.compact.active-scope { box-shadow:inset 2px 0 0 var(--accent); }
+
+/* Build 23 — inspector context, stable HUD, and Plan tree clarity */
+.app-shell.plan-tools .inspector { grid-template-rows:35px minmax(0,1fr); }
+.app-shell.cad-tools .inspector { grid-template-rows:35px auto minmax(0,1fr); }
+.cad-scope-host { padding:8px 10px 0; min-width:0; }
+.cad-scope-host[hidden] { display:none !important; }
+.cad-scope-card { display:grid; gap:5px; padding:8px 9px; border:1px solid var(--border); border-radius:8px; background:color-mix(in srgb,var(--surface-2) 72%,transparent); }
+.cad-scope-top { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:8px; min-width:0; }
+.cad-scope-label { color:var(--text-2); font-size:9.5px; font-weight:650; white-space:nowrap; }
+.cad-scope-select { width:100%; min-width:0; height:28px; border:1px solid var(--border-strong); border-radius:6px; background:var(--surface); color:var(--text); padding:0 7px; font-size:10px; outline:none; }
+.cad-scope-select:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.cad-scope-meta { color:var(--text-3); font-size:8.8px; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.app-shell.plan-tools .cad-scope-host { display:none !important; }
+
+/* The layer filter is its own row. Scope is no longer squeezed beside it. */
+.app-shell.cad-tools .primary-controls { display:block; min-height:28px; }
+.app-shell.cad-tools .primary-controls .layer-search { display:block; width:100%; }
+
+.plan-overlay-card { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:8px; min-height:42px; margin-bottom:8px; padding:7px 8px; border:1px solid var(--border); border-radius:7px; background:var(--surface-2); }
+.reference-empty { padding:8px 2px; }
+.reference-layer-actions { display:flex; gap:5px; margin:8px 0; }
+.reference-layer-list { display:grid; gap:5px; max-height:220px; overflow:auto; }
+.reference-layer-row { display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px; align-items:center; font-size:9.5px; color:var(--text-2); }
+.reference-layer-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reference-opacity-control { margin-top:5px; }
+
+/* Plan/CAD command grammar: COMMAND is always bottom-left; CAD coordinates are far-right. */
+.app-shell.plan-tools .canvas-hud { left:10px; right:auto; width:auto; min-width:168px; }
+.app-shell.plan-tools .command-status { left:0; right:auto; }
+.coord-group { flex:0 0 auto; min-width:222px; justify-content:flex-end; font-variant-numeric:tabular-nums; }
+#statusX, #statusY { display:inline-block; width:82px; text-align:right; font-variant-numeric:tabular-nums; }
+#statusUnits { min-width:18px; text-align:right; }
+
+/* A tree disclosure is a real control, not a tiny punctuation mark. */
+.floor-row { grid-template-columns:28px minmax(0,1fr) auto; }
+.floor-disclosure { width:28px; height:28px; font-size:20px; line-height:1; border-radius:6px; }
+.floor-disclosure:disabled { opacity:1; }
+
+/* No horizontal scroll affordance belongs in the application topbar/toolset switch. */
+.topbar, .topbar-zone, .toolset-switch { overflow-x:hidden !important; scrollbar-width:none; }
+.topbar::-webkit-scrollbar, .topbar-zone::-webkit-scrollbar, .toolset-switch::-webkit-scrollbar { display:none; width:0; height:0; }

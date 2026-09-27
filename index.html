@@ -72,16 +72,10 @@
         </div>
 
         <div id="canvasHud" class="canvas-hud" aria-label="Drawing command and status">
-          <div class="hud-cad-only status-group coord-group">
-            <span id="statusX">X 0</span>
-            <span id="statusY">Y 0</span>
-            <span class="status-divider"></span>
-            <span id="statusUnits">mm</span>
-          </div>
           <div id="commandBar" class="commandbar">
             <span class="command-label">Command</span>
             <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
-                   placeholder="L, M, CO, TR, EX, DI, Z …" aria-label="Command" />
+                   placeholder="L, M, CO, RO, TR, EX, DI, Z …" aria-label="Command" />
             <div id="commandStatus" class="command-status" data-i18n="command.ready">Type a command or alias and press Enter.</div>
           </div>
           <div class="hud-spacer"></div>
@@ -95,6 +89,12 @@
             <span class="status-divider"></span>
             <span id="statusZoom">100%</span>
           </div>
+          <div class="hud-cad-only status-group coord-group" aria-label="Cursor coordinates">
+            <span id="statusX">X 0</span>
+            <span id="statusY">Y 0</span>
+            <span class="status-divider"></span>
+            <span id="statusUnits">mm</span>
+          </div>
         </div>
       </section>
 
@@ -104,6 +104,7 @@
           <button class="inspector-tab" data-tab="reference" role="tab" data-i18n="tab.reference">Reference</button>
           <button class="inspector-tab" data-tab="properties" role="tab" data-i18n="tab.properties">Properties</button>
         </div>
+        <div id="cadScopeHost" class="cad-scope-host" hidden></div>
         <div class="inspector-body">
           <section class="inspector-panel active" data-panel="primary">
             <div class="panel-header">

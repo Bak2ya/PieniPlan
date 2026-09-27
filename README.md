@@ -19,7 +19,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 ### Plan Mode · 층별 평면
 
 - 건물을 **층(Floor)** 단위로 분리해 관리하며 각 층은 안정적인 내부 ID를 가집니다. Drawing Region 이름이 `6F`, `６Ｆ`, `6층`, `지하 2층`처럼 명확하면 처음 연결할 때 층 이름을 자동으로 이어받습니다.
-- 오른쪽 패널은 **층 / 팔레트 / 속성**으로 구성됩니다.
+- 오른쪽 패널은 **층 / 참조 도면 / 속성**으로 구성됩니다. `참조 도면`에서는 현재 층에 연결된 CAD Region의 표시/숨김, 불투명도, 레이어 표시를 제어할 수 있습니다.
 - Plan Mode에서는 사용자에게 `선`과 `벽`을 따로 나누지 않습니다. `L` 명령과 왼쪽 **선** 도구는 같은 semantic 평면 경계선을 만들고, 내부적으로 필요한 두께·공간 경계·문/창 host 속성은 그 선의 속성으로 유지합니다. 화면에 보이는 선은 실제 endpoint에서 정확히 끝나며, 선택 판정도 보이는 선을 기준으로 일정한 화면 픽셀 허용범위를 사용합니다.
 - 계단은 복잡한 CAD 디딤판 선을 그대로 반복 렌더링하지 않고 의미 객체로 단순화해 표시합니다.
 - CAD Drawing Region은 Plan Floor와 **1:1로 연결**합니다. 다른 층의 Region을 열거나 재인식해도 기존 Floor에 결과를 섞지 않고 대응 Floor를 재사용하거나 새로 만듭니다.
@@ -76,6 +76,8 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 - 기존 DXF 열기 및 편집
 - 새 DXF 도면 작성
 - 레이어 표시 / 숨김 / 단독 보기 / 검색
+- **작업 범위**는 CAD inspector 상단에서 항상 보이는 편집 context입니다. 전체 도면 또는 특정 Drawing Region을 선택하며, Region 모드에서는 렌더/선택/스냅/TR·EX 등 CAD 작업 후보를 해당 working set으로 제한합니다.
+- 특정 Drawing Region이 작업 범위일 때 `RO / ROTATE`로 그 Region의 source CAD를 기준점 → 기준 방향 → 목표 방향 순서로 회전할 수 있습니다. `H`/`V`/숫자 absolute angle도 지원하며 linked Plan semantic 객체는 자동으로 함께 돌지 않습니다.
 - 객체를 선택하면 해당 레이어를 **레이어 목록 내부에서 자동으로 찾아 표시**
 - 레이어 목록과 도면 영역 목록의 높이를 Splitter로 직접 조절
 - 왼쪽 → 오른쪽 **Window Selection**
@@ -84,7 +86,7 @@ PieniPlan은 **하나의 프로젝트 · Plan Mode와 CAD Mode · 실제 좌표�
 - Base Axis를 기준으로 한 ORTHO/POLAR 방향 추적
 - `Shift`를 누르는 동안 ORTHO 상태 임시 반전
 - 연속 LINE 그리기와 마우스 Preview
-- 캔버스 아래쪽에는 한 줄짜리 compact command/status HUD를 오버레이해 작업 면적을 덜 차지합니다. 명령 입력은 평소 짧게 유지되고 포커스될 때 확장됩니다.
+- 캔버스 아래쪽에는 한 줄짜리 compact command/status HUD를 오버레이합니다. **COMMAND는 Plan/CAD 모두 왼쪽 아래**, CAD X/Y는 오른쪽 끝의 고정폭 숫자 영역에 두어 좌표 자릿수가 변해도 레이아웃이 움직이지 않습니다. 명령 입력은 평소 짧게 유지되고 포커스될 때 확장됩니다.
 - `TR / TRIM` 잘라내기
 - `EX / EXTEND` 연장
 - TRIM/EXTEND 사용 중 `Shift`로 반대 동작 임시 사용
@@ -233,7 +235,7 @@ PieniPlan은 아직 개발 중입니다. 현재 다음 영역은 계속 확장 �
 
 - 자동 저장 및 브라우저 복구
 - PDF Reference 직접 읽기
-- MOVE / COPY / ROTATE / OFFSET 등 더 많은 CAD 편집 명령
+- MOVE / COPY / OFFSET 등 더 많은 CAD 편집 명령
 - 더 다양한 DXF Entity의 완전한 round-trip 보존
 - 문·계단·복잡한 곡선 구조 자동 인식 고도화
 - Junction Solver tolerance와 segmented door recognition의 실제 도면별 보정
@@ -256,6 +258,16 @@ python3 -m http.server 8000
 
 PieniPlan은 Tabler Icons의 일부 outline SVG 아이콘을 로컬로 포함합니다. 자세한 내용은 `THIRD_PARTY_LICENSES.md`를 확인하세요.
 
+
+## Build 23 — UI recovery, Working Area & Region Rotate
+
+- Plan inspector is now **Floors / References / Properties**. The duplicate Palette tab was removed; Door/Window/Space creation remains in the left Elements group.
+- The active Floor's linked CAD tracing is controllable again from References: visibility, opacity and linked-layer visibility can be changed without leaving Plan Mode.
+- CAD Working Area is now a persistent inspector context above Layer/Reference/Properties content, with Full drawing/Region selection and active object count.
+- Mode changes rerender the Reference inspector so Plan palette content cannot remain under the CAD Reference title.
+- Bottom HUD grammar is unified: COMMAND on the left in both modes, CAD X/Y on the far right with reserved numeric width. The top mode switch no longer exposes a horizontal scrollbar.
+- Floor tree disclosure triangles are about 170% of the previous visual size with a larger hit target.
+- Added Region-scoped `RO / ROTATE`: choose a base point, current reference direction and target direction with live preview. Full drawing rotation is intentionally blocked; linked Plan semantic geometry is not silently rotated with the source CAD.
 
 ## Build 22 — CAD Region working set & CAD TR preview
 

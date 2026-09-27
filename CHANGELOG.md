@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.20.0 · Build 23 — 2026-09-27
+- Recovered Plan linked-CAD tracing controls by replacing the duplicate Palette inspector with **Floors / References / Properties**. References now exposes linked Region visibility, opacity and linked-layer visibility.
+- Fixed stale inspector content when switching Plan/CAD modes; CAD References now consistently shows the opt-in Plan overlay plus external references only.
+- Promoted CAD **Working Area** to a persistent inspector context above all CAD tabs. Full drawing/Region selection and working-set object count no longer share a cramped row with layer search.
+- Unified the bottom HUD: COMMAND stays bottom-left in both modes, while CAD X/Y is reserved at the far right with right-aligned tabular numerals so changing coordinate width cannot reflow the HUD.
+- Removed the small horizontal scrollbar around the Plan/CAD mode switch and enlarged Floor-tree disclosure triangles to roughly 170% of the previous visual size with a larger hit area.
+- Added Region-scoped `RO / ROTATE`. A specific Drawing Region is required; the command snapshots its source-CAD working set, previews rotation with a temporary canvas transform, then commits geometry once. `H`, `V`, numeric absolute target angles and Shift 90° targeting are supported. Linked Plan semantic objects are intentionally not auto-rotated.
+- Region bounds are updated to the rotated result's axis-aligned bounding box. This keeps the existing Region data model but can slightly expand the working set after rotation; real drawings should be checked near adjacent geometry.
+- `BUILD23_SMOKE_TEST.py` passes **37/37** including Build21/22 regressions plus reference recovery, scope layout, HUD stability, disclosure size, Region-only rotate and topbar overflow. JS syntax checks pass for app/i18n/drawing-studio/worker.
+
 ## v0.19.0 · Build 22
 - Added a CAD **Working Area** model. The original CAD geometry remains single-source; selecting a Drawing Region activates a cached working set for CAD rendering, selection/hit-testing, snap filtering, TR/EX cutter candidates and layer counts instead of treating every floor/region as simultaneously active.
 - Plan → CAD now enters the active Floor's linked Drawing Region automatically. CAD can return to **Full drawing** at any time, and a Region `…` menu can activate **Edit this region only**.
