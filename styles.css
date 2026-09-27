@@ -1067,3 +1067,67 @@ html, body { overscroll-behavior:none; }
 
 .app-shell.plan-tools .inspector-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .app-shell.cad-tools .inspector-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+
+
+/* Build 30 — Plan section hierarchy, expansion motion, package workflow */
+.plan-section-inspector .inspector-tabs { min-height: 42px; }
+.plan-section-inspector .inspector-tab { font-size: 14px; font-weight: 720; }
+.plan-section-inspector .inspector-panel[data-panel="primary"] > .panel-header { display:none; }
+.plan-section-inspector .primary-controls { padding-top: 10px; }
+.floor-toolbar { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; padding:0 10px 10px; }
+.floor-toolbar .small-button { min-height:32px; }
+.floor-list { display:flex; flex-direction:column; gap:8px; padding:0 8px 12px; }
+.floor-tree-group { border:1px solid var(--line-subtle, rgba(127,127,127,.18)); border-radius:11px; background:var(--surface-1, rgba(127,127,127,.035)); overflow:hidden; transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease; }
+.floor-tree-group.active { border-color:color-mix(in srgb,var(--accent) 58%,transparent); background:color-mix(in srgb,var(--accent) 7%,var(--surface-1,transparent)); }
+.floor-row { min-height:39px; display:grid; grid-template-columns:28px minmax(0,1fr) 30px; align-items:center; gap:2px; padding:0 8px 0 6px; }
+.floor-name { font-size:13px; font-weight:730; line-height:1.2; }
+.floor-disclosure { width:27px; height:27px; font-size:16px; }
+.floor-main { min-width:0; }
+.floor-more { min-width:28px; min-height:28px; }
+.floor-expand-shell { display:grid; grid-template-rows:0fr; opacity:0; overflow:hidden; visibility:hidden; pointer-events:none; transition:grid-template-rows .20s cubic-bezier(.2,.75,.25,1),opacity .16s ease,visibility 0s linear .20s; }
+.floor-tree-group.expanded .floor-expand-shell { grid-template-rows:1fr; opacity:1; visibility:visible; pointer-events:auto; transition:grid-template-rows .20s cubic-bezier(.2,.75,.25,1),opacity .16s ease,visibility 0s; }
+.floor-expand-inner { min-height:0; overflow:hidden; padding:0 9px; }
+.floor-tree-group.expanded .floor-expand-inner { padding-bottom:9px; }
+.floor-reference-list { margin:0; padding:0 0 8px; }
+.floor-reference-placement { padding:7px 2px 6px; border:0; border-radius:0; background:transparent; }
+.floor-reference-placement + .floor-reference-placement { border-top:1px solid var(--line-subtle,rgba(127,127,127,.15)); }
+.floor-reference-header { display:flex; align-items:center; min-height:28px; gap:8px; }
+.floor-reference-main { flex:1; min-width:0; padding:0; border:0; background:transparent; text-align:left; color:inherit; cursor:pointer; }
+.floor-reference-name { display:block; font-size:11.5px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.floor-reference-view { flex:0 0 auto; min-height:25px; padding-inline:8px; }
+.floor-reference-controls { display:grid; grid-template-columns:28px minmax(0,1fr) 42px 12px; align-items:center; gap:6px; min-height:30px; }
+.floor-reference-eye { width:27px; height:27px; }
+.floor-reference-slider { width:100%; min-width:0; margin:0; }
+.floor-reference-opacity-number { width:42px; height:25px; font-variant-numeric:tabular-nums; text-align:right; }
+.floor-reference-percent-unit { font-size:10px; color:var(--text-2); }
+.floor-space-list { display:flex; flex-direction:column; gap:6px; padding:0; }
+.floor-space-row { min-height:35px; border:1px solid var(--line-subtle,rgba(127,127,127,.18)); border-radius:9px; background:var(--surface-2,rgba(127,127,127,.035)); padding:0 7px 0 11px; display:grid; grid-template-columns:minmax(0,1fr) 30px; align-items:center; }
+.floor-space-row.selected { border-color:color-mix(in srgb,var(--accent) 60%,transparent); background:color-mix(in srgb,var(--accent) 8%,var(--surface-2,transparent)); }
+.floor-space-name { font-size:12px; font-weight:650; }
+.floor-list.order-editing .floor-tree-group { cursor:grab; }
+.floor-tree-group.dragging { opacity:.48; }
+.floor-tree-group.drop-before,.floor-tree-group.drop-after { position:relative; }
+.floor-tree-group.drop-before::before,.floor-tree-group.drop-after::after { content:""; position:absolute; left:8px; right:8px; height:2px; border-radius:2px; background:var(--accent); z-index:3; pointer-events:none; }
+.floor-tree-group.drop-before::before { top:-5px; }
+.floor-tree-group.drop-after::after { bottom:-5px; }
+.floor-reorder-handle { width:22px; color:var(--text-2); font-size:14px; text-align:center; cursor:grab; }
+.floor-list.order-editing .floor-row { grid-template-columns:22px 28px minmax(0,1fr) 30px; }
+.plan-package-dialog { width:min(480px,calc(100vw - 32px)); }
+.plan-merge-dialog { width:min(640px,calc(100vw - 32px)); max-height:min(720px,calc(100vh - 40px)); }
+.plan-merge-list { display:flex; flex-direction:column; gap:8px; max-height:390px; overflow:auto; margin:12px 0; }
+.plan-merge-entry { border:1px solid var(--line-subtle,rgba(127,127,127,.18)); border-radius:10px; padding:10px; background:var(--surface-2,rgba(127,127,127,.035)); }
+.plan-merge-entry-top,.plan-merge-entry-bottom,.plan-merge-actions-row { display:flex; align-items:center; gap:8px; }
+.plan-merge-building-input { flex:1; min-width:0; }
+.plan-merge-entry-meta { flex:1; min-width:0; color:var(--text-2); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.plan-merge-discipline { width:140px; }
+.plan-merge-actions-row { justify-content:space-between; }
+.plan-merge-summary { color:var(--text-2); font-size:11px; }
+@media (prefers-reduced-motion:reduce){.floor-expand-shell,.floor-tree-group{transition:none!important;}}
+
+
+/* Build 30 final polish: compact collapsed drawings and keep reference controls visually inside the parent card. */
+.floor-tree-group:not(.expanded) .floor-row { min-height:36px; }
+.floor-reference-placement.selected { background:transparent; }
+.floor-expand-inner { transform:translateY(-3px); transition:transform .20s cubic-bezier(.2,.75,.25,1); }
+.floor-tree-group.expanded .floor-expand-inner { transform:translateY(0); }
+@media (prefers-reduced-motion:reduce){.floor-expand-inner{transition:none!important;transform:none!important;}}

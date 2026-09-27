@@ -40,7 +40,9 @@
         <button id="settingsMenuBtn" class="icon-button" aria-label="Settings" data-tooltip-title="Settings"><span class="ui-icon icon-settings" aria-hidden="true"></span></button>
       </div>
 
-      <input id="projectFileInput" type="file" accept=".ppln,.pieniplan,application/json" hidden />
+      <input id="projectFileInput" type="file" accept=".pprj,.ppln,.pieniplan,application/json" hidden />
+      <input id="planPackageFileInput" type="file" accept=".ppkg,application/json" hidden />
+      <input id="planMergeFileInput" type="file" accept=".ppkg,application/json" multiple hidden />
       <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
       <input id="referenceFileInput" type="file" accept=".dxf,image/*" hidden />
       <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
@@ -198,6 +200,9 @@
       </div>
 
       <div class="start-secondary">
+        <button id="startOpenProjectBtn" class="toolbar-button" data-i18n="start.openProjectPprj">Open Project (PPRJ)</button>
+        <button id="startOpenPackageBtn" class="toolbar-button" data-i18n="start.openPackagePpkg">Open Plan Package (PPKG)</button>
+        <button id="startMergePlanBtn" class="toolbar-button" data-i18n="start.mergePlans">Merge Plans</button>
         <button id="startSampleBtn" class="toolbar-button" data-i18n="start.sample">Open sample and look around</button>
       </div>
 
@@ -213,9 +218,12 @@
 
   <div id="fileMenu" class="top-menu" role="menu" hidden>
     <button id="fileNewAction" class="menu-row" data-i18n="action.new">New</button>
-    <button id="fileOpenProjectAction" class="menu-row" data-i18n="action.openProject">Open Project</button>
-    <button id="fileSaveProjectAction" class="menu-row" data-i18n="action.saveProject">Save Project</button>
-    <button id="fileDownloadProjectAction" class="menu-row" data-i18n="action.downloadProject">Download Project File</button>
+    <button id="fileOpenProjectAction" class="menu-row" data-i18n="action.openProjectPprj">Open Project (PPRJ)</button>
+    <button id="fileSaveProjectAction" class="menu-row" data-i18n="action.saveProjectPprj">Save Project (PPRJ)</button>
+    <button id="fileDownloadProjectAction" class="menu-row" data-i18n="action.downloadProjectPprj">Export Project (PPRJ)</button>
+    <div class="menu-divider"></div>
+    <button id="fileExportPlanPackageAction" class="menu-row" data-i18n="action.exportPlanPackage">Export Plan (PPKG)</button>
+    <button id="fileImportPlanPackageAction" class="menu-row" data-i18n="action.importPlanPackage">Import Plan (PPKG)</button>
     <div class="menu-divider"></div>
     <button id="fileOpenDxfAction" class="menu-row" data-i18n="action.openDxfEdit">Open DXF</button>
     <button id="fileExportDxfAction" class="menu-row" data-i18n="action.exportDxf">Export DXF</button>
@@ -259,6 +267,48 @@
       <div class="dialog-actions">
         <button id="dialogCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
         <button id="dialogApplyBtn" class="toolbar-button primary" data-i18n="action.applyScale">Apply scale</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="planPackageBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog plan-package-dialog" role="dialog" aria-modal="true" aria-labelledby="planPackageTitle">
+      <div class="dialog-title" id="planPackageTitle" data-i18n="ppkg.exportTitle">Export Plan Package (PPKG)</div>
+      <div class="dialog-copy" data-i18n="ppkg.exportCopy">Export only semantic Plan drawings. CAD source and reference files are not included.</div>
+      <label class="field-label" for="planPackageBuildingName" data-i18n="ppkg.buildingName">Building name</label>
+      <input id="planPackageBuildingName" class="text-input" type="text" autocomplete="off" />
+      <label class="field-label" for="planPackageDiscipline" data-i18n="ppkg.discipline">Drawing discipline</label>
+      <select id="planPackageDiscipline" class="select-input">
+        <option value="" data-i18n="ppkg.keepDiscipline">Keep drawing disciplines</option>
+        <option value="architectural" data-i18n="ppkg.disciplineArchitectural">Architectural</option>
+        <option value="fire" data-i18n="ppkg.disciplineFire">Fire</option>
+        <option value="electrical" data-i18n="ppkg.disciplineElectrical">Electrical</option>
+        <option value="communications" data-i18n="ppkg.disciplineCommunications">Communications</option>
+        <option value="mechanical" data-i18n="ppkg.disciplineMechanical">Mechanical</option>
+        <option value="facility" data-i18n="ppkg.disciplineFacility">Facility</option>
+        <option value="structural" data-i18n="ppkg.disciplineStructural">Structural</option>
+        <option value="other" data-i18n="ppkg.disciplineOther">Other</option>
+      </select>
+      <div class="dialog-actions">
+        <button id="planPackageCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="planPackageExportBtn" class="toolbar-button primary" data-i18n="ppkg.exportAction">Export PPKG</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="planMergeBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog plan-merge-dialog" role="dialog" aria-modal="true" aria-labelledby="planMergeTitle">
+      <div class="dialog-title" id="planMergeTitle" data-i18n="ppkg.mergeTitle">Merge Plan Packages</div>
+      <div class="dialog-copy" data-i18n="ppkg.mergeCopy">Packages with the same building name are combined. You can rename a building before saving the merged package.</div>
+      <div id="planMergeList" class="plan-merge-list"></div>
+      <div class="plan-merge-actions-row">
+        <button id="planMergeAddBtn" class="toolbar-button" data-i18n="ppkg.addPackages">Add PPKG</button>
+        <span id="planMergeSummary" class="plan-merge-summary"></span>
+      </div>
+      <div class="dialog-actions">
+        <button id="planMergeCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="planMergeExportBtn" class="toolbar-button primary" data-i18n="ppkg.exportMerged">Export merged PPKG</button>
       </div>
     </div>
   </div>
