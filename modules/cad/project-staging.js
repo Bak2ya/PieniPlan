@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{};
-  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','line','wall','door','window','dimension','space','stair']);
+  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','line','wall','door','window','dimension','space','stair','component']);
   function validate(raw){
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
@@ -22,6 +22,10 @@
       if(['cadCircle','cadArc'].includes(o.type)&&(!point(o.center)||!Number.isFinite(o.radius)||o.radius<=0))bad('circle');
       if(o.type==='cadArc'&&(!Number.isFinite(o.startAngle)||!Number.isFinite(o.sweep)))bad('arc');
       if(o.type==='cadText'&&!point(o.point))bad('text');
+      if(o.type==='component'){
+        if(!point(o.point)||typeof o.assetId!=='string'||!o.assetId.trim())bad('component');
+        for(const k of ['rotation','scaleX','scaleY'])if(o[k]!=null&&!Number.isFinite(o[k]))bad('component-transform');
+      }
     }
     for(const r of d.references||[]){
       if(!['image','dxf','linkedCadRegion'].includes(r.type))bad('reference-type');

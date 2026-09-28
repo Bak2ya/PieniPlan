@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.26.2 · Build 34**
+현재 버전: **v0.27.0 · Build 35**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -28,6 +28,7 @@ CAD를 잘 몰라도 건물의 평면 구조를 빠르게 만들고 정리하는
 
 - 실제 치수 기반 직선·곡선 평면 경계 작성
 - 문, 창, 공간, 계단 같은 의미 요소 배치
+- 변기·세면대·싱크·가전·가구 등 기본 구성품을 하나의 Component 객체로 배치·회전·반전·복사
 - 여러 **건물 → 도면 → 공간** 계층 관리
 - 건물과 도면의 순서를 각각 직접 편집
 - 도면별 참조 CAD/DXF·이미지 표시와 불투명도 조절
@@ -51,7 +52,8 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 
 - DXF 열기 및 편집
 - CAD Layer 생성, 이름 변경, 삭제, 현재 Layer, Lock/Unlock
-- 전체 도면 + Drawing Region별 Layer 표시 상태
+- 레이어 이름 옆 원형 색상 표시와 빠른 색상 선택
+- 전체 도면 + Drawing Region별 Layer 표시 상태와 지역별 ON/OFF override
 - GRID / SNAP / ORTHO / POLAR
 - Window / Crossing Selection
 - Command Console과 명령 입력
@@ -81,6 +83,16 @@ Plan 도면에는 CAD/DXF 또는 이미지를 밑그림으로 연결할 수 있�
 이미지나 참조 도면의 축척을 모르는 경우, 두 점 사이의 실제 길이를 입력하거나 이미 그린 Plan 선의 길이를 기준으로 **참조 도면만**, 또는 **참조 도면 + 현재 Plan 도면**을 함께 실제 크기에 맞출 수 있습니다.
 
 PDF 참조 렌더링은 아직 구현하지 않았습니다.
+
+---
+
+## 기본 구성품
+
+PieniPlan에는 일반적인 평면 작업에서 자주 쓰는 **Starter Components**가 포함됩니다. 변기, 소변기, 세면대, 싱크, 욕조, 샤워, 주방·세탁 가전, 책상, 의자, 소파, 침대 등 기본 항목을 Plan/CAD 양쪽에서 배치할 수 있습니다.
+
+구성품은 내부 선 조각을 프로젝트에 수십 개씩 풀어 저장하지 않고, 하나의 `ComponentInstance`로 다룹니다. 따라서 선택·이동·복사·회전·반전·삭제가 한 객체 단위로 이루어지고 프로젝트에는 asset ID와 위치/회전/반전/크기 정보가 저장됩니다.
+
+Starter Components의 치수·출처 기준은 **CADdillo CC0 1.0** 공개 CAD block catalogue입니다. Build35에서는 원본 DXF 바이너리를 그대로 포함한 것이 아니라, 공개된 footprint와 insertion datum을 기준으로 PieniPlan용 단순 plan symbol로 정규화했습니다. 각 항목의 출처·라이선스·원본 단위·정규화 내역은 `assets/components/ASSET_PROVENANCE.md`에 기록합니다.
 
 ---
 
@@ -153,6 +165,7 @@ PieniPlan의 앱 설정은 현재 프로젝트 데이터와 분리해서 관리�
 - 한국어 / English
 - 새 프로젝트 기본 단위: Metric / Imperial
 - System / Light / Dark / Black 테마
+- UI 텍스트 크기: 작게 / 기본 / 크게
 - 원본 PPRJ를 자동으로 덮어쓰지 않는 별도 Recovery snapshot
 
 Plan과 CAD는 같은 Compact Ribbon / Canvas / Inspector / Command 영역을 공유합니다. 모드를 바꿔도 공통 기능의 위치가 크게 바뀌지 않도록 구성하고, CAD 전용 기능만 필요한 곳에서 추가로 보여줍니다.

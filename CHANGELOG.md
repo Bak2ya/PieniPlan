@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.27.0 · Build 35 — 2026-09-28
+
+- Added app-level **Text Size** presets (Small / Default / Large) without changing control, row, padding, or Inspector dimensions. The PieniPlan identity remains 17px and micro text does not drop below 12px.
+- Reworked the CAD Layer manager to stay inside the 286px Inspector at every text-size preset: five columns, flexible ellipsized layer name, wrapped header actions, and no horizontal overflow.
+- Replaced the separate Layer color column with a compact circular color indicator beside the layer name. Clicking it opens an anchored palette with common colors, recent colors, and a custom color picker; object Properties continue to own ByLayer/per-object overrides.
+- Upgraded Drawing Region Layer visibility to three-state scope semantics: inherit global / force on / force off. Render, Selection, Snap and Modify policy use the same effective visibility, and the More menu can restore global inheritance.
+- Simplified File/View popovers to content-fit width and cleaned File terminology: project Open/Save/Save As, Plan Import/Export, DXF Import/Export, without repeated format suffixes or ellipsis.
+- Added the first **ComponentInstance** foundation for Plan and CAD: one-object insertion, selection, move/copy, 90° rotation, mirror, delete, snap, Properties, PPRJ round-trip and PPKG inclusion.
+- Added 24 normalized Starter Components for common bathroom, kitchen, laundry and furniture use. Their source footprint/insertion references come from the CADdillo CC0 1.0 catalogue; provenance and normalization notes are recorded in `assets/components/ASSET_PROVENANCE.md`. The bundled symbols are PieniPlan redraws, not byte/vertex copies of CADdillo DXF files.
+- Preserved Build34 TRIM/EXTEND hidden-layer behavior and CAD/Plan Space/Escape/⌘. keyboard grammar. Persistent `cadPolyline`, schema5, Curve Reconstruction and Stage4 remain deferred to the next Astra architecture gate.
+
 ## v0.26.2 · Build 34 — 2026-09-28
 
 - Fixed CAD TRIM/EXTEND activation so hidden global or Region-local Layers remain hidden; only LINE may reveal the active drawing Layer when needed.

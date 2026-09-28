@@ -202,16 +202,16 @@
     <button id="viewAllAction" class="menu-row" data-i18n="action.fitAllEntities">All extents</button>
   </div>
 
-  <div id="fileMenu" class="top-menu" role="menu" hidden>
-    <button id="fileNewAction" class="menu-row" data-i18n="action.new">New</button>
-    <button id="fileOpenProjectAction" class="menu-row" data-i18n="action.openProjectPprj">Open Project (PPRJ)</button>
-    <button id="fileSaveProjectAction" class="menu-row" data-i18n="action.saveProjectPprj">Save Project (PPRJ)</button>
-    <button id="fileDownloadProjectAction" class="menu-row" data-i18n="action.downloadProjectPprj">Export Project (PPRJ)</button>
+  <div id="fileMenu" class="top-menu file-menu" role="menu" hidden>
+    <button id="fileNewAction" class="menu-row" data-i18n="action.new">New drawing</button>
+    <button id="fileOpenProjectAction" class="menu-row" data-i18n="action.openProjectPprj">Open project</button>
+    <button id="fileSaveProjectAction" class="menu-row" data-i18n="action.saveProjectPprj">Save project</button>
+    <button id="fileDownloadProjectAction" class="menu-row" data-i18n="action.downloadProjectPprj">Save as</button>
     <div class="menu-divider"></div>
-    <button id="fileExportPlanPackageAction" class="menu-row" data-i18n="action.exportPlanPackage">Export Plan (PPKG)</button>
-    <button id="fileImportPlanPackageAction" class="menu-row" data-i18n="action.importPlanPackage">Import Plan (PPKG)</button>
+    <button id="fileImportPlanPackageAction" class="menu-row" data-i18n="action.importPlanPackage">Import plan</button>
+    <button id="fileExportPlanPackageAction" class="menu-row" data-i18n="action.exportPlanPackage">Export plan</button>
     <div class="menu-divider"></div>
-    <button id="fileOpenDxfAction" class="menu-row" data-i18n="action.openDxfEdit">Open DXF</button>
+    <button id="fileOpenDxfAction" class="menu-row" data-i18n="action.openDxfEdit">Import DXF</button>
     <button id="fileExportDxfAction" class="menu-row" data-i18n="action.exportDxf">Export DXF</button>
   </div>
 
@@ -254,6 +254,15 @@
           <button class="appearance-option" data-theme-choice="dark" data-i18n="appearance.dark">Dark</button>
           <button class="appearance-option" data-theme-choice="black" data-i18n="appearance.black">Black</button>
         </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settings.textSize">Text size</div>
+        <div class="settings-section-copy" data-i18n="settings.textSizeCopy">Adjust UI text without changing control or panel sizes.</div>
+        <select id="settingsTextSize" class="select-input settings-select">
+          <option value="small" data-i18n="textSize.small">Small</option>
+          <option value="default" data-i18n="textSize.default">Default</option>
+          <option value="large" data-i18n="textSize.large">Large</option>
+        </select>
       </div>
       <div class="settings-section">
         <div class="settings-section-title" data-i18n="settings.defaultUnit">New project default unit</div>
@@ -477,6 +486,7 @@
   <script src="modules/cad/query-index.js"></script>
   <script src="modules/cad/modify-geometry.js"></script>
   <script src="modules/cad/linear-operations.js"></script>
+  <script src="modules/components/library.js"></script>
   <script src="modules/command/native-modify.js"></script>
   <script src="app.js"></script>
 </body>

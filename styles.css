@@ -1474,3 +1474,106 @@ html, body { font-size:var(--font-body); }
 .brand-home .brand-name { font-size:var(--font-app-title) !important; }
 .plan-section-inspector .inspector-tab,
 .app-shell.cad-tools .inspector-tab { font-size:var(--font-control) !important; }
+
+/* v0.27.0 Build 35 — user-selectable text scale, responsive layer manager and compact menus. */
+:root[data-text-size="small"] {
+  --font-primary:14px;
+  --font-control:13px;
+  --font-body:12px;
+  --font-secondary:12px;
+  --font-micro:12px;
+}
+:root[data-text-size="default"] {
+  --font-primary:15px;
+  --font-control:14px;
+  --font-body:13px;
+  --font-secondary:12px;
+  --font-micro:12px;
+}
+:root[data-text-size="large"] {
+  --font-primary:16px;
+  --font-control:15px;
+  --font-body:14px;
+  --font-secondary:13px;
+  --font-micro:12px;
+}
+
+/* Top command menus size to their content rather than a generic panel width. */
+.top-menu { min-width:0!important; width:max-content!important; max-width:min(330px,calc(100vw - 24px)); }
+.top-menu .menu-row { min-width:0!important; width:auto; white-space:nowrap; padding-inline:10px; }
+#viewMenu .menu-row { min-width:0!important; }
+#fileMenu .menu-row { min-width:0!important; }
+
+/* Five-column layer table: color lives beside the name, not in a separate column. */
+.cad-layer-columns,
+.cad-layer-row {
+  grid-template-columns:28px minmax(0,1fr) 36px 28px 26px!important;
+  gap:2px!important;
+  min-width:0;
+}
+.cad-layer-columns { padding:0 3px!important; font-size:var(--font-secondary)!important; }
+.cad-layer-columns span:nth-child(2) { padding-left:0; }
+.cad-layer-row { padding:2px 3px!important; }
+.cad-layer-row .row-main { min-width:0; display:flex!important; align-items:center; gap:7px; }
+.cad-layer-row .row-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-layer-object-count { min-width:0; }
+.cad-layer-compact-action { width:28px!important; height:30px; min-width:28px!important; }
+.cad-layer-color-dot {
+  width:12px; height:12px; min-width:12px; border-radius:50%; padding:0; flex:none;
+  border:1px solid color-mix(in srgb,var(--text) 42%,var(--border-strong));
+  background:var(--layer-swatch); cursor:pointer;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--surface) 55%,transparent);
+}
+.cad-layer-color-dot:hover,.cad-layer-color-dot:focus-visible { outline:none; box-shadow:0 0 0 3px var(--accent-soft); border-color:var(--accent); }
+.cad-layer-local-override {
+  width:5px; height:5px; border-radius:50%; border:1px solid var(--text-2); background:transparent; flex:none;
+}
+.cad-layer-row.override-on .cad-layer-local-override { background:var(--text-2); }
+.cad-layer-row.override-off .cad-layer-local-override { background:transparent; box-shadow:inset 0 0 0 1px var(--surface); }
+.cad-layer-header-actions { flex-wrap:wrap; justify-content:flex-end; gap:4px!important; }
+.cad-layer-section-header { align-items:flex-start; }
+.cad-layer-scope-note { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-layer-list { overflow-x:hidden!important; }
+@media (max-width:900px) {
+  .cad-layer-columns,.cad-layer-row { grid-template-columns:28px minmax(0,1fr) 34px 28px 26px!important; }
+}
+
+.layer-color-popover {
+  position:fixed; z-index:105; width:max-content; max-width:min(240px,calc(100vw - 16px));
+  padding:8px; border:1px solid var(--border-strong); border-radius:8px;
+  background:color-mix(in srgb,var(--surface-2) 98%,transparent); box-shadow:0 10px 28px rgba(0,0,0,.28);
+}
+.layer-color-popover-title { font-size:var(--font-secondary); font-weight:650; color:var(--text); margin:0 0 7px; }
+.layer-color-grid { display:grid; grid-template-columns:repeat(8,24px); gap:5px; }
+.layer-color-choice { width:24px; height:24px; border-radius:50%; border:1px solid color-mix(in srgb,var(--text) 38%,var(--border)); background:var(--choice); cursor:pointer; }
+.layer-color-choice:hover,.layer-color-choice:focus-visible { outline:none; box-shadow:0 0 0 3px var(--accent-soft); border-color:var(--accent); }
+.layer-color-recent-label { margin:8px 0 5px; color:var(--text-3); font-size:var(--font-micro); }
+.layer-color-custom { width:100%; margin-top:8px; min-height:32px; border:1px solid var(--border); border-radius:6px; background:var(--surface-3); color:var(--text); font-size:var(--font-body); cursor:pointer; }
+
+/* Component picker stays inside the existing ribbon popover grammar. */
+.component-palette { width:min(330px,calc(100vw - 20px)); max-height:min(440px,70vh); overflow:auto; padding:6px; }
+.component-palette-group + .component-palette-group { margin-top:9px; padding-top:8px; border-top:1px solid var(--border); }
+.component-palette-heading { padding:2px 4px 6px; color:var(--text-3); font-size:var(--font-micro); font-weight:650; }
+.component-palette-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
+.component-palette-item { min-width:0; min-height:36px; border:0; border-radius:6px; padding:6px 8px; background:transparent; color:var(--text); text-align:left; font-size:var(--font-body); cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.component-palette-item:hover { background:var(--surface-3); }
+.component-palette-item.active { background:var(--accent-soft); }
+.component-palette-size { display:block; color:var(--text-3); font-size:var(--font-micro); margin-top:2px; }
+
+/* Build35 final containment fixes: intrinsic content must not widen the 286px Inspector. */
+.top-menu:not([hidden]) { display:flex; flex-direction:column; align-items:stretch; }
+.top-menu .menu-divider { width:auto; align-self:stretch; }
+.cad-manager-section,
+.cad-layer-manager,
+.cad-layer-list,
+.cad-layer-section-header,
+.cad-layer-header-actions { min-width:0; max-width:100%; }
+.cad-layer-manager { grid-template-columns:minmax(0,1fr); width:100%; }
+.cad-layer-section-header {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr);
+  align-items:start;
+  gap:4px!important;
+}
+.cad-layer-scope-note { width:100%; min-width:0; }
+.cad-layer-header-actions { justify-self:end; width:auto; flex-wrap:wrap; }
