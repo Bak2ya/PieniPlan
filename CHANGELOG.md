@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.26.2 · Build 34 — 2026-09-28
+
+- Fixed CAD TRIM/EXTEND activation so hidden global or Region-local Layers remain hidden; only LINE may reveal the active drawing Layer when needed.
+- Reduced the Build32/33 typography scale by one step for primary/control/body/secondary text while keeping the 17px PieniPlan identity and 12px micro metadata baseline.
+- Added CAD Space-tap handling through the same accept path as Enter while preserving Space+drag Pan and Plan Mode's Space-to-Select behavior.
+- Unified CAD cancellation routing: Esc still cancels the active command and returns to Select, and macOS gets `⌘.` as an auxiliary Cancel shortcut for Safari/full-screen use.
+- Updated shortcut/help copy to match the actual Plan/CAD keyboard grammar.
+- Preserved Build33 P0 correctness fixes, PPRJ schema4, PPKG schema1, Build32 layout, and the pending Polyline P1/P2 gate.
+
 ## v0.26.1 · Build 33 — 2026-09-28
 
 - Reject future PPRJ schemas and unsupported persistent object types before installing a project.
