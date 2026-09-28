@@ -28,6 +28,12 @@
   --door: #D4A85B;
   --window: #79B8E8;
   --dimension: #DDBF63;
+  --font-app-title: 17px;
+  --font-primary: 16px;
+  --font-control: 15px;
+  --font-body: 14px;
+  --font-secondary: 13px;
+  --font-micro: 12px;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -1321,3 +1327,150 @@ html, body { overscroll-behavior:none; }
 @media (prefers-reduced-motion:reduce) {
   .building-card,.building-expand-shell { transition:none!important; }
 }
+
+
+/* v0.26.0 Build 32 — density, typography and context-cleanup pass. */
+html, body { font-size:var(--font-body); }
+.brand-name { font-size:var(--font-app-title); }
+.toolset-button { font-size:var(--font-control); height:34px; padding-inline:11px; }
+.toolbar-button { font-size:var(--font-body); }
+.small-button { font-size:var(--font-secondary); min-height:30px; padding:4px 9px; }
+.mini-action { font-size:var(--font-micro); height:28px; padding-inline:8px; }
+.inspector-tab { font-size:var(--font-control); }
+.panel-title,.section-heading { font-size:var(--font-primary); }
+.panel-subtitle,.section-copy { font-size:var(--font-secondary); line-height:1.45; }
+.layer-search { height:34px; font-size:var(--font-body); padding-inline:10px; }
+.property-label,.property-value,.property-value input,.property-value select { font-size:var(--font-body); }
+.floor-name,.building-name,.floor-reference-name,.floor-space-name { font-size:var(--font-control); }
+.floor-meta,.row-meta,.cad-layer-scope-note,.region-main.compact span { font-size:var(--font-micro); }
+.command-label,.command-input,.command-status,.command-history-line { font-size:var(--font-secondary); }
+.status-toggle,.status-group,.status-axis { font-size:var(--font-micro); }
+.context-hint { font-size:var(--font-secondary)!important; }
+.context-field label,.context-unit { font-size:var(--font-secondary); }
+.context-field input { font-size:var(--font-control); height:32px!important; }
+.settings-section-title { font-size:var(--font-primary); }
+.settings-section-copy,.settings-check-row small,.settings-recovery-meta { font-size:var(--font-secondary); }
+.settings-check-row strong { font-size:var(--font-body); }
+
+/* Ribbon is a true split button: current tool + dedicated menu affordance. */
+.tool-rail { align-items:center; gap:8px; padding:5px 10px; }
+.tool-category-split {
+  height:36px; min-width:116px; display:grid; grid-template-columns:minmax(0,1fr) 28px;
+  border:1px solid transparent; border-radius:8px; overflow:hidden; flex:none;
+}
+.tool-category-split:hover { background:var(--surface-3); }
+.tool-category-split.active { background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 40%,transparent); }
+.tool-category-split .tool-category {
+  min-width:0; width:auto; height:34px; min-height:34px; padding:4px 9px; border:0; border-radius:0;
+  background:transparent!important; display:flex; flex-direction:row; justify-content:flex-start; align-items:center; gap:8px;
+}
+.tool-category-split .tool-category.active { border:0; }
+.tool-category-split .tool-icon { width:18px; height:18px; }
+.tool-category-split .tool-text { font-size:var(--font-control); line-height:1; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tool-category-menu { width:28px; height:34px; border:0; border-left:1px solid color-mix(in srgb,var(--border) 74%,transparent); background:transparent; color:var(--text-2); cursor:pointer; font-size:12px; }
+.tool-category-menu:hover { background:var(--surface-3); color:var(--text); }
+.ribbon-group-label { display:none!important; }
+
+/* Compact command menus visually belong to their trigger, not to a settings panel. */
+.tool-popover {
+  padding:4px; border-radius:7px; min-width:180px; width:max-content; max-width:min(260px,calc(100vw - 16px));
+  border-color:color-mix(in srgb,var(--border-strong) 78%,transparent); box-shadow:0 8px 22px rgba(0,0,0,.24);
+}
+.tool-popover-title { display:none; }
+.tool-popover .tool-item { min-width:180px; min-height:36px; padding:6px 10px; border-radius:5px; font-size:var(--font-body); gap:18px; }
+.tool-item-note { font-size:var(--font-micro); color:var(--text-3); font-variant-numeric:tabular-nums; }
+.tool-popover-divider { margin:3px 6px; }
+
+/* The tab is the page title. Keep only actions that add information. */
+.panel-context-labels { display:none!important; }
+.panel-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.panel-toolbar-end { justify-content:flex-end; }
+.inspector-panel { padding:10px; }
+.inspector-panel[data-panel="primary"].active { grid-template-rows:auto minmax(0,1fr); }
+.primary-controls:empty { display:none; }
+
+/* Hierarchy uses a thin parent boundary, not nested padding as decoration. */
+.building-list { gap:7px; padding:0 2px 10px; }
+.building-card { border-radius:9px; }
+.building-header { min-height:38px; grid-template-columns:24px minmax(0,1fr) 28px; gap:2px; padding:0 4px 0 3px; }
+.building-disclosure { width:24px; height:28px; }
+.building-more { min-width:26px; min-height:28px; }
+.building-expand-inner { padding:5px 4px 7px; }
+.building-floor-toolbar { gap:5px; padding:0 0 6px; }
+.building-card .floor-list { gap:4px; }
+.building-card .floor-tree-group { border-radius:7px; }
+.floor-row { min-height:38px; padding:4px 4px 4px 5px; }
+.floor-expand-inner { padding-left:4px; padding-right:2px; }
+.floor-reference-list { margin-left:20px; }
+.building-empty-copy { padding:8px 6px; }
+
+/* Layer manager is a compact, labeled table. */
+.cad-layer-manager { grid-template-rows:auto auto minmax(0,1fr); }
+.cad-layer-section-header { min-height:38px; padding:4px 5px 4px 8px; }
+.cad-layer-scope-note { min-width:0; font-size:var(--font-micro); }
+.cad-layer-columns,
+.cad-layer-row {
+  display:grid!important;
+  grid-template-columns:30px minmax(0,1fr) 44px 32px 34px 30px;
+  align-items:center;
+  gap:3px;
+}
+.cad-layer-columns { min-height:27px; padding:0 4px; border-bottom:1px solid var(--border); color:var(--text-3); font-size:11px; }
+.cad-layer-columns span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
+.cad-layer-columns span:nth-child(2) { text-align:left; padding-left:2px; }
+.cad-layer-row { min-height:38px; padding:2px 4px!important; }
+.cad-layer-row .eye-button { width:28px; height:30px; }
+.cad-layer-row .row-main { display:block; min-width:0; }
+.cad-layer-row .row-title { font-size:var(--font-control); line-height:1.2; }
+.cad-layer-object-count { color:var(--text-2); font-size:var(--font-secondary); text-align:right; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cad-layer-object-count.inherited { color:var(--text-3); font-style:italic; }
+.cad-layer-compact-action { width:30px; height:30px; min-width:30px; }
+.cad-layer-color-swatch { width:24px; height:24px; justify-self:center; border:1px solid var(--border-strong); border-radius:4px; background:var(--layer-swatch); cursor:pointer; }
+.cad-layer-color-swatch:hover { box-shadow:0 0 0 2px var(--accent-soft); border-color:var(--accent); }
+.cad-layer-more { font-size:17px; line-height:1; }
+.cad-layer-row .layer-active { position:absolute; left:3px; width:3px; height:22px; border-radius:2px; box-shadow:none; }
+.cad-layer-row { position:relative; }
+.cad-layer-name-input { height:30px; font:500 var(--font-body) system-ui; }
+.cad-layer-row-actions { display:none; }
+
+/* Floating HUD focuses on parameters/hints; the ribbon already names the tool. */
+.contextbar.context-floating { padding-inline:14px; gap:10px; }
+.context-title-wrap[hidden] { display:none!important; }
+
+/* Small-screen behavior keeps one readable label rather than restoring duplicates. */
+@media (max-width:900px) {
+  .tool-category-split { min-width:96px; }
+  .tool-category-split .tool-text { font-size:14px; }
+  .cad-layer-columns,.cad-layer-row { grid-template-columns:30px minmax(0,1fr) 40px 30px 30px 28px; }
+}
+
+
+/* Broader readable text pass: ordinary controls should not look like metadata. */
+.document-status { font-size:var(--font-secondary); }
+.progress-title,.progress-detail { font-size:var(--font-secondary); }
+.start-subtitle,.start-card-action,.continue-work-action { font-size:var(--font-body); }
+.start-card-kicker,.start-note,.continue-work-kicker,.continue-work-detail,.start-version { font-size:var(--font-micro); }
+.appearance-title,.appearance-option { font-size:var(--font-secondary); }
+.dialog-copy,.field-label,.export-save-location-note,.mapping-note { font-size:var(--font-body); }
+.field-label { font-size:var(--font-secondary); }
+.ui-tooltip { font-size:var(--font-secondary); }
+.tooltip-shortcut { font-size:var(--font-micro); }
+.context-menu-item,.floor-action-menu button,.palette-item,.reference-layer-row,.constraint-property-row,.property-action { font-size:var(--font-body); }
+.menu-row,.help-nav-item { font-size:var(--font-body); }
+.menu-label,.about-version { font-size:var(--font-secondary); }
+.floor-inline-rename { font-size:var(--font-control); }
+.floor-reference-opacity-number,.floor-reference-opacity > span,.floor-reference-percent-unit { font-size:var(--font-secondary); }
+.floor-space-meta,.space-menu-field,.space-gap-notice { font-size:var(--font-secondary); }
+.cad-scope-label,.cad-scope-copy,.cad-scope-select { font-size:var(--font-body); }
+.cad-scope-copy strong { font-size:var(--font-control); }
+.cad-scope-meta { font-size:var(--font-secondary); }
+.region-main.compact strong { font-size:var(--font-control); }
+.region-main.compact span { font-size:var(--font-secondary); }
+.command-suggestion { font-size:var(--font-secondary); }
+.command-suggestion strong { font-size:var(--font-secondary); }
+.mobile-viewer-badge { font-size:var(--font-secondary); }
+
+/* Build 32 final typography priority: primary navigation should read at the same visual scale as the app identity. */
+.brand-home .brand-name { font-size:var(--font-app-title) !important; }
+.plan-section-inspector .inspector-tab,
+.app-shell.cad-tools .inspector-tab { font-size:var(--font-control) !important; }

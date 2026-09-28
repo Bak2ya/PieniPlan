@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.26.0 · Build 32 — 2026-09-28
+
+- Refined the Compact Ribbon into anchored split buttons that show the current tool without duplicate group labels.
+- Reworked Ribbon dropdowns into compact command menus anchored directly below their trigger.
+- Added shared keyboard ownership so editable fields keep Enter/Escape instead of leaking them to CAD commands.
+- Increased the global UI typography scale and reduced unnecessary nested padding in the Plan building/drawing hierarchy.
+- Converted the CAD layer list into a labeled table with Show / Layer / Objects / Lock / Color / More columns; destructive/low-frequency actions moved under More.
+- Removed redundant context headings and repeated CAD/Plan wording where the active tab/mode already provides that information.
+- Simplified the floating tool HUD and CAD scope metadata so controls describe parameters/state instead of repeating the active tool or scope.
+
 ## v0.25.0 · Build 31 — 2026-09-28
 
 - Plan의 `구획`을 **건물 → 도면 → 공간** 계층으로 확장했다. 건물과 도면은 각각 명시적인 순서를 가지며, 선택과 펼침/접힘은 서로 독립적으로 동작한다. 기존 프로젝트는 건물 정보가 없으면 기본 건물 아래로 호환 로드한다.

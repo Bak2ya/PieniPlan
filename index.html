@@ -62,7 +62,7 @@
           <div id="contextHint" class="context-hint">Click an object to inspect it.</div>
         </div>
         <div id="emptyState" class="empty-state">
-          <div class="empty-kicker" id="emptyKicker">Plan Mode</div>
+          <div class="empty-kicker" id="emptyKicker" hidden></div>
           <div class="empty-title" id="emptyTitle" data-i18n="empty.planTitle">Draw a real-size floor plan without CAD complexity.</div>
           <div class="empty-copy" id="emptyCopy" data-i18n="empty.planCopy">Use walls, doors and windows directly, or add a DXF/image reference and trace it with exact dimensions.</div>
           <div class="empty-actions">
@@ -119,10 +119,10 @@
         <div id="cadScopeHost" class="cad-scope-host" hidden></div>
         <div class="inspector-body">
           <section class="inspector-panel active" data-panel="primary">
-            <div class="panel-header">
+            <div class="panel-header panel-context-labels" hidden>
               <div>
                 <div id="primaryPanelTitle" class="panel-title">Objects</div>
-                <div id="primaryPanelSubtitle" class="panel-subtitle">Floor-plan objects</div>
+                <div id="primaryPanelSubtitle" class="panel-subtitle"></div>
               </div>
             </div>
             <div id="primaryControls" class="primary-controls" hidden></div>
@@ -130,11 +130,7 @@
           </section>
 
           <section class="inspector-panel" data-panel="reference">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title" data-i18n="panel.references">References</div>
-                <div class="panel-subtitle" data-i18n="panel.referencesSub">DXF, PDF and image underlays</div>
-              </div>
+            <div class="panel-toolbar panel-toolbar-end">
               <button id="addReferenceBtn" class="small-button" data-i18n="action.add">Add</button>
             </div>
             <div id="referenceList" class="panel-list"></div>
@@ -143,19 +139,9 @@
               <div class="section-copy" data-i18n="panel.cadMappingCopy">Choose how semantic Plan objects are represented when converted to CAD/DXF.</div>
               <button id="mappingSettingsBtn" class="small-button" data-i18n="action.cadMapping">CAD mapping</button>
             </div>
-            <div id="referenceHelp" class="panel-section muted-section">
-              <div class="section-heading" data-i18n="panel.referenceRuleTitle">Reference ≠ Drawing</div>
-              <div class="section-copy" data-i18n="panel.referenceRuleCopy">References stay underneath the drawing. They can be calibrated and traced without changing the source.</div>
-            </div>
           </section>
 
           <section class="inspector-panel" data-panel="properties">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title" data-i18n="panel.properties">Properties</div>
-                <div class="panel-subtitle" data-i18n="panel.propertiesSub">Selected object or active tool</div>
-              </div>
-            </div>
             <div id="propertiesPanel" class="properties-panel"></div>
           </section>
         </div>
