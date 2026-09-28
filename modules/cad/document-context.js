@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
-  function create({ getState, classify, inWorkScope, layerVisible, layerLocked, planOverlayVisible }) {
+  function create({ getState, classify, inWorkScope, layerVisible, layerLocked, planOverlayVisible, layerForObject = null }) {
     let byId = new Map();
     let documentId = `doc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
     let geometryRevision = 0, layerRevision = 0, referenceRevision = 0;
@@ -36,7 +36,7 @@
     function getById(id){ return byId.get(id) || null; }
     function policy(id,purpose='select'){
       const obj=getById(id);if(!obj)return{allowed:false,reason:'missing-object',sourceKind:'unknown',layer:null,locked:false,visible:false,inWorkScope:false};
-      const sourceKind=classify(obj), layer=obj.cadLayer||null;
+      const sourceKind=classify(obj), layer=(layerForObject?layerForObject(obj):obj.cadLayer)||null;
       if(sourceKind==='cad-source'){
         const scope=Boolean(inWorkScope(obj)), visible=scope&&Boolean(layerVisible(layer||'0')), locked=Boolean(layerLocked(layer||'0'));
         if(purpose==='region-rotate-source')return{allowed:scope,reason:scope?null:'outside-work-scope',sourceKind,layer,locked,visible,inWorkScope:scope};

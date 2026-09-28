@@ -7,7 +7,7 @@
   function synthesize(existing, objects=[], visibility=new Map()){
     const out=normalize(existing instanceof Map?[...existing]:existing);
     for(const [name] of visibility||[])if(!out.has(name))out.set(name,defaults(name));
-    for(const obj of objects||[]){const name=obj?.cadLayer;if(name&&!out.has(name))out.set(name,defaults(name));}
+    for(const obj of objects||[]){const name=obj?.cadLayer||obj?.layer||obj?.sourceLayer;if(name&&!out.has(name))out.set(name,defaults(name));}
     if(!out.has('0'))out.set('0',defaults('0'));return out;
   }
   function serialize(map){return[...map.values()].map(v=>({...v}));}

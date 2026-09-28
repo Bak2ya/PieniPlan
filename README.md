@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.28.0 · Build 36**
+현재 버전: **v0.28.1 · Build 37**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -64,7 +64,7 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Metric / Imperial 입력·표시 구조
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
-PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. Build36의 persistent Polyline은 **저장·표시·선택·Snap·query 기반**까지 통합되었고, PLINE 작성과 Polyline TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN은 아직 사용자 기능으로 노출하지 않습니다.
+PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. Build37의 persistent Polyline은 **저장·표시·선택·Snap·query 기반**까지 통합되었고, PLINE 작성과 Polyline TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN은 아직 사용자 기능으로 노출하지 않습니다.
 
 ---
 

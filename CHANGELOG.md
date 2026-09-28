@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.28.1 · Build 37 — 2026-09-29
+
+- Fixed CAD Wall/Door/Window authoring visibility: activating any semantic architectural authoring tool now enables the Plan overlay before drawing, so newly created walls/openings remain visible and selectable instead of being created behind an off overlay.
+- Unified CAD source Layer resolution across `cadLayer`, legacy `layer`, and `sourceLayer` for render visibility, Selection, Snap, Modify/lock policy, Layer focus, properties, layer rename/delete usage checks, DXF export, and recognition helpers.
+- Updated CAD document context and Layer synthesis/visibility helpers so legacy source geometry no longer falls back to Layer 0 internally while the Inspector shows a different Layer.
+- Preserved Build36 schema5/cadPolyline, Components, Region Layer overrides, Compact Ribbon, typography, and tool Context behavior. No PLINE/P3/Curve Reconstruction/Stage4 expansion is included.
+- Verification: Build37 focused Chromium regression **3/3 PASS**, Build37 full Chromium regression **14/14 PASS**, core pure suites **85/85 PASS**, JS syntax PASS, local resources **63/63**, i18n **EN/KO 702/702**, page/console errors **0**. Safari/Retina remains the final hands-on check.
+
 ## v0.28.0 · Build 36 — 2026-09-29
 
 - Integrated the reviewed Astra P1/P2 foundation into the Build35 source without replacing Build35 UI/Layer/Component work: persistent `cadPolyline`, PPRJ schema5 capability gating, stable owner/vertex/edge identity, derived analytic LINE/ARC cache, spatial indexing, and shared Render/Selection/Snap/GeometryQuery semantics.

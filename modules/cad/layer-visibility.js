@@ -49,7 +49,7 @@
 
   function knownLayers(globalMap, objects, isCadSourceObject) {
     const keys = new Set(globalMap.keys());
-    for (const object of objects || []) if (isCadSourceObject(object)) keys.add(keyOf(object.cadLayer));
+    for (const object of objects || []) if (isCadSourceObject(object)) keys.add(keyOf(object.cadLayer || object.layer || object.sourceLayer));
     return [...keys];
   }
 
