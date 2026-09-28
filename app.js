@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.28.1';
-  const BUILD = 37;
+  const VERSION = '0.28.2';
+  const BUILD = 38;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -158,7 +158,6 @@
       { id: 'wall', labelKey: 'tool.wall', ready: true },
       { id: 'door', labelKey: 'tool.door', ready: true },
       { id: 'window', labelKey: 'tool.window', ready: true },
-      { id: 'space', labelKey: 'tool.space', ready: false },
       { id: 'component', labelKey: 'tool.component', ready: true }
     ],
     dimension: [
@@ -3249,15 +3248,34 @@
     requestAnimationFrame(()=>{
       regionList.scrollTop=previousRegionScroll;
       layerList.scrollTop=previousLayerScroll;
-      if(selectedLayer){
+      if(selectedLayer&&state.layerRevealRequested){
         const row=layerList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`);
-        if(row&&state.layerRevealRequested){
-          const target=row.offsetTop-(layerList.clientHeight-row.offsetHeight)/2;
-          layerList.scrollTop=Math.max(0,Math.min(target,layerList.scrollHeight-layerList.clientHeight));
+        if(row){
+          requestAnimationFrame(()=>revealCadLayerRow(layerList,row));
           state.layerRevealRequested=false;
         }
       }
     });
+  }
+
+  function revealCadLayerRow(layerList,row){
+    if(!layerList||!row)return false;
+    // Let the browser resolve the real rendered geometry first. `nearest` avoids
+    // gratuitous movement when the row is already visible and stays resilient
+    // across text-size presets, Safari/Retina metrics and resized Inspector panes.
+    try{row.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});}catch{row.scrollIntoView(false);}
+    requestAnimationFrame(()=>{
+      if(!row.isConnected||!layerList.isConnected)return;
+      const rr=row.getBoundingClientRect(),lr=layerList.getBoundingClientRect(),style=getComputedStyle(layerList);
+      const top=lr.top+(parseFloat(style.paddingTop)||0),bottom=lr.bottom-(parseFloat(style.paddingBottom)||0);
+      let correction=0;
+      if(rr.top<top)correction=rr.top-top;
+      else if(rr.bottom>bottom)correction=rr.bottom-bottom;
+      if(Math.abs(correction)>.5)layerList.scrollBy({top:correction,left:0,behavior:'auto'});
+      row.classList.remove('focus-reveal');void row.offsetWidth;row.classList.add('focus-reveal');
+      setTimeout(()=>{if(row.isConnected)row.classList.remove('focus-reveal');},1100);
+    });
+    return true;
   }
 
   function cadLayerForObject(obj){const m=state.cadMapping||defaultCadMapping();if(obj?.type==='wall')return m.wallLayer;if(obj?.type==='door')return m.doorLayer;if(obj?.type==='window')return m.windowLayer;if(obj?.type==='dimension')return m.dimensionLayer;return String(obj?.cadLayer||obj?.layer||obj?.sourceLayer||'0');}
@@ -3597,7 +3615,7 @@
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();if(!e.target.closest('.floor-action-menu')&&!e.target.closest('.floor-row .mini-action')&&!e.target.closest('.floor-space-row .mini-action'))closeFloorActionMenu();});
 
   applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');applyShortcutMetadata(dom.polarToggle,'polar','tooltip.polar');
-  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,cadCommands,cancelTransient,undo,redo,onPointerDown,onPointerMove,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,showWorkspace,showStartScreen,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,applyTextSize,safeReadTextSize,cadLayerForObject,openLayerColorPopover,closeLayerColorPopover,setCadLayerProperties,clearCadLayerVisibilityOverride,cadRegionLayerOverride,cadLayerHasOverride,placeComponent,editComponent,rotateComponent90,mirrorComponent,componentObjectsForCad,deleteObjectById,duplicateObject,renderProperties,openProjectFile,saveProjectFile,downloadProjectFile,makeProjectPayload,makePlanPackage,validatePlanPackage,importPlanPackageFile,importedPlanPackageData,replaceWorkspaceWithPlanPackage,mergedDrawingClone,pristinePlaceholderDrawing,syncCoincidentNodeOnly,dxfDoorEntities,constrainTracking,constrainEndpointWithShift,constrainBodyMoveDelta,connectedWallAngles,applyTrimExtendAtPoint,extendPlanLinearAtClick,ensureBuildingModel,activeBuilding,floorsForBuilding,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addBuilding,addFloor,renderPlanFloorPanel,reorderBuilding,reorderFloor,getPlanObjects,detectClosedWallFaces,updateSpaceHoverPreview,findSpaceBoundaryGapCandidates,endpointTouchesOtherBoundary,commitSpace,ensureSpaceMetadata,nextSpaceName,calculatedSpaceAreaM2,displaySpaceAreaM2,usesManualSpaceArea,setSpaceManualArea,setSpaceCalculatedArea,clearSpaceGapDiagnostic,doorSwingSide,doorSwingSectors,doorDirectManipulationMode,hingedLeafGeometry,flipDoorHingePreserveSide,flipDoorSwingSide,getLinkedCadRenderCache,recordEdit,runCommand,commandMatches,renderCommandConsole,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,solvePointOnEdgeAttachment,computePlanTrimSegment,computeCadTrimSegment,updateTrimPreview,activeCadWorkRegion,cadObjectsForRegion,cadWorkObjects,cadObjectInWorkScope,cadSelectableObjects,setCadWorkRegion,renderCadScopeControl,cadGlobalLayerVisible,cadRegionLayerVisible,cadLayerVisible,cadLayerInheritedOff,cadKnownLayers,cadLayerDefinition,cadLayerLocked,createCadLayer,renameCadLayer,deleteCadLayer,setCadLayerLocked,reassignCadObjects,setActiveCadLayer,cadMappingUsesLayer,setCadUnitSystem,cadPolicy,cadContextToken,cadContextTokenCurrent,initializeCadServices,applySelectionSet,deleteSelectedObjects,beginObjectDrag,setCadLayerVisibilityUndoable,showAllCadLayers,serializeCadRegionLayerVisibility,restoreCadRegionLayerVisibility,renderReferences,referencesForRender,referenceBelongsToFloor,floorReferencePlacements,renderFloorReferencePlacement,beginCalibration,applyCalibration,scaleCurrentFloorGeometry,cadPlanOverlayObjects,beginCadRegionRotation,cadRotatePreviewDelta,rotatePointAround,commitCadRegionRotation,setCadRotateAbsoluteAngle,buildSegmentSnapIndex,queryReferenceSnapIndex,queryObjectSnapIndex,nearestSnap,parseCadPointText,resolveCadPoint,commitNativeCadLine,startNativeCadLineSession,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
+  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,cadCommands,cancelTransient,undo,redo,onPointerDown,onPointerMove,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,showWorkspace,showStartScreen,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,revealCadLayerRow,applyTextSize,safeReadTextSize,cadLayerForObject,openLayerColorPopover,closeLayerColorPopover,setCadLayerProperties,clearCadLayerVisibilityOverride,cadRegionLayerOverride,cadLayerHasOverride,placeComponent,editComponent,rotateComponent90,mirrorComponent,componentObjectsForCad,deleteObjectById,duplicateObject,renderProperties,openProjectFile,saveProjectFile,downloadProjectFile,makeProjectPayload,makePlanPackage,validatePlanPackage,importPlanPackageFile,importedPlanPackageData,replaceWorkspaceWithPlanPackage,mergedDrawingClone,pristinePlaceholderDrawing,syncCoincidentNodeOnly,dxfDoorEntities,constrainTracking,constrainEndpointWithShift,constrainBodyMoveDelta,connectedWallAngles,applyTrimExtendAtPoint,extendPlanLinearAtClick,ensureBuildingModel,activeBuilding,floorsForBuilding,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addBuilding,addFloor,renderPlanFloorPanel,reorderBuilding,reorderFloor,getPlanObjects,detectClosedWallFaces,updateSpaceHoverPreview,findSpaceBoundaryGapCandidates,endpointTouchesOtherBoundary,commitSpace,ensureSpaceMetadata,nextSpaceName,calculatedSpaceAreaM2,displaySpaceAreaM2,usesManualSpaceArea,setSpaceManualArea,setSpaceCalculatedArea,clearSpaceGapDiagnostic,doorSwingSide,doorSwingSectors,doorDirectManipulationMode,hingedLeafGeometry,flipDoorHingePreserveSide,flipDoorSwingSide,getLinkedCadRenderCache,recordEdit,runCommand,commandMatches,renderCommandConsole,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,solvePointOnEdgeAttachment,computePlanTrimSegment,computeCadTrimSegment,updateTrimPreview,activeCadWorkRegion,cadObjectsForRegion,cadWorkObjects,cadObjectInWorkScope,cadSelectableObjects,setCadWorkRegion,renderCadScopeControl,cadGlobalLayerVisible,cadRegionLayerVisible,cadLayerVisible,cadLayerInheritedOff,cadKnownLayers,cadLayerDefinition,cadLayerLocked,createCadLayer,renameCadLayer,deleteCadLayer,setCadLayerLocked,reassignCadObjects,setActiveCadLayer,cadMappingUsesLayer,setCadUnitSystem,cadPolicy,cadContextToken,cadContextTokenCurrent,initializeCadServices,applySelectionSet,deleteSelectedObjects,beginObjectDrag,setCadLayerVisibilityUndoable,showAllCadLayers,serializeCadRegionLayerVisibility,restoreCadRegionLayerVisibility,renderReferences,referencesForRender,referenceBelongsToFloor,floorReferencePlacements,renderFloorReferencePlacement,beginCalibration,applyCalibration,scaleCurrentFloorGeometry,cadPlanOverlayObjects,beginCadRegionRotation,cadRotatePreviewDelta,rotatePointAround,commitCadRegionRotation,setCadRotateAbsoluteAngle,buildSegmentSnapIndex,queryReferenceSnapIndex,queryObjectSnapIndex,nearestSnap,parseCadPointText,resolveCadPoint,commitNativeCadLine,startNativeCadLineSession,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
 
   state.unitSystem=safeReadDefaultUnit();dom.dialogBackdrop.hidden=true;if(dom.settingsBackdrop)dom.settingsBackdrop.hidden=true;if(dom.planPackageBackdrop)dom.planPackageBackdrop.hidden=true;if(dom.planMergeBackdrop)dom.planMergeBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.confirmBackdrop.hidden=true;if(dom.exportSaveBackdrop)dom.exportSaveBackdrop.hidden=true;dom.commandBar.hidden=false;i18n.apply(document);state.browserSavedMeta=readBrowserSavedMeta();state.recoveryEnabled=safeReadRecoveryEnabled();state.recoveryMeta=readRecoveryMeta();state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});state.textSize=safeReadTextSize();applyTextSize(state.textSize,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();if(dom.aboutVersion)dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;if(dom.startVersion)dom.startVersion.textContent=`PieniPlan v${VERSION} · Build ${BUILD}`;renderCommandConsole();updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();

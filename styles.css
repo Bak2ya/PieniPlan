@@ -1353,12 +1353,13 @@ html, body { font-size:var(--font-body); }
 .settings-check-row strong { font-size:var(--font-body); }
 
 /* Ribbon is a true split button: current tool + dedicated menu affordance. */
-.tool-rail { align-items:center; gap:8px; padding:5px 10px; }
+.tool-rail { align-items:center; gap:12px; padding:5px 10px; }
 .tool-category-split {
   height:36px; min-width:116px; display:grid; grid-template-columns:minmax(0,1fr) 28px;
-  border:1px solid transparent; border-radius:8px; overflow:hidden; flex:none;
+  border:1px solid color-mix(in srgb,var(--border) 42%,transparent); border-radius:8px; overflow:hidden; flex:none;
+  background:color-mix(in srgb,var(--surface-2) 28%,transparent);
 }
-.tool-category-split:hover { background:var(--surface-3); }
+.tool-category-split:hover { background:var(--surface-3); border-color:color-mix(in srgb,var(--border-strong) 58%,transparent); }
 .tool-category-split.active { background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 40%,transparent); }
 .tool-category-split .tool-category {
   min-width:0; width:auto; height:34px; min-height:34px; padding:4px 9px; border:0; border-radius:0;
@@ -1367,8 +1368,9 @@ html, body { font-size:var(--font-body); }
 .tool-category-split .tool-category.active { border:0; }
 .tool-category-split .tool-icon { width:18px; height:18px; }
 .tool-category-split .tool-text { font-size:var(--font-control); line-height:1; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.tool-category-menu { width:28px; height:34px; border:0; border-left:1px solid color-mix(in srgb,var(--border) 74%,transparent); background:transparent; color:var(--text-2); cursor:pointer; font-size:12px; }
-.tool-category-menu:hover { background:var(--surface-3); color:var(--text); }
+.tool-category-menu { position:relative; width:28px; height:34px; border:0; background:transparent; color:var(--text-2); cursor:pointer; font-size:12px; }
+.tool-category-menu::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:1px; background:color-mix(in srgb,var(--border-strong) 64%,transparent); pointer-events:none; }
+.tool-category-menu:hover { background:color-mix(in srgb,var(--surface-3) 88%,transparent); color:var(--text); }
 .ribbon-group-label { display:none!important; }
 
 /* Compact command menus visually belong to their trigger, not to a settings panel. */
@@ -1555,7 +1557,18 @@ html, body { font-size:var(--font-body); }
 .cad-layer-header-actions { flex-wrap:wrap; justify-content:flex-end; gap:4px!important; }
 .cad-layer-section-header { align-items:flex-start; }
 .cad-layer-scope-note { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.cad-layer-list { overflow-x:hidden!important; }
+.cad-layer-list { overflow-x:hidden!important; scroll-padding-block:4px; }
+.cad-layer-row { scroll-margin-block:4px; }
+.cad-layer-row.focus-reveal {
+  box-shadow:inset 3px 0 0 var(--accent),0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent);
+  animation:cad-layer-focus-reveal 1.05s ease-out;
+}
+@keyframes cad-layer-focus-reveal {
+  0% { background:color-mix(in srgb,var(--accent) 22%,var(--surface)); }
+  55% { background:color-mix(in srgb,var(--accent) 13%,var(--surface)); }
+  100% { background:var(--accent-soft); }
+}
+@media (prefers-reduced-motion:reduce) { .cad-layer-row.focus-reveal { animation:none; } }
 @media (max-width:900px) {
   .cad-layer-columns,.cad-layer-row { grid-template-columns:28px minmax(0,1fr) 34px 28px 26px!important; }
 }

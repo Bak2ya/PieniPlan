@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.28.2 · Build 38 — 2026-09-29
+
+- Reworked CAD object → Layer reveal using the browser’s actual rendered geometry instead of assuming a row offset. The selected Layer uses `scrollIntoView({block: "nearest"})`, then checks the real row/list `getBoundingClientRect()` values and applies only the minimum `scrollBy()` correction if Safari/other layout metrics still leave the row clipped.
+- Added a brief Layer focus pulse after reveal so the user can immediately identify the exact selected-object Layer without changing the current Layer, visibility, or Region override.
+- Clarified Compact Ribbon split buttons: tool groups have more space between them, a subtle group surface, and only a short internal divider between the main tool and chevron, avoiding the visual reading of `|▼ 벽|` as one combined control.
+- Removed `공간 지정 / Space designation` from the CAD Architecture menu. Space remains a Plan semantic workflow; future CAD closed-area tools should use CAD-specific Region/Hatch/area concepts instead.
+- Renamed the Select-menu command `도면 영역 / Drawing Region` to `도면 영역 지정 / Define Drawing Region` so the menu item reads as an action while the Inspector section remains the noun `도면 영역`.
+- Verification: Build38 focused Chromium regression **4/4 PASS**, Build38 full Chromium regression **14/14 PASS**, Polyline **26/26**, GeometryQuery **13/13**, History **6/6**, Modify **7/7**, Command/Core **5/5**, P0 correctness **28/28**; page/console errors **0**. Safari/Retina real-project feel remains the final user-device check.
+
 ## v0.28.1 · Build 37 — 2026-09-29
 
 - Fixed CAD Wall/Door/Window authoring visibility: activating any semantic architectural authoring tool now enables the Plan overlay before drawing, so newly created walls/openings remain visible and selectable instead of being created behind an off overlay.
