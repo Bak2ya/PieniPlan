@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.25.0 · Build 31 — 2026-09-28
+
+- Plan의 `구획`을 **건물 → 도면 → 공간** 계층으로 확장했다. 건물과 도면은 각각 명시적인 순서를 가지며, 선택과 펼침/접힘은 서로 독립적으로 동작한다. 기존 프로젝트는 건물 정보가 없으면 기본 건물 아래로 호환 로드한다.
+- Reference 제어를 별도 중첩 카드가 아니라 펼쳐진 도면 surface 안에 직접 통합했다.
+- Plan/CAD가 동일한 **Compact Ribbon → Canvas + Inspector → Command/Status** 공간 문법을 사용하도록 정리했다. 작은 menu/popover는 내용에 맞는 compact width를 사용한다.
+- Settings를 추가했다: 한국어/English, 새 프로젝트 기본 Metric/Imperial, System/Light/Dark/Black 테마, 별도 Recovery snapshot. Recovery는 원본 PPRJ를 자동 덮어쓰지 않는다.
+- CAD 공통 GeometryQuery 기반을 추가해 Circle Crossing selection, 곡선/TEXT hit-test, LINE/CIRCLE/ARC 교점 Snap을 정밀화했다.
+- CAD History는 가능한 명령부터 ChangeSet + inverse를 사용하고 복잡한 기존 경로는 snapshot fallback을 유지한다.
+- TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN의 검증된 형상 범위를 추가했다. EXTEND는 commit 전에 실제 추가 구간을 ghost preview로 보여준다.
+- Layer appearance fast-path와 다중 Properties mixed color 표시의 불필요한 경로를 정리했다.
+- C2 CAD core와 UI 통합 후 core/static/runtime 회귀를 재검증했다. 일부 Modify 조합, Stage 4 Annotation/Sheet, 실제 Safari Recovery persistence 검증은 계속 진행 중이다.
+
 ## v0.24.0 · Build 30 — 2026-09-27
 - Renamed the primary PieniPlan project file role to **PPRJ** (`.pprj`, `fileType=pieniplan-project`, schemaVersion 4). Legacy `.ppln` / `.pieniplan` projects remain readable; new portable project exports use `.pprj` and the UI labels project open/save/export explicitly as PPRJ.
 - Added **PPKG (PieniPlan Plan Package)** for Plan-only semantic exchange. PPKG excludes raw CAD source and reference payloads, can preserve/override drawing disciplines, can be opened/imported, and supports multi-building/multi-discipline merge through the start-screen **Merge Plans** workflow. Duplicate drawing/object IDs are remapped safely during merge.

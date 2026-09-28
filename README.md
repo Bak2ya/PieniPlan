@@ -26,7 +26,8 @@ CAD를 잘 몰라도 건물의 평면 구조를 빠르게 만들고 정리하는
 
 - 실제 치수 기반 직선·곡선 평면 경계 작성
 - 문, 창, 공간, 계단 같은 의미 요소 배치
-- 층에 한정되지 않는 여러 **도면/구획** 관리
+- 여러 **건물 → 도면 → 공간** 계층 관리
+- 건물과 도면의 순서를 각각 직접 편집
 - 도면별 참조 CAD/DXF·이미지 표시와 불투명도 조절
 - 참조 도면을 따라 트레이싱
 - 알고 있는 실제 길이를 이용한 **기준 치수 맞추기**
@@ -38,7 +39,7 @@ CAD를 잘 몰라도 건물의 평면 구조를 빠르게 만들고 정리하는
 - 도면 계산 면적과 관리 면적을 분리해 보존
 - CAD Drawing Region에서 건축 구조를 인식해 Plan 객체로 단순화
 
-Plan의 구획 목록은 **도면 → 참조 도면 → 공간**의 관계를 한 자리에서 보여줍니다. 도면은 꼭 한 층과 1:1일 필요가 없으며, 같은 층을 여러 도면으로 나누거나 목적별 도면을 따로 관리할 수 있습니다.
+Plan의 구획 목록은 **건물 → 도면 → 공간** 관계를 한 자리에서 보여줍니다. 건물 안에 여러 도면을 둘 수 있고, 도면은 꼭 한 층과 1:1일 필요가 없습니다. 같은 층을 여러 도면으로 나누거나 `5F 동측`, `옥상`, `기계실`, `소방`처럼 목적에 맞는 이름으로 자유롭게 구성할 수 있습니다. 참조 도면 제어는 각 도면 안에 함께 표시됩니다.
 
 ---
 
@@ -52,12 +53,13 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - GRID / SNAP / ORTHO / POLAR
 - Window / Crossing Selection
 - Command Console과 명령 입력
-- LINE, TRIM, EXTEND, ERASE, DIST 등 CAD식 작업 흐름
+- LINE, TRIM, EXTEND, OFFSET, FILLET, BREAK, JOIN, ERASE, DIST 등 CAD식 작업 흐름
+- LINE / CIRCLE / ARC 교점 기반 정밀 Snap과 곡선·TEXT 선택
 - 특정 Drawing Region의 기준점·방향 기반 회전
 - Metric / Imperial 입력·표시 구조
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
-PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다.
+PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다.
 
 ---
 
@@ -139,6 +141,19 @@ PieniPlan 작업
 ```
 
 Native DWG 편집은 지원 범위에 포함하지 않습니다. DWG가 필요한 경우 DXF로 변환한 뒤 PieniPlan에서 사용하는 흐름을 권장합니다.
+
+---
+
+## 설정과 화면
+
+PieniPlan의 앱 설정은 현재 프로젝트 데이터와 분리해서 관리합니다.
+
+- 한국어 / English
+- 새 프로젝트 기본 단위: Metric / Imperial
+- System / Light / Dark / Black 테마
+- 원본 PPRJ를 자동으로 덮어쓰지 않는 별도 Recovery snapshot
+
+Plan과 CAD는 같은 Compact Ribbon / Canvas / Inspector / Command 영역을 공유합니다. 모드를 바꿔도 공통 기능의 위치가 크게 바뀌지 않도록 구성하고, CAD 전용 기능만 필요한 곳에서 추가로 보여줍니다.
 
 ---
 

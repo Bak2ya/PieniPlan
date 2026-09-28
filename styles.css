@@ -830,7 +830,7 @@ html, body { overscroll-behavior:none; }
 }
 
 
-/* Build 25 — pre-Astra bugfix: remove orphan topbar control and keep CAD HUD groups on one baseline. */
+/* CAD HUD cleanup: remove orphan topbar control and keep status groups on one baseline. */
 .canvas-hud .hud-status-actions,
 .canvas-hud .coord-group {
   flex:0 0 auto;
@@ -1131,3 +1131,193 @@ html, body { overscroll-behavior:none; }
 .floor-expand-inner { transform:translateY(-3px); transition:transform .20s cubic-bezier(.2,.75,.25,1); }
 .floor-tree-group.expanded .floor-expand-inner { transform:translateY(0); }
 @media (prefers-reduced-motion:reduce){.floor-expand-inner{transition:none!important;transform:none!important;}}
+
+/* C2 UI integration candidate — compact ribbon, building hierarchy, settings shell */
+
+/* Compact content-fit menus/popovers. */
+.top-menu,
+.tool-popover,
+.floor-action-menu {
+  width:max-content;
+  min-width:0;
+  max-width:min(360px,calc(100vw - 24px));
+}
+.top-menu .menu-row,
+.tool-popover .tool-item { min-width:148px; }
+.tool-popover { position:fixed!important; left:auto; top:50px; }
+.tool-popover-title { white-space:nowrap; }
+
+/* Plan/CAD keep the same spatial grammar: ribbon → canvas + inspector → one-line command/status. */
+.workspace {
+  grid-template-columns:minmax(0,1fr) 286px;
+  grid-template-rows:46px minmax(0,1fr);
+}
+.tool-rail {
+  grid-column:1 / -1;
+  grid-row:1;
+  border-right:0;
+  border-bottom:1px solid var(--border);
+  padding:5px 10px;
+  display:flex;
+  flex-direction:row;
+  align-items:stretch;
+  gap:4px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  background:var(--surface-2);
+}
+.tool-category,
+.tool-direct {
+  min-width:72px;
+  min-height:34px;
+  height:34px;
+  padding:3px 9px;
+  flex-direction:row;
+  justify-content:flex-start;
+  gap:7px;
+  border-radius:7px;
+}
+.tool-category .tool-icon,
+.tool-direct .tool-icon { width:15px; height:15px; flex:none; }
+.tool-category .tool-text,
+.tool-direct .tool-text { font-size:10.5px; line-height:1.1; white-space:nowrap; }
+.tool-category .ribbon-group-label {
+  margin-left:3px;
+  padding-left:7px;
+  border-left:1px solid var(--border);
+  color:var(--text-3);
+  font-size:8.5px;
+  line-height:1;
+  white-space:nowrap;
+}
+.canvas-host { grid-column:1; grid-row:2; }
+.inspector { grid-column:2; grid-row:2; }
+
+/* Command console stays a single compact status row by default. */
+.canvas-hud { min-height:30px; }
+.commandbar {
+  width:min(620px,58vw);
+  min-width:260px;
+  max-width:620px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.command-entry-row { flex:0 1 210px; min-width:130px; }
+.command-console-output { flex:1 1 auto; min-width:0; display:block; }
+.command-status { min-width:0; }
+.command-history:not([hidden]) {
+  position:absolute;
+  left:0;
+  bottom:calc(100% + 6px);
+  width:min(460px,55vw);
+  max-height:68px;
+  overflow:hidden;
+  padding:6px 8px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:color-mix(in srgb,var(--surface-2) 98%,transparent);
+  box-shadow:0 8px 22px rgba(0,0,0,.22);
+}
+.app-shell.plan-tools .commandbar { width:min(520px,52vw); min-width:250px; }
+
+/* Building → Drawing → Space hierarchy. */
+.building-list { display:flex; flex-direction:column; gap:10px; padding:0 8px 12px; }
+.building-card {
+  border:1px solid var(--line-subtle,rgba(127,127,127,.20));
+  border-radius:12px;
+  background:color-mix(in srgb,var(--surface-1,var(--surface)) 94%,transparent);
+  overflow:hidden;
+  transition:border-color .18s ease,background-color .18s ease;
+}
+.building-card.selected { border-color:color-mix(in srgb,var(--accent) 26%,var(--border)); }
+.building-header {
+  min-height:39px;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr) 30px;
+  align-items:center;
+  gap:3px;
+  padding:0 8px 0 6px;
+  background:color-mix(in srgb,var(--surface-2) 58%,transparent);
+}
+.building-header:hover { background:var(--surface-2); }
+.building-disclosure { width:27px; height:27px; border:0; background:transparent; color:var(--text-2); cursor:pointer; font-size:16px; border-radius:6px; }
+.building-disclosure:hover { background:var(--surface-3); color:var(--text); }
+.building-main { min-width:0; cursor:pointer; }
+.building-name { font-size:12.8px; line-height:1.2; font-weight:720; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.building-more { min-width:28px; min-height:28px; }
+.building-expand-shell {
+  display:grid;
+  grid-template-rows:0fr;
+  opacity:0;
+  visibility:hidden;
+  overflow:hidden;
+  pointer-events:none;
+  transition:grid-template-rows .20s cubic-bezier(.2,.75,.25,1),opacity .16s ease,visibility 0s linear .20s;
+}
+.building-card.expanded .building-expand-shell {
+  grid-template-rows:1fr;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transition:grid-template-rows .20s cubic-bezier(.2,.75,.25,1),opacity .16s ease,visibility 0s;
+}
+.building-expand-inner { min-height:0; overflow:hidden; padding:8px 8px 9px; }
+.building-floor-toolbar { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:7px; padding:0 1px 8px; }
+.building-floor-toolbar .small-button { min-height:29px; }
+.building-card .floor-list { padding:0; gap:7px; }
+.building-card .floor-tree-group { border-radius:9px; }
+.building-card .floor-tree-group.active { border-color:color-mix(in srgb,var(--accent) 62%,transparent); background:color-mix(in srgb,var(--accent) 8%,var(--surface-1,transparent)); }
+.building-card.selected:not(:has(.floor-tree-group.active)) { background:color-mix(in srgb,var(--accent) 3%,var(--surface)); }
+.building-list.order-editing .building-card { cursor:grab; }
+.building-card.dragging { opacity:.48; }
+.building-card.drop-before,.building-card.drop-after { position:relative; }
+.building-card.drop-before::before,.building-card.drop-after::after { content:""; position:absolute; left:8px; right:8px; height:2px; border-radius:2px; background:var(--accent); z-index:5; pointer-events:none; }
+.building-card.drop-before::before { top:-6px; }
+.building-card.drop-after::after { bottom:-6px; }
+.building-reorder-handle { width:22px; color:var(--text-2); font-size:14px; text-align:center; cursor:grab; }
+.building-list.order-editing .building-header { grid-template-columns:22px 28px minmax(0,1fr) 30px; }
+
+/* Keep reference controls part of the drawing parent surface, not a nested card. */
+.floor-reference-placement { background:transparent!important; border:0!important; box-shadow:none!important; }
+.floor-reference-list { border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent); margin-bottom:7px; }
+.floor-reference-controls { grid-template-columns:28px minmax(72px,1fr) 42px 12px; }
+
+/* Settings window. */
+.settings-dialog { width:min(560px,calc(100vw - 32px)); max-height:min(760px,calc(100vh - 40px)); overflow:auto; padding:0; }
+.settings-dialog-header { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 12px; border-bottom:1px solid var(--border); background:color-mix(in srgb,var(--surface) 96%,transparent); backdrop-filter:blur(12px); }
+.settings-dialog-header .dialog-title { margin:0; }
+.settings-close-icon { width:28px; height:28px; border:0; background:transparent; font-size:20px; color:var(--text-2); }
+.settings-section { display:grid; gap:8px; padding:14px 16px; border-bottom:1px solid color-mix(in srgb,var(--border) 72%,transparent); }
+.settings-section-title { font-size:12.5px; font-weight:700; }
+.settings-section-copy { color:var(--text-2); font-size:10.5px; line-height:1.45; }
+.settings-select { width:min(260px,100%); min-height:31px; }
+.settings-theme-options { width:min(420px,100%); }
+.settings-check-row { display:grid; grid-template-columns:auto minmax(0,1fr); gap:9px; align-items:start; padding:4px 0; cursor:pointer; }
+.settings-check-row input { margin-top:3px; }
+.settings-check-row span { display:grid; gap:3px; }
+.settings-check-row strong { font-size:11.5px; font-weight:650; }
+.settings-check-row small { color:var(--text-2); font-size:10px; line-height:1.45; }
+.settings-recovery-button { justify-self:start; }
+.settings-recovery-meta { color:var(--text-3); font-size:9.8px; }
+.settings-dialog-actions { position:sticky; bottom:0; margin:0; padding:12px 16px 16px; background:color-mix(in srgb,var(--surface) 96%,transparent); border-top:1px solid var(--border); }
+
+/* Black is a true-black work surface with slightly stepped controls. */
+:root[data-theme="black"] .topbar,
+:root[data-theme="black"] .canvas-host { background:#000; }
+:root[data-theme="black"] .tool-rail { background:#080A0D; }
+:root[data-theme="black"] .inspector,
+:root[data-theme="black"] .settings-dialog { background:#0A0C0F; }
+:root[data-theme="black"] .building-card,
+:root[data-theme="black"] .floor-tree-group,
+:root[data-theme="black"] .top-menu,
+:root[data-theme="black"] .tool-popover { background:#0D1117; }
+
+@media (max-width:900px) {
+  .workspace { grid-template-columns:minmax(0,1fr) 260px; }
+  .tool-category .ribbon-group-label { display:none; }
+  .tool-category,.tool-direct { min-width:58px; padding-inline:7px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .building-card,.building-expand-shell { transition:none!important; }
+}

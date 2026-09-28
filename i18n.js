@@ -3,6 +3,27 @@
 
   const messages = {
     en: {
+      'cadModify.distance': 'Enter distance / radius',
+      'cadModify.source': 'Select source object',
+      'cadModify.first': 'Specify first break point',
+      'cadModify.second': 'Select second LINE',
+      'cadModify.result': 'Specify result point / side',
+      'cadModify.invalid': 'No valid result. Check input and supported geometry.',
+
+      'cadProperty.currentLayer': 'Current layer',
+      'cadProperty.pickSource': 'MATCHPROP: select source object',
+      'cadProperty.pickTargets': 'Select target objects; Enter to apply, Esc to cancel',
+      'cadProperty.front': 'Bring to front',
+      'cadProperty.back': 'Send to back',
+      'cadProperty.color': 'Color (#RRGGBB; blank = ByLayer)',
+      'cadProperty.linetype': 'Linetype',
+      'cadProperty.lineweight': 'Lineweight (mm)',
+      'cadProperty.byLayer': 'ByLayer',
+      'cadProperty.printable': 'Printable',
+      'cadProperty.yes': 'Yes',
+      'cadProperty.no': 'No',
+      'cadProperty.matchFirst': 'Match appearance from first selected',
+
       'action.new': 'New',
       'action.openReference': 'Open Reference',
       'action.openDxfEdit': 'Open DXF',
@@ -84,6 +105,20 @@
       'appearance.light': 'Light',
       'appearance.dark': 'Dark',
       'appearance.black': 'Black',
+      'settings.title': 'Settings',
+      'settings.language': 'Language',
+      'settings.languageCopy': 'Choose the app language.',
+      'settings.defaultUnit': 'New project default unit',
+      'settings.defaultUnitCopy': 'Applies only to projects created from now on.',
+      'settings.recovery': 'Auto save / recovery',
+      'settings.recoveryEnable': 'Create recovery snapshots automatically',
+      'settings.recoveryCopy': 'Recovery snapshots are stored separately and never overwrite the original PPRJ.',
+      'settings.openRecovery': 'Open recovery snapshot',
+      'settings.noRecovery': 'No recovery snapshot is available yet.',
+      'settings.close': 'Close',
+      'settings.saved': 'Settings saved.',
+      'language.ko': '한국어',
+      'language.en': 'English',
 
       'context.tool': 'Tool',
       'context.select': 'Select',
@@ -569,6 +604,20 @@
       'panel.paletteSub': 'Plan objects and reference display',
       'panel.referenceOpacity': 'Reference opacity',
       'floor.add': '+ Add floor',
+      'building.add': '+ Add building',
+      'building.editOrder': 'Building order',
+      'building.finishOrder': 'Done',
+      'building.defaultName': 'Building 1',
+      'building.rename': 'Rename building',
+      'building.deleteTitle': 'Delete building',
+      'building.deleteConfirm': 'Delete {name} and every drawing inside it? This can be undone immediately with Undo.',
+      'building.deleteAction': 'Delete {name}',
+      'building.keepOne': 'At least one building must remain.',
+      'building.multiExportHint': 'Multi-building packages use the building names from the hierarchy.',
+      'building.addDrawing': '+ Add drawing',
+      'building.drawingOrder': 'Drawing order',
+      'building.expand': 'Expand {name}',
+      'building.collapse': 'Collapse {name}',
       'floor.addDrawing': '+ Add drawing',
       'floor.editOrder': 'Edit order',
       'floor.finishOrder': 'Done',
@@ -636,6 +685,27 @@
     },
 
     ko: {
+      'cadModify.distance': '거리 / 반지름 입력',
+      'cadModify.source': '원본 객체 선택',
+      'cadModify.first': '끊을 첫 점 지정',
+      'cadModify.second': '두 번째 LINE 선택',
+      'cadModify.result': '결과 점 / 방향 지정',
+      'cadModify.invalid': '유효한 결과가 없습니다. 입력과 지원 형상을 확인하세요.',
+
+      'cadProperty.currentLayer': '현재 레이어',
+      'cadProperty.pickSource': 'MATCHPROP: 원본 객체 선택',
+      'cadProperty.pickTargets': '대상 객체 선택 · Enter 적용 · Esc 취소',
+      'cadProperty.front': '맨 앞으로',
+      'cadProperty.back': '맨 뒤로',
+      'cadProperty.color': '색상 (#RRGGBB · 빈칸 = ByLayer)',
+      'cadProperty.linetype': '선종류',
+      'cadProperty.lineweight': '선가중치 (mm)',
+      'cadProperty.byLayer': 'ByLayer',
+      'cadProperty.printable': '출력 가능',
+      'cadProperty.yes': '예',
+      'cadProperty.no': '아니요',
+      'cadProperty.matchFirst': '첫 선택 객체의 표현 속성 맞추기',
+
       'action.new': '새 도면',
       'action.openReference': '참조 도면 추가',
       'action.openDxfEdit': 'DXF 열기',
@@ -717,6 +787,20 @@
       'appearance.light': '라이트',
       'appearance.dark': '다크',
       'appearance.black': '블랙',
+      'settings.title': '설정',
+      'settings.language': '언어',
+      'settings.languageCopy': '앱에서 사용할 언어를 선택합니다.',
+      'settings.defaultUnit': '새 프로젝트 기본 단위',
+      'settings.defaultUnitCopy': '앞으로 새로 만드는 프로젝트에만 적용됩니다.',
+      'settings.recovery': '자동 저장 / 복구',
+      'settings.recoveryEnable': '복구 스냅샷 자동 생성',
+      'settings.recoveryCopy': '복구 스냅샷은 별도로 저장되며 원본 PPRJ를 자동으로 덮어쓰지 않습니다.',
+      'settings.openRecovery': '복구 스냅샷 열기',
+      'settings.noRecovery': '아직 사용할 수 있는 복구 스냅샷이 없습니다.',
+      'settings.close': '닫기',
+      'settings.saved': '설정을 저장했습니다.',
+      'language.ko': '한국어',
+      'language.en': 'English',
 
       'context.tool': '도구',
       'context.select': '선택',
@@ -1203,6 +1287,20 @@
       'panel.paletteSub': 'Plan 객체와 참조 표시',
       'panel.referenceOpacity': '참조 도면 불투명도',
       'floor.add': '+ 층 추가',
+      'building.add': '+ 건물 추가',
+      'building.editOrder': '건물 순서',
+      'building.finishOrder': '완료',
+      'building.defaultName': '건물 1',
+      'building.rename': '건물 이름 바꾸기',
+      'building.deleteTitle': '건물 삭제',
+      'building.deleteConfirm': '{name}과(와) 그 안의 모든 도면을 삭제할까요? 바로 실행 취소할 수 있습니다.',
+      'building.deleteAction': '{name} 삭제',
+      'building.keepOne': '최소 한 개의 건물은 남아 있어야 합니다.',
+      'building.multiExportHint': '여러 건물 패키지는 구획의 건물 이름을 그대로 사용합니다.',
+      'building.addDrawing': '+ 도면 추가',
+      'building.drawingOrder': '도면 순서',
+      'building.expand': '{name} 펼치기',
+      'building.collapse': '{name} 접기',
       'floor.addDrawing': '+ 도면 추가',
       'floor.editOrder': '순서 편집',
       'floor.finishOrder': '완료',
@@ -1272,16 +1370,18 @@
 
   function resolveLanguage() {
     const forced = new URLSearchParams(location.search).get('lang');
-    const candidates = forced ? [forced] : (navigator.languages?.length ? navigator.languages : [navigator.language]);
+    let saved = null;
+    try { saved = localStorage.getItem('pieniplan-language'); } catch (_) {}
+    const candidates = forced ? [forced] : saved ? [saved] : ['ko'];
     for (const candidate of candidates) {
       const normalized = String(candidate || '').toLowerCase();
       if (normalized.startsWith('ko')) return 'ko';
       if (normalized.startsWith('en')) return 'en';
     }
-    return 'en';
+    return 'ko';
   }
 
-  const language = resolveLanguage();
+  let language = resolveLanguage();
 
   function t(key, vars = {}) {
     let value = messages[language]?.[key] ?? messages.en[key] ?? key;
@@ -1294,6 +1394,15 @@
     root.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   }
 
+  function setLanguage(next, { persist = true } = {}) {
+    const normalized = String(next || '').toLowerCase().startsWith('en') ? 'en' : 'ko';
+    language = normalized;
+    document.documentElement.lang = language;
+    if (persist) { try { localStorage.setItem('pieniplan-language', language); } catch (_) {} }
+    apply(document);
+    return language;
+  }
+
   document.documentElement.lang = language;
-  window.PieniPlanI18n = { language, t, apply };
+  window.PieniPlanI18n = { get language(){ return language; }, t, apply, setLanguage };
 })();

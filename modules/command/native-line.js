@@ -5,7 +5,7 @@
   const core = root.commandFoundation;
   function install(registry, port) {
     registry.register({
-      id:'L', aliases:['LINE'], available:ctx=>ctx.mode==='cad', transactional:true,
+      id:'L', aliases:['LINE'], available:ctx=>ctx.mode==='cad', transactional:false, historyOwner:'cad-change-set',
       create(){
         const draft={phase:'start',start:null,current:null,token:port.contextToken(),lastPointer:null};
         const resolvePointer=(point,shift=false)=>port.resolvePoint(point,{base:draft.start,shift,typed:false});

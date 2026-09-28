@@ -1,4 +1,4 @@
-/* Astra CAD Core Attempt A1. Synchronous, DOM-free, capability-injected core. */
+/* CAD command foundation: synchronous, DOM-free, capability-injected core. */
 (() => {
   'use strict';
   const root = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
