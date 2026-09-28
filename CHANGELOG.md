@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.28.0 · Build 36 — 2026-09-29
+
+- Integrated the reviewed Astra P1/P2 foundation into the Build35 source without replacing Build35 UI/Layer/Component work: persistent `cadPolyline`, PPRJ schema5 capability gating, stable owner/vertex/edge identity, derived analytic LINE/ARC cache, spatial indexing, and shared Render/Selection/Snap/GeometryQuery semantics.
+- Preserved Build35 `ComponentInstance`, Layer scope/color/settings, File/View menus, and Starter Components while merging the Polyline path; project validation now recognizes both `component` and `cadPolyline`.
+- Rebased UI text-size presets after real Safari review: Build35 **Small** is now the new **Default**, with denser **Small** and **Smaller** presets plus **Large**. Brand text remains stable while content-fit Ribbon/popover/context spacing tightens with smaller text.
+- Fixed CAD object → Layer focus to use one layer resolver across native CAD objects, legacy source lines and `cadPolyline`; focus/auto-scroll never changes visibility, current Layer or Region override state.
+- Changed CAD Wall/Door/Window activation to start the tool immediately like LINE instead of opening the CAD mapping modal from the tool button. Their active-tool Context strip remains visible while the tool is active.
+- Kept PLINE authoring, Polyline TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN, Curve Reconstruction and Stage4 outside this build. Build36 establishes the shared owner/query foundation only.
+- Verification: Astra/core pure suites **85/85 PASS**, Build36 focused Chromium regression **8/8 PASS**, Build35-descendant full Chromium regression **14/14 PASS**, page errors **0**, console errors **0**. Safari/Retina remains the final user-device feel check.
+
 ## v0.27.0 · Build 35 — 2026-09-28
 
 - Added app-level **Text Size** presets (Small / Default / Large) without changing control, row, padding, or Inspector dimensions. The PieniPlan identity remains 17px and micro text does not drop below 12px.

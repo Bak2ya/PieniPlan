@@ -20,7 +20,8 @@
   }
 
   function rotateCadObject(object, base, deltaDeg) {
-    if ((object.type === 'cadLine' || object.type === 'line') && object.a && object.b) {
+    if(root.cadPolyline?.is(object)){const a=rad(deltaDeg),c=Math.cos(a),s=Math.sin(a);object.vertices=root.cadPolyline.transform(object,{a:c,b:s,c:-s,d:c,tx:base.x-c*base.x+s*base.y,ty:base.y-s*base.x-c*base.y}).vertices;}
+    else if ((object.type === 'cadLine' || object.type === 'line') && object.a && object.b) {
       object.a = rotatePoint(object.a, base, deltaDeg);
       object.b = rotatePoint(object.b, base, deltaDeg);
     } else if ((object.type === 'cadCircle' || object.type === 'cadArc') && object.center) {

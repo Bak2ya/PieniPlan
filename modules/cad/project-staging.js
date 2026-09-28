@@ -2,12 +2,14 @@
 (() => {
   'use strict';
   const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{};
-  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','line','wall','door','window','dimension','space','stair','component']);
+  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','cadPolyline','line','wall','door','window','dimension','space','stair','component']);
   function validate(raw){
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
-    if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>4))bad('unsupported-schema');
-    const d=raw.drawing;
+    if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>5))bad('unsupported-schema');
+    const caps=raw.requiredCapabilities??[];
+    if(!Array.isArray(caps)||caps.some(c=>c!==root.cadPolyline?.capability))bad('unsupported-capability');
+    const d=raw.drawing,vertexIds=new Set(),edgeIds=new Set();
     for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
     const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
     for(const key of ['objects','references','drawingRegions','floors']){
@@ -15,6 +17,11 @@
     }
     for(const o of d.objects||[]){
       if(!supportedTypes.has(o.type))bad('unsupported-object-type:'+String(o.type));
+      if(o.type==='cadPolyline'){
+        if(raw.schemaVersion!==5||!caps.includes(root.cadPolyline?.capability))bad('polyline-capability-required');
+        root.cadPolyline.validate(o);
+        for(const v of o.vertices){if(vertexIds.has(v.id))bad('duplicate-vertex-id');vertexIds.add(v.id);if(v.outgoing){if(edgeIds.has(v.outgoing.id))bad('duplicate-edge-id');edgeIds.add(v.outgoing.id);}}
+      }
       for(const key of ['constraints','attachments'])if(o[key]!=null&&(typeof o[key]!=='object'||Array.isArray(o[key])))bad(key);
       for(const k of ['a','b','center','point','p1','p2','seed'])if(o[k]!=null&&!point(o[k]))bad('point');
       if(o.polygon!=null&&(!Array.isArray(o.polygon)||!o.polygon.every(point)))bad('polygon');

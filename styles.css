@@ -1475,28 +1475,50 @@ html, body { font-size:var(--font-body); }
 .plan-section-inspector .inspector-tab,
 .app-shell.cad-tools .inspector-tab { font-size:var(--font-control) !important; }
 
-/* v0.27.0 Build 35 — user-selectable text scale, responsive layer manager and compact menus. */
+/* v0.28.0 Build 36 — Build35 Small becomes the visual Default; two denser options are added. */
+:root[data-text-size="smaller"] {
+  --font-primary:12px;
+  --font-control:11.5px;
+  --font-body:11px;
+  --font-secondary:11px;
+  --font-micro:11px;
+}
 :root[data-text-size="small"] {
+  --font-primary:13px;
+  --font-control:12px;
+  --font-body:11.5px;
+  --font-secondary:11.5px;
+  --font-micro:11px;
+}
+:root[data-text-size="default"] {
   --font-primary:14px;
   --font-control:13px;
   --font-body:12px;
   --font-secondary:12px;
   --font-micro:12px;
 }
-:root[data-text-size="default"] {
+:root[data-text-size="large"] {
   --font-primary:15px;
   --font-control:14px;
   --font-body:13px;
   --font-secondary:12px;
   --font-micro:12px;
 }
-:root[data-text-size="large"] {
-  --font-primary:16px;
-  --font-control:15px;
-  --font-body:14px;
-  --font-secondary:13px;
-  --font-micro:12px;
-}
+
+/* Density follows text size horizontally while preserving control heights/hit areas. */
+.tool-category-split { min-width:104px; width:max-content; }
+:root[data-text-size="small"] .tool-category-split { min-width:96px; }
+:root[data-text-size="smaller"] .tool-category-split { min-width:90px; }
+:root[data-text-size="small"] .tool-category-split .tool-category,
+:root[data-text-size="smaller"] .tool-category-split .tool-category { padding-inline:7px; gap:6px; }
+:root[data-text-size="small"] .tool-popover .tool-item { min-width:156px; gap:12px; }
+:root[data-text-size="smaller"] .tool-popover .tool-item { min-width:146px; gap:10px; }
+:root[data-text-size="small"] .tool-popover { min-width:156px; }
+:root[data-text-size="smaller"] .tool-popover { min-width:146px; }
+:root[data-text-size="small"] .context-field input { width:70px; }
+:root[data-text-size="smaller"] .context-field input { width:64px; }
+:root[data-text-size="small"] .cad-layer-row .row-main,
+:root[data-text-size="smaller"] .cad-layer-row .row-main { gap:5px; }
 
 /* Top command menus size to their content rather than a generic panel width. */
 .top-menu { min-width:0!important; width:max-content!important; max-width:min(330px,calc(100vw - 24px)); }
