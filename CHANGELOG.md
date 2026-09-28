@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.26.1 · Build 33 — 2026-09-28
+
+- Reject future PPRJ schemas and unsupported persistent object types before installing a project.
+- Preserve supported legacy 2D POLYLINE bulges; explicitly reject unsupported flags and planes.
+- Correct signed CAD ARC exports and mirrored/negative-uniform INSERT arc transforms.
+- Include closing Reference polyline edges in snaps, with local nearest fallback after discrete snaps.
+- Enforce CAD Duplicate policy, translate ARC centers, and use atomic ChangeSet undo/redo.
+- Invalidate TRIM/EXTEND previews immediately on geometry, layer, selection, and context changes.
+- Preserve Build32 UI, Plan semantics, PPRJ schema4 and PPKG schema1. No persistent Polyline or Stage4 addition.
+
 ## v0.26.0 · Build 32 — 2026-09-28
 
 - Refined the Compact Ribbon into anchored split buttons that show the current tool without duplicate group labels.

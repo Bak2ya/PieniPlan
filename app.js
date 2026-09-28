@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.26.0';
-  const BUILD = 32;
+  const VERSION = '0.26.1';
+  const BUILD = 33;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -322,12 +322,12 @@
     cadSelectionService=cadSelectionModule.create({getIds:()=>selectionIds(),setIds:setSelectionIds,policy:(id,purpose)=>state.toolset==='cad'?cadContext.policy(id,purpose):({allowed:Boolean(cadContext.getById(id)),reason:null})});
     if(!cadLayerStore.has(state.activeCadLayer))state.activeCadLayer='0';
   }
-  function setSelectionIds(ids){const next=new Set(ids||[]);state.selectedObjectIds=next;state.selectedObjectId=next.size===1?[...next][0]:null;state.selectedReferenceId=null;state.selectedRegionId=null;if(state.toolset==='cad'&&next.size===1)state.layerRevealRequested=true;return next;}
+  function setSelectionIds(ids){if(state.toolset==='cad')state.trimPreview=null;const next=new Set(ids||[]);state.selectedObjectIds=next;state.selectedObjectId=next.size===1?[...next][0]:null;state.selectedReferenceId=null;state.selectedRegionId=null;if(state.toolset==='cad'&&next.size===1)state.layerRevealRequested=true;return next;}
   function cadLayerDefinition(name){if(!cadLayerStore)initializeCadServices();return cadLayerStore.ensure(name||'0');}
   function cadLayerLocked(name){return Boolean(cadLayerDefinition(name).locked);}
   function cadPolicy(id,purpose='select'){if(!cadContext)initializeCadServices();return cadContext.policy(id,purpose);}
-  function touchCadGeometry(){cadContext?.touchGeometry();}
-  function touchCadLayer(){cadContext?.touchLayer();}
+  function touchCadGeometry(){if(state.toolset==='cad')state.trimPreview=null;cadContext?.touchGeometry();}
+  function touchCadLayer(){if(state.toolset==='cad')state.trimPreview=null;cadContext?.touchLayer();}
   function touchCadReference(){cadContext?.touchReference();}
   function cadContextToken(){if(!cadContext)initializeCadServices();return cadContext.token();}
   function cadContextTokenCurrent(token,opts){return cadContext?.isCurrent(token,opts)!==false;}
@@ -1609,7 +1609,11 @@
     for(const o of originals.values())if(!used.has(o.id))changes.push({before:o,after:null,index:state.objects.indexOf(o)});
     return commitCadChanges(label,changes);
   }
+  function cadModifyPreviewCurrent(p){
+    return Boolean(p&&state.toolset==='cad'&&cadContextTokenCurrent(p.token)&&p.previewTool===state.activeTool&&p.previewCommand===state.activeCommand&&p.previewFloorId===state.activeFloorId&&cadContext.getById(p.targetId)===p.before&&cadPolicy(p.targetId,'modify').allowed);
+  }
   function drawTrimPreview(){
+    if(state.toolset==='cad'&&state.trimPreview&&!cadModifyPreviewCurrent(state.trimPreview)){state.trimPreview=null;return;}
     const p=state.trimPreview;if(!p||!(state.toolset==='cad'?['trim','extend'].includes(state.activeTool):state.activeTool==='trim'))return;
     const styles=getComputedStyle(document.documentElement),danger=p.kind==='extend'?(styles.getPropertyValue('--accent').trim()||'#58A6FF'):(styles.getPropertyValue('--danger').trim()||'#F85149');
     ctx.save();ctx.strokeStyle=danger;ctx.fillStyle=danger;ctx.globalAlpha=.82;ctx.lineCap='round';ctx.lineWidth=p.kind==='extend'?2:5;if(p.kind==='extend')ctx.setLineDash([6,4]);
@@ -1698,7 +1702,7 @@
     if(!target||target.type!=='cadLine'||!cadPolicy(target.id,'modify').allowed)return null;
     const start=distance(click,target.a)<=distance(click,target.b),from=start?target.b:target.a,to=start?target.a:target.b;
     const cutters=(mode==='extend'?cadQueryIndex?.rayCandidates({a:from,b:to})||[]:cadQueryCandidates(cadGeometry.bounds(target),'snap')).filter(o=>o.id!==target.id&&cadPolicy(o.id,'snap').allowed);
-    const plan=modules.cadModifyGeometry.plan(mode,target,click,cutters);return plan?{...plan,token:cadContextToken()}:null;
+    const plan=modules.cadModifyGeometry.plan(mode,target,click,cutters);return plan?{...plan,token:cadContextToken(),previewTool:state.activeTool,previewCommand:state.activeCommand,previewFloorId:state.activeFloorId}:null;
   }
   function computeCadTrimSegment(target,click){return computeCadModifyPlan('trim',target,click);}
   function updateTrimPreview(raw,{shift=false}={}){
@@ -1709,7 +1713,7 @@
     state.trimPreview=computeCadModifyPlan(mode,hitObject(raw),raw);
   }
   function commitCadModifyPlan(plan){
-    if(!plan||!cadContextTokenCurrent(plan.token))return false;
+    if(!cadModifyPreviewCurrent(plan))return false;
     const index=state.objects.indexOf(plan.before),after=plan.after.map((o,i)=>({...o,id:i?uid('cadLine'):plan.before.id}));
     const changes=[{before:plan.before,after:after[0]||null,index}];for(const o of after.slice(1))changes.push({before:null,after:o,index:state.objects.length});
     try{const ok=commitCadChanges(plan.kind,changes);state.trimPreview=null;if(ok)updateAll();return ok;}catch(error){state.trimPreview=null;setCommandStatus(cadFaultMessage(error.message),'error');return false;}
@@ -2008,6 +2012,7 @@
     for(const q of extras)addPoint(q);return(idx.cells.size||idx.segments.length)?idx:null;
   }
   function rebuildObjectSnapIndex({touch=true,scope=null}={}){
+    if(state.toolset==='cad')state.trimPreview=null;
     planGeometryCache={source:null,revision:-1,count:-1};
     state.cadRenderRevision=(state.cadRenderRevision||0)+1;
     const target=scope||state.toolset||'plan',buildPlan=target==='plan'||target==='all',buildCad=target==='cad'||target==='all';
@@ -2261,14 +2266,16 @@
   }
   function buildSnapIndex(entities,bounds){
     const segments=[],extra=[];let seq=0;const seg=(a,b,layer='0')=>segments.push({a,b,layer,id:`s${++seq}`});
-    for(const e of entities){const layer=e.layer||'0';if(e.type==='line')seg({x:e.x1,y:e.y1},{x:e.x2,y:e.y2},layer);else if(e.type==='polyline'){const pts=e.points||[];for(let i=1;i<pts.length;i++)seg({x:pts[i-1][0],y:pts[i-1][1]},{x:pts[i][0],y:pts[i][1]},layer);}else if(e.type==='circle'){extra.push({x:e.cx-e.r,y:e.cy,layer,kind:'quadrant'},{x:e.cx+e.r,y:e.cy,layer,kind:'quadrant'},{x:e.cx,y:e.cy-e.r,layer,kind:'quadrant'},{x:e.cx,y:e.cy+e.r,layer,kind:'quadrant'});}else if(e.type==='arc'){const a0=rad(e.startAngle||0),a1=rad((e.startAngle||0)+(e.sweep||0));extra.push({x:e.cx+Math.cos(a0)*e.r,y:e.cy+Math.sin(a0)*e.r,layer,kind:'endpoint'},{x:e.cx+Math.cos(a1)*e.r,y:e.cy+Math.sin(a1)*e.r,layer,kind:'endpoint'});}}
+    for(const e of entities){const layer=e.layer||'0';if(e.type==='line')seg({x:e.x1,y:e.y1},{x:e.x2,y:e.y2},layer);else if(e.type==='polyline'){const pts=e.points||[];for(let i=1;i<pts.length;i++)seg({x:pts[i-1][0],y:pts[i-1][1]},{x:pts[i][0],y:pts[i][1]},layer);if(e.closed&&pts.length>1)seg({x:pts[pts.length-1][0],y:pts[pts.length-1][1]},{x:pts[0][0],y:pts[0][1]},layer);}else if(e.type==='circle'){extra.push({x:e.cx-e.r,y:e.cy,layer,kind:'quadrant'},{x:e.cx+e.r,y:e.cy,layer,kind:'quadrant'},{x:e.cx,y:e.cy-e.r,layer,kind:'quadrant'},{x:e.cx,y:e.cy+e.r,layer,kind:'quadrant'});}else if(e.type==='arc'){const a0=rad(e.startAngle||0),a1=rad((e.startAngle||0)+(e.sweep||0));extra.push({x:e.cx+Math.cos(a0)*e.r,y:e.cy+Math.sin(a0)*e.r,layer,kind:'endpoint'},{x:e.cx+Math.cos(a1)*e.r,y:e.cy+Math.sin(a1)*e.r,layer,kind:'endpoint'});}}
     const idx=buildSegmentSnapIndex(segments);for(const q of extra){const gx=Math.floor(q.x/idx.cellW),gy=Math.floor(q.y/idx.cellH),key=`${gx},${gy}`;if(!idx.cells.has(key))idx.cells.set(key,[]);idx.cells.get(key).push(q);}return idx;
   }
   function queryReferenceSnapIndex(idx,p,threshold,visibleLayer,test){
-    if(!idx)return;const gx=Math.floor(p.x/idx.cellW),gy=Math.floor(p.y/idx.cellH),rx=Math.max(1,Math.ceil(threshold/idx.cellW)),ry=Math.max(1,Math.ceil(threshold/idx.cellH)),segments=new Map();
-    for(let dx=-rx;dx<=rx;dx++)for(let dy=-ry;dy<=ry;dy++){const key=`${gx+dx},${gy+dy}`;for(const q of idx.cells.get(key)||[]){if(visibleLayer&&!visibleLayer(q.layer||'0'))continue;if(distance(p,q)<=threshold)test(q,q.kind||'endpoint');}for(const seg of idx.segmentCells?.get(key)||[]){if(visibleLayer&&!visibleLayer(seg.layer||'0'))continue;if(pointSegmentDistance(p,seg.a,seg.b)<=threshold)segments.set(seg.index,seg);}}
+    if(!idx)return;let discrete=false;const emit=(q,kind)=>{discrete=true;test(q,kind);};const gx=Math.floor(p.x/idx.cellW),gy=Math.floor(p.y/idx.cellH),rx=Math.max(1,Math.ceil(threshold/idx.cellW)),ry=Math.max(1,Math.ceil(threshold/idx.cellH)),segments=new Map();
+    for(let dx=-rx;dx<=rx;dx++)for(let dy=-ry;dy<=ry;dy++){const key=`${gx+dx},${gy+dy}`;for(const q of idx.cells.get(key)||[]){if(visibleLayer&&!visibleLayer(q.layer||'0'))continue;if(distance(p,q)<=threshold)emit(q,q.kind||'endpoint');}for(const seg of idx.segmentCells?.get(key)||[]){if(visibleLayer&&!visibleLayer(seg.layer||'0'))continue;if(pointSegmentDistance(p,seg.a,seg.b)<=threshold)segments.set(seg.index,seg);}}
     if(state.toolset==='cad'&&idx===state.cadSnapIndex){const rect={minx:p.x-threshold,maxx:p.x+threshold,miny:p.y-threshold,maxy:p.y+threshold},list=cadQueryCandidates(rect,'snap').filter(o=>o.id!==null&&cadGeometry.hitDistance(o,p)<=threshold&&o.type!=='cadText');for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)for(const q of cadGeometry.intersections(list[i],list[j]))if(distance(p,q)<=threshold)test({...q,kind:'intersection',objectIds:[list[i].id,list[j].id]});return;}
-    const list=[...segments.values()];for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const x=segmentIntersection(list[i].a,list[i].b,list[j].a,list[j].b);if(x&&distance(p,x.point)<=threshold)test({...x.point,layer:list[i].layer},'intersection');}
+    const list=[...segments.values()];for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const x=segmentIntersection(list[i].a,list[i].b,list[j].a,list[j].b);if(x&&distance(p,x.point)<=threshold)emit({...x.point,layer:list[i].layer},'intersection');}
+    // Preserve discrete snaps; nearest is a local indexed-edge fallback.
+    if(!discrete)for(const seg of list){const q=modules.geometryQuery.projectNearest(seg,p);if(q&&q.distance<=threshold)test({...q.point,layer:seg.layer},'nearest');}
   }
   function boundsEntities(entities){let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;const add=(x,y)=>{if(Number.isFinite(x)&&Number.isFinite(y)){minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);}};for(const e of entities){if(e.type==='line'){add(e.x1,e.y1);add(e.x2,e.y2);}else if(e.type==='polyline')for(const p of e.points||[])add(p[0],p[1]);else if(e.type==='circle'||e.type==='arc'){add(e.cx-e.r,e.cy-e.r);add(e.cx+e.r,e.cy+e.r);}else if(e.type==='text')add(e.x,e.y);}return Number.isFinite(minx)?{minx,miny,maxx,maxy}:{minx:0,miny:0,maxx:1000,maxy:1000};}
   function readDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
@@ -2460,7 +2467,7 @@
   }
 
   function openRegionInPlan(region){const floor=ensureFloorForRegion(region);let ref=state.references.find(r=>r.type==='linkedCadRegion'&&r.regionId===region.id);if(!ref){const layers=visibleCadLayers(region);ref={id:uid('ref'),type:'linkedCadRegion',regionId:region.id,floorId:floor.id,name:`${region.name} · CAD`,visible:true,opacity:.48,layers:[...layers],visibleLayers:new Set(layers)};state.references.push(ref);}else{ref.visible=true;ref.floorId=floor.id;}state.activeBuildingId=floor.buildingId;state.activeFloorId=floor.id;state.expandedBuildingIds.add(floor.buildingId);state.expandedFloorIds.add(floor.id);state.selectedReferenceId=ref.id;markDirty(true);switchToolset('plan',{skipMapping:true});switchInspector('primary');fitBounds(region);updateAll();}
-  async function exportRegionDxf(region){const visible=visibleCadLayers();let entities='',layers=new Set(['0']);for(const o of state.objects){if(!(isCadObject(o)||o.type==='line')||!objectTouchesRegion(o,region))continue;const layer=o.cadLayer||'0';if(!visible.has(layer))continue;layers.add(layer);if(o.type==='cadLine'||o.type==='line'){const clipped=clipLineToRect(o.a,o.b,region);if(clipped)entities+=dxfLine(layer,clipped[0],clipped[1]);}else if(o.type==='cadCircle')entities+=dxfCircle(layer,o.center,o.radius);else if(o.type==='cadArc')entities+=dxfArc(layer,o.center,o.radius,o.startAngle||0,(o.startAngle||0)+(o.sweep||0));else if(o.type==='cadText'&&pointInRect(o.point,region))entities+=dxfText(layer,o.point,o.text||'',o.height||180,o.rotation||0);}let layerTable=dxfPair(0,'TABLE')+dxfPair(2,'LAYER')+dxfPair(70,layers.size);for(const name of layers)layerTable+=dxfPair(0,'LAYER')+dxfPair(2,sanitizeLayer(name))+dxfPair(70,0)+dxfPair(62,7)+dxfPair(6,'CONTINUOUS');layerTable+=dxfPair(0,'ENDTAB');const dxf=dxfPair(0,'SECTION')+dxfPair(2,'HEADER')+dxfPair(9,'$ACADVER')+dxfPair(1,'AC1009')+dxfPair(9,'$INSUNITS')+dxfPair(70,4)+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'TABLES')+layerTable+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'ENTITIES')+entities+dxfPair(0,'ENDSEC')+dxfPair(0,'EOF');const blob=new Blob([dxf],{type:'application/dxf;charset=utf-8'});await saveDxfBlob(blob,`${sanitizeFilename(region.name||'region')}_PieniPlan.dxf`);}
+  async function exportRegionDxf(region){const visible=visibleCadLayers();let entities='',layers=new Set(['0']);for(const o of state.objects){if(!(isCadObject(o)||o.type==='line')||!objectTouchesRegion(o,region))continue;const layer=o.cadLayer||'0';if(!visible.has(layer))continue;layers.add(layer);if(o.type==='cadLine'||o.type==='line'){const clipped=clipLineToRect(o.a,o.b,region);if(clipped)entities+=dxfLine(layer,clipped[0],clipped[1]);}else if(o.type==='cadCircle')entities+=dxfCircle(layer,o.center,o.radius);else if(o.type==='cadArc')entities+=dxfCadArc(layer,o);else if(o.type==='cadText'&&pointInRect(o.point,region))entities+=dxfText(layer,o.point,o.text||'',o.height||180,o.rotation||0);}let layerTable=dxfPair(0,'TABLE')+dxfPair(2,'LAYER')+dxfPair(70,layers.size);for(const name of layers)layerTable+=dxfPair(0,'LAYER')+dxfPair(2,sanitizeLayer(name))+dxfPair(70,0)+dxfPair(62,7)+dxfPair(6,'CONTINUOUS');layerTable+=dxfPair(0,'ENDTAB');const dxf=dxfPair(0,'SECTION')+dxfPair(2,'HEADER')+dxfPair(9,'$ACADVER')+dxfPair(1,'AC1009')+dxfPair(9,'$INSUNITS')+dxfPair(70,4)+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'TABLES')+layerTable+dxfPair(0,'ENDSEC')+dxfPair(0,'SECTION')+dxfPair(2,'ENTITIES')+entities+dxfPair(0,'ENDSEC')+dxfPair(0,'EOF');const blob=new Blob([dxf],{type:'application/dxf;charset=utf-8'});await saveDxfBlob(blob,`${sanitizeFilename(region.name||'region')}_PieniPlan.dxf`);}
   function downloadTextFile(text,filename,type='text/plain;charset=utf-8'){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function sanitizeFilename(name){return String(name||'PieniPlan').replace(/[\/:*?"<>|]+/g,'_').trim()||'PieniPlan';}
   function deleteRegion(regionId){pushHistory();state.drawingRegions=state.drawingRegions.filter(r=>r.id!==regionId);state.references=state.references.filter(r=>!(r.type==='linkedCadRegion'&&r.regionId===regionId));if(state.selectedRegionId===regionId)state.selectedRegionId=null;if(state.cadWorkRegionId===regionId)state.cadWorkRegionId=null;markDirty(true);updateAll();}
@@ -3244,6 +3251,11 @@
   function sanitizeLayer(name){return String(name||'0').replace(/[<>\\/:;?*|=",]/g,'_').slice(0,255)||'0';}
   function dxfLine(layer,a,b){return dxfPair(0,'LINE')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,a.x.toFixed(4))+dxfPair(20,a.y.toFixed(4))+dxfPair(30,'0')+dxfPair(11,b.x.toFixed(4))+dxfPair(21,b.y.toFixed(4))+dxfPair(31,'0');}
   function dxfCircle(layer,c,r){return dxfPair(0,'CIRCLE')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,c.x.toFixed(4))+dxfPair(20,c.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,r.toFixed(4));}
+  // DXF ARC is CCW: reversing endpoint order preserves a clockwise source locus.
+  function dxfCadArc(layer,o){
+    const start=o.startAngle||0,sweep=o.sweep||0;
+    return dxfArc(layer,o.center,o.radius,normalizeAngle(sweep<0?start+sweep:start),normalizeAngle(sweep<0?start:start+sweep));
+  }
   function dxfArc(layer,c,r,startDeg,endDeg){return dxfPair(0,'ARC')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,c.x.toFixed(4))+dxfPair(20,c.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,r.toFixed(4))+dxfPair(50,startDeg.toFixed(6))+dxfPair(51,endDeg.toFixed(6));}
   function dxfText(layer,p,text,height=180,rotation=0){return dxfPair(0,'TEXT')+dxfPair(8,sanitizeLayer(layer))+dxfPair(10,p.x.toFixed(4))+dxfPair(20,p.y.toFixed(4))+dxfPair(30,'0')+dxfPair(40,Number(height||180).toFixed(2))+dxfPair(50,Number(rotation||0).toFixed(4))+dxfPair(1,String(text).replace(/[\r\n]/g,' '));}
   function dxfDoorEntities(obj,layer){
@@ -3259,7 +3271,7 @@
     return out;
   }
   function exportDxf(){if(hasSemanticObjects()&&!state.cadMapping){openMappingDialog('export');return;}void exportDxfNow();}
-  async function exportDxfNow(){const m=state.cadMapping||defaultCadMapping();let entities='';const layers=new Set(['0']);for(const o of state.objects){if(o.type==='cadLine'||o.type==='line'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfLine(layer,o.a,o.b);}else if(o.type==='cadCircle'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfCircle(layer,o.center,o.radius);}else if(o.type==='cadArc'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfArc(layer,o.center,o.radius,o.startAngle||0,(o.startAngle||0)+(o.sweep||0));}else if(o.type==='cadText'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfText(layer,o.point,o.text||'',o.height||180,o.rotation||0);}else if(o.type==='wall'){layers.add(m.wallLayer);if(m.wallRepresentation==='outline'||m.wallRepresentation==='both')for(const[a,b]of wallOutlineVisibleWorld(o))entities+=dxfLine(m.wallLayer,a,b);if(m.wallRepresentation==='centerline'||m.wallRepresentation==='both'){if(isArcWall(o)){let a0=normalizeAngle(o.startAngle||0),a1=normalizeAngle((o.startAngle||0)+(o.sweep||0));if((o.sweep||0)<0)[a0,a1]=[a1,a0];entities+=dxfArc(m.wallLayer,o.center,o.radius,a0,a1);}else entities+=dxfLine(m.wallLayer,o.a,o.b);}}else if(o.type==='door'){layers.add(m.doorLayer);entities+=dxfDoorEntities(o,m.doorLayer);}else if(o.type==='window'){/* emitted below */}else if(o.type==='dimension'){const g=dimensionGeometry(o);if(g){layers.add(m.dimensionLayer);entities+=dxfLine(m.dimensionLayer,g.d1,g.d2);entities+=dxfLine(m.dimensionLayer,g.p1,g.d1);entities+=dxfLine(m.dimensionLayer,g.p2,g.d2);entities+=dxfText(m.dimensionLayer,{x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2},`${formatNumber(g.len,1)} mm`,140);}}}
+  async function exportDxfNow(){const m=state.cadMapping||defaultCadMapping();let entities='';const layers=new Set(['0']);for(const o of state.objects){if(o.type==='cadLine'||o.type==='line'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfLine(layer,o.a,o.b);}else if(o.type==='cadCircle'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfCircle(layer,o.center,o.radius);}else if(o.type==='cadArc'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfCadArc(layer,o);}else if(o.type==='cadText'){const layer=o.cadLayer||'0';layers.add(layer);entities+=dxfText(layer,o.point,o.text||'',o.height||180,o.rotation||0);}else if(o.type==='wall'){layers.add(m.wallLayer);if(m.wallRepresentation==='outline'||m.wallRepresentation==='both')for(const[a,b]of wallOutlineVisibleWorld(o))entities+=dxfLine(m.wallLayer,a,b);if(m.wallRepresentation==='centerline'||m.wallRepresentation==='both'){if(isArcWall(o)){let a0=normalizeAngle(o.startAngle||0),a1=normalizeAngle((o.startAngle||0)+(o.sweep||0));if((o.sweep||0)<0)[a0,a1]=[a1,a0];entities+=dxfArc(m.wallLayer,o.center,o.radius,a0,a1);}else entities+=dxfLine(m.wallLayer,o.a,o.b);}}else if(o.type==='door'){layers.add(m.doorLayer);entities+=dxfDoorEntities(o,m.doorLayer);}else if(o.type==='window'){/* emitted below */}else if(o.type==='dimension'){const g=dimensionGeometry(o);if(g){layers.add(m.dimensionLayer);entities+=dxfLine(m.dimensionLayer,g.d1,g.d2);entities+=dxfLine(m.dimensionLayer,g.p1,g.d1);entities+=dxfLine(m.dimensionLayer,g.p2,g.d2);entities+=dxfText(m.dimensionLayer,{x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2},`${formatNumber(g.len,1)} mm`,140);}}}
     // windows are added in a separate pass to keep the main loop readable after semantic conversion.
     for(const o of state.objects){if(o.type!=='window')continue;const g=openingGeometry(o);if(!g)continue;layers.add(m.windowLayer);const off=Math.min(50,(g.wall.thickness||150)*.35);for(const sign of[-1,1])entities+=dxfLine(m.windowLayer,{x:g.p1.x+g.nx*off*sign,y:g.p1.y+g.ny*off*sign},{x:g.p2.x+g.nx*off*sign,y:g.p2.y+g.ny*off*sign});}
     let layerTable=dxfPair(0,'TABLE')+dxfPair(2,'LAYER')+dxfPair(70,layers.size);for(const name of layers){layerTable+=dxfPair(0,'LAYER')+dxfPair(2,sanitizeLayer(name))+dxfPair(70,0)+dxfPair(62,7)+dxfPair(6,'CONTINUOUS');}layerTable+=dxfPair(0,'ENDTAB');
@@ -3270,7 +3282,20 @@
   function hideContextMenu(){contextMenu.hidden=true;contextMenu.innerHTML='';}
   function addContextMenuItem(label,run,{danger=false,disabled=false}={}){const b=document.createElement('button');b.className=`context-menu-item ${danger?'danger':''}`;b.textContent=label;b.disabled=disabled;b.addEventListener('click',()=>{hideContextMenu();run();});contextMenu.appendChild(b);}
   function addContextMenuDivider(){const d=document.createElement('div');d.className='context-menu-divider';contextMenu.appendChild(d);}
-  function duplicateObject(obj){if(!obj||obj.type==='space')return;pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionDetached;if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;state.objects.push(copy);state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
+  function duplicateObject(obj){if(!obj||obj.type==='space')return;
+    if(state.toolset==='cad'){
+      const token=cadContextToken(),source=cadContext.getById(obj.id);
+      if(source!==obj||cadSourceKind(source)!=='cad-source'||!cadPolicy(obj.id,'modify').allowed||cadLayerLocked(obj.cadLayer||'0')){setCommandStatus(cadFaultMessage('target-not-modifiable'),'error');return false;}
+      const copy=modules.cadChangeSet.clone(obj);copy.id=uid(obj.type);
+      if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;}
+      else if(copy.type==='cadCircle'||copy.type==='cadArc')copy.center.x+=200;
+      else if(copy.type==='cadText')copy.point.x+=200;
+      else return false;
+      if(!cadContextTokenCurrent(token))return false;
+      try{if(!commitCadChanges('DUPLICATE',[{before:null,after:copy,index:state.objects.length}]))return false;}catch(error){setCommandStatus(cadFaultMessage(error.message),'error');return false;}
+      setSelectionIds(new Set([copy.id]));updateAll();return true;
+    }
+    pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionDetached;if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;state.objects.push(copy);state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
   function showCanvasContextMenu(e){if(isCompactViewer())return;const ctrlSnapGesture=state.toolset==='plan'&&e.ctrlKey&&['line','wall','measure','move','copy','trim','extend'].includes(state.activeTool);e.preventDefault();if(ctrlSnapGesture)return;hideTooltip();const raw=screenCssToWorld(fromPointerEvent(e)),obj=hitObject(raw);if(obj){state.selectedObjectId=obj.id;state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();addContextMenuItem(t('action.properties'),()=>switchInspector('properties'));if(obj.type==='door'){addContextMenuDivider();const dt=obj.doorType||'hingedSingle';if(isHingedDoorType(dt)){if(!isDoubleLeafDoorType(dt))addContextMenuItem(t('action.flipHinge'),()=>{pushHistory();flipDoorHingePreserveSide(obj);markDirty(true);updateAll();});addContextMenuItem(t('action.flipSwing'),()=>{pushHistory();flipDoorSwingSide(obj);markDirty(true);updateAll();});}else if(!isFireShutterDoorType(dt))addContextMenuItem(t('action.flipSlide'),()=>{pushHistory();obj.slideDirection=obj.slideDirection===-1?1:-1;markDirty(true);updateAll();});}if(obj.type==='wall'){addContextMenuDivider();const connected=Boolean(obj.attachments?.a||obj.attachments?.b);addContextMenuItem(connected?t('action.detachJoint'):t('action.attachJoint'),()=>{pushHistory();if(connected)detachWallConnections(obj);else if(!attachTouchingWallEndpoints(obj)){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();});}
       if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);addContextMenuDivider();addContextMenuItem(cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer)));addContextMenuItem(t('action.soloLayer'),()=>soloLayer(layer));addContextMenuItem(t('action.showInLayers'),()=>{state.layerRevealRequested=true;switchInspector('primary');renderCadLayersPanel();});}
       if(obj.type!=='space'){addContextMenuDivider();addContextMenuItem(t('action.duplicate'),()=>duplicateObject(obj));}addContextMenuItem(t('action.delete'),()=>deleteObjectById(obj.id),{danger:true});

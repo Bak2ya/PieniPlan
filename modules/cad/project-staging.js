@@ -2,9 +2,11 @@
 (() => {
   'use strict';
   const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{};
+  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','line','wall','door','window','dimension','space','stair']);
   function validate(raw){
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
+    if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>4))bad('unsupported-schema');
     const d=raw.drawing;
     for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
     const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
@@ -12,6 +14,7 @@
       const ids=new Set();for(const o of d[key]||[]){if(!o||typeof o!=='object'||Array.isArray(o))bad(key+'-record');if(o.id){if(ids.has(o.id))bad('duplicate-'+key+'-id');ids.add(o.id);}}
     }
     for(const o of d.objects||[]){
+      if(!supportedTypes.has(o.type))bad('unsupported-object-type:'+String(o.type));
       for(const key of ['constraints','attachments'])if(o[key]!=null&&(typeof o[key]!=='object'||Array.isArray(o[key])))bad(key);
       for(const k of ['a','b','center','point','p1','p2','seed'])if(o[k]!=null&&!point(o[k]))bad('point');
       if(o.polygon!=null&&(!Array.isArray(o.polygon)||!o.polygon.every(point)))bad('polygon');

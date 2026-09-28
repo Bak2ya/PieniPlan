@@ -110,7 +110,7 @@ function toPairs(text){const lines=text.replace(/\r/g,'').split('\n'),pairs=[];f
 function sectionRange(pairs,name){for(let i=0;i<pairs.length-1;i++){if(pairs[i].code===0&&pairs[i].value==='SECTION'&&pairs[i+1].code===2&&pairs[i+1].value===name){const s=i+2;for(let j=s;j<pairs.length;j++)if(pairs[j].code===0&&pairs[j].value==='ENDSEC')return[s,j]}}return[-1,-1]}
 const num=(a,c,d=0)=>{const p=a.find(x=>x.code===c);const n=p?Number(p.value):d;return Number.isFinite(n)?n:d}, str=(a,c,d='')=>{const p=a.find(x=>x.code===c);return p?p.value:d};
 function readRecord(pairs,i,end){if(i>=end||pairs[i].code!==0)return null;const type=pairs[i].value;i++;
-  if(type==='POLYLINE'){const head=[];while(i<end&&pairs[i].code!==0)head.push(pairs[i++]);const verts=[];while(i<end&&pairs[i].code===0&&pairs[i].value==='VERTEX'){i++;const a=[];while(i<end&&pairs[i].code!==0)a.push(pairs[i++]);verts.push([num(a,10),num(a,20)])}if(i<end&&pairs[i].code===0&&pairs[i].value==='SEQEND')i++;return{type,a:head,verts,next:i}}
+  if(type==='POLYLINE'){const head=[];while(i<end&&pairs[i].code!==0)head.push(pairs[i++]);const verts=[];while(i<end&&pairs[i].code===0&&pairs[i].value==='VERTEX'){i++;const a=[];while(i<end&&pairs[i].code!==0)a.push(pairs[i++]);if(num(a,70)!==0||num(a,30)!==0)throw new Error('Unsupported DXF POLYLINE vertex flags/elevation');verts.push([num(a,10),num(a,20),num(a,42)])}if(i<end&&pairs[i].code===0&&pairs[i].value==='SEQEND')i++;return{type,a:head,verts,next:i}}
   const a=[];while(i<end&&pairs[i].code!==0)a.push(pairs[i++]);return{type,a,next:i};
 }
 function bulgeArc(a,b,bulge,layer){
@@ -121,10 +121,24 @@ function bulgeArc(a,b,bulge,layer){
   const startAngle=Math.atan2(a[1]-cy,a[0]-cx)*180/Math.PI,sweep=theta*180/Math.PI;
   return{type:'arc',cx,cy,r:radius,startAngle,sweep,layer,sourceType:'LWPOLYLINE_BULGE'};
 }
+function polylinePrimitives(verts,closed,layer,sourceType){
+  const out=[],count=closed?verts.length:verts.length-1;
+  for(let i=0;i<count;i++){
+    const v=verts[i],w=verts[(i+1)%verts.length],arc=bulgeArc([v.x,v.y],[w.x,w.y],v.bulge,layer);
+    out.push(arc?{...arc,sourceType:sourceType+'_BULGE'}:{type:'line',x1:v.x,y1:v.y,x2:w.x,y2:w.y,layer,sourceType});
+  }return out;
+}
 function primitiveFromRecord(r,defaultLayer='0'){
   const a=r.a, layer=str(a,8,defaultLayer)||defaultLayer;
   if(r.type==='LINE')return[{type:'line',x1:num(a,10),y1:num(a,20),x2:num(a,11),y2:num(a,21),layer}];
-  if(r.type==='POLYLINE'){return r.verts.length>1?[{type:'polyline',points:r.verts,closed:(num(a,70,0)&1)!==0,layer}]:[]}
+  if(r.type==='POLYLINE'){
+    // Only plain planar 2D chains. Reject unsupported geometry before installing any import.
+    const flags=num(a,70,0);
+    if(!Number.isInteger(flags)||(flags&~129)!==0||num(a,30)!==0||num(a,210)!==0||num(a,220)!==0||num(a,230,1)!==1)throw new Error('Unsupported DXF POLYLINE flags/elevation/extrusion');
+    const closed=(flags&1)!==0;
+    if(!r.verts.some(v=>v[2]))return r.verts.length>1?[{type:'polyline',points:r.verts.map(v=>v.slice(0,2)),closed,layer}]:[];
+    return polylinePrimitives(r.verts.map(v=>({x:v[0],y:v[1],bulge:v[2]||0})),closed,layer,'POLYLINE');
+  }
   if(r.type==='LWPOLYLINE'){
     const verts=[];let cur=null;
     for(const p of a){
@@ -134,14 +148,7 @@ function primitiveFromRecord(r,defaultLayer='0'){
     }
     if(cur&&Number.isFinite(cur.x)&&Number.isFinite(cur.y))verts.push(cur);
     if(verts.length<2)return[];
-    const closed=(num(a,70,0)&1)!==0,out=[];
-    const count=closed?verts.length:verts.length-1;
-    for(let i=0;i<count;i++){
-      const v=verts[i],w=verts[(i+1)%verts.length],p1=[v.x,v.y],p2=[w.x,w.y];
-      const arc=bulgeArc(p1,p2,v.bulge,layer);
-      if(arc)out.push(arc);else out.push({type:'line',x1:v.x,y1:v.y,x2:w.x,y2:w.y,layer,sourceType:'LWPOLYLINE'});
-    }
-    return out;
+    return polylinePrimitives(verts,(num(a,70,0)&1)!==0,layer,'LWPOLYLINE');
   }
   if(r.type==='CIRCLE')return[{type:'circle',cx:num(a,10),cy:num(a,20),r:Math.abs(num(a,40)),layer}];
   if(r.type==='ARC'){
@@ -159,8 +166,8 @@ function transformPoint(p,bx,by,ix,iy,sx,sy,rot){const x=(p[0]-bx)*sx,y=(p[1]-by
 function transformEntity(e,base,ins){const sx=ins.sx,sy=ins.sy,rot=ins.rot,layer=e.layer==='0'?(ins.layer||'0'):e.layer;const pt=p=>transformPoint(p,base.x,base.y,ins.x,ins.y,sx,sy,rot);
   if(e.type==='line'){const a=pt([e.x1,e.y1]),b=pt([e.x2,e.y2]);return{...e,x1:a[0],y1:a[1],x2:b[0],y2:b[1],layer}}
   if(e.type==='polyline')return{...e,points:e.points.map(pt),layer};
-  if(e.type==='circle'){if(Math.abs(sx-sy)<1e-7){const c=pt([e.cx,e.cy]);return{...e,cx:c[0],cy:c[1],r:e.r*Math.abs(sx),layer}}const pts=[];for(let k=0;k<=24;k++){const a=2*Math.PI*k/24;pts.push(pt([e.cx+e.r*Math.cos(a),e.cy+e.r*Math.sin(a)]))}return{type:'polyline',points:pts,closed:true,layer}}
-  if(e.type==='arc'){if(Math.abs(sx-sy)<1e-7){const c=pt([e.cx,e.cy]);const flip=sx*sy<0?-1:1;return{...e,cx:c[0],cy:c[1],r:e.r*Math.abs(sx),startAngle:e.startAngle+rot,sweep:e.sweep*flip,layer}}const pts=[];const steps=Math.max(8,Math.ceil(Math.abs(e.sweep)/10));for(let k=0;k<=steps;k++){const a=(e.startAngle+e.sweep*k/steps)*Math.PI/180;pts.push(pt([e.cx+e.r*Math.cos(a),e.cy+e.r*Math.sin(a)]))}return{type:'polyline',points:pts,closed:false,layer}}
+  if(e.type==='circle'){if(Math.abs(Math.abs(sx)-Math.abs(sy))<=1e-12*Math.max(Math.abs(sx),Math.abs(sy))&&sx!==0&&sy!==0){const c=pt([e.cx,e.cy]);return{...e,cx:c[0],cy:c[1],r:e.r*Math.abs(sx),layer}}const pts=[];for(let k=0;k<=24;k++){const a=2*Math.PI*k/24;pts.push(pt([e.cx+e.r*Math.cos(a),e.cy+e.r*Math.sin(a)]))}return{type:'polyline',points:pts,closed:true,layer,sourceType:'CIRCLE',approximation:'nonuniform-insert'}}
+  if(e.type==='arc'){if(Math.abs(Math.abs(sx)-Math.abs(sy))<=1e-12*Math.max(Math.abs(sx),Math.abs(sy))&&sx!==0&&sy!==0){const c=pt([e.cx,e.cy]);const flip=sx*sy<0?-1:1;return{...e,cx:c[0],cy:c[1],r:e.r*Math.abs(sx),startAngle:Math.atan2(sy*Math.sin(e.startAngle*Math.PI/180),sx*Math.cos(e.startAngle*Math.PI/180))*180/Math.PI+rot,sweep:e.sweep*flip,layer}}const pts=[];const steps=Math.max(8,Math.ceil(Math.abs(e.sweep)/10));for(let k=0;k<=steps;k++){const a=(e.startAngle+e.sweep*k/steps)*Math.PI/180;pts.push(pt([e.cx+e.r*Math.cos(a),e.cy+e.r*Math.sin(a)]))}return{type:'polyline',points:pts,closed:false,layer,sourceType:e.sourceType||'ARC',approximation:'nonuniform-insert'}}
   if(e.type==='text'){const a=pt([e.x,e.y]);const scale=(Math.abs(sx)+Math.abs(sy))/2;return{...e,x:a[0],y:a[1],height:(e.height||180)*scale,rotation:(e.rotation||0)+rot,layer}}
   return e;
 }
@@ -182,7 +189,7 @@ function parseDxf(text,id){
   }
   if(!entities.length)throw new Error(wm('noEntities'));
   const unit=dxfUnitInfo(dxfHeaderUnits(text)),layers=[...new Set(entities.map(x=>x.layer||'0'))].sort((a,b)=>a.localeCompare(b,activeLang==='ko'?'ko':'en'));
-  return{entities,ignored,unit,layers,stats:{blocks:blocks.size,expandedInserts,unresolvedInserts,sourceRecords:seen}};
+  return{entities,ignored,unit,layers,stats:{blocks:blocks.size,expandedInserts,unresolvedInserts,sourceRecords:seen,approximatedCurves:entities.filter(e=>e.approximation).length}};
 }
 
 onmessage = (e) => {
