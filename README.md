@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.28.2 · Build 38**
+현재 버전: **v0.29.0 · Build 39**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -64,7 +64,7 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Metric / Imperial 입력·표시 구조
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
-PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. Build38의 persistent Polyline은 **저장·표시·선택·Snap·query 기반**까지 통합되었고, PLINE 작성과 Polyline TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN은 아직 사용자 기능으로 노출하지 않습니다.
+PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 persistent Polyline foundation은 **저장·표시·선택·Snap·query 기반**까지 통합되었고, PLINE 작성과 Polyline TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN은 아직 사용자 기능으로 노출하지 않습니다.
 
 ---
 
@@ -168,6 +168,7 @@ PieniPlan의 앱 설정은 현재 프로젝트 데이터와 분리해서 관리�
 - System / Light / Dark / Black 테마
 - UI 텍스트 크기: 더 작게 / 작게 / 기본 / 크게
 - 원본 PPRJ를 자동으로 덮어쓰지 않는 별도 Recovery snapshot
+- **우클릭 메뉴**: 현재 도구·도구 그룹·선택 객체에 맞춰 동적으로 구성되며, 설정에서 명령별 표시(`자동 / 표시 / 숨김`)와 우선순위(`기본 / 높음 / 보통 / 낮음`)를 사용자 취향에 맞게 덮어쓸 수 있습니다. 이 설정은 프로젝트가 아니라 앱 환경설정에 저장됩니다.
 
 Plan과 CAD는 같은 Compact Ribbon / Canvas / Inspector / Command 영역을 공유합니다. 모드를 바꿔도 공통 기능의 위치가 크게 바뀌지 않도록 구성하고, CAD 전용 기능만 필요한 곳에서 추가로 보여줍니다.
 

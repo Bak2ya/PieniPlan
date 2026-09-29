@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.29.0 · Build 39 — 2026-09-29
+
+- Rebuilt the Canvas right-click menu as a contextual command surface driven by the existing tool/command catalog instead of maintaining separate per-tool menu trees. Runtime order follows the approved grammar: return to Select, current/related commands, same tool-group commands, then other recommendations.
+- Added command-context preference policy with safe defaults and user overrides. Each eligible command can use `Auto / Show / Hide` visibility and `Default / High / Normal / Low` priority without changing its group, mode, applicability, permission, or execution rules.
+- Added a Settings sidebar. Existing preferences remain under **General**, while **Context Menu** provides Plan/CAD mode selectors and one-level collapsible groups that mirror the tool categories. Overrides are app-local preferences and never become PPRJ project data.
+- Added reset-to-default behavior for Context Menu overrides. Defaults continue to follow PieniPlan updates unless the user has explicitly overridden a command.
+- Tightened the right-click menu to intrinsic/content-fit width with command shortcut notes while preserving the existing Compact Ribbon and Canvas space.
+- Cleaned up the Layer color popover lifecycle so its outside-click listener is removed immediately when the popover closes by color selection.
+- No PLINE/P3, Polyline Modify, Curve Reconstruction, or Stage4 feature expansion is included in this build.
+- Verification: Build39 focused Chromium regression **6/6 PASS**, Build39 full Chromium regression **14/14 PASS**, core pure suites **85/85 PASS**. Final static resource/i18n counts are recorded in the Build39 verification summary. Safari/Retina real-project feel remains a user-device check.
+
 ## v0.28.2 · Build 38 — 2026-09-29
 
 - Reworked CAD object → Layer reveal using the browser’s actual rendered geometry instead of assuming a row offset. The selected Layer uses `scrollIntoView({block: "nearest"})`, then checks the real row/list `getBoundingClientRect()` values and applies only the minimum `scrollBy()` correction if Safari/other layout metrics still leave the row clipped.

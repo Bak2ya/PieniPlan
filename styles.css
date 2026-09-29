@@ -1612,3 +1612,53 @@ html, body { font-size:var(--font-body); }
 }
 .cad-layer-scope-note { width:100%; min-width:0; }
 .cad-layer-header-actions { justify-self:end; width:auto; flex-wrap:wrap; }
+
+/* v0.29.0 Build 39 — scalable contextual menu + settings navigation. */
+.settings-dialog {
+  width:min(780px,calc(100vw - 32px));
+  height:min(640px,calc(100vh - 40px));
+  max-height:min(760px,calc(100vh - 40px));
+  overflow:hidden;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;
+}
+.settings-dialog-header,.settings-dialog-actions { position:relative; inset:auto; }
+.settings-layout { min-height:0; display:grid; grid-template-columns:156px minmax(0,1fr); }
+.settings-sidebar { min-width:0; padding:12px 9px; border-right:1px solid var(--border); background:color-mix(in srgb,var(--surface-2) 78%,transparent); }
+.settings-nav-item { display:block; width:100%; min-height:34px; padding:7px 10px; border:0; border-radius:7px; background:transparent; color:var(--text-2); text-align:left; font:inherit; font-size:var(--font-body); cursor:pointer; }
+.settings-nav-item:hover { background:var(--surface-3); color:var(--text); }
+.settings-nav-item.active { background:var(--accent-soft); color:var(--text); font-weight:650; }
+.settings-content { min-width:0; min-height:0; overflow:auto; }
+.settings-page { min-height:100%; padding:0 0 18px; }
+.settings-page[hidden] { display:none!important; }
+.settings-page-title { padding:17px 18px 4px; font-size:var(--font-primary); font-weight:720; }
+.settings-page-copy { padding:0 18px 13px; color:var(--text-2); font-size:var(--font-secondary); line-height:1.5; }
+.settings-page .settings-section { padding-inline:18px; }
+.settings-context-mode { display:flex; gap:4px; width:max-content; margin:0 18px 13px; padding:3px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+.settings-mode-choice { min-height:29px; padding:5px 11px; border:0; border-radius:5px; background:transparent; color:var(--text-2); font:inherit; font-size:var(--font-body); cursor:pointer; }
+.settings-mode-choice.active { background:var(--surface-3); color:var(--text); box-shadow:inset 0 0 0 1px var(--border-strong); }
+.settings-context-head { display:grid; grid-template-columns:minmax(0,1fr) 104px 104px; gap:8px; padding:0 20px 5px; color:var(--text-3); font-size:var(--font-secondary); }
+.settings-context-list { display:grid; gap:7px; padding:0 18px; }
+.settings-context-group { border:1px solid var(--border); border-radius:8px; overflow:clip; background:color-mix(in srgb,var(--surface-2) 54%,transparent); }
+.settings-context-group > summary { display:flex; align-items:center; gap:8px; min-height:36px; padding:7px 10px; cursor:pointer; list-style:none; font-size:var(--font-body); font-weight:650; }
+.settings-context-group > summary::-webkit-details-marker { display:none; }
+.settings-context-group > summary::before { content:'›'; display:inline-grid; place-items:center; width:14px; color:var(--text-3); transform:rotate(0deg); transition:transform .14s ease; }
+.settings-context-group[open] > summary::before { transform:rotate(90deg); }
+.settings-context-rows { border-top:1px solid var(--border); }
+.settings-context-row { display:grid; grid-template-columns:minmax(0,1fr) 104px 104px; gap:8px; align-items:center; min-height:38px; padding:5px 9px 5px 31px; border-bottom:1px solid color-mix(in srgb,var(--border) 58%,transparent); }
+.settings-context-row:last-child { border-bottom:0; }
+.settings-context-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--font-body); }
+.settings-context-row select { width:100%; min-width:0; height:28px; padding:3px 23px 3px 7px; font-size:var(--font-secondary); }
+.settings-context-reset { margin:14px 18px 0; }
+@media (max-width:680px) {
+  .settings-layout { grid-template-columns:118px minmax(0,1fr); }
+  .settings-context-head,.settings-context-row { grid-template-columns:minmax(0,1fr) 88px 88px; }
+  .settings-context-row { padding-left:18px; }
+}
+
+.canvas-context-menu { min-width:0; width:max-content; max-width:min(320px,calc(100vw - 16px)); }
+.context-menu-item { min-width:156px; width:100%; white-space:nowrap; }
+.context-menu-item.context-primary { font-weight:650; }
+.context-menu-item { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; }
+.context-menu-label { overflow:hidden; text-overflow:ellipsis; }
+.context-menu-note { color:var(--text-3); font-size:var(--font-secondary); font-variant-numeric:tabular-nums; }

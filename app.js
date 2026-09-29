@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.28.2';
-  const BUILD = 38;
+  const VERSION = '0.29.0';
+  const BUILD = 39;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -16,7 +16,8 @@
   const cadSelectionModule = modules.cadSelection;
   const cadUnitsModule = modules.cadUnits;
   const componentLibrary = modules.componentLibrary;
-  if(!cadLayerModule||!commandCore||!commandConsoleModule||!cadRegionTransform||!cadLayersModule||!cadContextModule||!cadSelectionModule||!cadUnitsModule||!modules.cadPolyline||!modules.cadSpatialTree||!modules.commandFoundation||!modules.build25CommandAdapters||!modules.nativeLineCommand||!componentLibrary)throw new Error('PieniPlan core modules failed to load.');
+  const contextMenuModule = modules.contextMenu;
+  if(!contextMenuModule||!cadLayerModule||!commandCore||!commandConsoleModule||!cadRegionTransform||!cadLayersModule||!cadContextModule||!cadSelectionModule||!cadUnitsModule||!modules.cadPolyline||!modules.cadSpatialTree||!modules.commandFoundation||!modules.build25CommandAdapters||!modules.nativeLineCommand||!componentLibrary)throw new Error('PieniPlan core modules failed to load.');
   i18n.apply(document);
 
   const $ = (id) => document.getElementById(id);
@@ -45,7 +46,7 @@
     confirmBackdrop: $('confirmBackdrop'), confirmTitle: $('confirmTitle'), confirmCopy: $('confirmCopy'), confirmCancelBtn: $('confirmCancelBtn'), confirmApplyBtn: $('confirmApplyBtn'),
     exportSaveBackdrop: $('exportSaveBackdrop'), exportSaveTitle: $('exportSaveTitle'), exportSaveCopy: $('exportSaveCopy'), exportSaveName: $('exportSaveName'), exportSaveCancelBtn: $('exportSaveCancelBtn'), exportSaveApplyBtn: $('exportSaveApplyBtn'), startVersion: $('startVersion'), planPackageBackdrop: $('planPackageBackdrop'), planPackageBuildingName: $('planPackageBuildingName'), planPackageDiscipline: $('planPackageDiscipline'), planPackageCancelBtn: $('planPackageCancelBtn'), planPackageExportBtn: $('planPackageExportBtn'), planMergeBackdrop: $('planMergeBackdrop'), planMergeList: $('planMergeList'), planMergeAddBtn: $('planMergeAddBtn'), planMergeCancelBtn: $('planMergeCancelBtn'), planMergeExportBtn: $('planMergeExportBtn'), planMergeSummary: $('planMergeSummary'),
     mappingBackdrop: $('mappingBackdrop'), recognitionBackdrop: $('recognitionBackdrop'), recognitionTitle: $('recognitionTitle'), recognitionCopy: $('recognitionCopy'), recognitionStats: $('recognitionStats'), recognitionBreakdown: $('recognitionBreakdown'), recognitionCreateWalls: $('recognitionCreateWalls'), recognitionCreateSpaces: $('recognitionCreateSpaces'), recognitionCreateDoors: $('recognitionCreateDoors'), recognitionCreateStairs: $('recognitionCreateStairs'), recognitionCancelBtn: $('recognitionCancelBtn'), recognitionApplyBtn: $('recognitionApplyBtn'), wallRepresentation: $('wallRepresentation'), wallLayerInput: $('wallLayerInput'), doorLayerInput: $('doorLayerInput'), windowLayerInput: $('windowLayerInput'), dimensionLayerInput: $('dimensionLayerInput'), mappingCancelBtn: $('mappingCancelBtn'), mappingApplyBtn: $('mappingApplyBtn'),
-    settingsBackdrop: $('settingsBackdrop'), settingsCloseBtn: $('settingsCloseBtn'), settingsCloseIcon: $('settingsCloseIcon'), settingsLanguage: $('settingsLanguage'), settingsDefaultUnit: $('settingsDefaultUnit'), settingsRecoveryEnabled: $('settingsRecoveryEnabled'), settingsTextSize: $('settingsTextSize'), settingsOpenRecovery: $('settingsOpenRecovery'), settingsRecoveryMeta: $('settingsRecoveryMeta'),
+    settingsBackdrop: $('settingsBackdrop'), settingsCloseBtn: $('settingsCloseBtn'), settingsCloseIcon: $('settingsCloseIcon'), settingsLanguage: $('settingsLanguage'), settingsDefaultUnit: $('settingsDefaultUnit'), settingsRecoveryEnabled: $('settingsRecoveryEnabled'), settingsTextSize: $('settingsTextSize'), settingsOpenRecovery: $('settingsOpenRecovery'), settingsRecoveryMeta: $('settingsRecoveryMeta'), settingsContextMenuList: $('settingsContextMenuList'), settingsContextReset: $('settingsContextReset'),
     uiTooltip: $('uiTooltip')
   };
 
@@ -376,6 +377,7 @@
   const TEXT_SIZE_STORAGE_KEY = 'pieniplan-text-size-v2';
   const LEGACY_TEXT_SIZE_STORAGE_KEY = 'pieniplan-text-size';
   const RECOVERY_ENABLED_STORAGE_KEY = 'pieniplan-recovery-enabled';
+  const CONTEXT_MENU_OVERRIDES_STORAGE_KEY = 'pieniplan-context-menu-overrides-v1';
   const RECOVERY_META_KEY = 'pieniplan-recovery-meta';
   const ROUTE_MARKER = 'pieniplan';
   const LOCAL_PROJECT_DB = 'PieniPlanProjects';
@@ -410,6 +412,24 @@
       return Number.isFinite(value) ? clamp(value, .28, .78) : .64;
     } catch (_) { return .64; }
   }
+
+  let contextMenuOverrides = Object.create(null);
+  let settingsPage = 'general';
+  let settingsContextMode = 'cad';
+  function safeReadContextMenuOverrides(){
+    try{return contextMenuModule.sanitizeOverrides(JSON.parse(localStorage.getItem(CONTEXT_MENU_OVERRIDES_STORAGE_KEY)||'{}'));}
+    catch(_){return Object.create(null);}
+  }
+  function persistContextMenuOverrides(){
+    try{localStorage.setItem(CONTEXT_MENU_OVERRIDES_STORAGE_KEY,JSON.stringify(contextMenuOverrides));}catch(_){}
+  }
+  function setContextMenuOverride(key,patch){
+    const current=contextMenuOverrides[key]||{};
+    const clean=contextMenuModule.sanitizeOverride({...current,...patch});
+    if(clean)contextMenuOverrides[key]=clean;else delete contextMenuOverrides[key];
+    persistContextMenuOverrides();
+  }
+
   function safeReadTextSize(){
     try{
       const value=localStorage.getItem(TEXT_SIZE_STORAGE_KEY);
@@ -469,6 +489,25 @@
   function scheduleRecoverySnapshot(){if(recoveryTimer)clearTimeout(recoveryTimer);if(!state.recoveryEnabled||!state.dirty)return;recoveryTimer=setTimeout(()=>{recoveryTimer=null;saveRecoverySnapshot();},1800);}
   async function clearRecoverySnapshot(){try{const db=await openLocalProjectDb();try{await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_PROJECT_STORE,'readwrite');tx.objectStore(LOCAL_PROJECT_STORE).delete(RECOVERY_PROJECT_KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Recovery delete failed'));tx.onabort=()=>reject(tx.error||new Error('Recovery delete aborted'));});}finally{db.close();}writeRecoveryMeta(null);}catch(err){console.warn('Recovery cleanup failed',err);}}
   async function openRecoverySnapshot(){try{const db=await openLocalProjectDb();let record;try{record=await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_PROJECT_STORE,'readonly'),req=tx.objectStore(LOCAL_PROJECT_STORE).get(RECOVERY_PROJECT_KEY);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error('Recovery read failed'));});}finally{db.close();}if(!record?.json)return updateSettingsRecoveryMeta();if(state.dirty&&!confirm(t('confirm.openProject')))return;const file=new File([record.json],record.name||'PieniPlan Recovery.pprj',{type:'application/json'});closeSettingsDialog();await openProjectFile(file,{skipConfirm:true,restoredLocal:true});}catch(err){console.error(err);alert(t('project.openFailed',{message:String(err?.message||err)}));}}
+  function showSettingsPage(page){
+    settingsPage=page==='contextMenu'?'contextMenu':'general';
+    document.querySelectorAll('[data-settings-page]').forEach(button=>button.classList.toggle('active',button.dataset.settingsPage===settingsPage));
+    document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.hidden=panel.dataset.settingsPanel!==settingsPage);
+    if(settingsPage==='contextMenu')renderSettingsContextMenu();
+  }
+  function contextPreferenceOptions(select,kind,current){
+    const options=kind==='visibility'
+      ?[['auto','settings.contextAuto'],['show','settings.contextShow'],['hide','settings.contextHide']]
+      :[['default','settings.contextDefaultPriority'],['high','settings.contextHigh'],['normal','settings.contextNormal'],['low','settings.contextLow']];
+    for(const[value,key]of options){const option=document.createElement('option');option.value=value;option.textContent=t(key);option.selected=value===current;select.appendChild(option);}
+  }
+  function renderSettingsContextMenu(){
+    if(!dom.settingsContextMenuList)return;
+    document.querySelectorAll('[data-context-mode]').forEach(button=>button.classList.toggle('active',button.dataset.contextMode===settingsContextMode));
+    const defs=contextCommandDefinitions(settingsContextMode,{settings:true}),groups=contextSettingsGroups(settingsContextMode),currentGroup=state.toolset===settingsContextMode?activeCategoryForTool(settingsContextMode,state.activeTool):'select';
+    dom.settingsContextMenuList.innerHTML='';
+    for(const group of groups){const commands=defs.filter(command=>command.group===group.id);if(!commands.length)continue;const details=document.createElement('details');details.className='settings-context-group';details.open=group.id===currentGroup;const summary=document.createElement('summary');summary.textContent=group.label;details.appendChild(summary);const rows=document.createElement('div');rows.className='settings-context-rows';for(const command of commands){const pref=contextMenuModule.preference(command,contextMenuOverrides),row=document.createElement('div');row.className='settings-context-row';row.dataset.commandKey=command.key;const label=document.createElement('div');label.className='settings-context-label';label.textContent=t(command.settingsLabelKey||command.labelKey);const visibility=document.createElement('select');visibility.className='select-input';visibility.setAttribute('aria-label',`${label.textContent} · ${t('settings.contextVisibility')}`);contextPreferenceOptions(visibility,'visibility',pref.visibility);visibility.addEventListener('change',()=>{setContextMenuOverride(command.key,{visibility:visibility.value});setCommandStatus(t('settings.saved'),'strong');});const priority=document.createElement('select');priority.className='select-input';priority.setAttribute('aria-label',`${label.textContent} · ${t('settings.contextPriority')}`);contextPreferenceOptions(priority,'priority',pref.priority);priority.addEventListener('change',()=>{setContextMenuOverride(command.key,{priority:priority.value});setCommandStatus(t('settings.saved'),'strong');});row.append(label,visibility,priority);rows.appendChild(row);}details.appendChild(rows);dom.settingsContextMenuList.appendChild(details);}
+  }
   function openSettingsDialog(){
     if(!dom.settingsBackdrop)return;
     dom.settingsLanguage.value=i18n.language;
@@ -476,6 +515,7 @@
     if(dom.settingsTextSize)dom.settingsTextSize.value=state.textSize||safeReadTextSize();
     dom.settingsRecoveryEnabled.checked=state.recoveryEnabled;
     updateSettingsRecoveryMeta();
+    showSettingsPage(settingsPage);
     dom.settingsBackdrop.hidden=false;
     closeTopMenus();
   }
@@ -3091,7 +3131,8 @@
   const LAYER_COLOR_RECENT_KEY='pieniplan-recent-layer-colors';
   function readRecentLayerColors(){try{const raw=JSON.parse(localStorage.getItem(LAYER_COLOR_RECENT_KEY)||'[]');return Array.isArray(raw)?raw.filter(x=>/^#[0-9a-f]{6}$/i.test(x)).slice(0,8):[];}catch(_){return[];}}
   function rememberLayerColor(color){if(!/^#[0-9a-f]{6}$/i.test(String(color)))return;const next=[color.toUpperCase(),...readRecentLayerColors().filter(x=>x.toUpperCase()!==color.toUpperCase())].slice(0,8);try{localStorage.setItem(LAYER_COLOR_RECENT_KEY,JSON.stringify(next));}catch(_){}}
-  function closeLayerColorPopover(){document.querySelector('.layer-color-popover')?.remove();}
+  let layerColorOutsideCleanup=null;
+  function closeLayerColorPopover(){document.querySelector('.layer-color-popover')?.remove();layerColorOutsideCleanup?.();layerColorOutsideCleanup=null;}
   function openLayerColorPopover(layer,owner){
     closeLayerColorPopover();closeFloorActionMenu();
     const palette=['#FFFFFF','#C9D1D9','#8B949E','#F85149','#FF9F0A','#FFD60A','#3FB950','#32D7E8','#58A6FF','#3478F6','#A371F7','#FF6BBA','#8B5A2B','#000000','#6E7681','#E6EDF3'];
@@ -3105,7 +3146,7 @@
     custom.addEventListener('click',()=>input.click());input.addEventListener('input',()=>{const hex=input.value.toUpperCase();rememberLayerColor(hex);setCadLayerProperties(layer,{color:hex});closeLayerColorPopover();});
     pop.append(custom,input);document.body.append(pop);
     const r=owner.getBoundingClientRect(),m=pop.getBoundingClientRect(),margin=8;let left=Math.max(margin,Math.min(r.left,window.innerWidth-m.width-margin)),top=r.bottom+5;if(top+m.height>window.innerHeight-margin)top=r.top-m.height-5;pop.style.left=`${Math.round(left)}px`;pop.style.top=`${Math.round(Math.max(margin,top))}px`;
-    const outside=e=>{if(!pop.contains(e.target)&&e.target!==owner){closeLayerColorPopover();document.removeEventListener('pointerdown',outside,true);}};setTimeout(()=>document.addEventListener('pointerdown',outside,true),0);
+    const outside=e=>{if(!pop.contains(e.target)&&e.target!==owner)closeLayerColorPopover();};const outsideTimer=setTimeout(()=>document.addEventListener('pointerdown',outside,true),0);layerColorOutsideCleanup=()=>{clearTimeout(outsideTimer);document.removeEventListener('pointerdown',outside,true);};
   }
   function showCadLayerActionMenu(layer,owner,count){closeLayerColorPopover();closeFloorActionMenu();const menu=document.createElement('div');menu.className='floor-action-menu cad-layer-action-menu';const add=(label,run,{danger=false,disabled=false}={})=>{const b=document.createElement('button');b.type='button';b.textContent=label;if(danger)b.className='danger';b.disabled=disabled;b.addEventListener('click',e=>{e.stopPropagation();if(disabled)return;closeFloorActionMenu();run();});menu.appendChild(b);};if(state.cadWorkRegionId&&cadLayerHasOverride(layer,state.cadWorkRegionId))add(t('layer.useGlobal'),()=>clearCadLayerVisibilityOverride(layer));add(t('action.rename'),()=>{cadLayerRenameTarget=layer;renderCadLayersPanel();});add(t('action.delete'),()=>deleteCadLayer(layer),{danger:true,disabled:layer==='0'||count>0||cadMappingUsesLayer(layer)});document.body.appendChild(menu);state.floorMenuEl=menu;const r=owner.getBoundingClientRect(),m=menu.getBoundingClientRect(),margin=8;let left=Math.min(window.innerWidth-m.width-margin,Math.max(margin,r.right-m.width)),top=r.bottom+5;if(top+m.height>window.innerHeight-margin)top=r.top-m.height-5;menu.style.left=`${Math.round(left)}px`;menu.style.top=`${Math.round(Math.max(margin,top))}px`;}
   function renderCadLayersPanel(){
@@ -3472,8 +3513,12 @@
     const blob=new Blob([dxf],{type:'application/dxf;charset=utf-8'}),name=state.sourceDxfName?state.sourceDxfName.replace(/\.dxf$/i,'')+'_PieniPlan.dxf':`PieniPlan_v${VERSION}_Build${BUILD}.dxf`;await saveDxfBlob(blob,name);}
 
   const contextMenu=document.createElement('div');contextMenu.className='canvas-context-menu';contextMenu.hidden=true;document.body.appendChild(contextMenu);
+  const contextToolRelations=Object.freeze({
+    plan:Object.freeze({trim:['extend'],extend:['trim'],door:['window','space','component'],window:['door','space','component'],space:['door','window','component'],component:['door','window','space']}),
+    cad:Object.freeze({trim:['extend'],extend:['trim'],wall:['door','window','component'],door:['wall','window','component'],window:['wall','door','component'],component:['wall','door','window']})
+  });
   function hideContextMenu(){contextMenu.hidden=true;contextMenu.innerHTML='';}
-  function addContextMenuItem(label,run,{danger=false,disabled=false}={}){const b=document.createElement('button');b.className=`context-menu-item ${danger?'danger':''}`;b.textContent=label;b.disabled=disabled;b.addEventListener('click',()=>{hideContextMenu();run();});contextMenu.appendChild(b);}
+  function addContextMenuItem(label,run,{danger=false,disabled=false,note='',primary=false}={}){const b=document.createElement('button');b.className=`context-menu-item ${danger?'danger':''} ${primary?'context-primary':''}`;b.disabled=disabled;const main=document.createElement('span');main.className='context-menu-label';main.textContent=label;b.appendChild(main);if(note){const n=document.createElement('span');n.className='context-menu-note';n.textContent=note;b.appendChild(n);}b.addEventListener('click',()=>{hideContextMenu();run();});contextMenu.appendChild(b);}
   function addContextMenuDivider(){const d=document.createElement('div');d.className='context-menu-divider';contextMenu.appendChild(d);}
   function duplicateObject(obj){if(!obj||obj.type==='space')return;
     if(obj.type==='component'){if(state.toolset==='cad'&&!cadPolicy(obj.id,'modify').allowed){setCommandStatus(cadFaultMessage('target-not-modifiable'),'error');return false;}pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid('component');copy.point={x:(obj.point?.x||0)+200,y:obj.point?.y||0};state.objects.push(copy);selectOnly(copy.id);markDirty(true);rebuildObjectSnapIndex({scope:'all'});updateAll();return true;}
@@ -3491,11 +3536,56 @@
       setSelectionIds(new Set([copy.id]));updateAll();return true;
     }
     pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionDetached;if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;state.objects.push(copy);state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
-  function showCanvasContextMenu(e){if(isCompactViewer())return;const ctrlSnapGesture=state.toolset==='plan'&&e.ctrlKey&&['line','wall','measure','move','copy','trim','extend'].includes(state.activeTool);e.preventDefault();if(ctrlSnapGesture)return;hideTooltip();const raw=screenCssToWorld(fromPointerEvent(e)),obj=hitObject(raw);if(obj){state.selectedObjectId=obj.id;state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();addContextMenuItem(t('action.properties'),()=>switchInspector('properties'));if(obj.type==='door'){addContextMenuDivider();const dt=obj.doorType||'hingedSingle';if(isHingedDoorType(dt)){if(!isDoubleLeafDoorType(dt))addContextMenuItem(t('action.flipHinge'),()=>{pushHistory();flipDoorHingePreserveSide(obj);markDirty(true);updateAll();});addContextMenuItem(t('action.flipSwing'),()=>{pushHistory();flipDoorSwingSide(obj);markDirty(true);updateAll();});}else if(!isFireShutterDoorType(dt))addContextMenuItem(t('action.flipSlide'),()=>{pushHistory();obj.slideDirection=obj.slideDirection===-1?1:-1;markDirty(true);updateAll();});}if(obj.type==='wall'){addContextMenuDivider();const connected=Boolean(obj.attachments?.a||obj.attachments?.b);addContextMenuItem(connected?t('action.detachJoint'):t('action.attachJoint'),()=>{pushHistory();if(connected)detachWallConnections(obj);else if(!attachTouchingWallEndpoints(obj)){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();});}
-      if(state.toolset==='cad'&&obj.type!=='space'){const layer=cadLayerForObject(obj);addContextMenuDivider();addContextMenuItem(cadLayerVisible(layer)?t('action.hideLayer'):t('action.showLayer'),()=>setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer)));addContextMenuItem(t('action.soloLayer'),()=>soloLayer(layer));addContextMenuItem(t('action.showInLayers'),()=>{state.layerRevealRequested=true;switchInspector('primary');renderCadLayersPanel();});}
-      if(obj.type!=='space'){addContextMenuDivider();addContextMenuItem(t('action.duplicate'),()=>duplicateObject(obj));}addContextMenuItem(t('action.delete'),()=>deleteObjectById(obj.id),{danger:true});
-    }else{if(state.toolset==='cad'){addContextMenuItem(t('action.defineRegion'),()=>setTool('region','select'));addContextMenuItem(t('action.fit'),fitAll);if(state.sourceDxfOutlierCount>0)addContextMenuItem(t('action.fitAllEntities'),fitFullExtents);addContextMenuDivider();addContextMenuItem(t('action.showAllLayers'),showAllCadLayers);}else{addContextMenuItem(t('action.selectTool'),()=>setTool('select','plan'));addContextMenuItem(t('action.fit'),fitAll);}}
-    if(!contextMenu.childElementCount)return;contextMenu.hidden=false;const margin=8,rect=contextMenu.getBoundingClientRect();contextMenu.style.left=`${Math.min(e.clientX,window.innerWidth-rect.width-margin)}px`;contextMenu.style.top=`${Math.min(e.clientY,window.innerHeight-rect.height-margin)}px`;
+  function toolCatalogFor(mode){return mode==='plan'?planToolCatalog:cadToolCatalog;}
+  function toolCategoriesFor(mode){return mode==='plan'?planCategories:cadCategories;}
+  function activeCategoryForTool(mode,tool){const catalog=toolCatalogFor(mode);for(const [group,items] of Object.entries(catalog))if(items.some(item=>item.id===tool))return group;return'select';}
+  function activateContextTool(mode,tool,category){if(state.toolset!==mode)return false;if(mode==='plan'&&tool==='wall'&&!state.toolSettings.wallType)state.toolSettings.wallType='straight';return setTool(tool,category);}
+  function contextObjectCommandDefinitions(mode,obj,{settings=false}={}){
+    const cad=mode==='cad',defs=[];
+    const available=predicate=>settings?true:Boolean(predicate);
+    defs.push({key:`${mode}:object:properties`,mode,group:'object',label:t('action.properties'),labelKey:'action.properties',basePriority:100,section:'current',available:available(obj),recommended:available(obj),run:()=>switchInspector('properties')});
+    defs.push({key:`${mode}:object:duplicate`,mode,group:'object',label:t('action.duplicate'),labelKey:'action.duplicate',basePriority:55,section:'current',available:available(obj&&obj.type!=='space'),recommended:available(obj&&obj.type!=='space'),run:()=>duplicateObject(obj)});
+    defs.push({key:`${mode}:object:delete`,mode,group:'object',label:t('action.delete'),labelKey:'action.delete',basePriority:45,section:'current',available:available(obj),recommended:available(obj),danger:true,run:()=>deleteObjectById(obj?.id)});
+    defs.push({key:`${mode}:object:flipHinge`,mode,group:'object',label:t('action.flipHinge'),labelKey:'action.flipHinge',basePriority:86,section:'current',available:available(obj?.type==='door'&&isHingedDoorType(obj.doorType||'hingedSingle')&&!isDoubleLeafDoorType(obj.doorType||'hingedSingle')),recommended:available(obj?.type==='door'&&isHingedDoorType(obj.doorType||'hingedSingle')&&!isDoubleLeafDoorType(obj.doorType||'hingedSingle')),run:()=>{if(!obj)return;pushHistory();flipDoorHingePreserveSide(obj);markDirty(true);updateAll();}});
+    defs.push({key:`${mode}:object:flipSwing`,mode,group:'object',label:t('action.flipSwing'),labelKey:'action.flipSwing',basePriority:84,section:'current',available:available(obj?.type==='door'&&isHingedDoorType(obj.doorType||'hingedSingle')),recommended:available(obj?.type==='door'&&isHingedDoorType(obj.doorType||'hingedSingle')),run:()=>{if(!obj)return;pushHistory();flipDoorSwingSide(obj);markDirty(true);updateAll();}});
+    defs.push({key:`${mode}:object:flipSlide`,mode,group:'object',label:t('action.flipSlide'),labelKey:'action.flipSlide',basePriority:84,section:'current',available:available(obj?.type==='door'&&!isHingedDoorType(obj.doorType||'hingedSingle')&&!isFireShutterDoorType(obj.doorType||'hingedSingle')),recommended:available(obj?.type==='door'&&!isHingedDoorType(obj.doorType||'hingedSingle')&&!isFireShutterDoorType(obj.doorType||'hingedSingle')),run:()=>{if(!obj)return;pushHistory();obj.slideDirection=obj.slideDirection===-1?1:-1;markDirty(true);updateAll();}});
+    const wallConnected=Boolean(obj?.attachments?.a||obj?.attachments?.b);
+    defs.push({key:`${mode}:object:wallJoint`,mode,group:'object',label:t(wallConnected?'action.detachJoint':'action.attachJoint'),labelKey:wallConnected?'action.detachJoint':'action.attachJoint',settingsLabelKey:'action.attachJoint',basePriority:82,section:'current',available:available(obj?.type==='wall'),recommended:available(obj?.type==='wall'),run:()=>{if(!obj)return;pushHistory();if(wallConnected)detachWallConnections(obj);else if(!attachTouchingWallEndpoints(obj)){state.history.pop();alert(t('alert.noJointNearby'));return;}markDirty(true);updateAll();}});
+    defs.push({key:`${mode}:object:showInLayers`,mode,group:'object',label:t('action.showInLayers'),labelKey:'action.showInLayers',basePriority:72,section:'current',available:available(cad&&obj&&obj.type!=='space'),recommended:available(cad&&obj&&obj.type!=='space'),run:()=>{state.layerRevealRequested=true;switchInspector('primary');renderCadLayersPanel();}});
+    const layer=obj&&cad?cadLayerForObject(obj):null;
+    defs.push({key:`${mode}:object:layerVisibility`,mode,group:'object',label:t(layer&&cadLayerVisible(layer)?'action.hideLayer':'action.showLayer'),labelKey:'action.hideLayer',settingsLabelKey:'action.hideLayer',basePriority:25,section:'current',available:available(cad&&obj&&obj.type!=='space'),recommended:false,run:()=>{if(layer)setCadLayerVisibilityUndoable(layer,!cadLayerVisible(layer));}});
+    defs.push({key:`${mode}:object:soloLayer`,mode,group:'object',label:t('action.soloLayer'),labelKey:'action.soloLayer',basePriority:20,section:'current',available:available(cad&&obj&&obj.type!=='space'),recommended:false,run:()=>{if(layer)soloLayer(layer);}});
+    return defs;
+  }
+  function contextCommandDefinitions(mode=state.toolset,{obj=null,settings=false}={}){
+    const catalog=toolCatalogFor(mode),categories=toolCategoriesFor(mode),defs=[];
+    const activeTool=state.toolset===mode?state.activeTool:'select',activeCategory=activeCategoryForTool(mode,activeTool),related=new Set(contextToolRelations[mode]?.[activeTool]||[]);
+    defs.push({key:`${mode}:utility:returnSelect`,mode,group:'select',label:t('action.returnToSelect'),labelKey:'action.returnToSelect',basePriority:120,section:'escape',available:settings||activeTool!=='select',recommended:activeTool!=='select',primary:true,run:()=>setTool('select','select')});
+    for(const cat of categories){for(let index=0;index<(catalog[cat.id]||[]).length;index++){const item=catalog[cat.id][index];if(!item.ready||item.id==='select')continue;const isRelated=related.has(item.id),sameGroup=cat.id===activeCategory&&item.id!==activeTool;defs.push({key:`${mode}:tool:${item.id}`,mode,group:cat.id,label:t(item.labelKey),labelKey:item.labelKey,note:item.note||'',tool:item.id,category:cat.id,basePriority:80-index,section:isRelated?'current':sameGroup?'group':'other',available:true,recommended:!obj&&(isRelated||sameGroup),run:()=>activateContextTool(mode,item.id,cat.id)});}}
+    defs.push(...contextObjectCommandDefinitions(mode,obj,{settings}));
+    defs.push({key:`${mode}:utility:fit`,mode,group:'other',label:t('action.fit'),labelKey:'action.fit',basePriority:30,section:'other',available:true,recommended:true,run:fitAll});
+    if(mode==='cad'){
+      defs.push({key:'cad:utility:fitAllEntities',mode,group:'other',label:t('action.fitAllEntities'),labelKey:'action.fitAllEntities',basePriority:24,section:'other',available:true,recommended:state.sourceDxfOutlierCount>0,run:fitFullExtents});
+      defs.push({key:'cad:utility:showAllLayers',mode,group:'other',label:t('action.showAllLayers'),labelKey:'action.showAllLayers',basePriority:10,section:'other',available:true,recommended:false,run:showAllCadLayers});
+    }
+    return defs;
+  }
+  function contextSettingsGroups(mode){
+    const groups=toolCategoriesFor(mode).map(cat=>({id:cat.id,label:t(cat.labelKey)}));
+    groups.push({id:'object',label:t('settings.contextObjectGroup')},{id:'other',label:t('settings.contextOtherGroup')});
+    return groups;
+  }
+  function contextCommandsForSection(defs,section,ctx){return contextMenuModule.sort(defs.filter(command=>command.section===section&&contextMenuModule.isVisible(command,ctx,contextMenuOverrides)),contextMenuOverrides);}
+  function showCanvasContextMenu(e){
+    if(isCompactViewer())return;
+    const ctrlSnapGesture=state.toolset==='plan'&&e.ctrlKey&&['line','wall','measure','move','copy','trim','extend'].includes(state.activeTool);e.preventDefault();if(ctrlSnapGesture)return;hideTooltip();
+    const raw=screenCssToWorld(fromPointerEvent(e)),obj=hitObject(raw);
+    if(obj){state.selectedObjectId=obj.id;state.selectedReferenceId=null;state.selectedRegionId=null;renderPrimaryPanel();renderProperties();render();}
+    const defs=contextCommandDefinitions(state.toolset,{obj}),ctx={mode:state.toolset,obj,activeTool:state.activeTool,activeCategory:activeCategoryForTool(state.toolset,state.activeTool)};
+    const sections=['escape','current','group','other'].map(section=>contextCommandsForSection(defs,section,ctx)).filter(items=>items.length);
+    for(let si=0;si<sections.length;si++){if(si)addContextMenuDivider();for(const command of sections[si])addContextMenuItem(command.label,command.run,{danger:command.danger,note:command.note,primary:command.primary});}
+    if(!contextMenu.childElementCount)return;
+    contextMenu.hidden=false;contextMenu.style.left='0px';contextMenu.style.top='0px';const margin=8,rect=contextMenu.getBoundingClientRect();contextMenu.style.left=`${Math.max(margin,Math.min(e.clientX,window.innerWidth-rect.width-margin))}px`;contextMenu.style.top=`${Math.max(margin,Math.min(e.clientY,window.innerHeight-rect.height-margin))}px`;
   }
 
   let tooltipTimer=null,tooltipOwner=null;
@@ -3548,6 +3638,9 @@
   dom.settingsTextSize?.addEventListener('change',()=>{applyTextSize(dom.settingsTextSize.value);setCommandStatus(t('settings.saved'),'strong');});
   dom.settingsRecoveryEnabled?.addEventListener('change',()=>{state.recoveryEnabled=Boolean(dom.settingsRecoveryEnabled.checked);try{localStorage.setItem(RECOVERY_ENABLED_STORAGE_KEY,String(state.recoveryEnabled));}catch(_){}if(state.recoveryEnabled)scheduleRecoverySnapshot();else if(recoveryTimer){clearTimeout(recoveryTimer);recoveryTimer=null;}setCommandStatus(t('settings.saved'),'strong');});
   dom.settingsOpenRecovery?.addEventListener('click',openRecoverySnapshot);
+  document.querySelectorAll('[data-settings-page]').forEach(button=>button.addEventListener('click',()=>showSettingsPage(button.dataset.settingsPage)));
+  document.querySelectorAll('[data-context-mode]').forEach(button=>button.addEventListener('click',()=>{settingsContextMode=button.dataset.contextMode==='plan'?'plan':'cad';renderSettingsContextMenu();}));
+  dom.settingsContextReset?.addEventListener('click',()=>{contextMenuOverrides=Object.create(null);persistContextMenuOverrides();renderSettingsContextMenu();setCommandStatus(t('settings.contextResetDone'),'strong');});
   dom.viewFitAction?.addEventListener('click',()=>{closeTopMenus();fitAll();});
   dom.viewAllAction?.addEventListener('click',()=>{closeTopMenus();fitFullExtents();});
   dom.fileNewAction?.addEventListener('click',()=>{closeTopMenus();resetProject();});
@@ -3615,7 +3708,7 @@
   document.addEventListener('pointerdown',e=>{if(!e.target.closest('.tool-rail')&&!e.target.closest('.tool-popover'))dom.toolPopover.hidden=true;if(!e.target.closest('#appearanceMenu')&&!e.target.closest('#appearanceBtn')&&!e.target.closest('#startAppearanceBtn'))dom.appearanceMenu.hidden=true;if(!e.target.closest('.canvas-context-menu'))hideContextMenu();if(!e.target.closest('.floor-action-menu')&&!e.target.closest('.floor-row .mini-action')&&!e.target.closest('.floor-space-row .mini-action'))closeFloorActionMenu();});
 
   applyShortcutMetadata(dom.gridToggle,'grid','tooltip.grid');applyShortcutMetadata(dom.snapToggle,'snap','tooltip.snap');applyShortcutMetadata(dom.orthoToggle,'ortho','tooltip.ortho');applyShortcutMetadata(dom.polarToggle,'polar','tooltip.polar');
-  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,cadCommands,cancelTransient,undo,redo,onPointerDown,onPointerMove,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,showWorkspace,showStartScreen,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,revealCadLayerRow,applyTextSize,safeReadTextSize,cadLayerForObject,openLayerColorPopover,closeLayerColorPopover,setCadLayerProperties,clearCadLayerVisibilityOverride,cadRegionLayerOverride,cadLayerHasOverride,placeComponent,editComponent,rotateComponent90,mirrorComponent,componentObjectsForCad,deleteObjectById,duplicateObject,renderProperties,openProjectFile,saveProjectFile,downloadProjectFile,makeProjectPayload,makePlanPackage,validatePlanPackage,importPlanPackageFile,importedPlanPackageData,replaceWorkspaceWithPlanPackage,mergedDrawingClone,pristinePlaceholderDrawing,syncCoincidentNodeOnly,dxfDoorEntities,constrainTracking,constrainEndpointWithShift,constrainBodyMoveDelta,connectedWallAngles,applyTrimExtendAtPoint,extendPlanLinearAtClick,ensureBuildingModel,activeBuilding,floorsForBuilding,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addBuilding,addFloor,renderPlanFloorPanel,reorderBuilding,reorderFloor,getPlanObjects,detectClosedWallFaces,updateSpaceHoverPreview,findSpaceBoundaryGapCandidates,endpointTouchesOtherBoundary,commitSpace,ensureSpaceMetadata,nextSpaceName,calculatedSpaceAreaM2,displaySpaceAreaM2,usesManualSpaceArea,setSpaceManualArea,setSpaceCalculatedArea,clearSpaceGapDiagnostic,doorSwingSide,doorSwingSectors,doorDirectManipulationMode,hingedLeafGeometry,flipDoorHingePreserveSide,flipDoorSwingSide,getLinkedCadRenderCache,recordEdit,runCommand,commandMatches,renderCommandConsole,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,solvePointOnEdgeAttachment,computePlanTrimSegment,computeCadTrimSegment,updateTrimPreview,activeCadWorkRegion,cadObjectsForRegion,cadWorkObjects,cadObjectInWorkScope,cadSelectableObjects,setCadWorkRegion,renderCadScopeControl,cadGlobalLayerVisible,cadRegionLayerVisible,cadLayerVisible,cadLayerInheritedOff,cadKnownLayers,cadLayerDefinition,cadLayerLocked,createCadLayer,renameCadLayer,deleteCadLayer,setCadLayerLocked,reassignCadObjects,setActiveCadLayer,cadMappingUsesLayer,setCadUnitSystem,cadPolicy,cadContextToken,cadContextTokenCurrent,initializeCadServices,applySelectionSet,deleteSelectedObjects,beginObjectDrag,setCadLayerVisibilityUndoable,showAllCadLayers,serializeCadRegionLayerVisibility,restoreCadRegionLayerVisibility,renderReferences,referencesForRender,referenceBelongsToFloor,floorReferencePlacements,renderFloorReferencePlacement,beginCalibration,applyCalibration,scaleCurrentFloorGeometry,cadPlanOverlayObjects,beginCadRegionRotation,cadRotatePreviewDelta,rotatePointAround,commitCadRegionRotation,setCadRotateAbsoluteAngle,buildSegmentSnapIndex,queryReferenceSnapIndex,queryObjectSnapIndex,nearestSnap,parseCadPointText,resolveCadPoint,commitNativeCadLine,startNativeCadLineSession,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
+  if(window.__PIENIPLAN_TEST_HOOK__){Object.assign(window.__PIENIPLAN_TEST_HOOK__,{state,cadCommands,cancelTransient,undo,redo,onPointerDown,onPointerMove,commitSegment,applyObjectDrag,syncDependentsOfWall,planDrawReferenceAt,detectWallCandidates,beginWallRecognition,applyWallRecognition,cancelWallRecognition,render,updateAll,fitAll,fitBounds,showWorkspace,showStartScreen,switchToolset,setTool,rebuildObjectSnapIndex,renderCadLayersPanel,revealCadLayerRow,applyTextSize,safeReadTextSize,showCanvasContextMenu,contextCommandDefinitions,renderSettingsContextMenu,showSettingsPage,setContextMenuOverride,safeReadContextMenuOverrides,cadLayerForObject,openLayerColorPopover,closeLayerColorPopover,setCadLayerProperties,clearCadLayerVisibilityOverride,cadRegionLayerOverride,cadLayerHasOverride,placeComponent,editComponent,rotateComponent90,mirrorComponent,componentObjectsForCad,deleteObjectById,duplicateObject,renderProperties,openProjectFile,saveProjectFile,downloadProjectFile,makeProjectPayload,makePlanPackage,validatePlanPackage,importPlanPackageFile,importedPlanPackageData,replaceWorkspaceWithPlanPackage,mergedDrawingClone,pristinePlaceholderDrawing,syncCoincidentNodeOnly,dxfDoorEntities,constrainTracking,constrainEndpointWithShift,constrainBodyMoveDelta,connectedWallAngles,applyTrimExtendAtPoint,extendPlanLinearAtClick,ensureBuildingModel,activeBuilding,floorsForBuilding,ensureFloorModel,ensureFloorForRegion,repairFloorRegionIsolation,setActiveFloor,addBuilding,addFloor,renderPlanFloorPanel,reorderBuilding,reorderFloor,getPlanObjects,detectClosedWallFaces,updateSpaceHoverPreview,findSpaceBoundaryGapCandidates,endpointTouchesOtherBoundary,commitSpace,ensureSpaceMetadata,nextSpaceName,calculatedSpaceAreaM2,displaySpaceAreaM2,usesManualSpaceArea,setSpaceManualArea,setSpaceCalculatedArea,clearSpaceGapDiagnostic,doorSwingSide,doorSwingSectors,doorDirectManipulationMode,hingedLeafGeometry,flipDoorHingePreserveSide,flipDoorSwingSide,getLinkedCadRenderCache,recordEdit,runCommand,commandMatches,renderCommandConsole,trimArchitecturalWallOverruns,solveArchitecturalWallJunctions,healArchitecturalEndpointGaps,normalizeArchitecturalJunctionEndpoints,cleanupArchitecturalWallTopology,repairPersistentPlanJunctions,migrateLegacyPlanLinesToEdges,solvePointOnEdgeAttachment,computePlanTrimSegment,computeCadTrimSegment,updateTrimPreview,activeCadWorkRegion,cadObjectsForRegion,cadWorkObjects,cadObjectInWorkScope,cadSelectableObjects,setCadWorkRegion,renderCadScopeControl,cadGlobalLayerVisible,cadRegionLayerVisible,cadLayerVisible,cadLayerInheritedOff,cadKnownLayers,cadLayerDefinition,cadLayerLocked,createCadLayer,renameCadLayer,deleteCadLayer,setCadLayerLocked,reassignCadObjects,setActiveCadLayer,cadMappingUsesLayer,setCadUnitSystem,cadPolicy,cadContextToken,cadContextTokenCurrent,initializeCadServices,applySelectionSet,deleteSelectedObjects,beginObjectDrag,setCadLayerVisibilityUndoable,showAllCadLayers,serializeCadRegionLayerVisibility,restoreCadRegionLayerVisibility,renderReferences,referencesForRender,referenceBelongsToFloor,floorReferencePlacements,renderFloorReferencePlacement,beginCalibration,applyCalibration,scaleCurrentFloorGeometry,cadPlanOverlayObjects,beginCadRegionRotation,cadRotatePreviewDelta,rotatePointAround,commitCadRegionRotation,setCadRotateAbsoluteAngle,buildSegmentSnapIndex,queryReferenceSnapIndex,queryObjectSnapIndex,nearestSnap,parseCadPointText,resolveCadPoint,commitNativeCadLine,startNativeCadLineSession,snapDirectionToStep,constrainEndpointToOriginalAngle,detectSegmentedDoorCandidates,toScreenCss,screenCssToWorld,clientToCanvasCss,hitObject,objectBodyDistance,wallVisibleSegments,suggestedFloorNameFromRegion,repairDefaultFloorNamesFromRegions,recognitionBaselineWallSignatures,recognizedWallSourceMatch,recognitionObjectSignature,recognizedObjectIsAutoOwned,saveDxfBlob,exportDxfNow,exportRegionDxf});}
 
-  state.unitSystem=safeReadDefaultUnit();dom.dialogBackdrop.hidden=true;if(dom.settingsBackdrop)dom.settingsBackdrop.hidden=true;if(dom.planPackageBackdrop)dom.planPackageBackdrop.hidden=true;if(dom.planMergeBackdrop)dom.planMergeBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.confirmBackdrop.hidden=true;if(dom.exportSaveBackdrop)dom.exportSaveBackdrop.hidden=true;dom.commandBar.hidden=false;i18n.apply(document);state.browserSavedMeta=readBrowserSavedMeta();state.recoveryEnabled=safeReadRecoveryEnabled();state.recoveryMeta=readRecoveryMeta();state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});state.textSize=safeReadTextSize();applyTextSize(state.textSize,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();if(dom.aboutVersion)dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;if(dom.startVersion)dom.startVersion.textContent=`PieniPlan v${VERSION} · Build ${BUILD}`;renderCommandConsole();updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
+  state.unitSystem=safeReadDefaultUnit();contextMenuOverrides=safeReadContextMenuOverrides();dom.dialogBackdrop.hidden=true;if(dom.settingsBackdrop)dom.settingsBackdrop.hidden=true;if(dom.planPackageBackdrop)dom.planPackageBackdrop.hidden=true;if(dom.planMergeBackdrop)dom.planMergeBackdrop.hidden=true;dom.mappingBackdrop.hidden=true;dom.recognitionBackdrop.hidden=true;dom.confirmBackdrop.hidden=true;if(dom.exportSaveBackdrop)dom.exportSaveBackdrop.hidden=true;dom.commandBar.hidden=false;i18n.apply(document);state.browserSavedMeta=readBrowserSavedMeta();state.recoveryEnabled=safeReadRecoveryEnabled();state.recoveryMeta=readRecoveryMeta();state.inspectorSplit=safeReadInspectorSplit();state.theme=safeReadTheme();applyTheme(state.theme,{persist:false});state.textSize=safeReadTextSize();applyTextSize(state.textSize,{persist:false});installTooltips();updateEmptyState();renderToolRail();updateAll();if(dom.aboutVersion)dom.aboutVersion.textContent=`Version ${VERSION} · Build ${BUILD}`;if(dom.startVersion)dom.startVersion.textContent=`PieniPlan v${VERSION} · Build ${BUILD}`;renderCommandConsole();updateContinueCard();history.replaceState({[ROUTE_MARKER]:true,view:'start',toolset:state.toolset},'',location.href);showStartScreen({historyMode:'none'});setTimeout(resizeCanvas,0);console.info(`PieniPlan v${VERSION} · Build ${BUILD}`);
 })();
