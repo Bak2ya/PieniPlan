@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.30.0 · Build 41 — 2026-09-30
+
+- Opened the Astra P1/P2 persistent Polyline foundation as the first user-facing **P3 PLINE vertical slice** in CAD Mode. PLINE now authors one persistent `cadPolyline` owner instead of exploding the result into independent LINE/ARC objects.
+- Added continuous straight-segment input plus ARC segment mode using endpoint + on-arc control point. The live preview and committed bulge use the same circle fit, and users can switch Line/Arc, Back the current draft, Close a valid chain, or finish an open chain with Enter/Space. Esc cancels without publishing draft geometry.
+- Added typed CAD coordinates to PLINE, including absolute/relative input through the existing unit parser and command grammar.
+- Added whole-owner Polyline interactions without topology edits: direct body Move, Duplicate with fresh owner/vertex/edge IDs, 90° Rotate, left/right and up/down Mirror, Properties topology summary, Selection, Undo/Redo, and PPRJ schema5 save/reopen. Similarity transforms preserve owner/vertex/edge identity; mirrors reverse bulge sign as required.
+- Added a compact PLINE Context strip (`직선 / 호 / 되돌리기 / 닫기`) and transient line/arc preview. The persistent model is not changed until final commit.
+- Preserved Build40 Context Menu/Settings override behavior, Build38 Layer reveal, Build37 Layer policy, Build35 Components, and the existing P1/P2 Render/Selection/Snap/GeometryQuery cache/index architecture.
+- Intentionally did **not** add Polyline TRIM/EXTEND/BREAK/JOIN/OFFSET/FILLET, Curve Reconstruction, associative annotation, or Sheet expansion. Those remain separate gates because they can change topology identity/remapping rules.
+- Verification: Build41 focused Chromium regression **11/11 PASS**, Build41 inherited full Chromium regression **14/14 PASS**, core pure suites **85/85 PASS**, product JS syntax **29/29 PASS**, i18n **EN/KO 742/742** with exact key parity and no duplicates. Browser page/console errors **0** in both regression runs. Safari/Retina feel remains a real-device check.
+
 ## v0.29.1 · Build 40 — 2026-09-30
 
 - Fixed Context Menu `Show` override coexistence for the Select group. `Return to Select` is now treated as an always-executable, idempotent command whose **Auto** recommendation appears only when another tool is active; if the user explicitly sets it to **Show**, it can remain visible even while Select is already active.

@@ -1662,3 +1662,10 @@ html, body { font-size:var(--font-body); }
 .context-menu-item { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; }
 .context-menu-label { overflow:hidden; text-overflow:ellipsis; }
 .context-menu-note { color:var(--text-3); font-size:var(--font-secondary); font-variant-numeric:tabular-nums; }
+
+/* v0.30.0 Build 41 — PLINE context controls. */
+.context-choice-group { display:flex; align-items:center; gap:4px; min-width:0; }
+.context-choice { min-height:28px; padding:4px 9px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text-2); font-size:var(--font-control); cursor:pointer; }
+.context-choice:hover { background:var(--surface-3); color:var(--text); }
+.context-choice.active { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+:root[data-text-size="small"] .context-choice,:root[data-text-size="smaller"] .context-choice { padding-inline:7px; }

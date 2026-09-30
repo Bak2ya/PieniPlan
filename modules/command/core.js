@@ -7,6 +7,7 @@
     ...[['O','OFFSET'],['F','FILLET'],['BR','BREAK'],['J','JOIN']].map(([id,name])=>({id,name,aliases:[id,name],cadOnly:true})),
     { id: 'MA', name: 'MATCHPROP', aliases: ['MA','MATCHPROP'], cadOnly:true },
     { id: 'L', name: 'LINE', aliases: ['L', 'LINE'] },
+    { id: 'PL', name: 'PLINE', aliases: ['PL', 'PLINE', 'POLYLINE'], cadOnly: true },
     { id: 'TR', name: 'TRIM', aliases: ['TR', 'TRIM'] },
     { id: 'EX', name: 'EXTEND', aliases: ['EX', 'EXTEND'] },
     { id: 'E', name: 'ERASE', aliases: ['E', 'ERASE'] },
