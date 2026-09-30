@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.29.0';
-  const BUILD = 39;
+  const VERSION = '0.29.1';
+  const BUILD = 40;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -3560,7 +3560,7 @@
   function contextCommandDefinitions(mode=state.toolset,{obj=null,settings=false}={}){
     const catalog=toolCatalogFor(mode),categories=toolCategoriesFor(mode),defs=[];
     const activeTool=state.toolset===mode?state.activeTool:'select',activeCategory=activeCategoryForTool(mode,activeTool),related=new Set(contextToolRelations[mode]?.[activeTool]||[]);
-    defs.push({key:`${mode}:utility:returnSelect`,mode,group:'select',label:t('action.returnToSelect'),labelKey:'action.returnToSelect',basePriority:120,section:'escape',available:settings||activeTool!=='select',recommended:activeTool!=='select',primary:true,run:()=>setTool('select','select')});
+    defs.push({key:`${mode}:utility:returnSelect`,mode,group:'select',label:t('action.returnToSelect'),labelKey:'action.returnToSelect',basePriority:120,section:'escape',available:true,recommended:activeTool!=='select',primary:true,run:()=>setTool('select','select')});
     for(const cat of categories){for(let index=0;index<(catalog[cat.id]||[]).length;index++){const item=catalog[cat.id][index];if(!item.ready||item.id==='select')continue;const isRelated=related.has(item.id),sameGroup=cat.id===activeCategory&&item.id!==activeTool;defs.push({key:`${mode}:tool:${item.id}`,mode,group:cat.id,label:t(item.labelKey),labelKey:item.labelKey,note:item.note||'',tool:item.id,category:cat.id,basePriority:80-index,section:isRelated?'current':sameGroup?'group':'other',available:true,recommended:!obj&&(isRelated||sameGroup),run:()=>activateContextTool(mode,item.id,cat.id)});}}
     defs.push(...contextObjectCommandDefinitions(mode,obj,{settings}));
     defs.push({key:`${mode}:utility:fit`,mode,group:'other',label:t('action.fit'),labelKey:'action.fit',basePriority:30,section:'other',available:true,recommended:true,run:fitAll});

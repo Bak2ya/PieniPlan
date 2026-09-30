@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.29.1 · Build 40 — 2026-09-30
+
+- Fixed Context Menu `Show` override coexistence for the Select group. `Return to Select` is now treated as an always-executable, idempotent command whose **Auto** recommendation appears only when another tool is active; if the user explicitly sets it to **Show**, it can remain visible even while Select is already active.
+- Preserved additive `Show` semantics across distinct commands: setting both `Return to Select` and `Define Drawing Region` to **Show** keeps both commands in the same right-click menu instead of letting recommendation state suppress one of them.
+- `Show` still does not bypass real mode/object/permission/lock applicability for commands that are genuinely unavailable. No project schema, geometry, Layer, Polyline, Component, or Settings-storage contract changes are included.
+- Verification: Build40 focused Chromium regression **7/7 PASS**, Build40 full Chromium regression **14/14 PASS**, core pure suites **85/85 PASS**, product JS syntax **28/28 PASS**, i18n **EN/KO 719/719** with exact key parity. Page/console errors **0** in browser regressions.
+
 ## v0.29.0 · Build 39 — 2026-09-29
 
 - Rebuilt the Canvas right-click menu as a contextual command surface driven by the existing tool/command catalog instead of maintaining separate per-tool menu trees. Runtime order follows the approved grammar: return to Select, current/related commands, same tool-group commands, then other recommendations.
