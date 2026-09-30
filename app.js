@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.31.0';
-  const BUILD = 42;
+  const VERSION = '0.32.0';
+  const BUILD = 43;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -1793,7 +1793,8 @@
     const p=state.trimPreview;if(!p||!(state.toolset==='cad'?['trim','extend'].includes(state.activeTool):state.activeTool==='trim'))return;
     const styles=getComputedStyle(document.documentElement),danger=p.kind==='extend'?(styles.getPropertyValue('--accent').trim()||'#58A6FF'):(styles.getPropertyValue('--danger').trim()||'#F85149');
     ctx.save();ctx.strokeStyle=danger;ctx.fillStyle=danger;ctx.globalAlpha=.82;ctx.lineCap='round';ctx.lineWidth=p.kind==='extend'?2:5;if(p.kind==='extend')ctx.setLineDash([6,4]);
-    const a=toScreenCss(p.a),b=toScreenCss(p.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    if(Array.isArray(p.previewGeometry)&&p.previewGeometry.length){for(const g of p.previewGeometry)drawCadObject({...g,id:'__cad_extend_preview__',cadLayer:cadLayerForObject(p.before)},danger,2);}
+    else{const a=toScreenCss(p.a),b=toScreenCss(p.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
     ctx.globalAlpha=.95;ctx.lineWidth=1.5;for(const q of p.cuts||[]){const sp=toScreenCss(q);ctx.beginPath();ctx.arc(sp.x,sp.y,4,0,Math.PI*2);ctx.fill();}
     ctx.restore();
   }
@@ -1896,10 +1897,11 @@
 
   function visibleCadLines(excludeId=null){return cadWorkObjects().filter(o=>o.type==='cadLine'&&o.id!==excludeId&&cadLayerVisible(cadLayerForObject(o)));}
   function computeCadModifyPlan(mode,target,click){
-    if(!target||target.type!=='cadLine'||!cadPolicy(target.id,'modify').allowed)return null;
-    const start=distance(click,target.a)<=distance(click,target.b),from=start?target.b:target.a,to=start?target.a:target.b;
-    const cutters=(mode==='extend'?cadQueryIndex?.rayCandidates({a:from,b:to})||[]:cadQueryCandidates(cadGeometry.bounds(target),'snap')).filter(o=>o.id!==target.id&&!modules.cadPolyline.is(o)&&cadPolicy(o.id,'snap').allowed);
-    const plan=modules.cadModifyGeometry.plan(mode,target,click,cutters);return plan?{...plan,token:cadContextToken(),previewTool:state.activeTool,previewCommand:state.activeCommand,previewFloorId:state.activeFloorId}:null;
+    if(!target||!cadPolicy(target.id,'modify').allowed)return null;
+    let plan=null;
+    if(target.type==='cadLine'){const start=distance(click,target.a)<=distance(click,target.b),from=start?target.b:target.a,to=start?target.a:target.b;const raw=mode==='extend'?cadQueryIndex?.rayCandidates({a:from,b:to})||[]:cadQueryCandidates(cadGeometry.bounds(target),'snap');const cutters=raw.filter(o=>o.id!==target.id&&(mode==='extend'||!modules.cadPolyline.is(o))&&cadPolicy(o.id,'snap').allowed);plan=modules.cadModifyGeometry.plan(mode,target,click,cutters);}
+    else if(mode==='extend'&&modules.cadPolyline.is(target)){const support=modules.cadPolyline.extensionSupport(target,click);if(!support)return null;const raw=support.queryKind==='ray'?(cadQueryIndex?.rayCandidates(support.query)||[]):cadQueryCandidates(cadGeometry.bounds(support.query),'snap');const cutters=raw.filter(o=>o.id!==target.id&&cadPolicy(o.id,'snap').allowed);plan=modules.cadPolyline.extendTerminal(target,click,cutters);}
+    return plan?{...plan,token:cadContextToken(),previewTool:state.activeTool,previewCommand:state.activeCommand,previewFloorId:state.activeFloorId}:null;
   }
   function computeCadTrimSegment(target,click){return computeCadModifyPlan('trim',target,click);}
   function updateTrimPreview(raw,{shift=false}={}){
@@ -1945,7 +1947,7 @@
     target[endpoint]={...hit.point};if(target.type==='wall'&&hit.boundary?.type==='wall')attachEndpointToExactBoundary(target,endpoint,hit.boundary,hit.point);
     if(target.type==='wall')syncDependentsOfWall(target.id);recordEdit('extend',{targetId:target.id,endpoint,boundaryId:hit.boundary?.id||null,before,after:{...target[endpoint]}});markDirty(true);refreshSpaces();rebuildObjectSnapIndex();updateAll();return true;
   }
-  function applyTrimExtendAtPoint(raw,mode){const obj=hitObject(raw);if(!obj)return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const actual=state.toolset==='plan'?mode:(state.shiftDown?(mode==='trim'?'extend':'trim'):mode);let ok=false;if(state.toolset==='cad'&&obj.type==='cadLine')ok=actual==='trim'?trimCadLineAtClick(obj,raw):extendCadLineAtClick(obj,raw);else if(state.toolset==='plan'&&(obj.type==='line'||(obj.type==='wall'&&!isArcWall(obj))))ok=actual==='trim'?trimPlanLinearAtClick(obj,raw):extendPlanLinearAtClick(obj,raw);if(ok)recordEdit(actual,{targetId:obj.id,toolset:state.toolset});setCommandStatus(ok?t(actual==='trim'?'command.trimApplied':'command.extendApplied'):t(actual==='trim'?'command.trimNoBoundary':'command.extendNoBoundary'),ok?'strong':'error');return ok;}
+  function applyTrimExtendAtPoint(raw,mode){const obj=hitObject(raw);if(!obj)return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const actual=state.toolset==='plan'?mode:(state.shiftDown?(mode==='trim'?'extend':'trim'):mode);let ok=false;if(state.toolset==='cad'&&(obj.type==='cadLine'||(actual==='extend'&&modules.cadPolyline.is(obj))))ok=actual==='trim'?trimCadLineAtClick(obj,raw):extendCadLineAtClick(obj,raw);else if(state.toolset==='plan'&&(obj.type==='line'||(obj.type==='wall'&&!isArcWall(obj))))ok=actual==='trim'?trimPlanLinearAtClick(obj,raw):extendPlanLinearAtClick(obj,raw);if(ok)recordEdit(actual,{targetId:obj.id,toolset:state.toolset});setCommandStatus(ok?t(actual==='trim'?'command.trimApplied':'command.extendApplied'):t(actual==='trim'?'command.trimNoBoundary':'command.extendNoBoundary'),ok?'strong':'error');return ok;}
 
   function parseCadPointText(raw,{base=null,direction=null}={}){
     const text=String(raw??'').trim();if(!text)return{ok:false,code:'empty-coordinate'};

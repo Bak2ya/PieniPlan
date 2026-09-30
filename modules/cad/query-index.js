@@ -17,7 +17,7 @@
   }
   // Slab broad phase over occupied cells, never precise geometry over the whole document.
   function rayBox(ray,b){let lo=0,hi=Infinity;for(const axis of ['x','y']){const d=ray.b[axis]-ray.a[axis],v=ray.a[axis],min=b['min'+axis],max=b['max'+axis];if(Math.abs(d)<1e-12){if(v<min||v>max)return false;}else{const t0=(min-v)/d,t1=(max-v)/d;lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));if(hi<lo)return false;}}return true;}
-  function rayCandidates(ray){const out=new Map(),idx=segmentIndex;for(const [key,segs] of idx.segmentCells||[]){const [x,y]=key.split(',').map(Number),b={minx:x*idx.cellW,maxx:(x+1)*idx.cellW,miny:y*idx.cellH,maxy:(y+1)*idx.cellH};if(rayBox(ray,b))for(const s of segs){const o=getById(s.objectId);if(o)out.set(o.id,o);}}for(const {o,b} of extra)if(rayBox(ray,b))out.set(o.id,o);return[...out.values()].filter(o=>rayBox(ray,query.bounds(o)));}
+  function rayCandidates(ray){const out=new Map(),idx=segmentIndex;for(const [key,segs] of idx.segmentCells||[]){const [x,y]=key.split(',').map(Number),b={minx:x*idx.cellW,maxx:(x+1)*idx.cellW,miny:y*idx.cellH,maxy:(y+1)*idx.cellH};if(rayBox(ray,b))for(const s of segs){const o=getById(s.objectId);if(o)out.set(o.id,o);}}for(const item of polyIndex?.queryByBounds(b=>rayBox(ray,b))||[])out.set(item.o.id,item.o);for(const {o,b} of extra)if(rayBox(ray,b))out.set(o.id,o);return[...out.values()].filter(o=>rayBox(ray,query.bounds(o)));}
   return Object.freeze({get stats(){return{polyOwners:polylines.length,polyOwnerVisits:polyIndex?.visits||0};},candidates,rayCandidates,polyCandidates:rect=>(polyIndex?.query(rect)||[]).map(x=>x.o)});
  }
  root.cadQueryIndex=Object.freeze({create});

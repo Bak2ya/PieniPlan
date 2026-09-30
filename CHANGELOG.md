@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.32.0 · Build 43 — 2026-09-30
+
+- Expanded **EXTEND (EX)** to persistent `cadPolyline` as the next P3 Modify gate. Open polylines can extend from the first or last terminal segment; clicking an interior segment never guesses a distant endpoint, and closed polylines remain intentionally unsupported in this gate.
+- Added both straight and ARC terminal extension. Straight segments continue on their terminal ray; ARC segments stay on the same circle and signed traversal direction while recomputing the authoritative bulge. Owner, vertex, and edge IDs remain unchanged because EXTEND moves only the terminal vertex/curve endpoint and does not split topology.
+- Polyline EXTEND uses the nearest valid visible/snappable boundary and can use another Polyline as a read-only boundary. Hidden/work-range-excluded geometry remains ineligible.
+- Extended the Polyline owner spatial-tree broad phase with bounds-predicate ray traversal so pointer preview does not fall back to a flat scan across Polyline owners.
+- EXTEND preview now renders the actual extension geometry: dashed straight continuation for LINE terminal edges and a true curved ARC continuation for ARC terminal edges. Existing cadLine EXTEND and Shift TRIM/EXTEND grammar are preserved.
+- Deferred Polyline TRIM/JOIN/OFFSET/FILLET and Curve Reconstruction to later gates; schema5 and `cad.polyline.lineArc.v1` remain unchanged.
+- Verification: Build43 focused Chromium **14/14 PASS**, inherited full Chromium **14/14 PASS**, PLINE baseline **11/11 PASS**, Context Menu baseline **7/7 PASS**, new Polyline EXTEND pure core **9/9 PASS**, Polyline BREAK pure core **9/9 PASS**, existing CAD core **85/85 PASS**, product JS syntax **29/29 PASS**, i18n **EN/KO 744/744** exact parity/no duplicates, page/console errors **0**. Safari/Retina and integrated 104k real-project performance remain real-device/fixture checks, not claimed here.
+
 ## v0.31.0 · Build 42 — 2026-09-30
 
 - Added the first topology-changing persistent Polyline Modify command: **BREAK (BR)** now accepts `cadPolyline` as well as the existing `cadLine` path. Open polylines can split into two owners; closed polylines remove the first-pick→second-pick forward path and become one open owner.
