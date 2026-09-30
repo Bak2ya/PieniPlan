@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.33.0 · Build 44 — 2026-09-30
+
+- Expanded **TRIM (TR)** to persistent `cadPolyline`. The clicked analytic edge is the local trim domain; valid interior cutter crossings split that edge into intervals and the interval under the click is removed without silently consuming neighboring edges.
+- Added straight and ARC Polyline trimming. Retained ARC fragments stay on the same circle and signed traversal while authoritative bulges are recomputed.
+- Open Polyline TRIM can leave one or two open owners; closed Polyline TRIM removes the clicked interval and reopens the remaining traversal as one owner. Existing retained vertex/edge IDs survive where possible, while new cut boundaries and additional owners receive fresh IDs at commit.
+- Another Polyline can act as a read-only TRIM cutter. Hidden/work-range-excluded geometry remains ineligible, locked targets fail before mutation, and Undo/Redo commits topology changes atomically through the existing CAD ChangeSet path.
+- Added a subtle **DWG2DXF** helper to the PieniPlan start screen and README for users who need to prepare a DWG as DXF. DWG2DXF remains a separate optional tool rather than a required PieniPlan component.
+- Deferred Polyline JOIN/OFFSET/FILLET, post-authoring Close/Open, Curve Reconstruction, and Stage4 to later gates; PPRJ schema5 and `cad.polyline.lineArc.v1` remain unchanged.
+- Verification: Build44 focused Chromium **21/21 PASS**, inherited full Chromium **14/14 PASS**, PLINE baseline **11/11 PASS**, Context Menu baseline **7/7 PASS**, Polyline TRIM pure **9/9 PASS**, EXTEND pure **9/9 PASS**, BREAK pure **9/9 PASS**, existing CAD core **85/85 PASS**, product JS syntax **29/29 PASS**, i18n **EN/KO 746/746** exact parity/no duplicates, local refs **36/36**, browser page/console errors **0**. Safari/Retina and integrated 104k real-project performance remain real-device/fixture checks, not claimed here.
+
 ## v0.32.0 · Build 43 — 2026-09-30
 
 - Expanded **EXTEND (EX)** to persistent `cadPolyline` as the next P3 Modify gate. Open polylines can extend from the first or last terminal segment; clicking an interior segment never guesses a distant endpoint, and closed polylines remain intentionally unsupported in this gate.

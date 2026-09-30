@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.32.0 · Build 43**
+현재 버전: **v0.33.0 · Build 44**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -65,7 +65,7 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Metric / Imperial 입력·표시 구조
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
-PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. **BREAK는 cadLine뿐 아니라 persistent Polyline도 지원**하며, 잘라내고 남은 조각의 기존 vertex/edge ID는 가능한 범위에서 유지하고 새로 생긴 경계/추가 owner에만 새 ID를 부여합니다. **EXTEND는 열린 Polyline의 첫/마지막 terminal segment를 지원하며 직선과 ARC 모두 같은 owner/vertex/edge ID를 유지한 채 가장 가까운 유효 경계까지 연장**합니다. 닫힌 Polyline과 내부 segment는 임의 endpoint를 추측하지 않고 거부합니다. Polyline의 TRIM/JOIN/OFFSET/FILLET은 다음 topology gate에서 단계적으로 확장합니다.
+PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. **BREAK는 cadLine뿐 아니라 persistent Polyline도 지원**하며, 잘라내고 남은 조각의 기존 vertex/edge ID는 가능한 범위에서 유지하고 새로 생긴 경계/추가 owner에만 새 ID를 부여합니다. **EXTEND는 열린 Polyline의 첫/마지막 terminal segment를 지원하며 직선과 ARC 모두 같은 owner/vertex/edge ID를 유지한 채 가장 가까운 유효 경계까지 연장**합니다. 닫힌 Polyline과 내부 segment는 임의 endpoint를 추측하지 않고 거부합니다. **TRIM은 클릭한 Polyline edge를 local trim domain으로 사용해 교차 경계 사이의 구간을 preview 후 제거하며, 직선/ARC edge와 open/closed owner topology를 처리합니다.** 유지되는 기존 vertex/edge ID는 가능한 범위에서 보존하고 새 절단 경계와 추가 owner에만 새 ID를 부여합니다. Polyline의 JOIN/OFFSET/FILLET은 다음 topology gate에서 단계적으로 확장합니다.
 
 ---
 
@@ -157,6 +157,13 @@ PieniPlan 작업
 ```
 
 Native DWG 편집은 지원 범위에 포함하지 않습니다. DWG가 필요한 경우 DXF로 변환한 뒤 PieniPlan에서 사용하는 흐름을 권장합니다.
+
+### 관련 도구 — DWG2DXF
+
+DWG 파일만 가지고 있다면 별도 경량 변환 도구인 **[DWG2DXF](https://bak2ya.github.io/DWGtoDXF/)**를 이용해 DXF로 준비한 뒤 PieniPlan에서 열 수 있습니다. DWG2DXF는 PieniPlan의 필수 구성요소가 아니라 독립 도구이며, 변환과 PieniPlan 편집 workflow를 느슨하게 연결하는 용도입니다.
+
+- 웹: https://bak2ya.github.io/DWGtoDXF/
+- GitHub: https://github.com/Bak2ya/DWGtoDXF
 
 ---
 

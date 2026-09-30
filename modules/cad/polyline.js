@@ -85,5 +85,20 @@
   else{let start=a.pos,end=b.pos;if(Math.abs(start-end)<=BREAK_EPS)return null;if(end<=start)end+=N;for(const f of fragmentsForRange(o,start,end))removed.push(edgeFragment(f.edge,f.t0,f.t1));const keepStart=end,keepEnd=start+N,piece=buildBreakPiece(o,keepStart,keepEnd,o.id,fresh,edgeUses);if(piece)after.push(piece);}
   return{kind:'BREAK',topology:'cadPolyline',before:[o],after,removed};
  }
- root.cadPolyline=Object.freeze({is,capability,validate,get,candidates,nearest,parameter,reverse,transform,deriveEdge,extensionSupport,extendTerminal,breakBetween,invalidate,clear,retain,snapPoints,get stats(){return{decodes,revisions:serial,owners:byId.size};}});
+
+ // P3.3 TRIM topology policy:
+ // - the clicked analytic edge is the local trim domain; other owner edges are not silently consumed;
+ // - only intersections strictly inside that edge are trim boundaries; the edge endpoints bound the terminal intervals;
+ // - removing an interval may split an open owner into two owners, while a closed owner becomes one open owner;
+ // - retained topology follows BREAK identity rules so untouched vertex/edge IDs survive and only new cut boundaries get fresh IDs.
+ function trimAt(o,p,cutters){validate(o);if(!Array.isArray(cutters))return null;const hit=nearest(o,p);if(!hit)return null;const edges=get(o).edges,index=edges.findIndex(e=>e.edgeId===hit.edgeId);if(index<0)return null;const e=edges[index],length=e.type==='cadLine'?pointDistance(e.a,e.b):Math.abs(e.sweep)*Math.PI/180*e.radius;if(!(length>BREAK_EPS))return null;const modelTol=root.geometryQuery?.tolerance?.model||1e-7,paramTol=Math.min(.1,Math.max(BREAK_EPS,modelTol/length)),ts=[];
+  for(const cutter of cutters){if(!cutter||cutter.id===o.id)continue;for(const q of root.geometryQuery.intersections(e,cutter)){const t=Math.max(0,Math.min(1,parameter(e,q)));if(!(t>paramTol&&t<1-paramTol))continue;if(!ts.some(v=>Math.abs(v-t)<=paramTol))ts.push(t);}}
+  if(!ts.length)return null;ts.sort((a,b)=>a-b);const cuts=[0,...ts,1],clickT=Math.max(0,Math.min(1,Number(hit.parameter)||0));let slot=cuts.length-2;for(let i=0;i<cuts.length-1;i++){if(clickT<=cuts[i+1]+paramTol){slot=i;break;}}const lo=cuts[slot],hi=cuts[slot+1];if(!(hi-lo>paramTol))return null;
+  const start=index+lo,end=index+hi,N=edges.length,fresh=breakFreshFactory(),edgeUses=new Map(),after=[];
+  if(!o.closed){const ranges=[];if(start>BREAK_EPS)ranges.push([0,start]);if(N-end>BREAK_EPS)ranges.push([end,N]);for(let i=0;i<ranges.length;i++){const ownerId=i===0?o.id:fresh('cadPolyline'),piece=buildBreakPiece(o,ranges[i][0],ranges[i][1],ownerId,fresh,edgeUses);if(piece)after.push(piece);}}
+  else{const piece=buildBreakPiece(o,end,start+N,o.id,fresh,edgeUses);if(piece)after.push(piece);}
+  const removed=[edgeFragment(e,lo,hi)],a=edgePoint(e,lo),b=edgePoint(e,hi),cutPoints=[...(lo>paramTol?[a]:[]),...(hi<1-paramTol?[b]:[])];
+  return{kind:'trim',topology:'cadPolyline',targetId:o.id,before:o,after,removed,previewGeometry:removed,a,b,cuts:cutPoints,edgeId:e.edgeId,t0:lo,t1:hi};
+ }
+ root.cadPolyline=Object.freeze({is,capability,validate,get,candidates,nearest,parameter,reverse,transform,deriveEdge,extensionSupport,extendTerminal,breakBetween,trimAt,invalidate,clear,retain,snapPoints,get stats(){return{decodes,revisions:serial,owners:byId.size};}});
 })();

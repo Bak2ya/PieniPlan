@@ -294,6 +294,9 @@ button:disabled { opacity:.42; cursor:default; }
 .start-card-action { margin-top:auto; padding-top:22px; font-size:11px; font-weight:650; color:var(--text); }
 .start-secondary { display:flex; justify-content:center; margin-top:16px; }
 .start-note { text-align:center; margin-top:12px; color:var(--text-3); font-size:10px; }
+.start-related-tool { display:flex; justify-content:center; align-items:center; gap:5px; margin-top:7px; color:var(--text-3); font-size:10px; }
+.start-related-tool a { color:var(--text-2); text-decoration:none; font-weight:620; }
+.start-related-tool a:hover { color:var(--text); text-decoration:underline; text-underline-offset:2px; }
 .start-version { text-align:center; margin-top:7px; color:var(--text-3); font-size:9.5px; font-variant-numeric:tabular-nums; opacity:.82; }
 
 .start-appearance-button { position:fixed; top:16px; right:16px; z-index:305; }
