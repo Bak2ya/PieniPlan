@@ -1669,3 +1669,6 @@ html, body { font-size:var(--font-body); }
 .context-choice:hover { background:var(--surface-3); color:var(--text); }
 .context-choice.active { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
 :root[data-text-size="small"] .context-choice,:root[data-text-size="smaller"] .context-choice { padding-inline:7px; }
+
+/* v0.31.0 Build 42 — current-command context actions + Polyline BREAK. */
+.canvas-context-menu .context-menu-item.checked .context-menu-label{font-weight:600;}

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.31.0 · Build 42 — 2026-09-30
+
+- Added the first topology-changing persistent Polyline Modify command: **BREAK (BR)** now accepts `cadPolyline` as well as the existing `cadLine` path. Open polylines can split into two owners; closed polylines remove the first-pick→second-pick forward path and become one open owner.
+- Defined and implemented BREAK identity rules: untouched vertex/edge IDs survive, the first retained fragment of a split edge keeps the original edge ID, later retained fragments receive fresh IDs, the first retained owner keeps the original owner ID, and additional owners receive fresh IDs. Preview-only topology uses placeholder IDs so pointer movement never consumes persistent IDs.
+- Preserved exact ARC loci during BREAK by deriving partial bulges from the retained signed sub-sweep. Positive/negative bulges and same-edge splitting are covered by focused pure tests.
+- Unified active-command action metadata for the PLINE Context strip and Canvas right-click menu. While PLINE is active, `직선 / 호 / 되돌리기 / 닫기` are sourced from the same command-session `actions` description; the active choice is checked and unavailable actions remain visible but disabled. These ephemeral command actions do not create individual Settings rows.
+- Added a ready **끊기 / Break** entry to the CAD Modify Ribbon and kept the existing `BR` command grammar. Locked/hidden/work-range policy remains authoritative before topology mutation, and Undo/Redo stores the change as one CAD ChangeSet.
+- Deferred Polyline EXTEND/TRIM/JOIN/OFFSET/FILLET and Curve Reconstruction to later gates; schema5 and `cad.polyline.lineArc.v1` remain unchanged.
+- Verification: Build42 focused Chromium **8/8 PASS**, PLINE baseline **11/11 PASS**, inherited full Chromium **14/14 PASS**, Context Menu baseline **7/7 PASS**, new Polyline BREAK pure core **9/9 PASS**, existing CAD core **85/85 PASS**, product JS syntax **29/29 PASS**, i18n **EN/KO 744/744** exact parity/no duplicates, page/console errors **0**. Safari/Retina and integrated 104k real-project performance remain real-device/fixture checks, not claimed here.
+
 ## v0.30.0 · Build 41 — 2026-09-30
 
 - Opened the Astra P1/P2 persistent Polyline foundation as the first user-facing **P3 PLINE vertical slice** in CAD Mode. PLINE now authors one persistent `cadPolyline` owner instead of exploding the result into independent LINE/ARC objects.

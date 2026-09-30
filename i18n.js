@@ -8,6 +8,7 @@
       'cadModify.first': 'Specify first break point',
       'cadModify.second': 'Select second LINE',
       'cadModify.result': 'Specify result point / side',
+      'cadModify.breakSecond': 'Specify second break point',
       'cadModify.invalid': 'No valid result. Check input and supported geometry.',
 
       'cadProperty.currentLayer': 'Current layer',
@@ -232,6 +233,7 @@
       'tool.copy': 'Copy',
       'tool.rotate': 'Rotate',
       'tool.trim': 'Trim',
+      'tool.break': 'Break',
       'tool.offset': 'Offset',
       'tool.delete': 'Delete',
       'tool.planned': 'planned',
@@ -770,6 +772,7 @@
       'cadModify.first': '끊을 첫 점 지정',
       'cadModify.second': '두 번째 LINE 선택',
       'cadModify.result': '결과 점 / 방향 지정',
+      'cadModify.breakSecond': '끊을 두 번째 점 지정',
       'cadModify.invalid': '유효한 결과가 없습니다. 입력과 지원 형상을 확인하세요.',
 
       'cadProperty.currentLayer': '현재 레이어',
@@ -994,6 +997,7 @@
       'tool.copy': '복사',
       'tool.rotate': '회전',
       'tool.trim': '잘라내기',
+      'tool.break': '끊기',
       'tool.offset': '간격 복사',
       'tool.delete': '삭제',
       'tool.planned': '준비 중',

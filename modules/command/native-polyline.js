@@ -46,7 +46,7 @@
           start.bulge=bulge;draft.points.push(clonePoint(draft.arcEnd));draft.arcEnd=null;draft.phase='next';notify();port.prompt('command.polylineArcEnd');return{ok:true};
         };
         return {
-          describe:()=>({phase:draft.phase,promptKey:draft.phase==='start'?'command.polylineFirst':draft.phase==='arc-control'?'command.polylineArcControl':draft.mode==='arc'?'command.polylineArcEnd':'command.polylineNext',input:['point','coordinate','keyword']}),
+          describe:()=>({phase:draft.phase,promptKey:draft.phase==='start'?'command.polylineFirst':draft.phase==='arc-control'?'command.polylineArcControl':draft.mode==='arc'?'command.polylineArcEnd':'command.polylineNext',input:['point','coordinate','keyword'],actions:[{id:'line',labelKey:'polyline.line',active:draft.mode==='line',enabled:true},{id:'arc',labelKey:'polyline.arc',active:draft.mode==='arc',enabled:true},{id:'back',labelKey:'polyline.back',active:false,enabled:Boolean(draft.arcEnd||draft.points.length)},{id:'close',labelKey:'polyline.close',active:false,enabled:!draft.arcEnd&&draft.points.length>=3}]}),
           view,
           preview({point,shift=false}){if(!finite(point))return{ok:true};draft.pointer=clonePoint(resolve(point,shift).point);notify();return{ok:true};},
           input(event){

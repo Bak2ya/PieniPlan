@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.30.0 · Build 41**
+현재 버전: **v0.31.0 · Build 42**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -58,13 +58,14 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Window / Crossing Selection
 - Command Console과 명령 입력
 - LINE과 **PLINE(직선/호 혼합, 열림/닫힘)** 작성, TRIM, EXTEND, OFFSET, FILLET, BREAK, JOIN, ERASE, DIST 등 CAD식 작업 흐름
+- PLINE 작성 중 Context strip의 `직선 / 호 / 되돌리기 / 닫기`를 우클릭에서도 같은 현재-command action으로 즉시 사용
 - LINE / CIRCLE / ARC 교점 기반 정밀 Snap과 곡선·TEXT 선택
 - PPRJ schema5 기반 persistent `cadPolyline`: 하나의 owner로 저장하고 stable vertex/edge ID, LINE/ARC analytic cache, Render/Selection/Snap/GeometryQuery를 공유하며 PLINE으로 직접 작성
 - 특정 Drawing Region의 기준점·방향 기반 회전
 - Metric / Imperial 입력·표시 구조
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
-PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. Polyline의 TRIM/EXTEND/OFFSET/FILLET/BREAK/JOIN처럼 topology를 바꾸는 Modify 명령은 stable vertex/edge remap 계약을 먼저 확정한 뒤 별도 단계에서 확장합니다.
+PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. **BREAK는 cadLine뿐 아니라 persistent Polyline도 지원**하며, 잘라내고 남은 조각의 기존 vertex/edge ID는 가능한 범위에서 유지하고 새로 생긴 경계/추가 owner에만 새 ID를 부여합니다. Polyline의 TRIM/EXTEND/JOIN/OFFSET/FILLET은 다음 topology gate에서 단계적으로 확장합니다.
 
 ---
 
