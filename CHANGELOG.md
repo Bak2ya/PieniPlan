@@ -1,3 +1,10 @@
+## v0.33.1 · Build 45 — 2026-10-01
+
+- Fixed a CAD TRIM modifier-state regression where a stale internal Shift state could make a normal Polyline TRIM click execute the temporary EXTEND path instead, producing `해당 방향에서 연장할 경계를 찾지 못했습니다.` even though Shift was not held.
+- Pointer move/down now resynchronize CAD Shift state from the actual pointer event, and TRIM/EXTEND commit receives that event modifier explicitly so preview and commit use the same modifier state.
+- Preserved intentional CAD Shift inversion: holding Shift during TRIM still temporarily requests EXTEND, while Plan Mode Shift remains geometry-constraint-only.
+- No Polyline topology/schema contract changed; ARC TRIM continues to use the Build44 analytic geometry path. PPRJ remains schema5 with `cad.polyline.lineArc.v1`; PPKG remains schema1.
+
 # Changelog
 
 ## v0.33.0 · Build 44 — 2026-09-30
