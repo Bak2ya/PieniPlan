@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.37.0 · Build 51 — 2026-10-02
+
+- Completed the persistent Polyline **FILLET** family for adjacent LINE↔LINE, LINE↔ARC and ARC↔ARC corners. The solver uses exact tangent loci, keeps retained source ARC segments on their original circle locus, preserves existing owner/edge identity where possible, and fails closed on degenerate or ambiguous solutions rather than linearizing curves.
+- Added explicit persistent Polyline **Close / Open** actions in Properties and the object context menu. Close adds one straight last→first closing edge with fresh topology; Open removes that stored closing edge. JOIN still does not silently auto-close loops.
+- Improved Polyline **JOIN** guidance without changing its geometry contract: after the first open source is selected, both eligible source endpoints are highlighted and the prompt explicitly asks for a second open object whose endpoint touches one of them.
+- Added integrated Polyline Modify verification across TRIM / JOIN / OFFSET / FILLET / Close / Open, including Undo/Redo and PPRJ save→reload. PPRJ remains schema5 with `cad.polyline.lineArc.v1`; PPKG remains schema1.
+- Verification: Build51 Polyline Modify core **11/11 PASS**, integrated browser regression **10/10**, FILLET **11/11**, command lifecycle **8/8**, OFFSET input **7/7**, OFFSET **8/8**, JOIN **7/7**, Shift **3/3**, PLINE baseline **11/11**, Context baseline **7/7**, focused **21/21**, full **14/14**. Pure BREAK/EXTEND/TRIM/JOIN **9/9 each**, OFFSET **7/7**, current-schema P0 **28/28**. Product JS syntax **29/29**, i18n **758/758**, local HTML refs **36/36**.
+
 ## v0.36.0 · Build 50 — 2026-10-01
 
 - Added the first persistent Polyline **FILLET** gate. `F` / Modify → Fillet accepts a radius, then two adjacent LINE segments on the same open or closed `cadPolyline` owner.
