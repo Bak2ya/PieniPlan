@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.35.1 · Build 49 — 2026-10-01
+
+- Fixed OFFSET command input focus: after `O` starts, the Command Console now keeps focus for immediate distance entry; invalid distance input stays editable, and a valid distance advances to canvas source selection without requiring a manual click back into the command field.
+- Added a transient Modify-source highlight after OFFSET/other native Modify source selection so a persistent Polyline is visibly acknowledged before the result-side click. This highlight is command state only and does not alter document selection; it clears on cancel/finish.
+- Kept the Build48 Polyline OFFSET geometry/topology contract unchanged. No FILLET work is included in this PATCH; PPRJ remains schema5 with `cad.polyline.lineArc.v1`, PPKG remains schema1.
+- Verification: Build49 OFFSET-input focused Chromium **7/7 PASS**, command lifecycle **8/8**, OFFSET regression **8/8**, inherited focused **21/21**, full **14/14**, PLINE baseline **11/11**, Context baseline **7/7**, JOIN **7/7**, Shift regression **3/3**. Pure OFFSET **7/7**, JOIN/TRIM/EXTEND/BREAK **9/9 each**, current-schema P0 **28/28**. Product JS syntax **29/29**, i18n **749/749**, local HTML refs **36/36**.
+
 ## v0.35.0 · Build 48 — 2026-10-01
 
 - Expanded **OFFSET (O)** to persistent open/closed `cadPolyline` owners while preserving the existing primitive LINE/CIRCLE/ARC OFFSET path.
