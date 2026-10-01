@@ -1,3 +1,21 @@
+# Changelog
+
+## v0.35.0 · Build 48 — 2026-10-01
+
+- Expanded **OFFSET (O)** to persistent open/closed `cadPolyline` owners while preserving the existing primitive LINE/CIRCLE/ARC OFFSET path.
+- Polyline OFFSET creates a new owner and never mutates the source. The side click chooses one consistent traversal-relative side; LINE edges stay parallel and ARC edges stay concentric with their signed traversal preserved.
+- Adjacent offset LINE/ARC supports are joined analytically at their local intersection. Ambiguous/unresolved joins and collapsed ARC radii fail closed instead of silently approximating geometry.
+- New offset owners, vertices and edges receive fresh IDs at commit; the source owner and every source sub-ID remain untouched. Undo/Redo and PPRJ validation continue through one CAD ChangeSet. PPRJ remains schema5 with `cad.polyline.lineArc.v1`; PPKG remains schema1.
+- Carried forward the Build47 command-lifecycle repair so Enter/Space can normally finish the active CAD command and an exact new command can supersede an active command without requiring a preliminary Esc. PLINE local keywords and numeric/coordinate command input remain local to their active command.
+- Verification: OFFSET focused Chromium **8/8 PASS**, OFFSET pure **7/7**, command lifecycle **8/8**, inherited focused **21/21**, full **14/14**, PLINE baseline **11/11**, Context baseline **7/7**, JOIN focused **7/7**, Shift regression **3/3**, JOIN/TRIM/EXTEND/BREAK pure **9/9 each**, current-schema P0 **28/28**, product JS **29/29**, resource refs **65/65**, i18n **749/749**, index local refs **36/36**. Safari/Retina hands-on OFFSET and integrated 104k real-project performance remain unverified.
+
+## v0.34.1 · Build 47 — 2026-10-01
+
+- Fixed CAD command lifecycle behavior that could leave the previous command owning input after the user had finished it, forcing an unnecessary Esc before the next command.
+- Enter/Space now performs a normal finish for active non-continuous CAD commands and returns to Select. LINE/PLINE keep their explicit continuous-command finish path.
+- Typing an exact global command while another CAD command session is active now supersedes the old session directly. PLINE-local `LINE/ARC/BACK/CLOSE` keywords and numeric/coordinate input are still dispatched to the active command rather than stolen by global command resolution.
+- Focused Chromium lifecycle regression **7/7 PASS**. This PATCH was used as the clean command-state baseline for Build48; JOIN geometry/topology was not changed.
+
 ## v0.34.0 · Build 46 — 2026-10-01
 
 - Added **JOIN (J)** for persistent open `cadPolyline` owners while preserving the existing primitive `cadLine` JOIN path.
@@ -13,8 +31,6 @@
 - Pointer move/down now resynchronize CAD Shift state from the actual pointer event, and TRIM/EXTEND commit receives that event modifier explicitly so preview and commit use the same modifier state.
 - Preserved intentional CAD Shift inversion: holding Shift during TRIM still temporarily requests EXTEND, while Plan Mode Shift remains geometry-constraint-only.
 - No Polyline topology/schema contract changed; ARC TRIM continues to use the Build44 analytic geometry path. PPRJ remains schema5 with `cad.polyline.lineArc.v1`; PPKG remains schema1.
-
-# Changelog
 
 ## v0.33.0 · Build 44 — 2026-09-30
 
