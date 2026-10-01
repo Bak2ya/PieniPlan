@@ -11,6 +11,8 @@
       'cadModify.breakSecond': 'Specify second break point',
       'cadModify.joinSource': 'Select first open Polyline or LINE',
       'cadModify.joinSecond': 'Select a connected second object of the same kind',
+      'cadModify.filletSource': 'Select first Polyline segment or LINE',
+      'cadModify.filletSecond': 'Select an adjacent Polyline segment or second LINE',
       'cadModify.invalid': 'No valid result. Check input and supported geometry.',
 
       'cadProperty.currentLayer': 'Current layer',
@@ -240,6 +242,7 @@
       'tool.break': 'Break',
       'tool.join': 'Join',
       'tool.offset': 'Offset',
+      'tool.fillet': 'Fillet',
       'tool.delete': 'Delete',
       'tool.planned': 'planned',
 
@@ -780,6 +783,8 @@
       'cadModify.breakSecond': '끊을 두 번째 점 지정',
       'cadModify.joinSource': '첫 번째 열린 폴리라인 또는 LINE 선택',
       'cadModify.joinSecond': '끝점이 맞닿은 같은 형식의 두 번째 객체 선택',
+      'cadModify.filletSource': '첫 번째 폴리라인 구간 또는 LINE 선택',
+      'cadModify.filletSecond': '인접한 폴리라인 구간 또는 두 번째 LINE 선택',
       'cadModify.invalid': '유효한 결과가 없습니다. 입력과 지원 형상을 확인하세요.',
 
       'cadProperty.currentLayer': '현재 레이어',
@@ -1009,6 +1014,7 @@
       'tool.break': '끊기',
       'tool.join': '결합',
       'tool.offset': '간격 복사',
+      'tool.fillet': '모깎기',
       'tool.delete': '삭제',
       'tool.planned': '준비 중',
 

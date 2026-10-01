@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.36.0 · Build 50 — 2026-10-01
+
+- Added the first persistent Polyline **FILLET** gate. `F` / Modify → Fillet accepts a radius, then two adjacent LINE segments on the same open or closed `cadPolyline` owner.
+- FILLET keeps the Polyline owner and both original adjacent LINE edge IDs, moves the shared corner vertex to the incoming tangent point, and inserts one fresh tangent vertex plus one fresh ARC edge. Primitive LINE↔LINE FILLET remains unchanged.
+- The two clicks identify the exact adjacent segments. Non-adjacent segments, same-segment picks, oversize radii, cross-owner Polyline picks, and LINE↔ARC / ARC↔ARC corners fail closed rather than guessing or approximating.
+- Added Fillet to the CAD Modify Ribbon/context flow with the same radius-entry focus behavior as OFFSET and transient source highlight behavior from Build49.
+- PPRJ remains schema5 with `cad.polyline.lineArc.v1`; PPKG remains schema1. Existing open-Polyline Close/Open, Curve Reconstruction and Annotation/Sheet Stage4 remain separate gates.
+
 ## v0.35.1 · Build 49 — 2026-10-01
 
 - Fixed OFFSET command input focus: after `O` starts, the Command Console now keeps focus for immediate distance entry; invalid distance input stays editable, and a valid distance advances to canvas source selection without requiring a manual click back into the command field.
