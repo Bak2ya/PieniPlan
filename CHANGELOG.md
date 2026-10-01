@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.38.0 · Build 52 — 2026-10-02
+
+- Added semi-automatic **Curve Reconstruction (`CR`)** in both CAD and Plan modes. Users select curve fragments, review a live fitted-circle preview, click included fragments again to exclude them, use **Find more** to add nearby matching candidates, then explicitly commit the result.
+- CAD reconstruction currently accepts editable primitive **LINE / ARC** fragments on the same editable layer and appearance, replacing them atomically with one analytic `cadArc`. Persistent Polyline owners are intentionally kept intact rather than partially exploded.
+- Plan reconstruction converts safe wall fragments into one persistent **Curved Wall** while preserving wall thickness and CAD-recognition provenance where possible. It fails closed when selected walls have hosted openings/dimensions, external wall relations, geometric constraints, incompatible layers, or materially different thicknesses.
+- Reconstruction is preview-only until explicit commit. CAD uses the existing ChangeSet history path; Plan uses project history, and both support Undo/Redo and normal PPRJ persistence without changing schema5 / PPKG schema1.
+- Added a pure circle-fit/candidate module (`modules/cad/curve-reconstruction.js`) with conservative residual/radius/sweep guards and explicit exclusion handling for Find more.
+- Verification: Curve Reconstruction pure core **7/7 PASS**, focused Chromium **13/13**, inherited focused **21/21**, full **14/14**, PLINE baseline **11/11**, Context baseline **7/7**, command lifecycle **8/8**, Shift **3/3**, JOIN **7/7**, OFFSET input **7/7**, OFFSET **8/8**, FILLET **11/11**, Polyline Modify **10/10**. Current-schema P0 **28/28** and Polyline Modify core **11/11** remain PASS. Product JS syntax **30/30**, i18n **774/774**, local HTML refs **37/37**. Safari/Retina hands-on remains to be verified.
+
 ## v0.37.0 · Build 51 — 2026-10-02
 
 - Completed the persistent Polyline **FILLET** family for adjacent LINE↔LINE, LINE↔ARC and ARC↔ARC corners. The solver uses exact tangent loci, keeps retained source ARC segments on their original circle locus, preserves existing owner/edge identity where possible, and fails closed on degenerate or ambiguous solutions rather than linearizing curves.

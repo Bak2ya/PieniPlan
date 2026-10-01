@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.37.0 · Build 51**
+현재 버전: **v0.38.0 · Build 52**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -41,6 +41,7 @@ CAD를 잘 몰라도 건물의 평면 구조를 빠르게 만들고 정리하는
 - 닫힌 경계에서 공간 생성 및 공간 이름/유형 관리
 - 도면 계산 면적과 관리 면적을 분리해 보존
 - CAD Drawing Region에서 건축 구조를 인식해 Plan 객체로 단순화
+- 여러 직선/호 조각을 사용자가 확인하며 하나의 **Curved Wall**로 복원하는 반자동 Curve Reconstruction
 
 Plan의 구획 목록은 **건물 → 도면 → 공간** 관계를 한 자리에서 보여줍니다. 건물 안에 여러 도면을 둘 수 있고, 도면은 꼭 한 층과 1:1일 필요가 없습니다. 같은 층을 여러 도면으로 나누거나 `5F 동측`, `옥상`, `기계실`, `소방`처럼 목적에 맞는 이름으로 자유롭게 구성할 수 있습니다. 참조 도면 제어는 각 도면 안에 함께 표시됩니다.
 
@@ -58,6 +59,7 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Window / Crossing Selection
 - Command Console과 명령 입력
 - LINE과 **PLINE(직선/호 혼합, 열림/닫힘)** 작성, TRIM, EXTEND, BREAK, JOIN, OFFSET, FILLET, ERASE, DIST 등 CAD식 작업 흐름
+- 분절된 LINE/ARC 조각을 후보로 고르고 미리보기·제외/추가·`더 찾기` 후 하나의 analytic ARC로 확정하는 **Curve Reconstruction (`CR`)**
 - PLINE 작성 중 Context strip의 `직선 / 호 / 되돌리기 / 닫기`를 우클릭에서도 같은 현재-command action으로 즉시 사용
 - LINE / CIRCLE / ARC 교점 기반 정밀 Snap과 곡선·TEXT 선택
 - PPRJ schema5 기반 persistent `cadPolyline`: 하나의 owner로 저장하고 stable vertex/edge ID, LINE/ARC analytic cache, Render/Selection/Snap/GeometryQuery를 공유하며 PLINE으로 직접 작성
@@ -66,6 +68,8 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
 PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. **BREAK는 cadLine뿐 아니라 persistent Polyline도 지원**하며, 잘라내고 남은 조각의 기존 vertex/edge ID는 가능한 범위에서 유지하고 새로 생긴 경계/추가 owner에만 새 ID를 부여합니다. **EXTEND는 열린 Polyline의 첫/마지막 terminal segment를 지원하며 직선과 ARC 모두 같은 owner/vertex/edge ID를 유지한 채 가장 가까운 유효 경계까지 연장**합니다. 닫힌 Polyline과 내부 segment는 임의 endpoint를 추측하지 않고 거부합니다. **TRIM은 클릭한 Polyline edge를 local trim domain으로 사용해 교차 경계 사이의 구간을 preview 후 제거하며, 직선/ARC edge와 open/closed owner topology를 처리합니다.** 유지되는 기존 vertex/edge ID는 가능한 범위에서 보존하고 새 절단 경계와 추가 owner에만 새 ID를 부여합니다. **JOIN은 끝점이 정확히 맞닿은 두 개의 열린 persistent Polyline을 하나의 owner로 결합**하며, 첫 owner와 공유 junction vertex를 survivor로 두고 나머지 기존 vertex/edge ID와 ARC bulge를 보존합니다. 서로 다른 레이어/표현/메타데이터, 닫힌 Polyline, gap 연결, 자동 Close는 거부합니다. **OFFSET은 open/closed persistent Polyline의 직선·ARC 혼합 geometry를 한쪽으로 평행/동심 이동해 새로운 Polyline owner를 만들며 원본은 그대로 유지**합니다. 인접 구간은 analytic support 교점으로 연결하고, 해석이 모호하거나 ARC 반경이 붕괴하는 경우에는 근사하지 않고 거부합니다. **FILLET은 같은 persistent Polyline 안의 서로 인접한 LINE/ARC 구간을 analytic tangent geometry로 모깎기하며 LINE↔LINE, LINE↔ARC, ARC↔ARC 조합을 지원합니다.** 기존 source ARC의 원 중심·반경 locus와 가능한 기존 edge identity를 유지하고 새 fillet ARC에 필요한 topology만 추가하며, 해가 모호하거나 반지름이 성립하지 않으면 근사하지 않고 거부합니다. **선택한 persistent PLINE은 속성 패널이나 우클릭 메뉴에서 명시적으로 닫기/열기 할 수 있습니다.** 닫기는 마지막 점과 첫 점을 하나의 직선 closing edge로 연결하고, 열기는 그 저장된 closing edge만 제거합니다. JOIN은 이 동작을 자동으로 대신하지 않습니다.
+
+**Curve Reconstruction은 자동으로 원본을 바꾸지 않는 반자동 도구입니다.** `CR`에서 관련 LINE/ARC 조각을 직접 포함·제외하며 fitted curve 미리보기를 확인하고, 필요하면 `더 찾기`로 주변 후보를 추가한 뒤 확정합니다. CAD에서는 현재 독립 LINE/ARC 조각만 하나의 ARC로 교체하고 persistent PLINE owner는 부분 분해하지 않습니다. Plan Mode에서는 안전한 벽 조각을 하나의 Curved Wall로 복원하며, 문·창·치수나 외부 벽 관계·기하 제약이 연결된 경우에는 관계를 추측해 깨뜨리지 않고 변환을 거부합니다.
 
 ---
 

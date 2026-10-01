@@ -15,6 +15,7 @@
     { id: 'M', name: 'MOVE', aliases: ['M', 'MOVE'], planOnly: true },
     { id: 'CO', name: 'COPY', aliases: ['CO', 'COPY'], planOnly: true },
     { id: 'RO', name: 'ROTATE', aliases: ['RO', 'ROTATE'], cadOnly: true },
+    { id: 'CR', name: 'CURVERECONSTRUCT', aliases: ['CR', 'CURVERECONSTRUCT', 'RECONSTRUCT'] },
     { id: 'Z', name: 'ZOOM', aliases: ['Z', 'ZOOM'] },
     { id: 'U', name: 'UNDO', aliases: ['U', 'UNDO'] },
     { id: 'REDO', name: 'REDO', aliases: ['REDO'] },
