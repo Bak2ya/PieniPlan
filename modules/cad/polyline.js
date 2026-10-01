@@ -100,5 +100,24 @@
   const removed=[edgeFragment(e,lo,hi)],a=edgePoint(e,lo),b=edgePoint(e,hi),cutPoints=[...(lo>paramTol?[a]:[]),...(hi<1-paramTol?[b]:[])];
   return{kind:'trim',topology:'cadPolyline',targetId:o.id,before:o,after,removed,previewGeometry:removed,a,b,cuts:cutPoints,edgeId:e.edgeId,t0:lo,t1:hi};
  }
- root.cadPolyline=Object.freeze({is,capability,validate,get,candidates,nearest,parameter,reverse,transform,deriveEdge,extensionSupport,extendTerminal,breakBetween,trimAt,invalidate,clear,retain,snapPoints,get stats(){return{decodes,revisions:serial,owners:byId.size};}});
+
+
+ // P3.4 JOIN topology policy:
+ // - primitive LINE JOIN remains owned by cadLinearOperations; this helper joins two distinct open cadPolyline owners only;
+ // - only one coincident endpoint pair within model tolerance is accepted. JOIN never bridges a visible gap, guesses an interior attachment, or silently closes a loop;
+ // - the first/source owner survives. Its coincident terminal vertex survives as the shared junction; the second owner's coincident terminal vertex is retired;
+ // - every retained edge ID and every non-retired vertex ID survives, including ARC bulges. Reversal changes traversal/bulge sign but not identity;
+ // - owner-level metadata must match so JOIN cannot silently discard layer/appearance/provenance data.
+ const JOIN_META_EXCLUDE=new Set(['id','type','closed','vertices']);
+ function joinMetadataEqual(a,b){const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})].filter(k=>!JOIN_META_EXCLUDE.has(k)));for(const k of keys){const av=a?.[k]??null,bv=b?.[k]??null;if(JSON.stringify(av)!==JSON.stringify(bv))return false;}return true;}
+ function joinOpen(a,b){if(!is(a)||!is(b))return null;validate(a);validate(b);if(a.id===b.id||a.closed||b.closed||!joinMetadataEqual(a,b))return null;const tol=Math.max(BREAK_EPS,root.geometryQuery?.tolerance?.model||1e-7),ae=[['start',a.vertices[0]],['end',a.vertices.at(-1)]],be=[['start',b.vertices[0]],['end',b.vertices.at(-1)]],matches=[];
+  for(const [as,av] of ae)for(const [bs,bv] of be)if(pointDistance(av,bv)<=tol)matches.push({aSide:as,bSide:bs,a:av,b:bv});
+  if(matches.length!==1)return null;const match=matches[0],source=match.aSide==='start'?reverse(a):clone(a),target=match.bSide==='end'?reverse(b):clone(b),farA=source.vertices[0],farB=target.vertices.at(-1);
+  // A loop requires an explicit Close/Open contract; do not create an open owner whose remote endpoints are already coincident.
+  if(pointDistance(farA,farB)<=tol)return null;
+  const shared=source.vertices.at(-1),incoming=target.vertices[0];if(!incoming.outgoing)return null;shared.outgoing={id:incoming.outgoing.id,bulge:incoming.outgoing.bulge};const vertices=[...source.vertices,...target.vertices.slice(1).map(v=>clone(v))];const out=clone(source);out.id=a.id;out.closed=false;out.vertices=vertices;validate(out);
+  return{kind:'JOIN',topology:'cadPolyline',before:[a,b],after:[out],junction:{x:shared.x,y:shared.y},survivorOwnerId:a.id,retiredOwnerId:b.id,survivorVertexId:shared.id,retiredVertexId:incoming.id,sourceReversed:match.aSide==='start',targetReversed:match.bSide==='end'};
+ }
+
+ root.cadPolyline=Object.freeze({is,capability,validate,get,candidates,nearest,parameter,reverse,transform,deriveEdge,extensionSupport,extendTerminal,breakBetween,trimAt,joinOpen,invalidate,clear,retain,snapPoints,get stats(){return{decodes,revisions:serial,owners:byId.size};}});
 })();

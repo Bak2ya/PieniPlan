@@ -1,3 +1,12 @@
+## v0.34.0 · Build 46 — 2026-10-01
+
+- Added **JOIN (J)** for persistent open `cadPolyline` owners while preserving the existing primitive `cadLine` JOIN path.
+- Polyline JOIN accepts exactly one coincident terminal endpoint pair. It does not bridge gaps, guess interior attachments, combine mismatched owner metadata, join closed owners, mix LINE↔Polyline topology, or silently close a loop.
+- The first selected Polyline owner and its shared terminal vertex survive. The second junction vertex retires while all other retained vertex/edge IDs remain stable. Required traversal reversal preserves edge identity and the analytic ARC locus while flipping signed bulge direction as needed.
+- JOIN uses the existing CAD operation preview and one ChangeSet commit, so Undo/Redo and PPRJ save/reopen remain atomic. PPRJ stays schema5 with `cad.polyline.lineArc.v1`; PPKG stays schema1.
+- Updated Modify Ribbon, command help/shortcut text, Context metadata, and README for the now-ready JOIN command. Polyline OFFSET and FILLET remain the next gates; post-authoring Close/Open remains separate.
+- Verification: JOIN focused Chromium **7/7 PASS**, JOIN pure **9/9 PASS**, inherited focused **21/21**, full **14/14**, PLINE baseline **11/11**, Context baseline **7/7**, Shift regression **3/3**, TRIM/EXTEND/BREAK pure **9/9 each**, existing core **85/85**, product JS **29/29**, resource refs **65/65**, i18n **749/749**, index local refs **36/36**. Build46 JOIN still needs real Safari/Retina use confirmation.
+
 ## v0.33.1 · Build 45 — 2026-10-01
 
 - Fixed a CAD TRIM modifier-state regression where a stale internal Shift state could make a normal Polyline TRIM click execute the temporary EXTEND path instead, producing `해당 방향에서 연장할 경계를 찾지 못했습니다.` even though Shift was not held.

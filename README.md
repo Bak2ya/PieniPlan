@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.33.1 · Build 45**
+현재 버전: **v0.34.0 · Build 46**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
@@ -57,7 +57,7 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - GRID / SNAP / ORTHO / POLAR
 - Window / Crossing Selection
 - Command Console과 명령 입력
-- LINE과 **PLINE(직선/호 혼합, 열림/닫힘)** 작성, TRIM, EXTEND, OFFSET, FILLET, BREAK, JOIN, ERASE, DIST 등 CAD식 작업 흐름
+- LINE과 **PLINE(직선/호 혼합, 열림/닫힘)** 작성, TRIM, EXTEND, BREAK, JOIN, ERASE, DIST 등 CAD식 작업 흐름
 - PLINE 작성 중 Context strip의 `직선 / 호 / 되돌리기 / 닫기`를 우클릭에서도 같은 현재-command action으로 즉시 사용
 - LINE / CIRCLE / ARC 교점 기반 정밀 Snap과 곡선·TEXT 선택
 - PPRJ schema5 기반 persistent `cadPolyline`: 하나의 owner로 저장하고 stable vertex/edge ID, LINE/ARC analytic cache, Render/Selection/Snap/GeometryQuery를 공유하며 PLINE으로 직접 작성
@@ -65,7 +65,7 @@ DXF geometry와 Layer를 직접 다루는 정밀 작업 모드입니다.
 - Metric / Imperial 입력·표시 구조
 - Plan Overlay와 외부 Reference를 CAD 원본과 분리해 안전하게 취급
 
-PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. **BREAK는 cadLine뿐 아니라 persistent Polyline도 지원**하며, 잘라내고 남은 조각의 기존 vertex/edge ID는 가능한 범위에서 유지하고 새로 생긴 경계/추가 owner에만 새 ID를 부여합니다. **EXTEND는 열린 Polyline의 첫/마지막 terminal segment를 지원하며 직선과 ARC 모두 같은 owner/vertex/edge ID를 유지한 채 가장 가까운 유효 경계까지 연장**합니다. 닫힌 Polyline과 내부 segment는 임의 endpoint를 추측하지 않고 거부합니다. **TRIM은 클릭한 Polyline edge를 local trim domain으로 사용해 교차 경계 사이의 구간을 preview 후 제거하며, 직선/ARC edge와 open/closed owner topology를 처리합니다.** 유지되는 기존 vertex/edge ID는 가능한 범위에서 보존하고 새 절단 경계와 추가 owner에만 새 ID를 부여합니다. Polyline의 JOIN/OFFSET/FILLET은 다음 topology gate에서 단계적으로 확장합니다.
+PieniPlan은 AutoCAD 전체를 복제하려는 프로젝트가 아닙니다. 목표는 **2D 건축 평면 작업에 필요한 기능을 익숙하고 예측 가능한 방식으로 제공하는 것**입니다. 일부 Modify 명령은 현재 검증된 형상 조합부터 단계적으로 확장하고 있습니다. 현재 PLINE은 **연속 직선, 3점 방식 ARC 구간, 열림/닫힘, 되돌리기, 좌표 입력, preview, 전체 owner 선택·이동·복제·90° 회전·반전, Undo/Redo, PPRJ 저장/재열기**까지 지원합니다. **BREAK는 cadLine뿐 아니라 persistent Polyline도 지원**하며, 잘라내고 남은 조각의 기존 vertex/edge ID는 가능한 범위에서 유지하고 새로 생긴 경계/추가 owner에만 새 ID를 부여합니다. **EXTEND는 열린 Polyline의 첫/마지막 terminal segment를 지원하며 직선과 ARC 모두 같은 owner/vertex/edge ID를 유지한 채 가장 가까운 유효 경계까지 연장**합니다. 닫힌 Polyline과 내부 segment는 임의 endpoint를 추측하지 않고 거부합니다. **TRIM은 클릭한 Polyline edge를 local trim domain으로 사용해 교차 경계 사이의 구간을 preview 후 제거하며, 직선/ARC edge와 open/closed owner topology를 처리합니다.** 유지되는 기존 vertex/edge ID는 가능한 범위에서 보존하고 새 절단 경계와 추가 owner에만 새 ID를 부여합니다. **JOIN은 끝점이 정확히 맞닿은 두 개의 열린 persistent Polyline을 하나의 owner로 결합**하며, 첫 owner와 공유 junction vertex를 survivor로 두고 나머지 기존 vertex/edge ID와 ARC bulge를 보존합니다. 서로 다른 레이어/표현/메타데이터, 닫힌 Polyline, gap 연결, 자동 Close는 이번 단계에서 거부합니다. Polyline의 OFFSET/FILLET은 다음 topology gate에서 단계적으로 확장합니다.
 
 ---
 
