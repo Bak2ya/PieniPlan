@@ -158,14 +158,13 @@
       <div class="start-brand"><img class="start-brand-logo" src="assets/pieniplan-icon-192.png" alt="" aria-hidden="true" /><span>PieniPlan</span></div>
       <div class="start-subtitle">Small Web Floor Plan Editor</div>
       <h1 id="startTitle" data-i18n="start.title">One drawing. Choose the tools you need.</h1>
-      <p class="start-intro" data-i18n="start.intro">Both paths use the same real-world coordinates and can end as the same DXF. You can switch tools later without starting over.</p>
+      <p class="start-intro" data-i18n="start.intro">This choice only selects the first toolbox. Plan Mode and CAD Mode use the same drawing and real-world coordinates, and you can switch at any time.</p>
 
       <div class="start-cards start-primary-cards">
         <button id="startPlanBtn" class="start-card plan-card">
           <span class="start-card-icon ui-icon icon-house" aria-hidden="true"></span>
           <span class="start-card-heading">
             <strong class="start-card-mode">Plan Mode</strong>
-            <span class="start-card-separator" aria-hidden="true">·</span>
             <span class="start-card-title" data-i18n="start.planTitle">Quick floor plan</span>
           </span>
           <span class="start-card-copy" data-i18n="start.planCopy">Draw walls, place doors and windows, and enter real dimensions directly. Use CAD detail only when you need it.</span>
@@ -176,7 +175,6 @@
           <span class="start-card-icon ui-icon icon-pen-ruler" aria-hidden="true"></span>
           <span class="start-card-heading">
             <strong class="start-card-mode">CAD Mode</strong>
-            <span class="start-card-separator" aria-hidden="true">·</span>
             <span class="start-card-title" data-i18n="start.cadTitle">DXF drawing</span>
           </span>
           <span class="start-card-copy" data-i18n="start.cadCopy">Open or draw DXF geometry and refine it with layers, snaps and precise editing tools. Command input is available too.</span>
@@ -190,19 +188,33 @@
             <span class="start-support-icon ui-icon icon-folder" aria-hidden="true"></span>
             <strong id="startContinueHeading" data-i18n="start.continueHeading">Continue</strong>
           </div>
-          <button id="continueWorkBtn" class="continue-work-card">
-            <span class="continue-work-main">
-              <span class="continue-work-kicker" data-i18n="start.continueKicker">Current drawing</span>
-              <strong data-i18n="start.continueTitle">Continue current drawing</strong>
-              <span id="continueWorkDetail" class="continue-work-detail"></span>
+
+          <button id="startOpenProjectBtn" class="start-continue-row">
+            <span class="start-continue-main">
+              <strong data-i18n="start.openProjectPprj">Open Project (.pprj)</strong>
+              <span data-i18n="start.openProjectCopy">Open a saved PieniPlan project file.</span>
             </span>
-            <span class="continue-work-action" data-i18n="start.continueAction">Continue →</span>
+            <span class="start-row-action" data-i18n="start.loadAction">Open →</span>
           </button>
-          <div class="start-support-actions">
-            <button id="startOpenProjectBtn" class="toolbar-button" data-i18n="start.openProjectPprj">Open Project (PPRJ)</button>
-            <button id="startOpenPackageBtn" class="toolbar-button" data-i18n="start.openPackagePpkg">Open Plan Package (PPKG)</button>
-          </div>
-          <p class="start-storage-note" data-i18n="start.continueDataNote">Deleting this site's browser data can remove browser-saved drawings and recovery data. Keep important work as a PPRJ file.</p>
+
+          <button id="startOpenPackageBtn" class="start-continue-row">
+            <span class="start-continue-main">
+              <strong data-i18n="start.openPackagePpkg">Open Plan Package (.ppkg)</strong>
+              <span data-i18n="start.openPackageCopy">Open a Plan Mode package containing one or more buildings.</span>
+            </span>
+            <span class="start-row-action" data-i18n="start.loadAction">Open →</span>
+          </button>
+
+          <button id="continueWorkBtn" class="start-continue-row continue-work-card">
+            <span class="continue-work-top">
+              <span class="start-continue-main">
+                <strong data-i18n="start.continueTitle">Continue current drawing</strong>
+                <span id="continueWorkDetail" class="continue-work-detail"></span>
+              </span>
+              <span id="continueWorkAction" class="start-row-action continue-work-action"></span>
+            </span>
+            <span class="start-storage-note" data-i18n="start.continueDataNote">Deleting this site's browser data can remove browser-saved drawings and recovery data. Keep important work as a .pprj file.</span>
+          </button>
         </section>
 
         <section class="start-support-card start-tools-card" aria-labelledby="startToolsHeading">
@@ -215,11 +227,17 @@
             <span class="start-tool-copy"><strong data-i18n="start.mergePlans">Merge Plans</strong><span data-i18n="start.mergePlansCopy">Combine multiple Plan packages into one organized project.</span></span>
             <span class="start-tool-arrow" aria-hidden="true">→</span>
           </button>
-          <a class="start-tool-row start-dwg-tool" href="https://bak2ya.github.io/DWGtoDXF/" target="_blank" rel="noopener noreferrer">
-            <span class="start-dwg-badge" aria-hidden="true"><span>DWG</span><span>DXF</span></span>
+          <div class="start-tool-row start-dwg-tool">
+            <span class="start-dwg-icon-wrap" aria-hidden="true">
+              <span class="start-dwg-badge"><span>DWG</span><span>DXF</span></span>
+              <img class="start-dwg-icon" src="https://bak2ya.github.io/DWGtoDXF/assets/icon-192.png" alt="" onerror="this.hidden=true" />
+            </span>
             <span class="start-tool-copy"><strong>DWG2DXF</strong><span data-i18n="start.dwgToolCopy">Convert a DWG to DXF before bringing it into PieniPlan.</span></span>
-            <span class="start-tool-arrow" aria-hidden="true">↗</span>
-          </a>
+            <span class="start-dwg-actions">
+              <a href="https://bak2ya.github.io/DWGtoDXF/" target="_blank" rel="noopener noreferrer" data-i18n="start.dwgOpen">Open ↗</a>
+              <a href="https://github.com/Bak2ya/DWGtoDXF" target="_blank" rel="noopener noreferrer" data-i18n="start.dwgGithub">View on GitHub ↗</a>
+            </span>
+          </div>
         </section>
       </div>
 
@@ -227,7 +245,6 @@
         <span data-i18n="start.samplePrompt">New to PieniPlan?</span>
         <button id="startSampleBtn" class="toolbar-button" data-i18n="start.sample">Open sample and look around</button>
       </div>
-      <div class="start-note" data-i18n="start.note">This choice only selects the first toolbox. It does not lock the project into a separate format.</div>
       <div id="startVersion" class="start-version" aria-label="PieniPlan version"></div>
     </div>
   </section>

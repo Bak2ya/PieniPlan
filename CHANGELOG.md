@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.43.1 · Build 59 — 2026-10-02
+
+- Feature Freeze를 유지한 **시작화면 polish PATCH**입니다. 기능·geometry·storage/schema 계약은 변경하지 않았습니다.
+- 시작화면의 최대 폭을 줄여 넓은 화면에서도 핵심 선택지가 한 덩어리로 읽히게 했고, `Plan Mode` / `CAD Mode` 이름을 더 큰 주 제목으로 올려 두 작업공간의 위계를 강화했습니다.
+- 상단 설명을 `여기서 고르는 것은 첫 공구함뿐입니다` 메시지로 통합하고, 하단의 중복 안내 문구를 제거했습니다.
+- `이어하기` 안의 `프로젝트 열기 (.pprj)` / `플랜 패키지 열기 (.ppkg)` / `현재 도면 계속하기`를 같은 row 문법으로 통일했습니다. 현재 도면만 accent surface로 강조하며, 파일명과 browser-saved/current-work action을 상태에 맞게 표시합니다. 사이트 데이터 삭제 안내는 현재 도면 카드 안으로 이동했습니다.
+- `플랜 패키지 열기` 설명에 단일 건물 또는 여러 건물이 포함될 수 있음을 명시했습니다.
+- `DWG2DXF`는 실제 웹앱의 `icon-192.png`를 사용하고 `DWG2DXF 열기`와 `GitHub에서 보기`를 분리했습니다. 네트워크에서 아이콘을 불러오지 못하면 기존 DWG/DXF badge가 fallback으로 남습니다.
+- 시작 카드/이어하기/추가 도구 hover를 위치 이동 없이 background/border/shadow가 약 170ms로 자연스럽게 스며드는 방식으로 통일했고 `prefers-reduced-motion`을 존중합니다.
+- Verification: Build59 start-screen Chromium **21/21 PASS**, Final Feature Fill **13/13**, CAD Core2 **16/16**, Stage4 **10/10**, Legacy **21/21**, Annotation/Reference **12/12**. JS syntax **34/34**, i18n EN/KO **920/920**, local refs **41/41**, 테스트 대상 page/console error 0. 오프라인 자동화에서는 외부 DWG2DXF icon request를 stub하고 URL/구조를 별도로 검증했습니다.
+
 ## v0.43.0 · Build 58 — 2026-10-02
 
 - Feature Freeze 전 **Final Feature Fill**을 완료했습니다. CAD Draw에 `REC/RECTANG/RECTANGLE`, `C/CIRCLE`, `A/ARC`를 정식 authoring command로 열어 Rectangle, analytic Circle, standalone analytic Arc를 직접 작성할 수 있습니다.

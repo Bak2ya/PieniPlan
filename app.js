@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.43.0';
-  const BUILD = 58;
+  const VERSION = '0.43.1';
+  const BUILD = 59;
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
   const PROJECT_CAPABILITIES = ()=>[modules.cadPolyline.capability,'cad.annotation.v2','reference.pdf.v1'];
@@ -29,7 +29,7 @@
 
   const dom = {
     appShell: $('appShell'), contextBar: $('contextBar'), startScreen: $('startScreen'), startPlanBtn: $('startPlanBtn'), startCadBtn: $('startCadBtn'), startSampleBtn: $('startSampleBtn'), startOpenProjectBtn: $('startOpenProjectBtn'), startOpenPackageBtn: $('startOpenPackageBtn'), startMergePlanBtn: $('startMergePlanBtn'), documentStatus: $('documentStatus'), mobileViewerBadge: $('mobileViewerBadge'),
-    continueWorkBtn: $('continueWorkBtn'), continueWorkDetail: $('continueWorkDetail'), backBtn: $('backBtn'), homeBtn: $('homeBtn'), appearanceBtn: $('appearanceBtn'), startAppearanceBtn: $('startAppearanceBtn'), appearanceMenu: $('appearanceMenu'), documentTitle: $('documentTitle'), documentDirtyDot: $('documentDirtyDot'),
+    continueWorkBtn: $('continueWorkBtn'), continueWorkDetail: $('continueWorkDetail'), continueWorkAction: $('continueWorkAction'), backBtn: $('backBtn'), homeBtn: $('homeBtn'), appearanceBtn: $('appearanceBtn'), startAppearanceBtn: $('startAppearanceBtn'), appearanceMenu: $('appearanceMenu'), documentTitle: $('documentTitle'), documentDirtyDot: $('documentDirtyDot'),
     viewMenuBtn: $('viewMenuBtn'), fileMenuBtn: $('fileMenuBtn'), settingsMenuBtn: $('settingsMenuBtn'), viewMenu: $('viewMenu'), fileMenu: $('fileMenu'), settingsMenu: $('settingsMenu'), openSettingsAction: $('openSettingsAction'),
     viewFitAction: $('viewFitAction'), viewAllAction: $('viewAllAction'), fileNewAction: $('fileNewAction'), fileOpenProjectAction: $('fileOpenProjectAction'), fileSaveProjectAction: $('fileSaveProjectAction'), fileDownloadProjectAction: $('fileDownloadProjectAction'), fileExportPlanPackageAction: $('fileExportPlanPackageAction'), fileImportPlanPackageAction: $('fileImportPlanPackageAction'), fileOpenDxfAction: $('fileOpenDxfAction'), fileExportDxfAction: $('fileExportDxfAction'), fileSheetPdfAction: $('fileSheetPdfAction'), helpBtn: $('helpBtn'), aboutBtn: $('aboutBtn'), helpBackdrop: $('helpBackdrop'), aboutBackdrop: $('aboutBackdrop'), helpCloseBtn: $('helpCloseBtn'), aboutCloseBtn: $('aboutCloseBtn'), helpContent: $('helpContent'), aboutVersion: $('aboutVersion'),
     planToolsBtn: $('planToolsBtn'), cadToolsBtn: $('cadToolsBtn'), toolRail: $('toolRail'), toolPopover: $('toolPopover'),
@@ -562,7 +562,7 @@
     closeTopMenus();
   }
   function closeSettingsDialog(){if(dom.settingsBackdrop)dom.settingsBackdrop.hidden=true;}
-  function applyLanguagePreference(value){const next=i18n.setLanguage?.(value)||value;try{localStorage.setItem(LANGUAGE_STORAGE_KEY,next);}catch(_){}renderToolRail();updateEmptyState();updateAll();if(!dom.settingsBackdrop?.hidden)openSettingsDialog();}
+  function applyLanguagePreference(value){const next=i18n.setLanguage?.(value)||value;try{localStorage.setItem(LANGUAGE_STORAGE_KEY,next);}catch(_){}renderToolRail();updateEmptyState();updateAll();updateContinueCard();if(!dom.settingsBackdrop?.hidden)openSettingsDialog();}
 
   function isCompactViewer() {
     return window.matchMedia?.('(max-width: 720px)').matches === true;
@@ -804,16 +804,18 @@
     const current = hasCurrentWork();
     const local = !current && state.browserSavedMeta;
     const available = current || Boolean(local);
+    const browserSaved = Boolean(local || state.projectLocalKey === LOCAL_PROJECT_KEY);
     dom.continueWorkBtn.hidden = false;
     dom.continueWorkBtn.disabled = !available;
     dom.continueWorkBtn.dataset.empty = available ? 'false' : 'true';
-    if(!available){dom.continueWorkDetail.textContent=t('start.continueEmpty');return;}
-    if(local){dom.continueWorkDetail.textContent=t('start.continueLocalDetail',{name:local.name||'PieniPlan.pprj'});return;}
-    dom.continueWorkDetail.textContent = t('start.continueDetail', {
-      toolset: t(state.toolset === 'plan' ? 'value.planTools' : 'value.cadTools'),
-      objects: state.objects.length,
-      references: state.references.length
-    });
+    if(!available){
+      dom.continueWorkDetail.textContent=t('start.continueEmpty');
+      dom.continueWorkAction.textContent='';
+      return;
+    }
+    const name = local?.name || state.projectFileName || `${projectBaseName()}.pprj`;
+    dom.continueWorkDetail.textContent = name;
+    dom.continueWorkAction.textContent = t(browserSaved ? 'start.continueBrowserAction' : 'start.continueAction');
   }
 
   function writeRoute(view, toolset, mode = 'push') {
