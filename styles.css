@@ -283,7 +283,7 @@ button:disabled { opacity:.42; cursor:default; }
 .start-subtitle { text-align:center; margin-top:5px; color:var(--text-3); font-size:11px; }
 .start-panel h1 { margin:28px 0 8px; text-align:center; font-size:25px; line-height:1.2; letter-spacing:-.015em; }
 .start-intro { max-width:760px; margin:0 auto 22px; text-align:center; color:var(--text-2); font-size:12.5px; line-height:1.65; }
-.start-cards,.start-support-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.start-cards,.start-support-sections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
 .start-card { position:relative; min-height:200px; padding:20px 22px; border:1px solid var(--border-strong); border-radius:15px; background-color:color-mix(in srgb,var(--surface-2) 92%,transparent); color:var(--text); cursor:pointer; text-align:left; display:flex; flex-direction:column; align-items:flex-start; box-shadow:0 16px 42px rgba(0,0,0,.18); transition:transform .18s cubic-bezier(.2,.75,.25,1),background-color .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease; }
 .start-card:hover { transform:translateY(-2px); background-color:var(--surface-2); box-shadow:0 20px 48px rgba(0,0,0,.25); }
 .start-card.plan-card:hover { border-color:color-mix(in srgb,var(--plan-accent) 58%,var(--border)); }
@@ -293,14 +293,13 @@ button:disabled { opacity:.42; cursor:default; }
 .start-card-title { color:var(--text-2); font-size:13.5px; font-weight:650; }
 .start-card-copy { color:var(--text-2); font-size:12px; line-height:1.65; margin-top:13px; max-width:94%; }
 .start-card-action { align-self:flex-end; margin-top:auto; padding-top:20px; font-size:11px; font-weight:680; color:var(--text); }
-.start-support-cards { margin-top:14px; }
-.start-support-card { min-height:188px; padding:16px; border:1px solid var(--border); border-radius:13px; background:color-mix(in srgb,var(--surface-1) 82%,transparent); display:flex; flex-direction:column; gap:9px; }
-.start-support-heading { display:flex; align-items:center; gap:8px; min-height:24px; margin-bottom:2px; }
+.start-support-sections { margin-top:16px; align-items:start; }
+.start-support-section { min-width:0; display:flex; flex-direction:column; gap:9px; }
+.start-support-heading { display:flex; align-items:center; min-height:24px; padding:0 2px; margin-bottom:2px; }
 .start-support-heading strong { font-size:13px; font-weight:700; }
-.start-support-icon { width:17px; height:17px; color:var(--text-3); }
 
-.start-continue-row { width:100%; min-height:60px; padding:10px 11px; border:1px solid var(--border); border-radius:9px; background-color:var(--surface-2); color:var(--text); cursor:pointer; display:flex; align-items:center; gap:12px; text-align:left; transition:transform .18s cubic-bezier(.2,.75,.25,1),background-color .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease; }
-.start-continue-row:hover:not(:disabled) { transform:translateY(-2px); background-color:var(--surface-3); border-color:var(--border-strong); box-shadow:0 9px 22px rgba(0,0,0,.14); }
+.start-continue-row { width:100%; min-height:64px; padding:11px 12px; border:1px solid var(--border); border-radius:11px; background-color:color-mix(in srgb,var(--surface-2) 94%,transparent); color:var(--text); cursor:pointer; display:flex; align-items:center; gap:12px; text-align:left; box-shadow:0 7px 18px rgba(0,0,0,.08); transition:transform .18s cubic-bezier(.2,.75,.25,1),background-color .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease; }
+.start-continue-row:hover:not(:disabled) { transform:translateY(-2px); background-color:var(--surface-3); border-color:var(--border-strong); box-shadow:0 11px 26px rgba(0,0,0,.15); }
 .start-continue-main { min-width:0; flex:1; display:flex; flex-direction:column; gap:3px; }
 .start-continue-main strong { font-size:12.5px; font-weight:680; }
 .start-continue-main > span { color:var(--text-3); font-size:9.8px; line-height:1.4; }
@@ -315,21 +314,18 @@ button:disabled { opacity:.42; cursor:default; }
 .start-storage-note { display:block; width:100%; color:var(--text-3); font-size:9.2px; line-height:1.45; }
 
 .start-tools-card { gap:9px; }
-.start-tool-row { width:100%; min-height:60px; border:1px solid var(--border); border-radius:9px; background-color:var(--surface-2); color:var(--text); padding:9px 10px; display:flex; align-items:center; gap:10px; text-align:left; text-decoration:none; cursor:pointer; transition:transform .18s cubic-bezier(.2,.75,.25,1),background-color .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease; }
-.start-tool-row:hover { transform:translateY(-2px); background-color:var(--surface-3); border-color:var(--border-strong); box-shadow:0 9px 22px rgba(0,0,0,.14); }
+.start-tool-row { width:100%; min-height:64px; border:1px solid var(--border); border-radius:11px; background-color:color-mix(in srgb,var(--surface-2) 94%,transparent); color:var(--text); padding:10px 11px; display:flex; align-items:center; gap:10px; text-align:left; text-decoration:none; cursor:pointer; box-shadow:0 7px 18px rgba(0,0,0,.08); transition:transform .18s cubic-bezier(.2,.75,.25,1),background-color .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease; }
+.start-tool-row:hover { transform:translateY(-2px); background-color:var(--surface-3); border-color:var(--border-strong); box-shadow:0 11px 26px rgba(0,0,0,.15); }
 .start-tool-icon { width:20px; height:20px; flex:none; color:var(--text-2); }
 .start-tool-copy { min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
 .start-tool-copy strong { font-size:11.5px; }
 .start-tool-copy span { color:var(--text-3); font-size:9.5px; line-height:1.4; }
 .start-tool-arrow { flex:none; color:var(--text-3); font-size:12px; }
-.start-dwg-tool { cursor:default; background-color:color-mix(in srgb,var(--accent) 8%,var(--surface-2)); border-color:color-mix(in srgb,var(--accent) 30%,var(--border)); }
+.start-dwg-tool { background-color:color-mix(in srgb,var(--accent) 8%,var(--surface-2)); border-color:color-mix(in srgb,var(--accent) 30%,var(--border)); }
 .start-dwg-tool:hover { border-color:color-mix(in srgb,var(--accent) 55%,var(--border)); background-color:color-mix(in srgb,var(--accent) 12%,var(--surface-3)); }
 .start-dwg-icon-wrap { position:relative; width:34px; height:34px; flex:none; }
 .start-dwg-badge { position:absolute; inset:0; border:1px solid color-mix(in srgb,var(--accent) 58%,var(--border)); border-radius:8px; display:grid; place-content:center; gap:0; color:var(--accent); font-size:7.5px; font-weight:760; line-height:1.05; letter-spacing:.04em; text-align:center; }
 .start-dwg-icon { position:absolute; inset:0; width:34px; height:34px; border-radius:8px; object-fit:cover; }
-.start-dwg-actions { flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
-.start-dwg-actions a { color:var(--text-2); font-size:9.5px; font-weight:650; text-decoration:none; white-space:nowrap; transition:color .17s ease; }
-.start-dwg-actions a:hover { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
 .start-sample-row { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px; color:var(--text-3); font-size:10px; }
 .start-version { text-align:center; margin-top:9px; color:var(--text-3); font-size:9.5px; font-variant-numeric:tabular-nums; opacity:.82; }
 
@@ -337,7 +333,6 @@ button:disabled { opacity:.42; cursor:default; }
   .start-card,
   .start-continue-row,
   .start-tool-row,
-  .start-dwg-actions a { transition:none; }
   .start-card:hover,
   .start-continue-row:hover:not(:disabled),
   .start-tool-row:hover { transform:none; }
@@ -382,9 +377,8 @@ button:disabled { opacity:.42; cursor:default; }
   .contextbar { padding-left:70px; }
   .statusbar, .commandbar { padding-left:68px; }
   .topbar-actions-left #fitBtn { display:none; }
-  .start-cards, .start-support-cards { grid-template-columns:1fr; }
+  .start-cards, .start-support-sections { grid-template-columns:1fr; }
   .start-card { min-height:190px; }
-  .start-support-card { min-height:auto; }
 }
 
 @media (max-width: 650px) {
@@ -491,7 +485,6 @@ button:disabled { opacity:.42; cursor:default; }
   .continue-work-top { align-items:flex-start; }
   .start-row-action { padding-top:1px; }
   .start-dwg-tool { flex-wrap:wrap; }
-  .start-dwg-actions { width:100%; flex-direction:row; justify-content:flex-end; gap:10px; padding-left:44px; }
   .appearance-menu { width:min(270px,calc(100vw - 20px)); }
 }
 

@@ -180,10 +180,9 @@
         </button>
       </div>
 
-      <div class="start-support-cards">
-        <section class="start-support-card start-continue-card" aria-labelledby="startContinueHeading">
+      <div class="start-support-sections">
+        <section class="start-support-section start-continue-card" aria-labelledby="startContinueHeading">
           <div class="start-support-heading">
-            <span class="start-support-icon ui-icon icon-folder" aria-hidden="true"></span>
             <strong id="startContinueHeading" data-i18n="start.continueHeading">Continue</strong>
           </div>
 
@@ -215,9 +214,8 @@
           </button>
         </section>
 
-        <section class="start-support-card start-tools-card" aria-labelledby="startToolsHeading">
+        <section class="start-support-section start-tools-card" aria-labelledby="startToolsHeading">
           <div class="start-support-heading">
-            <span class="start-support-icon ui-icon icon-modify" aria-hidden="true"></span>
             <strong id="startToolsHeading" data-i18n="start.toolsHeading">Additional tools</strong>
           </div>
           <button id="startMergePlanBtn" class="start-tool-row">
@@ -225,17 +223,14 @@
             <span class="start-tool-copy"><strong data-i18n="start.mergePlans">Merge Plans</strong><span data-i18n="start.mergePlansCopy">Combine multiple Plan packages into one organized project.</span></span>
             <span class="start-tool-arrow" aria-hidden="true">→</span>
           </button>
-          <div class="start-tool-row start-dwg-tool">
+          <a id="startDwgTool" class="start-tool-row start-dwg-tool" href="https://bak2ya.github.io/DWGtoDXF/" target="_blank" rel="noopener noreferrer">
             <span class="start-dwg-icon-wrap" aria-hidden="true">
               <span class="start-dwg-badge"><span>DWG</span><span>DXF</span></span>
               <img class="start-dwg-icon" src="https://bak2ya.github.io/DWGtoDXF/assets/icon-192.png" alt="" onerror="this.hidden=true" />
             </span>
             <span class="start-tool-copy"><strong>DWG2DXF</strong><span data-i18n="start.dwgToolCopy">Convert a DWG to DXF before bringing it into PieniPlan.</span></span>
-            <span class="start-dwg-actions">
-              <a href="https://bak2ya.github.io/DWGtoDXF/" target="_blank" rel="noopener noreferrer" data-i18n="start.dwgOpen">Open ↗</a>
-              <a href="https://github.com/Bak2ya/DWGtoDXF" target="_blank" rel="noopener noreferrer" data-i18n="start.dwgGithub">View on GitHub ↗</a>
-            </span>
-          </div>
+            <span class="start-tool-arrow" aria-hidden="true">↗</span>
+          </a>
         </section>
       </div>
 
@@ -249,6 +244,7 @@
 
   <div id="viewMenu" class="top-menu" role="menu" hidden>
     <button id="viewFitAction" class="menu-row" data-i18n="action.fit">Fit</button>
+    <button id="viewRegionAction" class="menu-row" data-i18n="action.fitDrawingRegion" hidden>Fit drawing region</button>
     <button id="viewAllAction" class="menu-row" data-i18n="action.fitAllEntities">All extents</button>
   </div>
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.44.0 · Build 61 — 2026-10-02
+
+- 사용자 실사용 요청에 따라 **도면 영역 맞춤**을 Plan/CAD 공통 View 기능으로 추가했습니다. CAD에서는 현재 작업 영역, Plan에서는 현재 층에 연결된 도면 영역을 우선 사용하며, 단일 영역만 존재할 때는 그 영역을 안전한 fallback으로 사용합니다. 여러 영역이 있으나 현재 대상이 모호하면 메뉴 항목을 숨겨 잘못된 영역으로 이동하지 않습니다.
+- 도면 영역 맞춤은 영역 경계 자체만 기준으로 기존 `fitBounds` 여백 규칙을 사용하므로, 도면 밖에 멀리 떨어진 객체가 있어도 카메라 중심/배율에 영향을 주지 않습니다. 기존 `화면 맞춤`과 `전체 범위`는 그대로 유지합니다.
+- 시작화면의 `이어하기` / `추가 도구`에서 바깥 container-card 표면을 제거했습니다. 두 섹션은 제목만 남고, PPRJ/PPKG/current drawing/플랜 병합/DWG2DXF가 각각 독립 카드로 같은 surface level에서 보입니다.
+- `DWG2DXF`는 카드 전체가 웹앱 열기 동작을 담당합니다. PieniPlan 시작화면의 중복 GitHub 링크는 제거하고, GitHub 진입은 DWG2DXF 웹앱 내부에 맡깁니다.
+- Build60의 Plan body-drag isolation, 2px hover lift, Plan/CAD icon removal, intro wrap 수정은 그대로 유지합니다.
+- PPRJ는 schema7 그대로이며 migration/capability 변경이 없습니다. 새 사용자 기능이 추가되어 **v0.43.2 → v0.44.0 MINOR**, 새 usable artifact이므로 **Build60 → Build61**입니다.
+
 ## v0.43.2 · Build 60 — 2026-10-02
 
 - Feature Freeze를 유지한 **Plan direct-manipulation 안정화 + 시작화면 polish PATCH**입니다. PPRJ는 schema7 그대로이며 migration/capability 변경이 없습니다.
