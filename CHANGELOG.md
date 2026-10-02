@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.41.0 · Build 55 — 2026-10-02
+
+- CAD Core 2 feature-fill: 일반 CAD source 객체에 selection-first `MOVE (M)`, `COPY (CO)`, `ROTATE (RO)`, `MIRROR (MI)`, uniform `SCALE (SC)`를 추가했습니다. 기존 Drawing Region 회전은 `RR / REGIONROTATE`로 분리해 보존합니다.
+- `STRETCH (S)` crossing/control-point 편집, rectangular `ARRAY (AR)`, 2-point `ALIGN (AL)`(+ 선택적 uniform scale)을 추가했습니다.
+- `CHAMFER (CH)`를 primitive LINE↔LINE 및 persistent PLINE 내부 인접 LINE↔LINE 코너에 추가했습니다. PLINE owner/source edge identity는 가능한 범위에서 유지하며 새 bevel topology에만 fresh ID를 부여합니다.
+- CAD selection에 Previous / Last / Select Similar command, Option/Alt-click overlap cycling을 추가했습니다.
+- persistent PLINE 선택 시 vertex grip을 표시하고 각 vertex를 직접 drag 편집할 수 있게 했습니다. 500 vertex를 넘는 owner는 화면 grip 폭증을 피하기 위해 개별 grip 표시를 생략합니다.
+- transform은 LINE/CIRCLE/ARC/TEXT/DIMENSION/HATCH/persistent PLINE의 analytic geometry를 유지하며, non-uniform scale/ellipse 변환은 이번 범위에 포함하지 않습니다.
+- Verification: CAD Core 2 focused Chromium **16/16 PASS**, inherited Stage4 **10/10**, legacy geometry/Polyline **21/21**, pure Core 2 **8/8**, Polyline Modify core **11/11**, static JS **32/32**, i18n EN/KO **826/826**, local refs **39/39**.
+
 ## v0.40.0 · Build 54 — 2026-10-02
 
 - Annotation/Sheet Stage4 최소 수직 단면을 구현했습니다.

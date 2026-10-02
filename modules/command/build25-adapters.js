@@ -9,7 +9,7 @@
       create: () => ({ immediate: true, commit: () => port.undo() }) });
     registry.register({ id: 'REDO', available: cad,
       create: () => ({ immediate: true, commit: () => port.redo() }) });
-    registry.register({ id: 'RO', aliases: ['ROTATE'], available: ctx => cad(ctx) && Boolean(ctx.regionId),
+    registry.register({ id: 'RR', aliases: ['REGIONROTATE'], available: ctx => cad(ctx) && Boolean(ctx.regionId),
       transactional: true, legacyOwnsHistory: true,
       create() {
         // This ephemeral draft is also the legacy renderer projection. Its Set is a

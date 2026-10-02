@@ -26,5 +26,15 @@
   const bis=unit({x:0,y:0},{x:x.u.x+y.u.x,y:x.u.y+y.u.y}),center=add(origin,bis,radius/Math.sin(angle/2)),p=add(origin,x.u,length),q=add(origin,y.u,length),startAngle=Math.atan2(p.y-center.y,p.x-center.x)*180/Math.PI,end=Math.atan2(q.y-center.y,q.x-center.x)*180/Math.PI,sweep=((end-startAngle+540)%360)-180;
   return{before:[a,b],after:[{...a,[x.move]:p},{...b,[y.move]:q},{type:'cadArc',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center,radius,startAngle,sweep}]};
  }
- root.cadLinearOperations=Object.freeze({offset,breakLine,join,fillet});
+
+ function chamfer(a,pa,b,pb,distance){
+  if(a.type!=='cadLine'||b.type!=='cadLine'||a.id===b.id||!(distance>E))return null;
+  if(['cadLayer','color','linetype','lineweight','drawOrder'].some(k=>(a[k]??null)!==(b[k]??null)))return null;
+  const hits=G.intersections({...a,mode:'line'},{...b,mode:'line'});if(hits.length!==1)return null;const origin=hits[0];
+  const side=(e,p)=>{const t=G.parameter(e,origin),tp=G.parameter(e,p),end=tp>=t?'b':'a',far=e[end],u=unit(origin,far);return u?{far,u,move:end==='a'?'b':'a'}:null;};
+  const x=side(a,pa),y=side(b,pb);if(!x||!y||distance>=d(origin,x.far)-E||distance>=d(origin,y.far)-E)return null;
+  const p=add(origin,x.u,distance),q=add(origin,y.u,distance);if(d(p,q)<=E)return null;
+  return{before:[a,b],after:[{...a,[x.move]:p},{...b,[y.move]:q},{type:'cadLine',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,drawOrder:a.drawOrder??null,a:p,b:q}]};
+ }
+ root.cadLinearOperations=Object.freeze({offset,breakLine,join,fillet,chamfer});
 })();
