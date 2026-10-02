@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.41.1 · Build 56 — 2026-10-02
+
+- 시작화면의 정보 위계를 다시 정리했습니다. `Plan Mode · 빠른 평면도` / `CAD Mode · DXF 도면`에서 모드 이름을 주 제목으로 올리고 설명을 더 사용자 친화적으로 다듬었으며, 진입 CTA를 카드 오른쪽 아래에 정렬했습니다.
+- `현재 도면 이어하기`와 PPRJ/PPKG 열기를 하나의 **이어하기** 카드로 묶었습니다. 이어갈 작업이 없을 때도 카드 구조가 유지되고 자연스러운 empty state를 표시합니다. 브라우저 사이트 데이터 삭제 시 browser-saved project/recovery data가 사라질 수 있다는 안내를 추가했습니다.
+- `플랜 병합`과 외부 보조도구 `DWG2DXF`를 동일 크기의 **추가 도구** 카드로 묶고, DWG2DXF는 별도 변환 badge로 시각적 위계를 높였습니다.
+- `샘플 도면으로 둘러보기`를 하단의 가벼운 진입 버튼으로 이동하고, 기존 사각형 샘플을 PieniPlan 아이콘을 연상시키는 **P 형태의 실제 editable Plan 도면**(직선/곡선 벽, 문, 창, 치수)으로 교체했습니다.
+- 기능/저장 schema는 변경하지 않습니다. PPRJ schema6 + 기존 capabilities와 Build55 CAD Core 2 동작을 그대로 유지합니다.
+
 ## v0.41.0 · Build 55 — 2026-10-02
 
 - CAD Core 2 feature-fill: 일반 CAD source 객체에 selection-first `MOVE (M)`, `COPY (CO)`, `ROTATE (RO)`, `MIRROR (MI)`, uniform `SCALE (SC)`를 추가했습니다. 기존 Drawing Region 회전은 `RR / REGIONROTATE`로 분리해 보존합니다.

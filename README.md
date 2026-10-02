@@ -4,7 +4,7 @@
 
 # PieniPlan
 
-현재 버전: **v0.41.0 · Build 55**
+현재 버전: **v0.41.1 · Build 56**
 
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**

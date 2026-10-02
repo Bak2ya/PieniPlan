@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.41.0';
-  const BUILD = 55;
+  const VERSION = '0.41.1';
+  const BUILD = 56;
   const INTERNAL_UNIT = 'mm';
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
@@ -770,9 +770,11 @@
   function updateContinueCard() {
     const current = hasCurrentWork();
     const local = !current && state.browserSavedMeta;
-    const show = current || Boolean(local);
-    dom.continueWorkBtn.hidden = !show;
-    if (!show) return;
+    const available = current || Boolean(local);
+    dom.continueWorkBtn.hidden = false;
+    dom.continueWorkBtn.disabled = !available;
+    dom.continueWorkBtn.dataset.empty = available ? 'false' : 'true';
+    if(!available){dom.continueWorkDetail.textContent=t('start.continueEmpty');return;}
     if(local){dom.continueWorkDetail.textContent=t('start.continueLocalDetail',{name:local.name||'PieniPlan.pprj'});return;}
     dom.continueWorkDetail.textContent = t('start.continueDetail', {
       toolset: t(state.toolset === 'plan' ? 'value.planTools' : 'value.cadTools'),
@@ -3744,7 +3746,25 @@
 
   function resetProject(){cadCommandSession?.cancel('new-project');if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.selectedRegionId=null;state.wallRecognitionPreview=null;state.curveReconstruction=null;state.annotationDraft=null;state.spaceGapDiagnostic=null;state.expandedFloorIds=new Set();state.selectedReferenceId=null;state.selectedObjectId=null;state.selectedObjectIds.clear();state.previousCadSelectionIds=new Set();state.lastCadObjectId=null;state.overlapCycle=null;state.selectionDrag=null;state.hoveredObjectId=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.editLog=[];state.activeCommand=null;state.spaceHoverPreview=null;state.cadWorkRegionId=null;state.cadPlanOverlay=false;state.nextId=1;state.camera={cx:0,cy:0,zoom:.12};state.cadMapping=null;state.cadLayerVisibility=new Map([['0',true]]);state.cadRegionLayerVisibility=new Map();state.cadLayerDefinitions=new Map([['0',cadLayersModule.defaults('0')]]);state.activeCadLayer='0';state.unitSystem=safeReadDefaultUnit();state.sheets=[];state.sourceDxfName=null;state.sourceDxfFingerprint=null;state.sourceDxfSize=0;state.sourceDxfLastModified=0;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.projectId=stableId('project');state.projectFileName=null;state.projectFileHandle=null;state.projectLocalKey=null;state.recognitionHistory=[];state.buildings=[{id:'building_1',name:t('building.defaultName'),order:0}];state.activeBuildingId='building_1';state.floors=[{id:'floor_1',name:'1F',sourceRegionId:null,discipline:'architectural',buildingId:'building_1',order:0}];state.expandedBuildingIds=new Set(['building_1']);state.expandedFloorIds=new Set();state.buildingOrderEditing=false;state.floorOrderEditing=false;state.floorOrderEditingBuildingId=null;state.activeFloorId='floor_1';state.dirty=false;initializeCadServices({newDocument:true});rebuildObjectSnapIndex({touch:false});setTool('select',state.toolset==='plan'?'plan':'select');updateAll();}
 
-  function createSample(){cadCommandSession?.cancel('sample');if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.buildings=[{id:'building_1',name:defaultBuildingName(0),order:0}];state.activeBuildingId='building_1';state.floors=[{id:'floor_1',name:'1F',sourceRegionId:null,discipline:'architectural',buildingId:'building_1',order:0}];state.activeFloorId='floor_1';state.expandedBuildingIds=new Set(['building_1']);state.expandedFloorIds=new Set();state.buildingOrderEditing=false;state.floorOrderEditing=false;state.floorOrderEditingBuildingId=null;state.unitSystem=safeReadDefaultUnit();state.selectedRegionId=null;state.wallRecognitionPreview=null;state.curveReconstruction=null;state.selectedObjectIds.clear();state.previousCadSelectionIds=new Set();state.lastCadObjectId=null;state.overlapCycle=null;state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.editLog=[];state.activeCommand=null;state.spaceHoverPreview=null;state.cadWorkRegionId=null;state.cadPlanOverlay=false;state.nextId=1;const wall=(a,b,th=150)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',floorId:state.activeFloorId,a,b,thickness:th,geometry:'straight',attachments:{}};state.objects.push(o);return o;};const outer=[wall({x:0,y:0},{x:8000,y:0},180),wall({x:8000,y:0},{x:8000,y:6000},180),wall({x:8000,y:6000},{x:0,y:6000},180),wall({x:0,y:6000},{x:0,y:0},180)];const innerV=wall({x:4200,y:0},{x:4200,y:6000},150),innerH=wall({x:0,y:3100},{x:4200,y:3100},150);attachWallEndpoint(innerV,'a');attachWallEndpoint(innerV,'b');attachWallEndpoint(innerH,'a');attachWallEndpoint(innerH,'b');state.objects.push({id:uid('door'),type:'door',layerId:'doors',floorId:state.activeFloorId,wallId:innerV.id,t:.48,width:900,doorType:'hingedSingle',hinge:'start',swing:1,slideDirection:1},{id:uid('window'),type:'window',layerId:'windows',floorId:state.activeFloorId,wallId:outer[2].id,t:.7,width:1600},{id:uid('window'),type:'window',layerId:'windows',floorId:state.activeFloorId,wallId:outer[0].id,t:.25,width:1200},{id:uid('dimension'),type:'dimension',layerId:'dimensions',floorId:state.activeFloorId,wallId:outer[0].id,t1:0,t2:1,offset:-650},{id:uid('cadLine'),type:'cadLine',cadLayer:'AXIS',a:{x:4200,y:-900},b:{x:4200,y:6900},source:'sample DXF'});state.cadLayerVisibility=new Map([['0',true],['AXIS',true]]);state.cadRegionLayerVisibility=new Map();state.cadLayerDefinitions=cadLayersModule.synthesize([{name:'0'},{name:'AXIS'}],state.objects,state.cadLayerVisibility);initializeCadServices({newDocument:true});state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.projectFileName=null;state.projectFileHandle=null;state.projectLocalKey=null;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
+  function createSample(){cadCommandSession?.cancel('sample');if(state.dirty&&!confirm(t('confirm.newDrawing')))return;state.references=[];state.objects=[];state.drawingRegions=[];state.buildings=[{id:'building_1',name:defaultBuildingName(0),order:0}];state.activeBuildingId='building_1';state.floors=[{id:'floor_1',name:'1F',sourceRegionId:null,discipline:'architectural',buildingId:'building_1',order:0}];state.activeFloorId='floor_1';state.expandedBuildingIds=new Set(['building_1']);state.expandedFloorIds=new Set();state.buildingOrderEditing=false;state.floorOrderEditing=false;state.floorOrderEditingBuildingId=null;state.unitSystem=safeReadDefaultUnit();state.selectedRegionId=null;state.wallRecognitionPreview=null;state.curveReconstruction=null;state.selectedObjectIds.clear();state.previousCadSelectionIds=new Set();state.lastCadObjectId=null;state.overlapCycle=null;state.selectionDrag=null;state.layerFilter='';state.baseAxisAngle=0;state.baseAxisWallId=null;state.history=[];state.future=[];state.editLog=[];state.activeCommand=null;state.spaceHoverPreview=null;state.cadWorkRegionId=null;state.cadPlanOverlay=false;state.nextId=1;
+    const wall=(a,b,th=180)=>{const o={id:uid('wall'),type:'wall',layerId:'walls',floorId:state.activeFloorId,a:{...a},b:{...b},thickness:th,geometry:'straight',attachments:{}};state.objects.push(o);return o;};
+    const arcWall=(a,b,control,th=180)=>{const g=circleFromThreePoints(a,b,control);if(!g)return wall(a,b,th);const o={id:uid('wall'),type:'wall',layerId:'walls',floorId:state.activeFloorId,a:{...a},b:{...b},thickness:th,geometry:'arc',...g,attachments:{}};state.objects.push(o);return o;};
+    /* Build56 sample: a real editable floor plan whose wall layout reads as the PieniPlan “P”. */
+    const left=wall({x:0,y:-5000},{x:0,y:5200},180),top=wall({x:0,y:5200},{x:1800,y:5200},180),spine=wall({x:1800,y:-5000},{x:1800,y:5200},180),bottom=wall({x:1800,y:-5000},{x:0,y:-5000},180);
+    const bowlOuter=arcWall({x:1800,y:5200},{x:1800,y:700},{x:6900,y:3000},180);
+    const bowlInner=arcWall({x:1800,y:4050},{x:1800,y:1850},{x:4700,y:2950},150);
+    const lowerRoom=wall({x:0,y:-1050},{x:1800,y:-1050},150),upperRoom=wall({x:0,y:1100},{x:1800,y:1100},150);
+    [top,bottom,lowerRoom,upperRoom].forEach(w=>{attachWallEndpoint(w,'a');attachWallEndpoint(w,'b');});
+    attachWallEndpoint(bowlOuter,'a');attachWallEndpoint(bowlOuter,'b');attachWallEndpoint(bowlInner,'a');attachWallEndpoint(bowlInner,'b');
+    state.objects.push(
+      {id:uid('door'),type:'door',layerId:'doors',floorId:state.activeFloorId,wallId:spine.id,t:.34,width:850,doorType:'hingedSingle',hinge:'start',swing:1,slideDirection:1},
+      {id:uid('door'),type:'door',layerId:'doors',floorId:state.activeFloorId,wallId:spine.id,t:.62,width:900,doorType:'hingedSingle',hinge:'end',swing:-1,slideDirection:1},
+      {id:uid('window'),type:'window',layerId:'windows',floorId:state.activeFloorId,wallId:bowlOuter.id,t:.30,width:1500},
+      {id:uid('window'),type:'window',layerId:'windows',floorId:state.activeFloorId,wallId:bowlOuter.id,t:.69,width:1500},
+      {id:uid('window'),type:'window',layerId:'windows',floorId:state.activeFloorId,wallId:left.id,t:.22,width:1200},
+      {id:uid('dimension'),type:'dimension',layerId:'dimensions',floorId:state.activeFloorId,wallId:left.id,t1:0,t2:1,offset:700}
+    );
+    state.cadLayerVisibility=new Map([['0',true]]);state.cadRegionLayerVisibility=new Map();state.cadLayerDefinitions=cadLayersModule.synthesize([{name:'0'}],state.objects,state.cadLayerVisibility);initializeCadServices({newDocument:true});state.cadMapping=null;state.sourceDxfName=null;state.sourceDxfMainBounds=null;state.sourceDxfFullBounds=null;state.sourceDxfOutlierCount=0;state.projectFileName=null;state.projectFileHandle=null;state.projectLocalKey=null;state.dirty=false;state.selectedObjectId=null;state.selectedObjectIds.clear();state.selectedReferenceId=null;rebuildObjectSnapIndex();switchToolset('plan',{skipMapping:true});updateAll();fitAll();}
 
   function commandMatches(query){return commandCore.matches(query,{plan:state.toolset==='plan'});}
   function renderCommandSuggestions(){commandConsole.renderSuggestions();}
