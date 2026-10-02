@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.43.2 · Build 60 — 2026-10-02
+
+- Feature Freeze를 유지한 **Plan direct-manipulation 안정화 + 시작화면 polish PATCH**입니다. PPRJ는 schema7 그대로이며 migration/capability 변경이 없습니다.
+- P 형태 샘플 도면에서 연결된 벽/곡선을 하나씩 몸통 drag했을 때 인접 벽의 끝점이 따라 움직이거나 늘어나면서 도형이 해체되는 실사용 회귀를 수정했습니다.
+- Plan Mode 직접 조작 문법을 명확히 분리했습니다: **벽/곡선 몸통 drag = 선택 객체만 강체 이동 + Wall-to-Wall 접합 해제**, **끝점 handle drag = persistent junction 편집**입니다. 문·창·연결 치수처럼 `wallId/t`로 host되는 의미 요소는 선택 벽과 함께 유지됩니다.
+- Shift whole-body constraint는 기존처럼 GLOBAL H/V 또는 연결선 기준 평행/수직 방향을 제공하지만, 이웃 벽 geometry를 끌고 가지 않습니다.
+- 시작화면의 hover를 background/border/shadow 변화만으로 끝내지 않고 `translateY(-2px)`을 더해 카드가 살짝 떠오르는 느낌으로 강화했습니다. Reduced Motion에서는 이동을 제거합니다.
+- Plan Mode / CAD Mode 카드 위의 작은 장식 아이콘을 제거하고 카드 높이/상단 여백을 정리했습니다. 상단 `첫 공구함` 설명 폭을 넓혀 한국어 마지막 `다.`가 단독 줄로 떨어지는 현상을 없앴습니다.
+- 공개 README를 제품 소개 중심으로 축약하고, PieniPlan의 출발점과 **Plan Mode → Facility Manager reader/추가 편집 흐름**을 핵심 관계로 다시 명시했습니다.
+- Verification: Plan body-drag focused Chromium **12/12 PASS**, start-screen **16/16**, Final Feature Fill **13/13**, CAD Core2 **16/16**, Stage4 **10/10**, Legacy **21/21**, Annotation/Reference **12/12**. Product JS syntax **34/34**, i18n EN/KO **920/920**, local refs **41/41**, 테스트 대상 page/console error 0.
+
 ## v0.43.1 · Build 59 — 2026-10-02
 
 - Feature Freeze를 유지한 **시작화면 polish PATCH**입니다. 기능·geometry·storage/schema 계약은 변경하지 않았습니다.
