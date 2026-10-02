@@ -14,7 +14,7 @@
  function onArc(e,p,tol=MODEL){if(!arc(e)||Math.abs(e.sweep||0)>=360)return true;const a=Math.atan2(p.y-e.center.y,p.x-e.center.x)*180/Math.PI,s=e.sweep||0,d=s>=0?norm(a-(e.startAngle||0)):norm((e.startAngle||0)-a),t=tol/Math.max(EPS,e.radius)*180/Math.PI;return d<=Math.abs(s)+t||360-d<=t;}
  function parameter(e,p){const d=sub(e.b,e.a),l=d.x*d.x+d.y*d.y;return l?((p.x-e.a.x)*d.x+(p.y-e.a.y)*d.y)/l:0;}
  function inLine(e,p,tol){const t=parameter(e,p),eps=tol/Math.max(EPS,dist(e.a,e.b));return e.mode==='line'||(t>=-eps&&(e.mode==='ray'||t<=1+eps));}
- function segments(e){if(line(e))return[e];if(e?.points?.length)return e.points.slice(1).map((p,i)=>({a:e.points[i],b:p})).concat(e.closed?[{a:e.points.at(-1),b:e.points[0]}]:[]);return[];}
+ function segments(e){if(line(e))return[e];if(Array.isArray(e?.segments))return e.segments;if(e?.points?.length)return e.points.slice(1).map((p,i)=>({a:e.points[i],b:p})).concat(e.closed?[{a:e.points.at(-1),b:e.points[0]}]:[]);return[];}
  function intersections(a,b,tol=MODEL,scope=null){
   if(poly(a)||poly(b)){
    if(!poly(a))return intersections(b,a,tol,scope);

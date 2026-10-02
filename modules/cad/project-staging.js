@@ -2,13 +2,13 @@
 (() => {
   'use strict';
   const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{};
-  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','cadPolyline','line','wall','door','window','dimension','space','stair','component']);
+  const supportedTypes=new Set(['cadLine','cadCircle','cadArc','cadText','cadPolyline','cadDimension','cadHatch','line','wall','door','window','dimension','space','stair','component']);
   function validate(raw){
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
-    if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>5))bad('unsupported-schema');
+    if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>6))bad('unsupported-schema');
     const caps=raw.requiredCapabilities??[];
-    if(!Array.isArray(caps)||caps.some(c=>c!==root.cadPolyline?.capability))bad('unsupported-capability');
+    if(!Array.isArray(caps)||caps.some(c=>![root.cadPolyline?.capability,'cad.annotation.v1'].includes(c)))bad('unsupported-capability');
     const d=raw.drawing,vertexIds=new Set(),edgeIds=new Set();
     for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
     const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
@@ -18,7 +18,7 @@
     for(const o of d.objects||[]){
       if(!supportedTypes.has(o.type))bad('unsupported-object-type:'+String(o.type));
       if(o.type==='cadPolyline'){
-        if(raw.schemaVersion!==5||!caps.includes(root.cadPolyline?.capability))bad('polyline-capability-required');
+        if((raw.schemaVersion??1)<5||!caps.includes(root.cadPolyline?.capability))bad('polyline-capability-required');
         root.cadPolyline.validate(o);
         for(const v of o.vertices){if(vertexIds.has(v.id))bad('duplicate-vertex-id');vertexIds.add(v.id);if(v.outgoing){if(edgeIds.has(v.outgoing.id))bad('duplicate-edge-id');edgeIds.add(v.outgoing.id);}}
       }
@@ -29,6 +29,8 @@
       if(['cadCircle','cadArc'].includes(o.type)&&(!point(o.center)||!Number.isFinite(o.radius)||o.radius<=0))bad('circle');
       if(o.type==='cadArc'&&(!Number.isFinite(o.startAngle)||!Number.isFinite(o.sweep)))bad('arc');
       if(o.type==='cadText'&&!point(o.point))bad('text');
+      if(o.type==='cadDimension'&&(!point(o.p1)||!point(o.p2)||!Number.isFinite(o.offset)))bad('cad-dimension');
+      if(o.type==='cadHatch'&&(!Array.isArray(o.points)||o.points.length<3||!o.points.every(point)))bad('cad-hatch');
       if(o.type==='component'){
         if(!point(o.point)||typeof o.assetId!=='string'||!o.assetId.trim())bad('component');
         for(const k of ['rotation','scaleX','scaleY'])if(o[k]!=null&&!Number.isFinite(o[k]))bad('component-transform');

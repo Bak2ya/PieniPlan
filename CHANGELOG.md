@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.40.0 · Build 54 — 2026-10-02
+
+- Annotation/Sheet Stage4 최소 수직 단면을 구현했습니다.
+- CAD `TEXT (T)`, 정렬 치수 `DLI/DIM`, 닫힌 PLINE 기반 `HATCH (H)` 작성 지원.
+- 주석 객체를 PPRJ schema6 / `cad.annotation.v1` capability로 저장·재열기합니다.
+- File → Sheet / PDF 및 `SHEET/PLOT/PRINT`로 현재 CAD 뷰 중심을 A3/A4, portrait/landscape, 지정 축척 시트로 저장하고 브라우저 인쇄/Save as PDF 경로를 엽니다.
+- Sheet 출력은 CAD 레이어의 printable 설정을 존중합니다.
+- Build53의 CAD L/PL Shift 45° + Base Axis 임시 제약을 포함합니다.
+- 104k 실제 프로젝트 성능 검증은 사용자 결정대로 Stabilization 단계로 보류합니다.
+
+## v0.39.0 · Build 53 — 2026-10-02
+
+- CAD `L` / `PL`에서 Shift 임시 제약을 기존 90° ORTHO 반전이 아니라 **가까운 45° 방향 계열**로 확장했습니다.
+- Base Axis가 설정되어 있으면 Shift 후보에 **Base-Axis 기준 45° 계열**도 함께 포함합니다.
+- F8 ORTHO, F10 POLAR의 persistent 상태는 그대로 유지하며 Shift는 작성 중 임시 제약으로만 작동합니다.
+- Build52 Curve Reconstruction 및 Build51 Polyline Modify 계약은 변경하지 않았습니다.
+
 ## v0.38.0 · Build 52 — 2026-10-02
 
 - Added semi-automatic **Curve Reconstruction (`CR`)** in both CAD and Plan modes. Users select curve fragments, review a live fitted-circle preview, click included fragments again to exclude them, use **Find more** to add nearby matching candidates, then explicitly commit the result.
