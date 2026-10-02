@@ -44,7 +44,8 @@
       <input id="planPackageFileInput" type="file" accept=".ppkg,application/json" hidden />
       <input id="planMergeFileInput" type="file" accept=".ppkg,application/json" multiple hidden />
       <input id="dxfEditFileInput" type="file" accept=".dxf" hidden />
-      <input id="referenceFileInput" type="file" accept=".dxf,image/*" hidden />
+      <input id="referenceFileInput" type="file" accept=".dxf,.pdf,application/pdf,image/*" hidden />
+      <input id="referenceReconnectFileInput" type="file" accept=".dxf,.pdf,application/pdf,image/*" hidden />
       <button id="newBtn" hidden></button><button id="openProjectBtn" hidden></button><button id="saveProjectBtn" hidden></button><button id="openDxfBtn" hidden></button><button id="openRefBtn" hidden></button><button id="fitBtn" hidden></button><button id="exportDxfBtn" hidden></button><button id="backBtn" hidden></button><button id="appearanceBtn" hidden></button>
     </header>
 
@@ -53,6 +54,7 @@
       <div id="toolPopover" class="tool-popover" hidden></div>
 
       <section id="canvasHost" class="canvas-host" tabindex="0" aria-label="Drawing canvas" data-i18n-aria="aria.canvas">
+        <div id="pdfReferenceLayer" class="pdf-reference-layer" aria-hidden="true"></div>
         <canvas id="drawingCanvas"></canvas>
         <div class="contextbar context-floating" id="contextBar">
           <div class="context-title-wrap">
@@ -349,6 +351,23 @@
     </div>
   </div>
 
+  <div id="annotationTextBackdrop" class="dialog-backdrop" hidden>
+    <div class="dialog annotation-text-dialog" role="dialog" aria-modal="true" aria-labelledby="annotationTextTitle">
+      <div class="dialog-title" id="annotationTextTitle" data-i18n="annotation.multilineTitle">Multiline text</div>
+      <div class="dialog-copy" id="annotationTextCopy" data-i18n="annotation.multilineCopy">Enter the note or callout text. Line breaks are kept in the drawing.</div>
+      <label class="field-label" for="annotationTextArea" data-i18n="annotation.textContent">Text</label>
+      <textarea id="annotationTextArea" class="text-input annotation-textarea" rows="6" spellcheck="true"></textarea>
+      <div class="annotation-text-options">
+        <label><span class="field-label" data-i18n="annotation.textHeight">Height (mm)</span><input id="annotationTextHeight" class="text-input" type="number" min="1" step="1" value="180" /></label>
+        <label><span class="field-label" data-i18n="annotation.textWidth">Wrap width (mm)</span><input id="annotationTextWidth" class="text-input" type="number" min="0" step="10" value="1200" /></label>
+      </div>
+      <div class="dialog-actions">
+        <button id="annotationTextCancelBtn" class="toolbar-button" data-i18n="action.cancel">Cancel</button>
+        <button id="annotationTextApplyBtn" class="toolbar-button primary" data-i18n="annotation.placeText">Place text</button>
+      </div>
+    </div>
+  </div>
+
   <div id="dialogBackdrop" class="dialog-backdrop" hidden>
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
       <div class="dialog-title" id="dialogTitle" data-i18n="dialog.calibrate">Calibrate reference</div>
@@ -543,6 +562,7 @@
   <script src="modules/command/native-matchprop.js"></script>
   <script src="modules/command/native-line.js"></script>
   <script src="modules/command/native-polyline.js"></script>
+  <script src="modules/command/native-draw.js"></script>
   <script src="modules/command/console.js"></script>
   <script src="modules/cad/geometry-query.js"></script>
   <script src="modules/cad/query-index.js"></script>
@@ -550,6 +570,7 @@
   <script src="modules/cad/linear-operations.js"></script>
   <script src="modules/cad/transform-operations.js"></script>
   <script src="modules/cad/curve-reconstruction.js"></script>
+  <script src="modules/cad/annotation2.js"></script>
   <script src="modules/components/library.js"></script>
   <script src="modules/command/native-modify.js"></script>
   <script src="modules/command/native-transform.js"></script>

@@ -18,17 +18,24 @@
   function validMatrix(m){if(!m||![m.a,m.b,m.c,m.d,m.tx,m.ty].every(finite))return false;const sx=Math.hypot(m.a,m.b),sy=Math.hypot(m.c,m.d);return sx>EPS&&sy>EPS&&Math.abs(sx-sy)<=1e-8*Math.max(sx,sy)&&Math.abs(m.a*m.c+m.b*m.d)<=1e-8*sx*sy;}
   function transformedAngle(m,degrees){const r=degrees*Math.PI/180,v={x:Math.cos(r),y:Math.sin(r)},q={x:m.a*v.x+m.c*v.y,y:m.b*v.x+m.d*v.y};return Math.atan2(q.y,q.x)*180/Math.PI;}
   function arc(o,m){const s=scaleOf(m),sign=Math.sign(det(m))||1;return{...o,center:point(m,o.center),radius:o.radius*s,startAngle:transformedAngle(m,o.startAngle||0),sweep:(o.sweep||0)*sign};}
-  function dimension(o,m){const p1=point(m,o.p1),p2=point(m,o.p2),dx=o.p2.x-o.p1.x,dy=o.p2.y-o.p1.y,len=Math.hypot(dx,dy);let offset=Number(o.offset)||0;if(len>EPS){const nx=-dy/len,ny=dx/len,d1={x:o.p1.x+nx*offset,y:o.p1.y+ny*offset},td1=point(m,d1),ndx=p2.x-p1.x,ndy=p2.y-p1.y,nlen=Math.hypot(ndx,ndy);if(nlen>EPS)offset=(td1.x-p1.x)*(-ndy/nlen)+(td1.y-p1.y)*(ndx/nlen);}const out={...o,p1,p2,offset};if(Array.isArray(o.segments))out.segments=o.segments.map(s=>({a:point(m,s.a),b:point(m,s.b)}));return out;}
+  function dimension(o,m){
+    const kind=o.kind||'aligned',s=scaleOf(m);let out={...o};
+    if(kind==='aligned'){const p1=point(m,o.p1),p2=point(m,o.p2),dx=o.p2.x-o.p1.x,dy=o.p2.y-o.p1.y,len=Math.hypot(dx,dy);let offset=Number(o.offset)||0;if(len>EPS){const nx=-dy/len,ny=dx/len,d1={x:o.p1.x+nx*offset,y:o.p1.y+ny*offset},td1=point(m,d1),ndx=p2.x-p1.x,ndy=p2.y-p1.y,nlen=Math.hypot(ndx,ndy);if(nlen>EPS)offset=(td1.x-p1.x)*(-ndy/nlen)+(td1.y-p1.y)*(ndx/nlen);}out={...o,p1,p2,offset};}
+    else if(kind==='radius'||kind==='diameter')out={...o,center:point(m,o.center),radius:o.radius*s,labelPoint:point(m,o.labelPoint)};
+    else if(kind==='angular')out={...o,vertex:point(m,o.vertex),ray1:point(m,o.ray1),ray2:point(m,o.ray2),radius:(Number(o.radius)||1)*s,labelPoint:o.labelPoint?point(m,o.labelPoint):undefined};
+    if(root.cadAnnotation2)out.segments=root.cadAnnotation2.segments(out);else if(Array.isArray(o.segments))out.segments=o.segments.map(seg=>({a:point(m,seg.a),b:point(m,seg.b)}));return out;
+  }
   function transform(o,m){if(!validMatrix(m)||!o)return null;const s=scaleOf(m),sign=Math.sign(det(m))||1;
     if(root.cadPolyline?.is(o))return root.cadPolyline.transform(o,m);
     if(o.type==='cadLine')return{...o,a:point(m,o.a),b:point(m,o.b)};
     if(o.type==='cadCircle')return{...o,center:point(m,o.center),radius:o.radius*s};
     if(o.type==='cadArc')return arc(o,m);
-    if(o.type==='cadText')return{...o,point:point(m,o.point),height:(Number(o.height)||180)*s,rotation:transformedAngle(m,Number(o.rotation)||0),mirrored:sign<0?!Boolean(o.mirrored):Boolean(o.mirrored)};
+    if(o.type==='cadText')return{...o,point:point(m,o.point),leaderAnchor:o.leaderAnchor?point(m,o.leaderAnchor):undefined,height:(Number(o.height)||180)*s,width:(Number(o.width)||0)*s,rotation:transformedAngle(m,Number(o.rotation)||0),mirrored:sign<0?!Boolean(o.mirrored):Boolean(o.mirrored)};
     if(o.type==='cadDimension')return dimension(o,m);
-    if(o.type==='cadHatch')return{...o,points:(o.points||[]).map(p=>point(m,p)),sourceBoundaryId:null};
+    if(o.type==='cadHatch')return{...o,points:(o.points||[]).map(p=>point(m,p)),angle:transformedAngle(m,Number(o.angle)||45),sourceBoundaryId:null};
+    if(o.type==='cadLeader')return{...o,points:(o.points||[]).map(p=>point(m,p)),height:(Number(o.height)||140)*s,width:(Number(o.width)||0)*s};
     return null;
   }
-  function supports(o){return Boolean(o&&(root.cadPolyline?.is(o)||['cadLine','cadCircle','cadArc','cadText','cadDimension','cadHatch'].includes(o.type)));}
+  function supports(o){return Boolean(o&&(root.cadPolyline?.is(o)||['cadLine','cadCircle','cadArc','cadText','cadDimension','cadHatch','cadLeader'].includes(o.type)));}
   root.cadTransformOperations=Object.freeze({identity,multiply,translate,rotate,scale,mirror,align,point,det,scaleOf,validMatrix,transform,supports});
 })();

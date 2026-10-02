@@ -178,7 +178,10 @@ button:disabled { opacity:.42; cursor:default; }
 .tool-item-note { font-size:9px; color:var(--text-3); }
 
 .canvas-host { position:relative; min-width:0; min-height:0; overflow:hidden; background:var(--canvas); outline:none; }
-#drawingCanvas { touch-action:none; position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
+#drawingCanvas { touch-action:none; position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; z-index:1; }
+.pdf-reference-layer { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+.pdf-reference-item { position:absolute; border:0; overflow:hidden; pointer-events:none; transform-origin:0 0; background:#fff; }
+.pdf-reference-item embed, .pdf-reference-item object { width:100%; height:100%; border:0; display:block; pointer-events:none; }
 .canvas-host[data-tool="select"] #drawingCanvas { cursor:default; }
 .canvas-host[data-tool="door"] #drawingCanvas, .canvas-host[data-tool="window"] #drawingCanvas { cursor:cell; }
 .canvas-host[data-pan="true"] #drawingCanvas { cursor:grabbing; }
@@ -1701,3 +1704,15 @@ html, body { font-size:var(--font-body); }
 
 /* v0.31.0 Build 42 — current-command context actions + Polyline BREAK. */
 .canvas-context-menu .context-menu-item.checked .context-menu-label{font-weight:600;}
+
+/* Build57 annotation/reference feature-fill */
+.annotation-text-dialog { width:min(520px,calc(100vw - 32px)); }
+.annotation-textarea { width:100%; min-height:132px; resize:vertical; line-height:1.45; padding:8px 9px; }
+.annotation-text-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.annotation-text-options label { display:grid; gap:5px; }
+.reference-status-badge { display:inline-flex; align-items:center; min-height:18px; padding:1px 6px; border:1px solid var(--border); border-radius:999px; font-size:9px; color:var(--text-3); margin-left:5px; }
+.reference-status-badge.changed { color:var(--danger,#e05d5d); border-color:color-mix(in srgb,var(--danger,#e05d5d) 45%,var(--border)); }
+.reference-status-badge.ok { color:var(--accent); }
+
+.reference-status-badge.matched { color:var(--accent); border-color:color-mix(in srgb,var(--accent) 40%,var(--border)); }
+.reference-status-badge.updated { color:var(--text-2); border-color:var(--border-strong); }

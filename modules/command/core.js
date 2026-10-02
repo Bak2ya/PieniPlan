@@ -8,12 +8,22 @@
     { id: 'MA', name: 'MATCHPROP', aliases: ['MA','MATCHPROP'], cadOnly:true },
     { id: 'L', name: 'LINE', aliases: ['L', 'LINE'] },
     { id: 'PL', name: 'PLINE', aliases: ['PL', 'PLINE', 'POLYLINE'], cadOnly: true },
+    { id: 'REC', name: 'RECTANGLE', aliases: ['REC', 'RECTANG', 'RECTANGLE'], cadOnly: true },
+    { id: 'C', name: 'CIRCLE', aliases: ['C', 'CIRCLE'], cadOnly: true },
+    { id: 'A', name: 'ARC', aliases: ['A', 'ARC'], cadOnly: true },
     { id: 'TR', name: 'TRIM', aliases: ['TR', 'TRIM'] },
     { id: 'EX', name: 'EXTEND', aliases: ['EX', 'EXTEND'] },
     { id: 'E', name: 'ERASE', aliases: ['E', 'ERASE'] },
     { id: 'DI', name: 'DIST', aliases: ['DI', 'DIST'] },
     { id: 'T', name: 'TEXT', aliases: ['T','TEXT'], cadOnly:true },
+    { id: 'MT', name: 'MTEXT', aliases: ['MT','MTEXT'], cadOnly:true },
+    { id: 'LE', name: 'LEADER', aliases: ['LE','LEADER','CALLOUT'], cadOnly:true },
     { id: 'DLI', name: 'DIMALIGNED', aliases: ['DLI','DIM','DIMALIGNED'], cadOnly:true },
+    { id: 'DRA', name: 'DIMRADIUS', aliases: ['DRA','DIMRADIUS'], cadOnly:true },
+    { id: 'DDI', name: 'DIMDIAMETER', aliases: ['DDI','DIMDIAMETER'], cadOnly:true },
+    { id: 'DAN', name: 'DIMANGULAR', aliases: ['DAN','DIMANGULAR'], cadOnly:true },
+    { id: 'DCO', name: 'DIMCONTINUE', aliases: ['DCO','DIMCONTINUE'], cadOnly:true },
+    { id: 'DBA', name: 'DIMBASELINE', aliases: ['DBA','DIMBASELINE'], cadOnly:true },
     { id: 'H', name: 'HATCH', aliases: ['H','HATCH'], cadOnly:true },
     { id: 'SHEET', name: 'SHEET', aliases: ['SHEET','PLOT','PRINT'], cadOnly:true },
     { id: 'M', name: 'MOVE', aliases: ['M', 'MOVE'] },
@@ -48,7 +58,10 @@
     return catalog
       .filter(command => !(command.planOnly && !plan) && !(command.cadOnly && plan))
       .filter(command => command.aliases.some(alias => alias.startsWith(q)))
-      .slice(0, limit);
+      .map((command,index)=>({command,index,exact:command.aliases.some(alias=>alias===q)}))
+      .sort((a,b)=>Number(b.exact)-Number(a.exact)||a.index-b.index)
+      .slice(0, limit)
+      .map(item=>item.command);
   }
 
   root.commandCore = Object.freeze({ catalog, normalize, matches });

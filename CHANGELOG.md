@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.43.0 · Build 58 — 2026-10-02
+
+- Feature Freeze 전 **Final Feature Fill**을 완료했습니다. CAD Draw에 `REC/RECTANG/RECTANGLE`, `C/CIRCLE`, `A/ARC`를 정식 authoring command로 열어 Rectangle, analytic Circle, standalone analytic Arc를 직접 작성할 수 있습니다.
+- `ARRAY (AR)`에 **Polar Array**를 추가했습니다. 중심점 → 전체 항목 수 → 채움 각도(Enter 기본 360°) 흐름이며 analytic Circle/Arc와 persistent PLINE을 similarity transform으로 유지합니다. 기존 `AR → 열/행/간격` rectangular 입력은 첫 숫자를 열 개수로 해석해 하위호환을 유지합니다.
+- persistent PLINE grip 편집에 **vertex 삽입/삭제**를 추가했습니다. edge 우클릭 또는 더블클릭으로 삽입하고 vertex 우클릭으로 삭제합니다. 기존 owner/source edge identity를 가능한 범위에서 유지하고 ARC 삽입은 analytic sweep을 정확히 분할합니다. 혼합/비호환 curved topology 삭제는 근사하지 않고 fail-closed합니다.
+- `A/ARC`와 `AR/ARRAY` 같은 prefix 충돌에서 정확히 입력한 command를 autocomplete prefix 후보보다 우선하도록 command matching을 정리했습니다.
+- 현재 구현과 모순되던 `STRETCH 미지원`, `ARRAY rectangular only`, `Circle / Arc` 묶음 표기 등 runtime 도움말/README의 stale 상태 문구를 정리했습니다.
+- 저장 형식은 **PPRJ schema7 그대로**이며 새 capability를 요구하지 않습니다. Build57 Annotation v2 / PDF reference 및 기존 CAD Core2 동작을 유지합니다.
+- Verification: Build58 focused Chromium **13/13 PASS**, CAD Core2 inherited **16/16**, Stage4 **10/10**, Legacy **21/21**, Annotation/Reference **12/12**, pure Final Feature Fill core **6/6**. JS syntax **34/34**, i18n EN/KO **918/918**, local refs **41/41**, page/console error 0.
+
+## v0.42.0 · Build 57 — 2026-10-02
+
+- Annotation / Output 2차 feature-fill을 추가했습니다. `MT/MTEXT` 여러 줄 문자와 줄바꿈/폭, `LE/LEADER` Callout, `DRA` 반지름, `DDI` 지름, `DAN` 각도, `DCO` 연속, `DBA` 기준선 치수를 persistent CAD 객체로 저장합니다.
+- HATCH에 ANSI31 / Cross / Solid 패턴, 각도, 간격 편집과 기존 draw-order 조절을 연결했습니다. source boundary가 남아 있는 경우 경계 업데이트 흐름도 보존합니다.
+- Sheet/PDF quick output이 여러 줄 문자, Leader, 고급 Dimension, Hatch 패턴을 반영합니다. 고급 주석의 DXF R12 출력은 LINE/TEXT 호환 fallback을 사용합니다.
+- Reference 2차로 PDF 참조를 추가했습니다. PDF 첫 페이지를 브라우저 내장 PDF 렌더러 underlay로 표시하고, 배치/불투명도/축척/사각 Clip을 유지합니다.
+- 이미지/DXF/PDF 참조에 원본 이름·크기·수정시각·SHA-256 source metadata를 기록하고, 사용자가 원본 파일을 다시 선택하면 수동 재연결 및 변경 여부를 비교합니다. 브라우저 보안 모델 때문에 로컬 파일을 백그라운드에서 자동 감시하지는 않습니다.
+- PPRJ를 schema7로 올리고 `cad.annotation.v2`, `reference.pdf.v1` capability를 추가했습니다. schema5 Polyline 및 schema6 Annotation v1 프로젝트는 계속 검증/열기 가능하도록 유지합니다.
+- Build56 시작화면/P 샘플과 Build55 CAD Core2 동작을 회귀검사로 유지했습니다.
+
 ## v0.41.1 · Build 56 — 2026-10-02
 
 - 시작화면의 정보 위계를 다시 정리했습니다. `Plan Mode · 빠른 평면도` / `CAD Mode · DXF 도면`에서 모드 이름을 주 제목으로 올리고 설명을 더 사용자 친화적으로 다듬었으며, 진입 CTA를 카드 오른쪽 아래에 정렬했습니다.
