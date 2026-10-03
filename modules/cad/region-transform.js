@@ -20,6 +20,26 @@
   }
 
   function rotateCadObject(object, base, deltaDeg) {
+    // Region rotation keeps the historical working-set/ownership policy, but the
+    // geometry transform itself must cover every persistent CAD type supported by RO.
+    // Using the shared similarity transform prevents Annotation v2 from drifting out
+    // of sync as new dimension/leader/hatch kinds are added.
+    const ops=root.cadTransformOperations;
+    if(ops?.supports?.(object)){
+      const transformed=ops.transform(object,ops.rotate(base,deltaDeg));
+      if(transformed){
+        // Generic hatch transforms intentionally detach a moved hatch from its source
+        // boundary. RR rotates the frozen source set together, so preserve ownership.
+        if(object.type==='cadHatch'){if(Object.prototype.hasOwnProperty.call(object,'sourceBoundaryId'))transformed.sourceBoundaryId=object.sourceBoundaryId;else delete transformed.sourceBoundaryId;}
+        // RR is a geometry-only stabilization path. Shared transform helpers normalize
+        // a few optional style fields for generic RO; avoid materializing defaults that
+        // were absent on the Region source object when rotation does not need them.
+        if(object.type==='cadText')for(const key of['height','width','mirrored','leaderAnchor'])if(!Object.prototype.hasOwnProperty.call(object,key))delete transformed[key];
+        if(object.type==='cadLeader')for(const key of['height','width'])if(!Object.prototype.hasOwnProperty.call(object,key))delete transformed[key];
+        Object.assign(object,transformed);
+        return object;
+      }
+    }
     if(root.cadPolyline?.is(object)){const a=rad(deltaDeg),c=Math.cos(a),s=Math.sin(a);object.vertices=root.cadPolyline.transform(object,{a:c,b:s,c:-s,d:c,tx:base.x-c*base.x+s*base.y,ty:base.y-s*base.x-c*base.y}).vertices;}
     else if ((object.type === 'cadLine' || object.type === 'line') && object.a && object.b) {
       object.a = rotatePoint(object.a, base, deltaDeg);

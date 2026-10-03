@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.44.2 · Build 63 — 2026-10-03
+
+- Build61 Post Feature-Freeze audit의 남은 RC blocker **B61-05~B61-09**를 좁게 안정화했습니다. 신규 제품 기능, schema, capability 변경은 없습니다.
+- **B61-05 Region RR × Annotation v2**: 기존 frozen Region working-set/ownership 정책은 유지하고, RR geometry transform을 공통 similarity transform과 정합시켜 Dimension/Hatch/Leader/Text까지 함께 회전합니다. Leader를 Region bounds에 포함하고, RR에서 Hatch source-boundary ownership은 유지합니다.
+- **B61-06 Sheet blank popup**: 출력 HTML/SVG를 self-contained Blob 문서로 준비한 뒤 사용자 gesture에서 blank window를 열고 opener를 즉시 끊은 후 Blob으로 이동합니다. popup이 실제로 열리지 않으면 Sheet/history를 변경하지 않습니다.
+- **B61-07 Sheet physical scale**: 종이 전체 mm 좌표계와 10mm printable viewport를 분리했습니다. nested viewport의 world 크기를 `printable-mm × scale denominator`로 두어 생성 SVG 기준 1:100에서 모델 1000mm가 정확히 10mm가 됩니다. 브라우저/프린터의 실제 100% 출력은 여전히 hands-on 검증 대상입니다.
+- **B61-08 large snapshot history**: 기존 60-entry cap과 함께 history+future 전체에 **96 MiB 추정 retained-byte budget**을 적용합니다. 가장 먼 Undo/Redo entry부터 제거하되 각 방향의 가장 가까운 1-step은 보존합니다. 이는 JS heap 자체를 96 MiB로 보장하는 것이 아니라 대형 snapshot 문자열의 무제한 retained copy를 막는 1차 안정화 경계입니다.
+- **B61-09 Region DXF Annotation v2**: full/Region export가 공통 Annotation LINE/TEXT fallback helper를 사용하도록 정리했습니다. Region clipping/layer 정책은 그대로 유지하면서 Leader, radius/diameter/angular/aligned Dimension, multiline text, Hatch boundary를 누락하지 않습니다.
+- Verification: Build63 Stabilization2 **14/14 PASS** + Build62/61 inherited browser suites 포함 **141/141 PASS**, page/console error 0. Product JS syntax **34/34**, i18n EN/KO **926/926** exact parity, local HTML refs **41/41**, Build63 static contracts 전체 PASS.
+- B61-01~09은 코드/자동회귀 기준으로 모두 수정 대상이 반영됐지만 **아직 RC 승인으로 간주하지 않습니다**. Astra blocker-closure 재검증, Safari/Retina, 실제 PDF/종이 100% 축척, 외부 CAD reader의 full/Region DXF, 102,852-object 장시간 history/GC 실사용 검증이 남아 있습니다.
+- 호환 bugfix/stabilization이므로 **v0.44.1 → v0.44.2 PATCH**, 새 usable artifact이므로 **Build62 → Build63**입니다. PPRJ schema7 유지.
+
 ## v0.44.1 · Build 62 — 2026-10-03
 
 - Build61 Post Feature-Freeze read-only audit에서 확인된 1차 RC blocker 중 **B61-01~B61-04**를 안정화했습니다. 새 기능 확대나 schema/capability 변경은 없습니다.
