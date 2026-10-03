@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.44.1 · Build 62 — 2026-10-03
+
+- Build61 Post Feature-Freeze read-only audit에서 확인된 1차 RC blocker 중 **B61-01~B61-04**를 안정화했습니다. 새 기능 확대나 schema/capability 변경은 없습니다.
+- **B61-01 저장/recovery race**: 저장 시작 시 `projectId + documentWriteEpoch + sessionKind` revision을 캡처하고, 완료 시 같은 revision일 때만 clean 처리·파일 핸들 연결·recovery 정리를 수행합니다. 저장 도중 새 편집이 생기면 이전 revision의 저장 완료는 현재 작업을 clean으로 만들지 않으며 새 recovery를 지우지 않습니다. browser/file/recovery write는 각각 직렬화합니다.
+- **B61-02 Region delete Undo**: history snapshot에 lightweight `linkedCadRegion` membership을 포함해 Region 삭제 Undo/Redo에서 연결 Reference ID/placement/layer membership을 복원합니다. DXF/PDF/image의 heavy source resource를 history에 deep-copy하지 않습니다.
+- **B61-03 직접 drag 취소**: gesture 시작 상태의 geometry/topology/history/future/selection을 별도 cancel snapshot으로 보관하고 Escape·pointercancel·tool change·window blur에서 gesture 전체를 rollback합니다. 이전 명령의 Undo를 대신 호출하지 않습니다.
+- **B61-04 parent Arc canonical geometry**: coincident endpoint 편집으로 간접 변경되는 parent arc도 기존 midpoint control을 기준으로 analytic center/radius/start/sweep를 재계산합니다. 재계산 불가 시 parent endpoint 변경을 되돌립니다. Build60의 body-drag isolation 계약은 그대로 유지합니다.
+- 사용자가 실사용에서 발견한 시작화면 보호를 함께 정리했습니다. **샘플 도면은 disposable sample session**으로 열려 `현재 도면 계속하기`를 차지하거나 recovery/current slot을 덮어쓰지 않습니다. 샘플 진입 전 기존 current workspace가 있으면 메모리에 보존하고 Continue로 복귀할 수 있습니다.
+- 현재 작업을 실제로 교체하는 `프로젝트 열기`, PPKG open, editable DXF open, 새 도면/recovery open 경로는 공통 workspace-replacement guard를 사용합니다. dirty 작업은 기본 포커스를 `취소`에 두고 `저장하고 계속 / 저장하지 않고 계속 / 취소`, clean 작업은 `작업 바꾸기 / 취소`를 제공합니다. 브라우저에 저장된 Continue 프로젝트만 있는 상태에서 새 blank Plan/CAD를 시작하는 경우도 보호합니다.
+- Verification: 기존 Build61 browser regression **112/112 PASS** + Build62 Stabilization1 **15/15 PASS**, page/console error 0. Product JS syntax **34/34**, i18n EN/KO **926/926** exact parity, local HTML refs **41/41**, Build62 static contracts 모두 PASS.
+- **B61-05~B61-09는 의도적으로 이번 빌드에서 건드리지 않았고 여전히 다음 Stabilization 범위**입니다. 따라서 Build62를 RC 승인 완료로 간주하지 않습니다.
+- 호환 bugfix/stabilization이므로 **v0.44.0 → v0.44.1 PATCH**, 새 usable artifact이므로 **Build61 → Build62**입니다. PPRJ schema7 유지.
+
 ## v0.44.0 · Build 61 — 2026-10-02
 
 - 사용자 실사용 요청에 따라 **도면 영역 맞춤**을 Plan/CAD 공통 View 기능으로 추가했습니다. CAD에서는 현재 작업 영역, Plan에서는 현재 층에 연결된 도면 영역을 우선 사용하며, 단일 영역만 존재할 때는 그 영역을 안전한 fallback으로 사용합니다. 여러 영역이 있으나 현재 대상이 모호하면 메뉴 항목을 숨겨 잘못된 영역으로 이동하지 않습니다.
