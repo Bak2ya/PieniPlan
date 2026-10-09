@@ -7,8 +7,9 @@
     return String(value).replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
   }
 
-  function create({ input, status, history, suggestions, getPlanMode, readyText, maxLog = 80 }) {
+  function create({ input, status, history, suggestions, getPlanMode, readyText, bar=null, expandButton=null, pinButton=null, maxLog = 80 }) {
     const log = [];
+    let expanded=false,pinned=false;
 
     function matches() {
       return root.commandCore.matches(input?.value, { plan: Boolean(getPlanMode?.()) });
@@ -38,15 +39,20 @@
 
     function render() {
       const current = log[log.length - 1] || { text: readyText(), kind: '' };
-      const previous = log.slice(Math.max(0, log.length - 3), Math.max(0, log.length - 1));
+      const previous = log.slice(0, Math.max(0, log.length - 1));
       if (history) {
         history.innerHTML = previous.map(item => `<div class="command-history-line ${escapeHtml(item.kind || '')}">${escapeHtml(item.text)}</div>`).join('');
-        history.hidden = !previous.length;
+        history.hidden = !expanded;
+        history.scrollTop=history.scrollHeight;
       }
       if (status) {
         status.className = `command-status ${current.kind || ''}`.trim();
         status.textContent = current.text;
       }
+      bar?.classList.toggle('log-expanded',expanded);
+      bar?.closest('#canvasHost')?.classList.toggle('command-log-open',expanded);
+      expandButton?.setAttribute('aria-expanded',String(expanded));
+      if(pinButton){pinButton.hidden=!expanded;pinButton.setAttribute('aria-pressed',String(pinned));}
       renderSuggestions();
     }
 
@@ -70,9 +76,13 @@
       return true;
     }
 
-    input?.addEventListener('input', renderSuggestions);
+    input?.addEventListener('input', event=>{if(!event.isComposing)renderSuggestions();});
+    expandButton?.addEventListener('click',()=>{expanded=!expanded;if(!expanded)pinned=false;render();});
+    pinButton?.addEventListener('click',()=>{pinned=!pinned;expanded=true;render();});
+    document.addEventListener('pointerdown',e=>{if(expanded&&!pinned&&bar&&!bar.contains(e.target)){expanded=false;render();}});
+    bar?.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.isComposing&&expanded&&!pinned){expanded=false;render();}});
 
-    return Object.freeze({ push, render, renderSuggestions, hideSuggestions, completeFirst, getLog: () => log.slice() });
+    return Object.freeze({ push, render, renderSuggestions, hideSuggestions, completeFirst, getLog: () => log.slice(), get expanded(){return expanded;}, get pinned(){return pinned;} });
   }
 
   root.commandConsole = Object.freeze({ create });

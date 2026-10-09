@@ -110,7 +110,7 @@ function toPairs(text){const lines=text.replace(/\r/g,'').split('\n'),pairs=[];f
 function sectionRange(pairs,name){for(let i=0;i<pairs.length-1;i++){if(pairs[i].code===0&&pairs[i].value==='SECTION'&&pairs[i+1].code===2&&pairs[i+1].value===name){const s=i+2;for(let j=s;j<pairs.length;j++)if(pairs[j].code===0&&pairs[j].value==='ENDSEC')return[s,j]}}return[-1,-1]}
 const num=(a,c,d=0)=>{const p=a.find(x=>x.code===c);const n=p?Number(p.value):d;return Number.isFinite(n)?n:d}, str=(a,c,d='')=>{const p=a.find(x=>x.code===c);return p?p.value:d};
 function readRecord(pairs,i,end){if(i>=end||pairs[i].code!==0)return null;const type=pairs[i].value;i++;
-  if(type==='POLYLINE'){const head=[];while(i<end&&pairs[i].code!==0)head.push(pairs[i++]);const verts=[];while(i<end&&pairs[i].code===0&&pairs[i].value==='VERTEX'){i++;const a=[];while(i<end&&pairs[i].code!==0)a.push(pairs[i++]);if(num(a,70)!==0||num(a,30)!==0)throw new Error('Unsupported DXF POLYLINE vertex flags/elevation');verts.push([num(a,10),num(a,20),num(a,42)])}if(i<end&&pairs[i].code===0&&pairs[i].value==='SEQEND')i++;return{type,a:head,verts,next:i}}
+  if(type==='POLYLINE'){const head=[];while(i<end&&pairs[i].code!==0)head.push(pairs[i++]);const verts=[];while(i<end&&pairs[i].code===0&&pairs[i].value==='VERTEX'){i++;const a=[];while(i<end&&pairs[i].code!==0)a.push(pairs[i++]);verts.push([num(a,10),num(a,20),num(a,42),num(a,70),num(a,30)])}if(i<end&&pairs[i].code===0&&pairs[i].value==='SEQEND')i++;return{type,a:head,verts,next:i}}
   const a=[];while(i<end&&pairs[i].code!==0)a.push(pairs[i++]);return{type,a,next:i};
 }
 function bulgeArc(a,b,bulge,layer){
@@ -135,11 +135,13 @@ function primitiveFromRecord(r,defaultLayer='0'){
     // Only plain planar 2D chains. Reject unsupported geometry before installing any import.
     const flags=num(a,70,0);
     if(!Number.isInteger(flags)||(flags&~129)!==0||num(a,30)!==0||num(a,210)!==0||num(a,220)!==0||num(a,230,1)!==1)throw new Error('Unsupported DXF POLYLINE flags/elevation/extrusion');
+    if(r.verts.some(v=>v[3]!==0||v[4]!==0))throw new Error('Unsupported DXF POLYLINE vertex flags/elevation');
     const closed=(flags&1)!==0;
     if(!r.verts.some(v=>v[2]))return r.verts.length>1?[{type:'polyline',points:r.verts.map(v=>v.slice(0,2)),closed,layer}]:[];
     return polylinePrimitives(r.verts.map(v=>({x:v[0],y:v[1],bulge:v[2]||0})),closed,layer,'POLYLINE');
   }
   if(r.type==='LWPOLYLINE'){
+    if((num(a,70)&~129)!==0||num(a,38)!==0||num(a,210)!==0||num(a,220)!==0||num(a,230,1)!==1)throw new Error('Unsupported DXF LWPOLYLINE flags/elevation/extrusion');
     const verts=[];let cur=null;
     for(const p of a){
       if(p.code===10){if(cur&&Number.isFinite(cur.x)&&Number.isFinite(cur.y))verts.push(cur);cur={x:Number(p.value),y:NaN,bulge:0};}
@@ -171,25 +173,41 @@ function transformEntity(e,base,ins){const sx=ins.sx,sy=ins.sy,rot=ins.rot,layer
   if(e.type==='text'){const a=pt([e.x,e.y]);const scale=(Math.abs(sx)+Math.abs(sy))/2;return{...e,x:a[0],y:a[1],height:(e.height||180)*scale,rotation:(e.rotation||0)+rot,layer}}
   return e;
 }
-function parseBlocks(pairs){const [s,e]=sectionRange(pairs,'BLOCKS'),blocks=new Map();if(s<0)return blocks;let i=s;while(i<e){const r=readRecord(pairs,i,e);if(!r){i++;continue}i=r.next;if(r.type!=='BLOCK')continue;const name=str(r.a,2)||str(r.a,3);const base={x:num(r.a,10),y:num(r.a,20)},ents=[];while(i<e){const rr=readRecord(pairs,i,e);if(!rr){i++;continue}i=rr.next;if(rr.type==='ENDBLK')break;ents.push(...primitiveFromRecord(rr,'0'))}if(name)blocks.set(name,{base,entities:ents})}return blocks}
+// Read definitions without interpreting geometry. Only reachable INSERT definitions are validated.
+function parseBlocks(pairs){
+  const [s,e]=sectionRange(pairs,'BLOCKS'),blocks=new Map();if(s<0)return blocks;let i=s;
+  while(i<e){const r=readRecord(pairs,i,e);if(!r){i++;continue}i=r.next;if(r.type!=='BLOCK')continue;
+    const name=str(r.a,2)||str(r.a,3),base={x:num(r.a,10),y:num(r.a,20)},records=[];
+    while(i<e){const rr=readRecord(pairs,i,e);if(!rr){i++;continue}i=rr.next;if(rr.type==='ENDBLK')break;records.push(rr)}
+    if(name)blocks.set(name,{base,records});
+  }return blocks;
+}
 function parseDxf(text,id){
   if(/^AutoCAD Binary DXF/i.test(text.trim()))throw new Error(wm('binary'));
   const pairs=toPairs(text);progress(id,wm('structureStage'),.08,wm('structureDetail'));
   const blocks=parseBlocks(pairs);progress(id,wm('blocksStage'),.20,wm('blocksDetail',{count:blocks.size.toLocaleString()}));
   const [s,e]=sectionRange(pairs,'ENTITIES');if(s<0)throw new Error(wm('entitiesMissing'));
-  const entities=[];let ignored=0,expandedInserts=0,unresolvedInserts=0,i=s,seen=0;
-  while(i<e){const r=readRecord(pairs,i,e);if(!r){i++;continue}i=r.next;seen++;
+  const entities=[],usedBlocks=new Set(),omittedByType={};let ignored=0,expandedInserts=0,i=s,seen=0;
+  function expand(r,chain=[]){
     if(r.type==='INSERT'){
-      const name=str(r.a,2),b=blocks.get(name);if(!b){unresolvedInserts++;continue}
-      const ins={x:num(r.a,10),y:num(r.a,20),sx:num(r.a,41,1)||1,sy:num(r.a,42,1)||1,rot:num(r.a,50,0),layer:str(r.a,8,'0')||'0'};
-      for(const be of b.entities)entities.push(transformEntity(be,b.base,ins));expandedInserts++;continue;
+      const name=str(r.a,2),b=blocks.get(name);
+      if(!b)throw new Error(`Unresolved DXF INSERT: ${name}`);
+      if(chain.includes(name)||chain.length>=64)throw new Error(`Cyclic/deep DXF INSERT: ${[...chain,name].join(' > ')}`);
+      if(num(r.a,30)!==0||num(r.a,210)!==0||num(r.a,220)!==0||num(r.a,230,1)!==1||num(r.a,70,1)!==1||num(r.a,71,1)!==1)throw new Error(`Unsupported DXF INSERT elevation/extrusion/array: ${name}`);
+      const ins={x:num(r.a,10),y:num(r.a,20),sx:num(r.a,41,1),sy:num(r.a,42,1),rot:num(r.a,50),layer:str(r.a,8,'0')||'0'};
+      if(!ins.sx||!ins.sy)throw new Error(`Invalid DXF INSERT scale: ${name}`);
+      usedBlocks.add(name);expandedInserts++;const out=[];
+      for(const rr of b.records)for(const be of expand(rr,[...chain,name]))out.push(transformEntity(be,b.base,ins));return out;
     }
-    const prim=primitiveFromRecord(r,'0');if(prim.length)entities.push(...prim);else if(!['SEQEND','ENDBLK'].includes(r.type))ignored++;
+    let prim;try{prim=primitiveFromRecord(r,'0')}catch(err){throw new Error(`${err.message} (${chain.length?'BLOCK '+chain.join(' > '):'ENTITIES'}; ${r.type}; handle ${str(r.a,5,'?')})`)}
+    if(!prim.length&&!['SEQEND','ENDBLK'].includes(r.type)){ignored++;omittedByType[r.type]=(omittedByType[r.type]||0)+1}return prim;
+  }
+  while(i<e){const r=readRecord(pairs,i,e);if(!r){i++;continue}i=r.next;seen++;for(const ent of expand(r))entities.push(ent);
     if(seen%5000===0)progress(id,wm('entitiesStage'),Math.min(.65,.20+seen/50000*.45),wm('entitiesDetail',{count:seen.toLocaleString()}));
   }
   if(!entities.length)throw new Error(wm('noEntities'));
   const unit=dxfUnitInfo(dxfHeaderUnits(text)),layers=[...new Set(entities.map(x=>x.layer||'0'))].sort((a,b)=>a.localeCompare(b,activeLang==='ko'?'ko':'en'));
-  return{entities,ignored,unit,layers,stats:{blocks:blocks.size,expandedInserts,unresolvedInserts,sourceRecords:seen,approximatedCurves:entities.filter(e=>e.approximation).length}};
+  return{entities,ignored,unit,layers,stats:{blocks:blocks.size,usedBlocks:usedBlocks.size,unusedBlocks:blocks.size-usedBlocks.size,expandedInserts,unresolvedInserts:0,sourceRecords:seen,omittedByType,approximatedCurves:entities.filter(e=>e.approximation).length}};
 }
 
 onmessage = (e) => {

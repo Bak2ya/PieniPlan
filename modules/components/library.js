@@ -77,5 +77,50 @@
   }
   function label(asset,language='ko'){return language==='en'?asset.nameEn:asset.nameKo;}
   function categoryLabel(category,language='ko'){const m={bathroom:['욕실·위생','Bathroom'],kitchen:['주방','Kitchen'],laundry:['세탁','Laundry'],furniture:['가구','Furniture']};return (m[category]||[category,category])[language==='en'?1:0];}
-  root.componentLibrary=Object.freeze({assets:Object.freeze(assets.slice()),get:id=>byId.get(id)||null,list:()=>assets.slice(),label,categoryLabel,localBounds,localPoint,worldPoint,bounds,hitDistance,snapPoints});
+  function vectorPaths(asset){
+    const b=localBounds(asset),paths=[],poly=(points,{close=false}={})=>paths.push({points,closed:close});
+    const rect=(x1,y1,x2,y2)=>poly([{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}],{close:true});
+    const ellipse=(cx,cy,rx,ry,start=0,end=Math.PI*2)=>{const pts=[];for(let i=0;i<=32;i++){const a=start+(end-start)*i/32;pts.push({x:cx+Math.cos(a)*rx,y:cy+Math.sin(a)*ry});}poly(pts,{close:Math.abs(end-start)>=Math.PI*2-.01});};
+    const w=b.maxx-b.minx,d=b.maxy-b.miny,cx=(b.minx+b.maxx)/2,cy=(b.miny+b.maxy)/2;
+    rect(b.minx,b.miny,b.maxx,b.maxy);
+    switch(asset.symbol){
+      case'toilet':
+        rect(b.minx+w*.16,b.miny+d*.03,b.maxx-w*.16,b.miny+d*.23);
+        ellipse(cx,b.miny+d*.58,w*.27,d*.31);break;
+      case'urinal':
+        ellipse(cx,b.miny+d*.48,w*.34,d*.39,0,Math.PI);poly([{x:b.minx+w*.16,y:b.miny+d*.44},{x:b.minx+w*.26,y:b.maxy-d*.07},{x:b.maxx-w*.26,y:b.maxy-d*.07},{x:b.maxx-w*.16,y:b.miny+d*.44}]);break;
+      case'lavatory-round':
+        ellipse(cx,cy,w*.28,d*.34);ellipse(cx,b.miny+d*.12,Math.max(4,w*.025),Math.max(4,d*.025));break;
+      case'lavatory-rect':case'sink':
+        rect(b.minx+w*.16,b.miny+d*.18,b.maxx-w*.16,b.maxy-d*.12);ellipse(cx,b.miny+d*.1,Math.max(4,w*.025),Math.max(4,d*.025));break;
+      case'double-sink':
+        rect(b.minx+w*.08,b.miny+d*.16,cx-w*.03,b.maxy-d*.12);rect(cx+w*.03,b.miny+d*.16,b.maxx-w*.08,b.maxy-d*.12);break;
+      case'bathtub':
+        rect(b.minx+w*.06,b.miny+d*.08,b.maxx-w*.06,b.maxy-d*.08);ellipse(b.minx+w*.18,cy,w*.035,d*.055);break;
+      case'shower':
+        poly([{x:b.minx,y:b.miny},{x:b.maxx,y:b.maxy}]);poly([{x:b.maxx,y:b.miny},{x:b.minx,y:b.maxy}]);ellipse(cx,cy,Math.max(5,w*.035),Math.max(5,d*.035));break;
+      case'drain':
+        rect(b.minx+w*.23,b.miny+d*.23,b.maxx-w*.23,b.maxy-d*.23);break;
+      case'range':
+        for(const ox of[-.24,.24])for(const oy of[-.22,.22])ellipse(cx+w*ox,cy+d*oy,w*.13,d*.13);break;
+      case'washer':case'dryer':case'washer-dryer':case'appliance':
+        ellipse(cx,cy,Math.min(w,d)*.3,Math.min(w,d)*.3);if(asset.symbol==='washer-dryer')poly([{x:b.minx,y:cy},{x:b.maxx,y:cy}]);break;
+      case'desk':
+        poly([{x:b.minx,y:b.miny+d*.18},{x:b.maxx,y:b.miny+d*.18}]);break;
+      case'chair':
+        rect(b.minx+w*.12,b.miny+d*.12,b.maxx-w*.12,b.maxy-d*.12);poly([{x:b.minx+w*.12,y:b.miny+d*.2},{x:b.maxx-w*.12,y:b.miny+d*.2}]);break;
+      case'sofa':
+        rect(b.minx+w*.06,b.miny+d*.08,b.maxx-w*.06,b.maxy-d*.08);poly([{x:b.minx+w*.17,y:b.miny+d*.25},{x:b.maxx-w*.17,y:b.miny+d*.25}]);poly([{x:cx,y:b.miny+d*.25},{x:cx,y:b.maxy-d*.08}]);break;
+      case'bed':
+        poly([{x:b.minx,y:b.miny+d*.11},{x:b.maxx,y:b.miny+d*.11}]);rect(b.minx+w*.08,b.miny+d*.14,cx-w*.02,b.miny+d*.34);rect(cx+w*.02,b.miny+d*.14,b.maxx-w*.08,b.miny+d*.34);break;
+      case'cabinet':
+        poly([{x:b.minx,y:cy},{x:b.maxx,y:cy}]);break;
+      case'dining-table':
+        rect(b.minx+w*.15,b.miny+d*.2,b.maxx-w*.15,b.maxy-d*.2);break;
+      default: break;
+    }
+    if(asset.symbol==='drain'){poly([{x:b.minx+w*.23,y:cy},{x:b.maxx-w*.23,y:cy}]);poly([{x:cx,y:b.miny+d*.23},{x:cx,y:b.maxy-d*.23}]);}
+    return paths;
+  }
+  root.componentLibrary=Object.freeze({assets:Object.freeze(assets.slice()),get:id=>byId.get(id)||null,list:()=>assets.slice(),label,categoryLabel,localBounds,localPoint,worldPoint,bounds,hitDistance,snapPoints,vectorPaths});
 })();

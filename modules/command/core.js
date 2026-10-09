@@ -6,6 +6,7 @@
   const catalog = Object.freeze([
     ...[['O','OFFSET'],['F','FILLET'],['BR','BREAK'],['J','JOIN']].map(([id,name])=>({id,name,aliases:[id,name],cadOnly:true})),
     { id: 'MA', name: 'MATCHPROP', aliases: ['MA','MATCHPROP'], cadOnly:true },
+    { id: 'ST', name: 'STAIR', aliases: ['ST','STAIR'], planOnly:true },
     { id: 'L', name: 'LINE', aliases: ['L', 'LINE'] },
     { id: 'PL', name: 'PLINE', aliases: ['PL', 'PLINE', 'POLYLINE'], cadOnly: true },
     { id: 'REC', name: 'RECTANGLE', aliases: ['REC', 'RECTANG', 'RECTANGLE'], cadOnly: true },

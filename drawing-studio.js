@@ -1,46 +1,30 @@
 (() => {
-  let worker = null;
-  let seq = 0;
-  const pending = new Map();
-
-  function ensureWorker() {
-    if (worker) return worker;
-    worker = new Worker('workers/dxf-worker.js');
-    worker.onmessage = (e) => {
-      const { id, ok, result, error, progress } = e.data || {};
-      if (progress && pending.has(id)) {
-        pending.get(id).onProgress?.(progress);
-        return;
-      }
-      const p = pending.get(id);
-      if (!p) return;
-      pending.delete(id);
-      if (ok) p.resolve(result);
-      else p.reject(new Error(error || 'DXF analysis failed.'));
+  let worker=null,seq=0;
+  const pending=new Map();
+  function settle(id,ok,value){const p=pending.get(id);if(!p)return;pending.delete(id);p.cleanup();ok?p.resolve(value):p.reject(value);}
+  function ensureWorker(){
+    if(worker)return worker;
+    const current=new Worker('workers/dxf-worker.js');worker=current;
+    current.onmessage=e=>{
+      if(worker!==current)return;
+      const {id,ok,result,error,progress}=e.data||{},p=pending.get(id);if(!p)return;
+      if(progress){try{p.onProgress?.(progress);}catch(err){settle(id,false,err);}return;}
+      settle(id,Boolean(ok),ok?result:new Error(error||'DXF analysis failed.'));
     };
-    worker.onerror = (e) => {
-      for (const [, p] of pending) p.reject(new Error(e.message || 'DXF Worker error'));
-      pending.clear();
-      worker?.terminate();
-      worker = null;
-    };
-    return worker;
+    current.onerror=e=>{if(worker!==current)return;dispose(new Error(e.message||'DXF Worker error'));};
+    return current;
   }
-
-  function parseAndAnalyze(text, onProgress) {
-    return new Promise((resolve, reject) => {
-      const id = ++seq;
-      pending.set(id, { resolve, reject, onProgress });
-      ensureWorker().postMessage({ id, type: 'parseAndAnalyze', text, lang: document.documentElement.lang || 'en' });
+  function parseAndAnalyze(text,onProgress,{signal}={}){
+    return new Promise((resolve,reject)=>{
+      if(signal?.aborted){reject(new DOMException('Import cancelled.','AbortError'));return;}
+      const id=++seq,abort=()=>{settle(id,false,new DOMException('Import cancelled.','AbortError'));if(!pending.size&&worker){worker.terminate();worker=null;}};
+      pending.set(id,{resolve,reject,onProgress,cleanup:()=>signal?.removeEventListener('abort',abort)});
+      signal?.addEventListener('abort',abort,{once:true});
+      try{ensureWorker().postMessage({id,type:'parseAndAnalyze',text,lang:document.documentElement.lang||'en'});}catch(err){settle(id,false,err);}
     });
   }
-
-  function dispose() {
-    if (worker) worker.terminate();
-    worker = null;
-    for (const [, p] of pending) p.reject(new Error('Drawing task closed.'));
-    pending.clear();
+  function dispose(reason=new DOMException('Drawing task closed.','AbortError')){
+    worker?.terminate();worker=null;for(const id of [...pending.keys()])settle(id,false,reason);
   }
-
-  window.PieniPlanDXF = { parseAndAnalyze, dispose };
+  window.PieniPlanDXF={parseAndAnalyze,dispose};
 })();

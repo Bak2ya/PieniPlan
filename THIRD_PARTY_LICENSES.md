@@ -24,3 +24,8 @@ The complete license text used by this project is included at:
 `vendor/tabler/LICENSE.txt`
 
 Only the icons needed by the PieniPlan interface are bundled locally. No icon CDN is required at runtime.
+
+
+### Local outline icon extensions
+
+`vendor/tabler/file.svg`, `printer.svg`, `rectangle.svg`, `circle.svg`, `arc.svg` are PieniPlan-authored simple 24×24, 2px outline additions matching the existing menu grammar. They are not newly downloaded third-party images. Existing Tabler subset licensing remains in vendor/tabler/LICENSE.txt. Component vector provenance remains in assets/components/ASSET_PROVENANCE.md.

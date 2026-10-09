@@ -82,6 +82,8 @@
         <div id="canvasHud" class="canvas-hud" aria-label="Drawing command and status">
           <div id="commandBar" class="commandbar">
             <div class="command-entry-row">
+              <button id="commandLogExpand" class="command-log-button" data-i18n-aria="command.expandLog" aria-controls="commandHistory" aria-expanded="false" data-i18n-title="command.expandLog" title="Command history">⌃</button>
+              <button id="commandLogPin" data-i18n-aria="command.pinLog" class="command-log-button" aria-pressed="false" data-i18n-title="command.pinLog" title="Pin history" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M16 3l5 5-4 1-3 5-4-4 5-3zM10 10l-4 4 4 4 4-4M6 18l-3 3"/></svg></button>
               <span class="command-label" data-i18n="command.promptLabel">Command:</span>
               <input id="commandInput" class="command-input" type="text" autocomplete="off" spellcheck="false"
                      data-i18n-placeholder="command.inputPlaceholder" placeholder="Type a command…" aria-label="Command" />
@@ -117,9 +119,11 @@
           <button id="primaryInspectorTab" class="inspector-tab active" data-tab="primary" role="tab">Objects</button>
           <button class="inspector-tab" data-tab="reference" role="tab" data-i18n="tab.reference">Reference</button>
           <button class="inspector-tab" data-tab="properties" role="tab" data-i18n="tab.properties">Properties</button>
+          <button class="inspector-tab" data-tab="components" role="tab" hidden>구성품</button>
         </div>
         <div id="cadScopeHost" class="cad-scope-host" hidden></div>
         <div class="inspector-body">
+          <section class="inspector-panel" data-panel="components"><div id="componentBrowser" class="component-browser"></div></section>
           <section class="inspector-panel active" data-panel="primary">
             <div class="panel-header panel-context-labels" hidden>
               <div>
@@ -243,23 +247,25 @@
   </section>
 
   <div id="viewMenu" class="top-menu" role="menu" hidden>
-    <button id="viewFitAction" class="menu-row" data-i18n="action.fit">Fit</button>
-    <button id="viewRegionAction" class="menu-row" data-i18n="action.fitDrawingRegion" hidden>Fit drawing region</button>
-    <button id="viewAllAction" class="menu-row" data-i18n="action.fitAllEntities">All extents</button>
+    <button id="viewFitAction" class="menu-row menu-row-icon"><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="action.fit">Fit</span></button>
+    <button id="viewRegionAction" class="menu-row menu-row-icon" hidden><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="action.fitDrawingRegion">Fit drawing region</span></button>
+    <button id="viewAllAction" class="menu-row menu-row-icon"><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="action.fitAllEntities">All extents</span></button>
+    <div class="menu-divider"></div><button id="floorOverlayAction" class="menu-row menu-row-icon"><span class="ui-icon icon-layers" aria-hidden="true"></span><span data-i18n="feature.overlay">Floor overlay</span></button>
   </div>
 
   <div id="fileMenu" class="top-menu file-menu" role="menu" hidden>
-    <button id="fileNewAction" class="menu-row" data-i18n="action.new">New drawing</button>
-    <button id="fileOpenProjectAction" class="menu-row" data-i18n="action.openProjectPprj">Open project</button>
-    <button id="fileSaveProjectAction" class="menu-row" data-i18n="action.saveProjectPprj">Save project</button>
-    <button id="fileDownloadProjectAction" class="menu-row" data-i18n="action.downloadProjectPprj">Save as</button>
+    <button id="fileNewAction" class="menu-row menu-row-icon"><span class="ui-icon icon-file" aria-hidden="true"></span><span data-i18n="action.new">New drawing</span></button>
+    <button id="fileOpenProjectAction" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.openProjectPprj">Open project</span></button>
+    <button id="fileSaveProjectAction" class="menu-row menu-row-icon"><span class="ui-icon icon-save" aria-hidden="true"></span><span data-i18n="action.saveProjectPprj">Save project</span></button>
+    <button id="fileDownloadProjectAction" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.downloadProjectPprj">Save as</span></button>
     <div class="menu-divider"></div>
-    <button id="fileImportPlanPackageAction" class="menu-row" data-i18n="action.importPlanPackage">Import plan</button>
-    <button id="fileExportPlanPackageAction" class="menu-row" data-i18n="action.exportPlanPackage">Export plan</button>
+    <button id="fileImportPlanPackageAction" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.importPlanPackage">Import plan</span></button>
+    <button id="fileExportPlanPackageAction" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.exportPlanPackage">Export plan</span></button>
     <div class="menu-divider"></div>
-    <button id="fileOpenDxfAction" class="menu-row" data-i18n="action.openDxfEdit">Import DXF</button>
-    <button id="fileExportDxfAction" class="menu-row" data-i18n="action.exportDxf">Export DXF</button>
-    <button id="fileSheetPdfAction" class="menu-row" data-i18n="action.sheetPdf">Sheet / PDF</button>
+    <button id="fileOpenDxfAction" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.openDxfEdit">Import DXF</span></button>
+    <button id="fileExportDxfAction" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.exportDxf">Export DXF</span></button>
+    <div class="menu-divider"></div>
+    <button id="fileSheetPdfAction" class="menu-row menu-row-icon"><span class="ui-icon icon-print" aria-hidden="true"></span><span data-i18n="action.sheetPdf">Sheet / PDF</span></button>
   </div>
 
   <div id="settingsMenu" class="top-menu settings-menu" role="menu" hidden>
@@ -319,6 +325,10 @@
                 <option value="default" data-i18n="textSize.default">Default</option>
                 <option value="large" data-i18n="textSize.large">Large</option>
               </select>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title" data-i18n="settings.snapSensitivity">Snap sensitivity</div>
+              <select id="settingsSnapSensitivity" class="select-input settings-select" aria-label="Snap sensitivity"><option value="low" data-i18n="snap.low">Low</option><option value="normal" data-i18n="snap.normal">Normal</option><option value="high" data-i18n="snap.high">High</option></select>
             </div>
             <div class="settings-section">
               <div class="settings-section-title" data-i18n="settings.defaultUnit">New project default unit</div>
@@ -587,6 +597,13 @@
   <script src="modules/command/native-modify.js"></script>
   <script src="modules/command/native-transform.js"></script>
   <script src="modules/command/context-menu.js"></script>
+  <script src="modules/view/floor-alignment.js"></script>
+  <script src="modules/output/sheet-layout.js"></script>
+  <script src="modules/ui/canvas-selection.js"></script>
+  <script src="modules/ui/post-feature-fill.js"></script>
+  <script src="modules/geometry/precision.js"></script>
+  <script src="modules/plan/stair.js"></script>
+  <script src="modules/cad/connected-selection.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

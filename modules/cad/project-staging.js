@@ -15,6 +15,8 @@
     for(const key of ['objects','references','drawingRegions','floors']){
       const ids=new Set();for(const o of d[key]||[]){if(!o||typeof o!=='object'||Array.isArray(o))bad(key+'-record');if(o.id){if(ids.has(o.id))bad('duplicate-'+key+'-id');ids.add(o.id);}}
     }
+    for(const f of d.floors||[])if(f.viewAlignment!=null&&(!root.floorAlignment?.valid(f.viewAlignment)||f.viewAlignment.referenceFloorId&&!((d.floors||[]).some(r=>r.id===f.viewAlignment.referenceFloorId&&r.id!==f.id&&r.buildingId===f.buildingId))))bad('floor-view-alignment');
+    for(const sheet of d.sheets||[]){if(sheet.range!=null){try{if(!root.sheetLayout)bad('sheet-layout-unavailable');root.sheetLayout.layout(sheet.range,sheet);}catch{bad('sheet-layout');}}}
     for(const o of d.objects||[]){
       if(!supportedTypes.has(o.type))bad('unsupported-object-type:'+String(o.type));
       if(o.type==='cadPolyline'){
@@ -39,6 +41,7 @@
       }
       if(o.type==='cadHatch'){if(!Array.isArray(o.points)||o.points.length<3||!o.points.every(point))bad('cad-hatch');if(o.angle!=null&&!Number.isFinite(o.angle))bad('cad-hatch-angle');}
       if(o.type==='cadLeader'){if(!annotationV2)bad('annotation-v2-capability-required');if(!Array.isArray(o.points)||o.points.length<2||!o.points.every(point)||typeof o.text!=='string')bad('cad-leader');if(o.height!=null&&(!Number.isFinite(o.height)||o.height<=0))bad('cad-leader-height');if(o.width!=null&&(!Number.isFinite(o.width)||o.width<0))bad('cad-leader-width');}
+      if(o.type==='stair'&&o.upDirection!=null){if(![1,-1].includes(o.upDirection)||!Number.isInteger(o.treadCount)||o.treadCount<2||o.treadCount>256||!o.polygon||o.polygon.length!==4||!root.planStair?.frame(o))bad('stair-properties');}
       if(o.type==='component'){
         if(!point(o.point)||typeof o.assetId!=='string'||!o.assetId.trim())bad('component');
         for(const k of ['rotation','scaleX','scaleY'])if(o[k]!=null&&!Number.isFinite(o[k]))bad('component-transform');

@@ -1,3 +1,30 @@
+## v0.46.0 · Build66
+
+- 스냅 표시·민감도·원호 정확도·가까운 후보 우선순위와 그리기 중 임시 해제를 추가했습니다.
+- Plan EX 결과 미리보기 및 연장 대상 소유권, 선택 객체 방향의 Shift 몸통 이동을 보완했습니다.
+- Plan 계단 생성/편집/벡터 출력, 연결된 CAD 끝점 선택, 연결된 층·도면 영역 전환 및 Plan 존재 표시를 추가했습니다.
+- 참조 파일의 최초 건물명 기본값, 다른 층 anchor를 이용한 선택 객체 위치 보정, 한글 명령 안내 및 펼치기/고정 명령 기록을 통합했습니다.
+- 기존 schema7과 Build65 안정화 유지. 자동 영구 solver/공간 자동 변형 및 수동 검증 경계는 동반 내부 문서에 명시했습니다.
+
+# v0.45.0 · Build64 — Post-RC Feature Fill candidate
+
+## v0.45.1 · Build 65
+
+- DXF: 미사용 BLOCK의 미지원 POLYLINE 때문에 전체 가져오기가 중단되던 문제 수정. 참조 미지원 데이터 오류와 제외된 요소 수 안내.
+- 가져오기 실패·취소·연속 작업의 진행 표시 정리, 편집 DXF는 기존 도면을 보존한 채 준비 후 교체.
+- 빈 도면의 새로 그리기/기존 DXF 수정하기 버튼이 canvas에 가려 클릭되지 않던 문제 수정.
+- Plan 공간: 기존 허용 범위 내 작은 끝점 간격·T 접합과 두-wall 곡선 폐합, 잘못 닫히던 대각 틈 판정 교정. source 벽 좌표는 변경하지 않음.
+- PPRJ schema7 및 기존 층 정렬/겹쳐보기/Region/구성품/Sheet/명령/저장·복구 유지.
+
+
+- Added optional floor view alignment with manual anchors, conservative automatic ghost proposals, same-building camera continuity and read-only floor overlays. Geometry and schema7 remain unchanged.
+- Added common canvas dim selection for Region bounds, temporary print ranges and alignment anchors; explicit apply/retry/cancel and stale-session/input guards.
+- Added a contextual vector Component Browser and moved Plan elements behind CAD geometry/edit/annotation tools. Existing commands/Properties retained; menu icons and Sheet output wording made consistent.
+- Replaced sheet prompts with A4–A0 paper, orientation, Region/multi-page/direct ranges, fit/fixed denominator, page margins, contain-only ratio expansion and shared physical preview/print mapping. Closed explicit range clipping and nested-preview CSS gaps.
+- Preserved Build63 stabilization and Plan behaviors. This is an Astra candidate with manual platform/output/heap checks pending; see the companion reports.
+
+---
+
 # Changelog
 
 ## v0.44.2 · Build 63 — 2026-10-03
