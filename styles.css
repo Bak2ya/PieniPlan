@@ -1799,3 +1799,50 @@ html, body { font-size:var(--font-body); }
 .region-plan-badge { color:var(--text-3); font-size:.85em; font-weight:400; }
 
 #canvasHost.command-log-open .progress-toast { bottom:calc(104px + min(210px,28vh)); }
+
+/* Build67: recognition selection on the left, corresponding candidate count on the right. */
+.recognition-action-results { display:grid; grid-template-columns:minmax(0,1fr); gap:0; padding:4px 10px; }
+.recognition-action-results .recognition-action-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:10px; align-items:center; min-height:42px; font-size:11px; }
+.recognition-action-results .recognition-action-row + .recognition-action-row { border-top:1px solid color-mix(in srgb,var(--border) 65%,transparent); }
+.recognition-action-count { color:var(--text-3); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; font-size:10.5px; }
+.recognition-action-row:has(input:disabled) { opacity:.5; }
+.tool-popover-heading { font-size:10px; font-weight:650; color:var(--text-3); letter-spacing:.01em; padding:11px 12px 4px; }
+.tool-popover-heading:not(:first-child) { margin-top:5px; border-top:1px solid var(--border); }
+
+/* Build67: project-scoped decorative Plan line appearance. */
+.plan-appearance-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:9px; }
+.plan-appearance-fields label { display:flex; flex-direction:column; gap:6px; min-width:0; font-size:10px; color:var(--text-2); }
+.plan-appearance-fields input:not([type=color]) { width:100%; box-sizing:border-box; min-width:0; }
+.plan-appearance-fields input[type=color] { height:31px; width:100%; min-width:0; cursor:pointer; background:var(--surface); border:1px solid var(--border); border-radius:5px; }
+.plan-display-style-select { width:auto; max-width:160px; min-width:100px; height:29px; }
+@media(max-width:500px){.plan-appearance-fields { grid-template-columns:1fr; }}
+
+.icon-align-left { --icon-url:url('vendor/tabler/align-left.svg'); }
+.icon-angle { --icon-url:url('vendor/tabler/angle.svg'); }
+.icon-arrow-bar-to-right { --icon-url:url('vendor/tabler/arrow-bar-to-right.svg'); }
+.icon-arrows-horizontal { --icon-url:url('vendor/tabler/arrows-horizontal.svg'); }
+.icon-arrows-join { --icon-url:url('vendor/tabler/arrows-join.svg'); }
+.icon-arrows-move { --icon-url:url('vendor/tabler/arrows-move.svg'); }
+.icon-arrows-split { --icon-url:url('vendor/tabler/arrows-split.svg'); }
+.icon-border-radius { --icon-url:url('vendor/tabler/border-radius.svg'); }
+.icon-copy { --icon-url:url('vendor/tabler/copy.svg'); }
+.icon-corner-up-right { --icon-url:url('vendor/tabler/corner-up-right.svg'); }
+.icon-crop { --icon-url:url('vendor/tabler/crop.svg'); }
+.icon-cut { --icon-url:url('vendor/tabler/cut.svg'); }
+.icon-flip-horizontal { --icon-url:url('vendor/tabler/flip-horizontal.svg'); }
+.icon-layout-grid { --icon-url:url('vendor/tabler/layout-grid.svg'); }
+.icon-letter-t { --icon-url:url('vendor/tabler/letter-t.svg'); }
+.icon-line-dashed { --icon-url:url('vendor/tabler/line-dashed.svg'); }
+.icon-link { --icon-url:url('vendor/tabler/link.svg'); }
+.icon-message-2 { --icon-url:url('vendor/tabler/message-2.svg'); }
+.icon-resize { --icon-url:url('vendor/tabler/resize.svg'); }
+.icon-rotate { --icon-url:url('vendor/tabler/rotate.svg'); }
+.icon-ruler { --icon-url:url('vendor/tabler/ruler.svg'); }
+.icon-ruler-measure { --icon-url:url('vendor/tabler/ruler-measure.svg'); }
+.icon-stairs { --icon-url:url('vendor/tabler/stairs.svg'); }
+.icon-text-wrap { --icon-url:url('vendor/tabler/text-wrap.svg'); }
+.icon-texture { --icon-url:url('vendor/tabler/texture.svg'); }
+.icon-vector-spline { --icon-url:url('vendor/tabler/vector-spline.svg'); }
+
+/* Vertical constraint reuses the licensed horizontal asset with UI rotation. */
+.icon-vertical { --icon-url:url('vendor/tabler/arrows-horizontal.svg'); transform:rotate(90deg); }

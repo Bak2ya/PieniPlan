@@ -1,3 +1,20 @@
+## v0.48.0 · Build68 — Plan/CAD integrated workflow and output (2026-10-10)
+
+- Plan line/curve tools share four stroke types and project appearance; solid boundary participation, non-solid presentation, preserved host relationships.
+- Read-only recognized space boundary highlight; clearer licensed tool icons and existing command/group grammar retained.
+- Plan architectural objects now render in shared Sheet preview/print; simple per-floor Plan UI, CAD scale/margins/ranges preserved, native arcs and annotation marks improved.
+- Region DXF linetype table and curved display export repaired; Plan curve copy translates center with endpoints.
+- PPRJ schema7 compatible. Testing candidate: actual saved PDF/physical print/Safari/external CAD reader checks remain pending; external references are explicitly excluded from output.
+
+## v0.47.0 · Build67 — Plan display tools and workflow polish (2026-10-09)
+
+- Plan visual lines and arcs with per-object stroke pattern and project-global color/width/dash spacing; separate from structural wall/space recognition, schema7 optional metadata. Sheet SVG / DXF linetype support.
+- Recognition: checkbox/action on left, recognized count on right; walls selected by default, prior applied state respected.
+- Hinged double door first-leaf ratio (10–90%; 50:50 legacy), swing/selection/DXF geometry; menu grouping without legacy type migration.
+- Shift drag: joined neighbor wall directions join constraint candidates; no automatic neighbor translation.
+- Plan curve icon uses existing Tabler arc SVG; other generic icons kept pending user's choice, no custom icons generated.
+- Test: Chromium injected-source 20/20, 0 page errors; inherited Build66 pure geometry 29/29 + 29/29; JS syntax and i18n parity checked. Full browser suite and physical PDF/Safari/reader checks NOT run.
+
 ## v0.46.0 · Build66
 
 - 스냅 표시·민감도·원호 정확도·가까운 후보 우선순위와 그리기 중 임시 해제를 추가했습니다.

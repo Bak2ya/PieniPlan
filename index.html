@@ -331,6 +331,15 @@
               <select id="settingsSnapSensitivity" class="select-input settings-select" aria-label="Snap sensitivity"><option value="low" data-i18n="snap.low">Low</option><option value="normal" data-i18n="snap.normal">Normal</option><option value="high" data-i18n="snap.high">High</option></select>
             </div>
             <div class="settings-section">
+              <div class="settings-section-title" data-i18n="plan.appearanceTitle">Plan lines and curves</div>
+              <div class="settings-section-copy" data-i18n="plan.appearanceCopy">Shared by this project’s Plan lines and curves.</div>
+              <div class="plan-appearance-fields">
+                <label><span data-i18n="plan.color">Color</span><input id="settingsPlanLineColor" type="color" value="#8e9bab" /></label>
+                <label><span data-i18n="plan.width">Width (px)</span><input id="settingsPlanLineWidth" class="text-input" type="number" min="0.5" max="6" step="0.1" value="1.4" /></label>
+                <label><span data-i18n="plan.dashScale">Dash spacing</span><input id="settingsPlanDashScale" class="text-input" type="number" min="0.5" max="3" step="0.1" value="1" /></label>
+              </div>
+            </div>
+            <div class="settings-section">
               <div class="settings-section-title" data-i18n="settings.defaultUnit">New project default unit</div>
               <div class="settings-section-copy" data-i18n="settings.defaultUnitCopy">Applies only to projects created from now on.</div>
               <select id="settingsDefaultUnit" class="select-input settings-select">
@@ -490,12 +499,11 @@
       <div class="dialog-title" id="recognitionTitle">Recognize walls</div>
       <div class="dialog-copy" id="recognitionCopy"></div>
       <div id="recognitionStats" class="recognition-stats"></div>
-      <div id="recognitionBreakdown" class="recognition-breakdown"></div>
-      <div class="recognition-options" role="group" aria-label="Recognition options" data-i18n-aria="recognition.options">
-        <label><input id="recognitionCreateWalls" type="checkbox" checked /> <span data-i18n="recognition.createWalls">Create wall structure</span></label>
-        <label><input id="recognitionCreateSpaces" type="checkbox" checked /> <span data-i18n="recognition.createSpaces">Create high-confidence room spaces</span></label>
-        <label><input id="recognitionCreateDoors" type="checkbox" checked /> <span data-i18n="recognition.createDoors">Create high-confidence hinged doors</span></label>
-        <label><input id="recognitionCreateStairs" type="checkbox" checked /> <span data-i18n="recognition.createStairs">Create confirmed stair candidates</span></label>
+      <div class="recognition-options recognition-action-results" role="group" aria-label="Recognition options" data-i18n-aria="recognition.options">
+        <label class="recognition-action-row"><input id="recognitionCreateWalls" type="checkbox" checked /><span data-i18n="recognition.createWalls">Create simplified walls</span><span class="recognition-action-count" id="recognitionWallsCount"></span></label>
+        <label class="recognition-action-row"><input id="recognitionCreateSpaces" type="checkbox" /><span data-i18n="recognition.createSpaces">Create room spaces</span><span class="recognition-action-count" id="recognitionSpacesCount"></span></label>
+        <label class="recognition-action-row"><input id="recognitionCreateDoors" type="checkbox" /><span data-i18n="recognition.createDoors">Create hinged doors</span><span class="recognition-action-count" id="recognitionDoorsCount"></span></label>
+        <label class="recognition-action-row"><input id="recognitionCreateStairs" type="checkbox" /><span data-i18n="recognition.createStairs">Create detected stairs</span><span class="recognition-action-count" id="recognitionStairsCount"></span></label>
       </div>
       <div class="recognition-note" data-i18n="recognition.note">Candidates stay lightweight until you apply them. Repeated CAD lines are grouped into architectural structure first.</div>
       <div class="dialog-actions">
