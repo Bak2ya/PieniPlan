@@ -1856,3 +1856,37 @@ html, body { font-size:var(--font-body); }
 .inline-text-tools input { width:72px; }.inline-text-tools input,.inline-text-tools select,.inline-text-tools button {font:inherit;min-height:28px;padding:3px 6px;color:var(--text);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:4px;}
 .inline-text-tools button { cursor:pointer; }.inline-text-hint { flex-basis:100%;color:var(--text-2); }
 .output-content-list {display:grid;gap:7px;margin:12px 0;max-height:200px;overflow:auto;}.output-content-row{display:grid;grid-template-columns:20px 1fr 85px 34px;gap:6px;align-items:center;}.output-content-row input[type=range]{width:85px;}.output-reference-note{font-size:11px;color:var(--text-2);}
+
+/* Build72 — settings grouping, accessible project name editing, save-as. */
+.icon-pencil { --icon-url:url('vendor/tabler/pencil.svg'); }
+.settings-context-section { display:block; }
+.settings-context-section > .settings-section-title,.settings-context-section > .settings-section-copy { margin-bottom:10px; }
+.settings-context-section .settings-context-head { padding-inline:0; }
+.settings-context-section .settings-context-list { padding:0; }
+.settings-context-section .settings-context-reset { margin:12px 0 2px; }
+.settings-context-group { border:0; border-bottom:1px solid var(--border); border-radius:0; background:transparent; margin-bottom:6px; }
+.settings-context-group-heading { display:flex; align-items:center; min-height:30px; font-size:var(--font-body); font-weight:650; }
+.settings-context-rows { border-top:0; }
+.settings-context-row { padding-left:6px; }
+.settings-context-label { display:flex; align-items:center; gap:7px; }
+.settings-context-label .ui-icon { width:16px; height:16px; flex:none; }
+.topbar-document { min-width:0; }
+.project-title-control { display:flex; align-items:center; min-width:0; gap:4px; }
+.project-rename-pencil { display:grid; place-items:center; width:20px; height:23px; flex:none; border:0; padding:2px; border-radius:4px; background:none; color:var(--text-2); opacity:0; pointer-events:none; cursor:pointer; }
+.project-title-control:hover .project-rename-pencil,.project-title-control:focus-within .project-rename-pencil { opacity:1; pointer-events:auto; }
+.project-rename-pencil:hover,.project-rename-pencil:focus-visible,.project-name-action:hover { background:var(--surface-3); color:var(--text); }
+.project-rename-pencil .ui-icon { width:14px; height:14px; }
+.project-title-control.editing .project-rename-pencil,.project-title-control.editing .document-title { display:none; }
+.project-name-edit { display:flex; align-items:center; gap:4px; min-width:0; }
+.project-name-edit[hidden] { display:none!important; }
+.project-name-edit input { min-width:90px; width:clamp(120px,19vw,260px); height:27px; padding:3px 6px; font-size:var(--font-body); }
+.project-name-action { width:24px; height:25px; padding:0; flex:none; border:0; border-radius:5px; background:transparent; color:var(--text-2); font:inherit; cursor:pointer; }
+.project-save-as-dialog { width:min(410px,calc(100vw - 32px)); }
+.project-save-as-field { display:flex; align-items:center; gap:6px; margin:7px 0 12px; }
+.project-save-as-field input { min-width:0; flex:1; }
+.project-save-as-field span { color:var(--text-2); font-size:var(--font-body); }
+@media(hover:none){.project-rename-pencil { opacity:1; pointer-events:auto; }}
+
+/* Share the same tool icons between right-click menus and their settings. */
+.canvas-context-menu .context-menu-label { display:flex;align-items:center;gap:7px;min-width:0; }
+.canvas-context-menu .context-menu-label .ui-icon { width:15px;height:15px;flex:none; }

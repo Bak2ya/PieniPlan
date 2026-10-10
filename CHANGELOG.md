@@ -1,3 +1,11 @@
+## v0.51.0 · Build72
+
+- 설정창을 일반·환경·Plan Mode·CAD Mode로 재구성하고 각 모드의 우클릭 설정/아이콘을 정리했습니다.
+- 다른 PPRJ에서 도면 내용 없이 Plan 선 표시 설정만 가져올 수 있습니다.
+- 신규 프로젝트 Plan 선 기본 굵기를 기존 2.2px로 복원하고 기본값 복원 기능을 추가했습니다. 기존 프로젝트에 저장된 사용자 설정은 유지합니다.
+- 상단 프로젝트 이름을 연필 아이콘으로 안전하게 직접 수정할 수 있습니다. Enter/Esc 및 확인·취소 버튼을 지원합니다.
+- 다른 이름으로 저장할 때 파일 이름을 지정하고 .pprj 확장자를 한 번만 사용하도록 정리했습니다.
+
 ## v0.50.0 · Build71 — 공유 CAD 블록·DXF·건축 시트 통합 후보 (2026-10-10)
 
 - BLOCK/INSERT/EXPLODE와 격리된 BEDIT 정의 편집, nested matrix/ByLayer/ByBlock/owner selection/snap 및 inverse library transaction.
