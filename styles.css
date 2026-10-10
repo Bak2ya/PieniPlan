@@ -1846,3 +1846,13 @@ html, body { font-size:var(--font-body); }
 
 /* Vertical constraint reuses the licensed horizontal asset with UI rotation. */
 .icon-vertical { --icon-url:url('vendor/tabler/arrows-horizontal.svg'); transform:rotate(90deg); }
+
+@font-face { font-family:PieniPlanOutputSans; src:url('vendor/output/PieniPlanOutputSans.ttf') format('truetype'); font-style:normal; font-weight:400; font-display:swap; }
+.inline-text-editor { position:absolute;inset:0;z-index:24;pointer-events:none; }
+.inline-text-frame { position:absolute;transform-origin:0 0; }
+.inline-text-input { position:absolute;box-sizing:content-box;resize:none;padding:0;margin:0;border:1px solid var(--accent);border-radius:2px;background:var(--canvas);color:var(--text);font-family:system-ui,sans-serif;outline:none;overflow:hidden;pointer-events:auto; }
+.inline-text-tools { position:absolute;display:flex;gap:7px;align-items:end;flex-wrap:wrap;max-width:min(650px,calc(100% - 8px));padding:9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px #0005;pointer-events:auto;font-size:11px; }
+.inline-text-tools label { display:grid;gap:4px; }
+.inline-text-tools input { width:72px; }.inline-text-tools input,.inline-text-tools select,.inline-text-tools button {font:inherit;min-height:28px;padding:3px 6px;color:var(--text);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:4px;}
+.inline-text-tools button { cursor:pointer; }.inline-text-hint { flex-basis:100%;color:var(--text-2); }
+.output-content-list {display:grid;gap:7px;margin:12px 0;max-height:200px;overflow:auto;}.output-content-row{display:grid;grid-template-columns:20px 1fr 85px 34px;gap:6px;align-items:center;}.output-content-row input[type=range]{width:85px;}.output-reference-note{font-size:11px;color:var(--text-2);}

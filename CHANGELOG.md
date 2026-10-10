@@ -1,3 +1,17 @@
+## v0.49.0 · Build70 — 출력·도면 위 문자 편집 통합 (2026-10-10)
+
+- shared SVG/mm scene에서 실제 PDF 직접 저장·열기. A4~A0, 범위/축척/여백 유지, current view와 floor/saved Sheet 범위 추가.
+- external DXF/PDF/image 기본 포함, 출력 전용 visible/opacity. PDF underlay만 최대300dpi raster, native/DXF vectors 유지. prepared asset 오류·stale document publish 방지.
+- world-anchored TEXT/MTEXT inline editor, Plan floor annotation, height/alignment/rotation/wrap, IME event fence, native editing Undo 및 commit/cancel/history/persistence.
+- Build69 all-wall common style 보존. Plan text는 CAD native 수정대상이 아닌 Plan Overlay RO. schema7 유지.
+- actual Safari Build69 blank second page 재현, candidate actual PDF1page 및 direct/OS PDF 저장 확인. OS 인쇄 방향/100% 안내. 실제 OS IME 전체 조합은 부분 검증이며 RC 인증 아님.
+
+## v0.48.1 · Build69 — Plan wall appearance parity (2026-10-10)
+
+- Plan 수동 벽과 기존 자동 인식 벽이 동일한 프로젝트 공통 선 색상·굵기를 사용하도록 수정.
+- Plan 시트/PDF SVG 벽 스타일에도 동일한 규칙 적용. 선택·호버 강조, 도면 geometry/두께/연결 정보, PPRJ schema7은 유지.
+- Build68의 Safari 실인쇄·외부 참조 출력·문자 편집 개선은 이번 수정 범위 밖.
+
 ## v0.48.0 · Build68 — Plan/CAD integrated workflow and output (2026-10-10)
 
 - Plan line/curve tools share four stroke types and project appearance; solid boundary participation, non-solid presentation, preserved host relationships.

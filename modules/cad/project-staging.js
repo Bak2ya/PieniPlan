@@ -30,7 +30,7 @@
       if(['cadLine','line','wall'].includes(o.type)&&(!point(o.a)||!point(o.b)))bad('line');
       if(['cadCircle','cadArc'].includes(o.type)&&(!point(o.center)||!Number.isFinite(o.radius)||o.radius<=0))bad('circle');
       if(o.type==='cadArc'&&(!Number.isFinite(o.startAngle)||!Number.isFinite(o.sweep)))bad('arc');
-      if(o.type==='cadText'){if(!point(o.point)||typeof o.text!=='string')bad('text');if(o.width!=null&&(!Number.isFinite(o.width)||o.width<0))bad('text-width');if((o.mtext===true||o.text.includes('\n'))&&!annotationV2)bad('annotation-v2-capability-required');}
+      if(o.type==='cadText'){if(o.alignment!=null&&!['left','center','right'].includes(o.alignment))bad('text-alignment');if(!point(o.point)||typeof o.text!=='string')bad('text');if(o.width!=null&&(!Number.isFinite(o.width)||o.width<0))bad('text-width');if((o.mtext===true||o.text.includes('\n'))&&!annotationV2)bad('annotation-v2-capability-required');}
       if(o.type==='cadDimension'){
         const kind=o.kind||'aligned';
         if(kind==='aligned'){if(!point(o.p1)||!point(o.p2)||!Number.isFinite(o.offset))bad('cad-dimension');}

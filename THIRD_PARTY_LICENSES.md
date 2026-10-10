@@ -29,3 +29,8 @@ Only the icons needed by the PieniPlan interface are bundled locally. No icon CD
 ### Local outline icon extensions
 
 `vendor/tabler/file.svg`, `printer.svg`, `rectangle.svg`, `circle.svg`, `arc.svg` are PieniPlan-authored simple 24×24, 2px outline additions matching the existing menu grammar. They are not newly downloaded third-party images. Existing Tabler subset licensing remains in vendor/tabler/LICENSE.txt. Component vector provenance remains in assets/components/ASSET_PROVENANCE.md.
+
+
+## PDF output and font dependencies (Build70)
+
+Pinned jsPDF4.2.1 (MIT), svg2pdf.js2.8.1 (MIT), PDF.js6.4.299 (Apache2.0 plus asset-specific notices), and static Noto Sans KR400 (SIL OFL1.1) are bundled locally. Full upstream notices, dependency notices, provenance and font derivation are in `vendor/output/THIRD_PARTY_NOTICES.md`, associated LICENSE files and `PROVENANCE.json`. No runtime CDN is required.
