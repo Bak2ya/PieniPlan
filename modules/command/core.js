@@ -4,6 +4,8 @@
   const root = window.PieniPlanModules = window.PieniPlanModules || {};
 
   const catalog = Object.freeze([
+    {id:'SHEETMANAGER',name:'SHEETMANAGER',aliases:['SHEETMANAGER']},
+    ...[['DIMSTYLE','D'],['DIMLINEAR','DIMLINEAR'],['BLOCK','B'],['INSERT','I'],['EXPLODE','X'],['XLINE','XL'],['RAY','RAY'],['BEDIT','BE'],['BLOCKS','BLOCKS']].map(([id,alias])=>({id,name:id,aliases:[...new Set([id,alias])],cadOnly:true})),
     ...[['O','OFFSET'],['F','FILLET'],['BR','BREAK'],['J','JOIN']].map(([id,name])=>({id,name,aliases:[id,name],cadOnly:true})),
     { id: 'MA', name: 'MATCHPROP', aliases: ['MA','MATCHPROP'], cadOnly:true },
     { id: 'ST', name: 'STAIR', aliases: ['ST','STAIR'], planOnly:true },
@@ -19,7 +21,7 @@
     { id: 'T', name: 'TEXT', aliases: ['T','TEXT'] },
     { id: 'MT', name: 'MTEXT', aliases: ['MT','MTEXT'] },
     { id: 'LE', name: 'LEADER', aliases: ['LE','LEADER','CALLOUT'], cadOnly:true },
-    { id: 'DLI', name: 'DIMALIGNED', aliases: ['DLI','DIM','DIMALIGNED'], cadOnly:true },
+    { id: 'DLI', name: 'DIMALIGNED', aliases: ['DLI','DAL','DIM','DIMALIGNED'], cadOnly:true },
     { id: 'DRA', name: 'DIMRADIUS', aliases: ['DRA','DIMRADIUS'], cadOnly:true },
     { id: 'DDI', name: 'DIMDIAMETER', aliases: ['DDI','DIMDIAMETER'], cadOnly:true },
     { id: 'DAN', name: 'DIMANGULAR', aliases: ['DAN','DIMANGULAR'], cadOnly:true },

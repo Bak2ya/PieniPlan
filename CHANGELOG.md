@@ -1,3 +1,11 @@
+## v0.50.0 · Build71 — 공유 CAD 블록·DXF·건축 시트 통합 후보 (2026-10-10)
+
+- BLOCK/INSERT/EXPLODE와 격리된 BEDIT 정의 편집, nested matrix/ByLayer/ByBlock/owner selection/snap 및 inverse library transaction.
+- editable semantic DXF graph, 5 DIMENSION kinds/DIMSTYLE/DSTYLE, Korean TEXT/MTEXT/HATCH holes, raw RO preservation diagnostics. 독립ezdxf 오류0/보정0, 외부CAD GUI 검증은 보류.
+- DIMSTYLE 관리/기존객체 적용, DIMLINEAR, XLINE/RAY, native title block+metadata, 개별 mixed Sheet 용지·축척·PDF 및 재출력 중복 방지.
+- PPRJ schema7/capability 확장, staged load rollback, 104k 일반 선 culling 보호. Plan/FM/PPKG/Build69 wall/Build70 output/text 계약 유지.
+- FREEZE CANDIDATE — CONDITIONAL: human OSIME/외부 CAD/실도면 성능 편차 감사 남음. 정식 release/감사 완료 아님.
+
 ## v0.49.0 · Build70 — 출력·도면 위 문자 편집 통합 (2026-10-10)
 
 - shared SVG/mm scene에서 실제 PDF 직접 저장·열기. A4~A0, 범위/축척/여백 유지, current view와 floor/saved Sheet 범위 추가.

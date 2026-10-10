@@ -20,22 +20,25 @@
   function arc(o,m){const s=scaleOf(m),sign=Math.sign(det(m))||1;return{...o,center:point(m,o.center),radius:o.radius*s,startAngle:transformedAngle(m,o.startAngle||0),sweep:(o.sweep||0)*sign};}
   function dimension(o,m){
     const kind=o.kind||'aligned',s=scaleOf(m);let out={...o};
-    if(kind==='aligned'){const p1=point(m,o.p1),p2=point(m,o.p2),dx=o.p2.x-o.p1.x,dy=o.p2.y-o.p1.y,len=Math.hypot(dx,dy);let offset=Number(o.offset)||0;if(len>EPS){const nx=-dy/len,ny=dx/len,d1={x:o.p1.x+nx*offset,y:o.p1.y+ny*offset},td1=point(m,d1),ndx=p2.x-p1.x,ndy=p2.y-p1.y,nlen=Math.hypot(ndx,ndy);if(nlen>EPS)offset=(td1.x-p1.x)*(-ndy/nlen)+(td1.y-p1.y)*(ndx/nlen);}out={...o,p1,p2,offset};}
+    if(kind==='linear'){const p1=point(m,o.p1),p2=point(m,o.p2),g=root.cadAnnotation2.linear(o),dimensionAngle=transformedAngle(m,o.dimensionAngle),a=dimensionAngle*Math.PI/180,d=g?point(m,g.d1):p1;out={...o,p1,p2,dimensionAngle,offset:(d.x-p1.x)*(-Math.sin(a))+(d.y-p1.y)*Math.cos(a)};}
+    else if(kind==='aligned'){const p1=point(m,o.p1),p2=point(m,o.p2),dx=o.p2.x-o.p1.x,dy=o.p2.y-o.p1.y,len=Math.hypot(dx,dy);let offset=Number(o.offset)||0;if(len>EPS){const nx=-dy/len,ny=dx/len,d1={x:o.p1.x+nx*offset,y:o.p1.y+ny*offset},td1=point(m,d1),ndx=p2.x-p1.x,ndy=p2.y-p1.y,nlen=Math.hypot(ndx,ndy);if(nlen>EPS)offset=(td1.x-p1.x)*(-ndy/nlen)+(td1.y-p1.y)*(ndx/nlen);}out={...o,p1,p2,offset};}
     else if(kind==='radius'||kind==='diameter')out={...o,center:point(m,o.center),radius:o.radius*s,labelPoint:point(m,o.labelPoint)};
     else if(kind==='angular')out={...o,vertex:point(m,o.vertex),ray1:point(m,o.ray1),ray2:point(m,o.ray2),radius:(Number(o.radius)||1)*s,labelPoint:o.labelPoint?point(m,o.labelPoint):undefined};
     if(root.cadAnnotation2)out.segments=root.cadAnnotation2.segments(out);else if(Array.isArray(o.segments))out.segments=o.segments.map(seg=>({a:point(m,seg.a),b:point(m,seg.b)}));return out;
   }
   function transform(o,m){if(!validMatrix(m)||!o)return null;const s=scaleOf(m),sign=Math.sign(det(m))||1;
     if(root.cadPolyline?.is(o))return root.cadPolyline.transform(o,m);
-    if(o.type==='cadLine')return{...o,a:point(m,o.a),b:point(m,o.b)};
+    if(o.type==='cadPoint')return{...o,point:point(m,o.point)};
+    if(o.type==='cadInsert')return{...o,matrix:multiply(m,o.matrix)};
+    if(['cadLine','cadRay','cadXline'].includes(o.type))return{...o,a:point(m,o.a),b:point(m,o.b)};
     if(o.type==='cadCircle')return{...o,center:point(m,o.center),radius:o.radius*s};
     if(o.type==='cadArc')return arc(o,m);
     if(o.type==='cadText')return{...o,point:point(m,o.point),leaderAnchor:o.leaderAnchor?point(m,o.leaderAnchor):undefined,height:(Number(o.height)||180)*s,width:(Number(o.width)||0)*s,rotation:transformedAngle(m,Number(o.rotation)||0),mirrored:sign<0?!Boolean(o.mirrored):Boolean(o.mirrored)};
     if(o.type==='cadDimension')return dimension(o,m);
-    if(o.type==='cadHatch')return{...o,points:(o.points||[]).map(p=>point(m,p)),angle:transformedAngle(m,Number(o.angle)||45),sourceBoundaryId:null};
+    if(o.type==='cadHatch'){const q={...o,points:(o.points||[]).map(p=>point(m,p)),loops:o.loops?.map(loop=>loop.map(p=>point(m,p))),angle:transformedAngle(m,finite(o.angle)?o.angle:45),sourceBoundaryId:null};if(o.dxf?.raw||o.hatchPatternTransform){const hm=multiply(m,o.hatchPatternTransform||{a:1,b:0,c:0,d:1,tx:0,ty:0});if([hm.a-1,hm.b,hm.c,hm.d-1,hm.tx,hm.ty].every(v=>Math.abs(v)<1e-10))delete q.hatchPatternTransform;else q.hatchPatternTransform=hm;if(o.patternScale!=null)q.patternScale=o.patternScale*s;}return q;}
     if(o.type==='cadLeader')return{...o,points:(o.points||[]).map(p=>point(m,p)),height:(Number(o.height)||140)*s,width:(Number(o.width)||0)*s};
     return null;
   }
-  function supports(o){return Boolean(o&&(root.cadPolyline?.is(o)||['cadLine','cadCircle','cadArc','cadText','cadDimension','cadHatch','cadLeader'].includes(o.type)));}
+  function supports(o){return Boolean(o&&(root.cadPolyline?.is(o)||['cadPoint','cadInsert','cadXline','cadRay','cadLine','cadCircle','cadArc','cadText','cadDimension','cadHatch','cadLeader'].includes(o.type)));}
   root.cadTransformOperations=Object.freeze({identity,multiply,translate,rotate,scale,mirror,align,point,det,scaleOf,validMatrix,transform,supports});
 })();

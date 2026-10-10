@@ -1,0 +1,7 @@
+/* Atomic definition delta + object delta. Unchanged world geometry is shared. */
+(() => {
+ 'use strict';const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},clone=v=>root.cadChangeSet.clone(v),equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),key=n=>String(n).toUpperCase();
+ function create(label,before,after,changes){if(!before&&!after||before&&after&&key(before.name)!==key(after.name))throw Error('invalid-library-change');return{kind:'cad-library-change',version:1,label,name:(before||after).name,before:clone(before),after:clone(after),objects:root.cadChangeSet.create(label,changes)};}
+ function apply(entry,document,{inverse=false}={}){if(entry?.kind!=='cad-library-change'||entry.version!==1)throw Error('invalid-library-change');const expected=inverse?entry.after:entry.before,value=inverse?entry.before:entry.after,index=document.definitions.findIndex(d=>key(d.name)===key(entry.name)),current=index<0?null:document.definitions[index];if(!equal(current,expected))throw Error('stale-library-change');const definitions=document.definitions.slice();if(value){if(index<0)definitions.push(clone(value));else definitions[index]=clone(value);}else definitions.splice(index,1);const objects=root.cadChangeSet.apply(entry.objects,document.objects,{inverse});root.cadBlocks.validate(definitions,objects);return{definitions,objects};}
+ root.cadLibraryChange=Object.freeze({create,apply});
+})();

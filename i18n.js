@@ -3,6 +3,17 @@
 
   const messages = {
     en: {
+      'tool.linearDim':'Linear dimension',
+      'tool.xline':'Construction line',
+      'tool.ray':'Ray',
+      'annotation.dimensionType.linear':'Linear',
+      'block.rotation':'Rotation',
+      'block.scale':'Scale',
+      'block.multiple':'Repeat placement',
+      'block.name':'Choose block',
+      'value.cadInsert':'Block instance',
+      'value.cadXline':'Construction line',
+      'value.cadRay':'Ray',
       'tool.stair': 'Stair',
       'stair.first': 'Specify first stair corner',
       'stair.second': 'Specify opposite stair corner',
@@ -1017,6 +1028,17 @@
     },
 
     ko: {
+      'tool.linearDim':'선형 치수',
+      'tool.xline':'양방향 기준선',
+      'tool.ray':'반직선',
+      'annotation.dimensionType.linear':'선형',
+      'block.rotation':'회전',
+      'block.scale':'축척',
+      'block.multiple':'반복 배치',
+      'block.name':'블록 선택',
+      'value.cadInsert':'블록 배치',
+      'value.cadXline':'무한 기준선',
+      'value.cadRay':'반직선',
       'tool.stair': '계단',
       'stair.first': '계단 첫 모서리를 지정하세요.',
       'stair.second': '계단 맞은편 모서리를 지정하세요.',

@@ -1,0 +1,7063 @@
+{
+  "format": "PieniPlan",
+  "fileType": "pieniplan-project",
+  "schemaVersion": 7,
+  "requiredCapabilities": [
+    "cad.polyline.lineArc.v1",
+    "cad.annotation.v2",
+    "reference.pdf.v1",
+    "sheet.architectural.v1",
+    "cad.dimstyle.v1",
+    "cad.dxf.roundtrip.v1",
+    "cad.block.v1",
+    "cad.construction.v1"
+  ],
+  "projectId": "project-3f2e0bb2-f532-4c62-bf7e-bec6dfd8c835",
+  "app": {
+    "version": "0.50.0",
+    "build": 71
+  },
+  "savedAt": "2026-10-10T08:00:38.335Z",
+  "sourceDxf": {
+    "name": "native-artifact.dxf",
+    "fingerprint": "b57ddd7ab08d0769b5b3f89d93926a75ea7940ad6e4357c13206bef3505df55f",
+    "size": 11209,
+    "lastModified": 1791619232997,
+    "mainBounds": {
+      "minx": -255.22957435166276,
+      "miny": -500,
+      "maxx": 4747.129858190796,
+      "maxy": 4806.863737476941
+    },
+    "fullBounds": {
+      "minx": -255.22957435166276,
+      "miny": -500,
+      "maxx": 4747.129858190796,
+      "maxy": 4806.863737476941
+    },
+    "outlierCount": 0
+  },
+  "drawing": {
+    "dimensionStyles": [
+      {
+        "name": "Arch",
+        "textHeight": 250,
+        "arrowSize": 100,
+        "extensionOffset": 0.625,
+        "extensionBeyond": 1.25,
+        "textGap": 0.625,
+        "overallScale": 1,
+        "precision": 0,
+        "units": "mm",
+        "lengthFactor": 1,
+        "arrow": "tick",
+        "textPosition": "above",
+        "textOrientation": "aligned",
+        "dimensionColorIndex": 0,
+        "extensionColorIndex": 0,
+        "textColorIndex": 0,
+        "dimensionColor": "BYBLOCK",
+        "extensionColor": "BYBLOCK",
+        "textColor": "BYBLOCK",
+        "format": "<>",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "DIMSTYLE"
+            ],
+            [
+              105,
+              "50"
+            ],
+            [
+              330,
+              "51"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbDimStyleTableRecord"
+            ],
+            [
+              2,
+              "Arch"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              3,
+              "<> mm"
+            ],
+            [
+              40,
+              "1"
+            ],
+            [
+              41,
+              "100"
+            ],
+            [
+              42,
+              "0.625"
+            ],
+            [
+              44,
+              "1.25"
+            ],
+            [
+              140,
+              "250"
+            ],
+            [
+              147,
+              "0.625"
+            ],
+            [
+              144,
+              "1"
+            ],
+            [
+              142,
+              "100"
+            ],
+            [
+              77,
+              "1"
+            ],
+            [
+              73,
+              "0"
+            ],
+            [
+              74,
+              "0"
+            ],
+            [
+              271,
+              "0"
+            ],
+            [
+              277,
+              "2"
+            ],
+            [
+              340,
+              "4E"
+            ]
+          ],
+          "signature": "{\"name\":\"Arch\",\"textHeight\":250,\"arrowSize\":100,\"extensionOffset\":0.625,\"extensionBeyond\":1.25,\"textGap\":0.625,\"overallScale\":1,\"precision\":0,\"units\":\"mm\",\"lengthFactor\":1,\"arrow\":\"tick\",\"textPosition\":\"above\",\"textOrientation\":\"aligned\",\"dimensionColorIndex\":0,\"extensionColorIndex\":0,\"textColorIndex\":0,\"dimensionColor\":\"BYBLOCK\",\"extensionColor\":\"BYBLOCK\",\"textColor\":\"BYBLOCK\",\"format\":\"<>\",\"readonly\":false,\"showUnit\":true,\"textStyle\":\"Standard\"}"
+        },
+        "readonly": false,
+        "showUnit": true,
+        "textStyle": "Standard"
+      },
+      {
+        "name": "Architecture",
+        "textHeight": 2.5,
+        "arrowSize": 2.5,
+        "extensionOffset": 0.625,
+        "extensionBeyond": 1.25,
+        "textGap": 0.625,
+        "overallScale": 100,
+        "precision": 0,
+        "units": "mm",
+        "lengthFactor": 1,
+        "arrow": "closed",
+        "textOrientation": "aligned",
+        "format": "<>",
+        "showUnit": true,
+        "textPosition": "above"
+      }
+    ],
+    "dxfArchive": {
+      "version": "AC1021",
+      "unitCode": 4,
+      "unitFactor": 1,
+      "sections": [
+        {
+          "name": "HEADER",
+          "pairs": [
+            [
+              9,
+              "$ACADVER"
+            ],
+            [
+              1,
+              "AC1021"
+            ],
+            [
+              9,
+              "$INSUNITS"
+            ],
+            [
+              70,
+              "4"
+            ],
+            [
+              9,
+              "$DWGCODEPAGE"
+            ],
+            [
+              3,
+              "UTF-8"
+            ],
+            [
+              9,
+              "$HANDSEED"
+            ],
+            [
+              5,
+              "53"
+            ]
+          ]
+        },
+        {
+          "name": "TABLES",
+          "pairs": [
+            [
+              0,
+              "TABLE"
+            ],
+            [
+              2,
+              "LAYER"
+            ],
+            [
+              5,
+              "4B"
+            ],
+            [
+              330,
+              "0"
+            ],
+            [
+              100,
+              "AcDbSymbolTable"
+            ],
+            [
+              70,
+              "5"
+            ],
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "46"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "0"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ],
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "47"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-WALL"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ],
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "48"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-TEXT"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ],
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "49"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-DIM"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ],
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "4A"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-HATCH"
+            ],
+            [
+              70,
+              "4"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ],
+            [
+              0,
+              "ENDTAB"
+            ],
+            [
+              0,
+              "TABLE"
+            ],
+            [
+              2,
+              "LTYPE"
+            ],
+            [
+              5,
+              "4D"
+            ],
+            [
+              330,
+              "0"
+            ],
+            [
+              100,
+              "AcDbSymbolTable"
+            ],
+            [
+              70,
+              "1"
+            ],
+            [
+              0,
+              "LTYPE"
+            ],
+            [
+              5,
+              "4C"
+            ],
+            [
+              330,
+              "4D"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLinetypeTableRecord"
+            ],
+            [
+              2,
+              "CONTINUOUS"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              3,
+              "CONTINUOUS"
+            ],
+            [
+              72,
+              "65"
+            ],
+            [
+              73,
+              "0"
+            ],
+            [
+              40,
+              "0"
+            ],
+            [
+              0,
+              "ENDTAB"
+            ],
+            [
+              0,
+              "TABLE"
+            ],
+            [
+              2,
+              "STYLE"
+            ],
+            [
+              5,
+              "4F"
+            ],
+            [
+              330,
+              "0"
+            ],
+            [
+              100,
+              "AcDbSymbolTable"
+            ],
+            [
+              70,
+              "1"
+            ],
+            [
+              0,
+              "STYLE"
+            ],
+            [
+              5,
+              "4E"
+            ],
+            [
+              330,
+              "4F"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbTextStyleTableRecord"
+            ],
+            [
+              2,
+              "Standard"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              40,
+              "0"
+            ],
+            [
+              41,
+              "1"
+            ],
+            [
+              50,
+              "0"
+            ],
+            [
+              71,
+              "0"
+            ],
+            [
+              42,
+              "2.5"
+            ],
+            [
+              3,
+              "txt"
+            ],
+            [
+              4,
+              ""
+            ],
+            [
+              0,
+              "ENDTAB"
+            ],
+            [
+              0,
+              "TABLE"
+            ],
+            [
+              2,
+              "DIMSTYLE"
+            ],
+            [
+              5,
+              "51"
+            ],
+            [
+              330,
+              "0"
+            ],
+            [
+              100,
+              "AcDbSymbolTable"
+            ],
+            [
+              100,
+              "AcDbDimStyleTable"
+            ],
+            [
+              70,
+              "1"
+            ],
+            [
+              0,
+              "DIMSTYLE"
+            ],
+            [
+              105,
+              "50"
+            ],
+            [
+              330,
+              "51"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbDimStyleTableRecord"
+            ],
+            [
+              2,
+              "Arch"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              3,
+              "<> mm"
+            ],
+            [
+              40,
+              "1"
+            ],
+            [
+              41,
+              "100"
+            ],
+            [
+              42,
+              "0.625"
+            ],
+            [
+              44,
+              "1.25"
+            ],
+            [
+              140,
+              "250"
+            ],
+            [
+              147,
+              "0.625"
+            ],
+            [
+              144,
+              "1"
+            ],
+            [
+              142,
+              "100"
+            ],
+            [
+              77,
+              "1"
+            ],
+            [
+              73,
+              "0"
+            ],
+            [
+              74,
+              "0"
+            ],
+            [
+              271,
+              "0"
+            ],
+            [
+              277,
+              "2"
+            ],
+            [
+              340,
+              "4E"
+            ],
+            [
+              0,
+              "ENDTAB"
+            ],
+            [
+              0,
+              "TABLE"
+            ],
+            [
+              2,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "52"
+            ],
+            [
+              330,
+              "0"
+            ],
+            [
+              100,
+              "AcDbSymbolTable"
+            ],
+            [
+              70,
+              "9"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "1"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*MODEL_SPACE"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "2"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*PAPER_SPACE"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "3"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "DESK"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "4"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "PARENT"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "13"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*PPD1"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "14"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*PPD2"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "15"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*PPD3"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "16"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*PPD4"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "BLOCK_RECORD"
+            ],
+            [
+              5,
+              "17"
+            ],
+            [
+              330,
+              "52"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbBlockTableRecord"
+            ],
+            [
+              2,
+              "*PPD5"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              280,
+              "1"
+            ],
+            [
+              281,
+              "0"
+            ],
+            [
+              0,
+              "ENDTAB"
+            ]
+          ]
+        }
+      ],
+      "preservedBlocks": [],
+      "sourceObjectCount": 14,
+      "diagnostics": [],
+      "warnings": [
+        "Imported HATCH boundaries, holes and pattern records are retained; display uses a generic basic pattern rather than every DXF pattern family."
+      ]
+    },
+    "blockDefinitions": [
+      {
+        "name": "Desk",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "1C"
+          ],
+          [
+            330,
+            "3"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "Desk"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "Desk"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "1F"
+          ],
+          [
+            330,
+            "3"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadLine-dxf-1",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "colorIndex": 0,
+            "color": "BYBLOCK",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 0,
+              "y": 0
+            },
+            "b": {
+              "x": 1000,
+              "y": 0
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "1D"
+                ],
+                [
+                  330,
+                  "3"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "0"
+                ],
+                [
+                  62,
+                  "0"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "0"
+                ],
+                [
+                  20,
+                  "0"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "1000"
+                ],
+                [
+                  21,
+                  "0"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-1",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"0\",\"colorIndex\":0,\"color\":\"BYBLOCK\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":0,\"y\":0},\"b\":{\"x\":1000,\"y\":0},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadCircle-dxf-2",
+            "type": "cadCircle",
+            "cadLayer": "0",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "center": {
+              "x": 500,
+              "y": 500
+            },
+            "radius": 100,
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "CIRCLE"
+                ],
+                [
+                  5,
+                  "1E"
+                ],
+                [
+                  330,
+                  "3"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "0"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbCircle"
+                ],
+                [
+                  10,
+                  "500"
+                ],
+                [
+                  20,
+                  "500"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "100"
+                ]
+              ],
+              "ownerId": "cadCircle-dxf-2",
+              "signature": "{\"type\":\"cadCircle\",\"cadLayer\":\"0\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"center\":{\"x\":500,\"y\":500},\"radius\":100,\"source\":\"DXF\"}"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Parent",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "20"
+          ],
+          [
+            330,
+            "4"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "Parent"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "Parent"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "22"
+          ],
+          [
+            330,
+            "4"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadInsert-dxf-3",
+            "type": "cadInsert",
+            "cadLayer": "0",
+            "colorIndex": 0,
+            "color": "BYBLOCK",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "blockName": "Desk",
+            "matrix": {
+              "a": 0.8660254037844387,
+              "b": 0.49999999999999983,
+              "c": -0.49999999999999983,
+              "d": 0.8660254037844387,
+              "tx": 100,
+              "ty": 200
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "INSERT"
+                ],
+                [
+                  5,
+                  "21"
+                ],
+                [
+                  330,
+                  "4"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "0"
+                ],
+                [
+                  62,
+                  "0"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbBlockReference"
+                ],
+                [
+                  2,
+                  "Desk"
+                ],
+                [
+                  10,
+                  "100"
+                ],
+                [
+                  20,
+                  "200"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  41,
+                  "1"
+                ],
+                [
+                  42,
+                  "1"
+                ],
+                [
+                  43,
+                  "1"
+                ],
+                [
+                  50,
+                  "29.999999999999993"
+                ]
+              ],
+              "ownerId": "cadInsert-dxf-3",
+              "signature": "{\"type\":\"cadInsert\",\"cadLayer\":\"0\",\"colorIndex\":0,\"color\":\"BYBLOCK\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"blockName\":\"Desk\",\"matrix\":{\"a\":0.8660254037844387,\"b\":0.49999999999999983,\"c\":-0.49999999999999983,\"d\":0.8660254037844387,\"tx\":100,\"ty\":200},\"source\":\"DXF\"}"
+            }
+          }
+        ]
+      },
+      {
+        "name": "*PPD1",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "23"
+          ],
+          [
+            330,
+            "13"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "*PPD1"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "*PPD1"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "2A"
+          ],
+          [
+            330,
+            "13"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadLine-dxf-4",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": -0.2795084971874737,
+              "y": 0.5590169943749475
+            },
+            "b": {
+              "x": -224.16581474435392,
+              "y": 448.33162948870785
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "24"
+                ],
+                [
+                  330,
+                  "13"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "-0.2795084971874737"
+                ],
+                [
+                  20,
+                  "0.5590169943749475"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "-224.16581474435392"
+                ],
+                [
+                  21,
+                  "448.33162948870785"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-4",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":-0.2795084971874737,\"y\":0.5590169943749475},\"b\":{\"x\":-224.16581474435392,\"y\":448.33162948870785},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-5",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 999.7204915028125,
+              "y": 500.55901699437493
+            },
+            "b": {
+              "x": 775.834185255646,
+              "y": 948.3316294887078
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "25"
+                ],
+                [
+                  330,
+                  "13"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "999.7204915028125"
+                ],
+                [
+                  20,
+                  "500.55901699437493"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "775.834185255646"
+                ],
+                [
+                  21,
+                  "948.3316294887078"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-5",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":999.7204915028125,\"y\":500.55901699437493},\"b\":{\"x\":775.834185255646,\"y\":948.3316294887078},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-6",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": -223.60679774997897,
+              "y": 447.21359549995793
+            },
+            "b": {
+              "x": 776.393202250021,
+              "y": 947.2135954999579
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "26"
+                ],
+                [
+                  330,
+                  "13"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "-223.60679774997897"
+                ],
+                [
+                  20,
+                  "447.21359549995793"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "776.393202250021"
+                ],
+                [
+                  21,
+                  "947.2135954999579"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-6",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":-223.60679774997897,\"y\":447.21359549995793},\"b\":{\"x\":776.393202250021,\"y\":947.2135954999579},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-7",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": -255.22957435166276,
+              "y": 352.3452656949066
+            },
+            "b": {
+              "x": -191.98402114829517,
+              "y": 542.0819253050093
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "27"
+                ],
+                [
+                  330,
+                  "13"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "-255.22957435166276"
+                ],
+                [
+                  20,
+                  "352.3452656949066"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "-191.98402114829517"
+                ],
+                [
+                  21,
+                  "542.0819253050093"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-7",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":-255.22957435166276,\"y\":352.3452656949066},\"b\":{\"x\":-191.98402114829517,\"y\":542.0819253050093},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-8",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 808.0159788517047,
+              "y": 1042.0819253050092
+            },
+            "b": {
+              "x": 744.7704256483372,
+              "y": 852.3452656949065
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "28"
+                ],
+                [
+                  330,
+                  "13"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "808.0159788517047"
+                ],
+                [
+                  20,
+                  "1042.0819253050092"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "744.7704256483372"
+                ],
+                [
+                  21,
+                  "852.3452656949065"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-8",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":808.0159788517047,\"y\":1042.0819253050092},\"b\":{\"x\":744.7704256483372,\"y\":852.3452656949065},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadText-dxf-9",
+            "type": "cadText",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "point": {
+              "x": 220.21199431533876,
+              "y": 809.5760113693224
+            },
+            "text": "1118 mm",
+            "height": 250,
+            "rotation": 26.56505117707799,
+            "alignment": "center",
+            "width": 0,
+            "mtext": false,
+            "verticalAlignment": 2,
+            "textStyle": "Standard",
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "TEXT"
+                ],
+                [
+                  5,
+                  "29"
+                ],
+                [
+                  330,
+                  "13"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  10,
+                  "220.21199431533876"
+                ],
+                [
+                  20,
+                  "809.5760113693224"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "250"
+                ],
+                [
+                  1,
+                  "1118 mm"
+                ],
+                [
+                  50,
+                  "26.56505117707799"
+                ],
+                [
+                  7,
+                  "Standard"
+                ],
+                [
+                  72,
+                  "1"
+                ],
+                [
+                  11,
+                  "220.21199431533876"
+                ],
+                [
+                  21,
+                  "809.5760113693224"
+                ],
+                [
+                  31,
+                  "0"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  73,
+                  "2"
+                ]
+              ],
+              "ownerId": "cadText-dxf-9",
+              "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":220.21199431533876,\"y\":809.5760113693224},\"text\":\"1118 mm\",\"height\":250,\"rotation\":26.56505117707799,\"alignment\":\"center\",\"width\":0,\"mtext\":false,\"verticalAlignment\":2,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+            },
+            "mirrored": false
+          }
+        ]
+      },
+      {
+        "name": "*PPD2",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "2B"
+          ],
+          [
+            330,
+            "14"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "*PPD2"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "*PPD2"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "32"
+          ],
+          [
+            330,
+            "14"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadLine-dxf-10",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 0,
+              "y": 0.625
+            },
+            "b": {
+              "x": 0,
+              "y": 751.25
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "2C"
+                ],
+                [
+                  330,
+                  "14"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "0"
+                ],
+                [
+                  20,
+                  "0.625"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "0"
+                ],
+                [
+                  21,
+                  "751.25"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-10",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":0,\"y\":0.625},\"b\":{\"x\":0,\"y\":751.25},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-11",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 1000,
+              "y": 500.625
+            },
+            "b": {
+              "x": 1000,
+              "y": 751.25
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "2D"
+                ],
+                [
+                  330,
+                  "14"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "1000"
+                ],
+                [
+                  20,
+                  "500.625"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "1000"
+                ],
+                [
+                  21,
+                  "751.25"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-11",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":1000,\"y\":500.625},\"b\":{\"x\":1000,\"y\":751.25},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-12",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 0,
+              "y": 750
+            },
+            "b": {
+              "x": 1000,
+              "y": 750
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "2E"
+                ],
+                [
+                  330,
+                  "14"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "0"
+                ],
+                [
+                  20,
+                  "750"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "1000"
+                ],
+                [
+                  21,
+                  "750"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-12",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":0,\"y\":750},\"b\":{\"x\":1000,\"y\":750},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-13",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": -70.71067811865476,
+              "y": 679.2893218813452
+            },
+            "b": {
+              "x": 70.71067811865476,
+              "y": 820.7106781186548
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "2F"
+                ],
+                [
+                  330,
+                  "14"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "-70.71067811865476"
+                ],
+                [
+                  20,
+                  "679.2893218813452"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "70.71067811865476"
+                ],
+                [
+                  21,
+                  "820.7106781186548"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-13",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":-70.71067811865476,\"y\":679.2893218813452},\"b\":{\"x\":70.71067811865476,\"y\":820.7106781186548},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-14",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 1070.7106781186549,
+              "y": 820.7106781186548
+            },
+            "b": {
+              "x": 929.2893218813452,
+              "y": 679.2893218813452
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "30"
+                ],
+                [
+                  330,
+                  "14"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "1070.7106781186549"
+                ],
+                [
+                  20,
+                  "820.7106781186548"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "929.2893218813452"
+                ],
+                [
+                  21,
+                  "679.2893218813452"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-14",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":1070.7106781186549,\"y\":820.7106781186548},\"b\":{\"x\":929.2893218813452,\"y\":679.2893218813452},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadText-dxf-15",
+            "type": "cadText",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "point": {
+              "x": 500,
+              "y": 875.625
+            },
+            "text": "1000 mm",
+            "height": 250,
+            "rotation": 0,
+            "alignment": "center",
+            "width": 0,
+            "mtext": false,
+            "verticalAlignment": 2,
+            "textStyle": "Standard",
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "TEXT"
+                ],
+                [
+                  5,
+                  "31"
+                ],
+                [
+                  330,
+                  "14"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  10,
+                  "500"
+                ],
+                [
+                  20,
+                  "875.625"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "250"
+                ],
+                [
+                  1,
+                  "1000 mm"
+                ],
+                [
+                  50,
+                  "0"
+                ],
+                [
+                  7,
+                  "Standard"
+                ],
+                [
+                  72,
+                  "1"
+                ],
+                [
+                  11,
+                  "500"
+                ],
+                [
+                  21,
+                  "875.625"
+                ],
+                [
+                  31,
+                  "0"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  73,
+                  "2"
+                ]
+              ],
+              "ownerId": "cadText-dxf-15",
+              "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":500,\"y\":875.625},\"text\":\"1000 mm\",\"height\":250,\"rotation\":0,\"alignment\":\"center\",\"width\":0,\"mtext\":false,\"verticalAlignment\":2,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+            },
+            "mirrored": false
+          }
+        ]
+      },
+      {
+        "name": "*PPD3",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "33"
+          ],
+          [
+            330,
+            "15"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "*PPD3"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "*PPD3"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "37"
+          ],
+          [
+            330,
+            "15"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadLine-dxf-16",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 2000,
+              "y": 0
+            },
+            "b": {
+              "x": 2700,
+              "y": 500
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "34"
+                ],
+                [
+                  330,
+                  "15"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "2000"
+                ],
+                [
+                  20,
+                  "0"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "2700"
+                ],
+                [
+                  21,
+                  "500"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-16",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":2000,\"y\":0},\"b\":{\"x\":2700,\"y\":500},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-17",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 2390.4268368728317,
+              "y": 191.97970447633384
+            },
+            "b": {
+              "x": 2423.3066343339033,
+              "y": 389.2584892427626
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "35"
+                ],
+                [
+                  330,
+                  "15"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "2390.4268368728317"
+                ],
+                [
+                  20,
+                  "191.97970447633384"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "2423.3066343339033"
+                ],
+                [
+                  21,
+                  "389.2584892427626"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-17",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":2390.4268368728317,\"y\":191.97970447633384},\"b\":{\"x\":2423.3066343339033,\"y\":389.2584892427626},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadText-dxf-18",
+            "type": "cadText",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "point": {
+              "x": 2700,
+              "y": 500
+            },
+            "text": "R 500 mm",
+            "height": 250,
+            "rotation": 0,
+            "alignment": "center",
+            "width": 0,
+            "mtext": false,
+            "verticalAlignment": 2,
+            "textStyle": "Standard",
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "TEXT"
+                ],
+                [
+                  5,
+                  "36"
+                ],
+                [
+                  330,
+                  "15"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  10,
+                  "2700"
+                ],
+                [
+                  20,
+                  "500"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "250"
+                ],
+                [
+                  1,
+                  "R 500 mm"
+                ],
+                [
+                  50,
+                  "0"
+                ],
+                [
+                  7,
+                  "Standard"
+                ],
+                [
+                  72,
+                  "1"
+                ],
+                [
+                  11,
+                  "2700"
+                ],
+                [
+                  21,
+                  "500"
+                ],
+                [
+                  31,
+                  "0"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  73,
+                  "2"
+                ]
+              ],
+              "ownerId": "cadText-dxf-18",
+              "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":2700,\"y\":500},\"text\":\"R 500 mm\",\"height\":250,\"rotation\":0,\"alignment\":\"center\",\"width\":0,\"mtext\":false,\"verticalAlignment\":2,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+            },
+            "mirrored": false
+          }
+        ]
+      },
+      {
+        "name": "*PPD4",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "38"
+          ],
+          [
+            330,
+            "16"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "*PPD4"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "*PPD4"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "3D"
+          ],
+          [
+            330,
+            "16"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadLine-dxf-19",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 1593.1332643966325,
+              "y": 290.6190968595482
+            },
+            "b": {
+              "x": 2700,
+              "y": -500
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "39"
+                ],
+                [
+                  330,
+                  "16"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "1593.1332643966325"
+                ],
+                [
+                  20,
+                  "290.6190968595482"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "2700"
+                ],
+                [
+                  21,
+                  "-500"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-19",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":1593.1332643966325,\"y\":290.6190968595482},\"b\":{\"x\":2700,\"y\":-500},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-20",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 2505.5061279865818,
+              "y": -274.1791981290125
+            },
+            "b": {
+              "x": 2308.227343220153,
+              "y": -307.05899559008395
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "3A"
+                ],
+                [
+                  330,
+                  "16"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "2505.5061279865818"
+                ],
+                [
+                  20,
+                  "-274.1791981290125"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "2308.227343220153"
+                ],
+                [
+                  21,
+                  "-307.05899559008395"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-20",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":2505.5061279865818,\"y\":-274.1791981290125},\"b\":{\"x\":2308.227343220153,\"y\":-307.05899559008395},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-21",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 1494.4938720134182,
+              "y": 274.1791981290125
+            },
+            "b": {
+              "x": 1691.7726567798468,
+              "y": 307.05899559008395
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "3B"
+                ],
+                [
+                  330,
+                  "16"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "1494.4938720134182"
+                ],
+                [
+                  20,
+                  "274.1791981290125"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "1691.7726567798468"
+                ],
+                [
+                  21,
+                  "307.05899559008395"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-21",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":1494.4938720134182,\"y\":274.1791981290125},\"b\":{\"x\":1691.7726567798468,\"y\":307.05899559008395},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadText-dxf-22",
+            "type": "cadText",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "point": {
+              "x": 2700,
+              "y": -500
+            },
+            "text": "Ø 1000 mm",
+            "height": 250,
+            "rotation": 0,
+            "alignment": "center",
+            "width": 0,
+            "mtext": false,
+            "verticalAlignment": 2,
+            "textStyle": "Standard",
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "TEXT"
+                ],
+                [
+                  5,
+                  "3C"
+                ],
+                [
+                  330,
+                  "16"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  10,
+                  "2700"
+                ],
+                [
+                  20,
+                  "-500"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "250"
+                ],
+                [
+                  1,
+                  "Ø 1000 mm"
+                ],
+                [
+                  50,
+                  "0"
+                ],
+                [
+                  7,
+                  "Standard"
+                ],
+                [
+                  72,
+                  "1"
+                ],
+                [
+                  11,
+                  "2700"
+                ],
+                [
+                  21,
+                  "-500"
+                ],
+                [
+                  31,
+                  "0"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  73,
+                  "2"
+                ]
+              ],
+              "ownerId": "cadText-dxf-22",
+              "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":2700,\"y\":-500},\"text\":\"Ø 1000 mm\",\"height\":250,\"rotation\":0,\"alignment\":\"center\",\"width\":0,\"mtext\":false,\"verticalAlignment\":2,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+            },
+            "mirrored": false
+          }
+        ]
+      },
+      {
+        "name": "*PPD5",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfBase": {
+          "x": 0,
+          "y": 0
+        },
+        "dxfHeader": [
+          [
+            0,
+            "BLOCK"
+          ],
+          [
+            5,
+            "3E"
+          ],
+          [
+            330,
+            "17"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockBegin"
+          ],
+          [
+            2,
+            "*PPD5"
+          ],
+          [
+            70,
+            "0"
+          ],
+          [
+            10,
+            "0"
+          ],
+          [
+            20,
+            "0"
+          ],
+          [
+            30,
+            "0"
+          ],
+          [
+            3,
+            "*PPD5"
+          ],
+          [
+            1,
+            ""
+          ]
+        ],
+        "dxfEnd": [
+          [
+            0,
+            "ENDBLK"
+          ],
+          [
+            5,
+            "45"
+          ],
+          [
+            330,
+            "17"
+          ],
+          [
+            100,
+            "AcDbEntity"
+          ],
+          [
+            8,
+            "0"
+          ],
+          [
+            100,
+            "AcDbBlockEnd"
+          ]
+        ],
+        "readonly": false,
+        "objects": [
+          {
+            "id": "cadLine-dxf-23",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 3000,
+              "y": 2000
+            },
+            "b": {
+              "x": 3500,
+              "y": 2000
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "3F"
+                ],
+                [
+                  330,
+                  "17"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "3000"
+                ],
+                [
+                  20,
+                  "2000"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "3500"
+                ],
+                [
+                  21,
+                  "2000"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-23",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":3000,\"y\":2000},\"b\":{\"x\":3500,\"y\":2000},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-24",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 3000,
+              "y": 2000
+            },
+            "b": {
+              "x": 3353.553390593274,
+              "y": 2353.553390593274
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "40"
+                ],
+                [
+                  330,
+                  "17"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "3000"
+                ],
+                [
+                  20,
+                  "2000"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "3353.553390593274"
+                ],
+                [
+                  21,
+                  "2353.553390593274"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-24",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":3000,\"y\":2000},\"b\":{\"x\":3353.553390593274,\"y\":2353.553390593274},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadArc-dxf-25",
+            "type": "cadArc",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "center": {
+              "x": 3000,
+              "y": 2000
+            },
+            "radius": 500,
+            "startAngle": 0,
+            "sweep": 45,
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "ARC"
+                ],
+                [
+                  5,
+                  "41"
+                ],
+                [
+                  330,
+                  "17"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbCircle"
+                ],
+                [
+                  10,
+                  "3000"
+                ],
+                [
+                  20,
+                  "2000"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "500"
+                ],
+                [
+                  100,
+                  "AcDbArc"
+                ],
+                [
+                  50,
+                  "0"
+                ],
+                [
+                  51,
+                  "45"
+                ]
+              ],
+              "ownerId": "cadArc-dxf-25",
+              "signature": "{\"type\":\"cadArc\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"center\":{\"x\":3000,\"y\":2000},\"radius\":500,\"startAngle\":0,\"sweep\":45,\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-26",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 3570.772357893658,
+              "y": 1929.3510555056057
+            },
+            "b": {
+              "x": 3429.227642106342,
+              "y": 2070.648944494394
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "42"
+                ],
+                [
+                  330,
+                  "17"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "3570.772357893658"
+                ],
+                [
+                  20,
+                  "1929.3510555056057"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "3429.227642106342"
+                ],
+                [
+                  21,
+                  "2070.648944494394"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-26",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":3570.772357893658,\"y\":1929.3510555056057},\"b\":{\"x\":3429.227642106342,\"y\":2070.648944494394},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadLine-dxf-27",
+            "type": "cadLine",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "a": {
+              "x": 3253.5534286704487,
+              "y": 2353.64065704481
+            },
+            "b": {
+              "x": 3453.553352516099,
+              "y": 2353.466124141738
+            },
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "LINE"
+                ],
+                [
+                  5,
+                  "43"
+                ],
+                [
+                  330,
+                  "17"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbLine"
+                ],
+                [
+                  10,
+                  "3253.5534286704487"
+                ],
+                [
+                  20,
+                  "2353.64065704481"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  11,
+                  "3453.553352516099"
+                ],
+                [
+                  21,
+                  "2353.466124141738"
+                ],
+                [
+                  31,
+                  "0"
+                ]
+              ],
+              "ownerId": "cadLine-dxf-27",
+              "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":3253.5534286704487,\"y\":2353.64065704481},\"b\":{\"x\":3453.553352516099,\"y\":2353.466124141738},\"source\":\"DXF\"}"
+            }
+          },
+          {
+            "id": "cadText-dxf-28",
+            "type": "cadText",
+            "cadLayer": "A-DIM",
+            "colorIndex": 256,
+            "color": "BYLAYER",
+            "linetype": "BYLAYER",
+            "lineweight": "BYLAYER",
+            "point": {
+              "x": 3517.3725382063203,
+              "y": 2214.30272212445
+            },
+            "text": "45°",
+            "height": 250,
+            "rotation": 0,
+            "alignment": "center",
+            "width": 0,
+            "mtext": false,
+            "verticalAlignment": 2,
+            "textStyle": "Standard",
+            "source": "DXF",
+            "dxf": {
+              "raw": [
+                [
+                  0,
+                  "TEXT"
+                ],
+                [
+                  5,
+                  "44"
+                ],
+                [
+                  330,
+                  "17"
+                ],
+                [
+                  100,
+                  "AcDbEntity"
+                ],
+                [
+                  8,
+                  "A-DIM"
+                ],
+                [
+                  62,
+                  "256"
+                ],
+                [
+                  6,
+                  "BYLAYER"
+                ],
+                [
+                  370,
+                  "-1"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  10,
+                  "3517.3725382063203"
+                ],
+                [
+                  20,
+                  "2214.30272212445"
+                ],
+                [
+                  30,
+                  "0"
+                ],
+                [
+                  40,
+                  "250"
+                ],
+                [
+                  1,
+                  "45°"
+                ],
+                [
+                  50,
+                  "0"
+                ],
+                [
+                  7,
+                  "Standard"
+                ],
+                [
+                  72,
+                  "1"
+                ],
+                [
+                  11,
+                  "3517.3725382063203"
+                ],
+                [
+                  21,
+                  "2214.30272212445"
+                ],
+                [
+                  31,
+                  "0"
+                ],
+                [
+                  100,
+                  "AcDbText"
+                ],
+                [
+                  73,
+                  "2"
+                ]
+              ],
+              "ownerId": "cadText-dxf-28",
+              "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":3517.3725382063203,\"y\":2214.30272212445},\"text\":\"45°\",\"height\":250,\"rotation\":0,\"alignment\":\"center\",\"width\":0,\"mtext\":false,\"verticalAlignment\":2,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+            },
+            "mirrored": false
+          }
+        ]
+      },
+      {
+        "name": "PP_SHEET_TITLE",
+        "base": {
+          "x": 0,
+          "y": 0
+        },
+        "objects": [
+          {
+            "id": "title-line-0",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 0,
+              "y": 0
+            },
+            "b": {
+              "x": 175,
+              "y": 0
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-1",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 175,
+              "y": 0
+            },
+            "b": {
+              "x": 175,
+              "y": 32
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-2",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 175,
+              "y": 32
+            },
+            "b": {
+              "x": 0,
+              "y": 32
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-3",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 0,
+              "y": 32
+            },
+            "b": {
+              "x": 0,
+              "y": 0
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-4",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 0,
+              "y": 20
+            },
+            "b": {
+              "x": 175,
+              "y": 20
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-5",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 0,
+              "y": 10
+            },
+            "b": {
+              "x": 175,
+              "y": 10
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-6",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 85,
+              "y": 0
+            },
+            "b": {
+              "x": 85,
+              "y": 20
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-line-7",
+            "type": "cadLine",
+            "cadLayer": "0",
+            "a": {
+              "x": 130,
+              "y": 0
+            },
+            "b": {
+              "x": 130,
+              "y": 20
+            },
+            "lineweight": 0.18
+          },
+          {
+            "id": "title-text-8",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 4,
+              "y": 26
+            },
+            "text": "{{drawingName}}",
+            "height": 3.5,
+            "rotation": 0,
+            "alignment": "left"
+          },
+          {
+            "id": "title-text-9",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 4,
+              "y": 14
+            },
+            "text": "{{drawingNumber}}",
+            "height": 3,
+            "rotation": 0,
+            "alignment": "left"
+          },
+          {
+            "id": "title-text-10",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 89,
+              "y": 14
+            },
+            "text": "1:{{scale}}",
+            "height": 2.5,
+            "rotation": 0,
+            "alignment": "left"
+          },
+          {
+            "id": "title-text-11",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 134,
+              "y": 14
+            },
+            "text": "REV {{revision}}",
+            "height": 2.5,
+            "rotation": 0,
+            "alignment": "left"
+          },
+          {
+            "id": "title-text-12",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 4,
+              "y": 4
+            },
+            "text": "{{projectName}}",
+            "height": 2.5,
+            "rotation": 0,
+            "alignment": "left"
+          },
+          {
+            "id": "title-text-13",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 89,
+              "y": 4
+            },
+            "text": "{{date}}",
+            "height": 2.5,
+            "rotation": 0,
+            "alignment": "left"
+          },
+          {
+            "id": "title-text-14",
+            "type": "cadText",
+            "cadLayer": "0",
+            "point": {
+              "x": 134,
+              "y": 4
+            },
+            "text": "{{sheetName}}",
+            "height": 2.5,
+            "rotation": 0,
+            "alignment": "left"
+          }
+        ]
+      }
+    ],
+    "objects": [
+      {
+        "id": "cadLine-dxf-29",
+        "type": "cadLine",
+        "cadLayer": "A-WALL",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "a": {
+          "x": 0,
+          "y": 0
+        },
+        "b": {
+          "x": 1000,
+          "y": 0
+        },
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "LINE"
+            ],
+            [
+              5,
+              "5"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-WALL"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbLine"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              11,
+              "1000"
+            ],
+            [
+              21,
+              "0"
+            ],
+            [
+              31,
+              "0"
+            ]
+          ],
+          "ownerId": "cadLine-dxf-29",
+          "signature": "{\"type\":\"cadLine\",\"cadLayer\":\"A-WALL\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":0,\"y\":0},\"b\":{\"x\":1000,\"y\":0},\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadText-dxf-30",
+        "type": "cadText",
+        "cadLayer": "A-TEXT",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "point": {
+          "x": 0,
+          "y": 200
+        },
+        "text": "한글과 English",
+        "height": 100,
+        "rotation": 30,
+        "alignment": "center",
+        "width": 0,
+        "mtext": false,
+        "verticalAlignment": 0,
+        "textStyle": "Standard",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "TEXT"
+            ],
+            [
+              5,
+              "6"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-TEXT"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbText"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "200"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              40,
+              "100"
+            ],
+            [
+              1,
+              "한글과 English"
+            ],
+            [
+              50,
+              "30"
+            ],
+            [
+              7,
+              "Standard"
+            ],
+            [
+              72,
+              "1"
+            ],
+            [
+              11,
+              "0"
+            ],
+            [
+              21,
+              "200"
+            ],
+            [
+              31,
+              "0"
+            ],
+            [
+              100,
+              "AcDbText"
+            ],
+            [
+              73,
+              "0"
+            ]
+          ],
+          "ownerId": "cadText-dxf-30",
+          "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-TEXT\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":0,\"y\":200},\"text\":\"한글과 English\",\"height\":100,\"rotation\":30,\"alignment\":\"center\",\"width\":0,\"mtext\":false,\"verticalAlignment\":0,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadText-dxf-31",
+        "type": "cadText",
+        "cadLayer": "A-TEXT",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "point": {
+          "x": 0,
+          "y": 400
+        },
+        "text": "두 줄\nSecond line",
+        "height": 100,
+        "rotation": 20,
+        "alignment": "right",
+        "width": 1000,
+        "mtext": true,
+        "verticalAlignment": 0,
+        "textStyle": "Standard",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "MTEXT"
+            ],
+            [
+              5,
+              "7"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-TEXT"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbMText"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "400"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              40,
+              "100"
+            ],
+            [
+              1,
+              "두 줄\\PSecond line"
+            ],
+            [
+              50,
+              "20"
+            ],
+            [
+              7,
+              "Standard"
+            ],
+            [
+              41,
+              "1000"
+            ],
+            [
+              71,
+              "3"
+            ]
+          ],
+          "ownerId": "cadText-dxf-31",
+          "signature": "{\"type\":\"cadText\",\"cadLayer\":\"A-TEXT\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"point\":{\"x\":0,\"y\":400},\"text\":\"두 줄\\nSecond line\",\"height\":100,\"rotation\":20,\"alignment\":\"right\",\"width\":1000,\"mtext\":true,\"verticalAlignment\":0,\"textStyle\":\"Standard\",\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadCircle-dxf-32",
+        "type": "cadCircle",
+        "cadLayer": "A-WALL",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "center": {
+          "x": 2000,
+          "y": 0
+        },
+        "radius": 500,
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "CIRCLE"
+            ],
+            [
+              5,
+              "8"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-WALL"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbCircle"
+            ],
+            [
+              10,
+              "2000"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              40,
+              "500"
+            ]
+          ],
+          "ownerId": "cadCircle-dxf-32",
+          "signature": "{\"type\":\"cadCircle\",\"cadLayer\":\"A-WALL\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"center\":{\"x\":2000,\"y\":0},\"radius\":500,\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadArc-dxf-33",
+        "type": "cadArc",
+        "cadLayer": "A-WALL",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "center": {
+          "x": 3000,
+          "y": 0
+        },
+        "radius": 500,
+        "startAngle": 270,
+        "sweep": 90,
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "ARC"
+            ],
+            [
+              5,
+              "9"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-WALL"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbCircle"
+            ],
+            [
+              10,
+              "3000"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              40,
+              "500"
+            ],
+            [
+              100,
+              "AcDbArc"
+            ],
+            [
+              50,
+              "270"
+            ],
+            [
+              51,
+              "0"
+            ]
+          ],
+          "ownerId": "cadArc-dxf-33",
+          "signature": "{\"type\":\"cadArc\",\"cadLayer\":\"A-WALL\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"center\":{\"x\":3000,\"y\":0},\"radius\":500,\"startAngle\":270,\"sweep\":90,\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadInsert-dxf-34",
+        "type": "cadInsert",
+        "cadLayer": "A-WALL",
+        "colorIndex": 7,
+        "color": "#ff0000",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "blockName": "Parent",
+        "matrix": {
+          "a": 1.8793852415718169,
+          "b": 0.6840402866513374,
+          "c": -0.3420201433256687,
+          "d": 0.9396926207859084,
+          "tx": 3000,
+          "ty": 3000
+        },
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "INSERT"
+            ],
+            [
+              5,
+              "A"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-WALL"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "16711680"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbBlockReference"
+            ],
+            [
+              2,
+              "Parent"
+            ],
+            [
+              10,
+              "3000"
+            ],
+            [
+              20,
+              "3000"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              41,
+              "2"
+            ],
+            [
+              42,
+              "1"
+            ],
+            [
+              43,
+              "1"
+            ],
+            [
+              50,
+              "20"
+            ]
+          ],
+          "ownerId": "cadInsert-dxf-34",
+          "signature": "{\"type\":\"cadInsert\",\"cadLayer\":\"A-WALL\",\"colorIndex\":7,\"color\":\"#ff0000\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"blockName\":\"Parent\",\"matrix\":{\"a\":1.8793852415718169,\"b\":0.6840402866513374,\"c\":-0.3420201433256687,\"d\":0.9396926207859084,\"tx\":3000,\"ty\":3000},\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadHatch-dxf-35",
+        "type": "cadHatch",
+        "cadLayer": "A-HATCH",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "points": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 1000
+          },
+          {
+            "x": 0,
+            "y": 1000
+          }
+        ],
+        "loops": [
+          [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1000,
+              "y": 0
+            },
+            {
+              "x": 1000,
+              "y": 1000
+            },
+            {
+              "x": 0,
+              "y": 1000
+            }
+          ],
+          [
+            {
+              "x": 200,
+              "y": 200
+            },
+            {
+              "x": 800,
+              "y": 200
+            },
+            {
+              "x": 800,
+              "y": 800
+            },
+            {
+              "x": 200,
+              "y": 800
+            }
+          ]
+        ],
+        "pattern": "ANSI31",
+        "angle": 45,
+        "patternScale": 1,
+        "spacingPx": 16,
+        "sourceBoundaryId": null,
+        "opacity": 0.14,
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "HATCH"
+            ],
+            [
+              5,
+              "B"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-HATCH"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbHatch"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              210,
+              "0"
+            ],
+            [
+              220,
+              "0"
+            ],
+            [
+              230,
+              "1"
+            ],
+            [
+              2,
+              "ANSI31"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              71,
+              "0"
+            ],
+            [
+              91,
+              "2"
+            ],
+            [
+              92,
+              "3"
+            ],
+            [
+              72,
+              "0"
+            ],
+            [
+              73,
+              "1"
+            ],
+            [
+              93,
+              "4"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              10,
+              "1000"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              10,
+              "1000"
+            ],
+            [
+              20,
+              "1000"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "1000"
+            ],
+            [
+              97,
+              "0"
+            ],
+            [
+              92,
+              "2"
+            ],
+            [
+              72,
+              "0"
+            ],
+            [
+              73,
+              "1"
+            ],
+            [
+              93,
+              "4"
+            ],
+            [
+              10,
+              "200"
+            ],
+            [
+              20,
+              "200"
+            ],
+            [
+              10,
+              "800"
+            ],
+            [
+              20,
+              "200"
+            ],
+            [
+              10,
+              "800"
+            ],
+            [
+              20,
+              "800"
+            ],
+            [
+              10,
+              "200"
+            ],
+            [
+              20,
+              "800"
+            ],
+            [
+              97,
+              "0"
+            ],
+            [
+              75,
+              "0"
+            ],
+            [
+              76,
+              "1"
+            ],
+            [
+              52,
+              "45"
+            ],
+            [
+              41,
+              "1"
+            ],
+            [
+              77,
+              "0"
+            ],
+            [
+              78,
+              "1"
+            ],
+            [
+              53,
+              "45"
+            ],
+            [
+              43,
+              "0"
+            ],
+            [
+              44,
+              "0"
+            ],
+            [
+              45,
+              "-113.1370849898476"
+            ],
+            [
+              46,
+              "113.13708498984761"
+            ],
+            [
+              79,
+              "0"
+            ],
+            [
+              98,
+              "0"
+            ]
+          ],
+          "ownerId": "cadHatch-dxf-35",
+          "signature": "{\"type\":\"cadHatch\",\"cadLayer\":\"A-HATCH\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"points\":[{\"x\":0,\"y\":0},{\"x\":1000,\"y\":0},{\"x\":1000,\"y\":1000},{\"x\":0,\"y\":1000}],\"loops\":[[{\"x\":0,\"y\":0},{\"x\":1000,\"y\":0},{\"x\":1000,\"y\":1000},{\"x\":0,\"y\":1000}],[{\"x\":200,\"y\":200},{\"x\":800,\"y\":200},{\"x\":800,\"y\":800},{\"x\":200,\"y\":800}]],\"pattern\":\"ANSI31\",\"angle\":45,\"patternScale\":1,\"spacingPx\":16,\"sourceBoundaryId\":null,\"opacity\":0.14,\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadRay-dxf-36",
+        "type": "cadRay",
+        "cadLayer": "A-WALL",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "a": {
+          "x": 0,
+          "y": 0
+        },
+        "b": {
+          "x": 0.7071067811865475,
+          "y": 0.7071067811865475
+        },
+        "mode": "ray",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "RAY"
+            ],
+            [
+              5,
+              "C"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-WALL"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbRay"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              11,
+              "0.7071067811865475"
+            ],
+            [
+              21,
+              "0.7071067811865475"
+            ],
+            [
+              31,
+              "0"
+            ]
+          ],
+          "ownerId": "cadRay-dxf-36",
+          "signature": "{\"type\":\"cadRay\",\"cadLayer\":\"A-WALL\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":0,\"y\":0},\"b\":{\"x\":0.7071067811865475,\"y\":0.7071067811865475},\"mode\":\"ray\",\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadXline-dxf-37",
+        "type": "cadXline",
+        "cadLayer": "A-WALL",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "a": {
+          "x": 0,
+          "y": 0
+        },
+        "b": {
+          "x": 1,
+          "y": 0
+        },
+        "mode": "line",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "XLINE"
+            ],
+            [
+              5,
+              "D"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-WALL"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbXline"
+            ],
+            [
+              10,
+              "0"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              11,
+              "1"
+            ],
+            [
+              21,
+              "0"
+            ],
+            [
+              31,
+              "0"
+            ]
+          ],
+          "ownerId": "cadXline-dxf-37",
+          "signature": "{\"type\":\"cadXline\",\"cadLayer\":\"A-WALL\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"a\":{\"x\":0,\"y\":0},\"b\":{\"x\":1,\"y\":0},\"mode\":\"line\",\"source\":\"DXF\"}"
+        }
+      },
+      {
+        "id": "cadDimension-dxf-38",
+        "type": "cadDimension",
+        "cadLayer": "A-DIM",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "kind": "aligned",
+        "p1": {
+          "x": 0,
+          "y": 0
+        },
+        "p2": {
+          "x": 1000,
+          "y": 500
+        },
+        "offset": 500,
+        "styleName": "Arch",
+        "textOverride": "<>",
+        "styleOverrides": null,
+        "dxfPresentation": "*PPD1",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "DIMENSION"
+            ],
+            [
+              5,
+              "E"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-DIM"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbDimension"
+            ],
+            [
+              2,
+              "*PPD1"
+            ],
+            [
+              3,
+              "Arch"
+            ],
+            [
+              70,
+              "33"
+            ],
+            [
+              11,
+              "220.21199431533876"
+            ],
+            [
+              21,
+              "809.5760113693224"
+            ],
+            [
+              31,
+              "0"
+            ],
+            [
+              1,
+              "<>"
+            ],
+            [
+              10,
+              "776.393202250021"
+            ],
+            [
+              20,
+              "947.2135954999579"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              100,
+              "AcDbAlignedDimension"
+            ],
+            [
+              13,
+              "0"
+            ],
+            [
+              23,
+              "0"
+            ],
+            [
+              33,
+              "0"
+            ],
+            [
+              14,
+              "1000"
+            ],
+            [
+              24,
+              "500"
+            ],
+            [
+              34,
+              "0"
+            ]
+          ],
+          "ownerId": "cadDimension-dxf-38",
+          "signature": "{\"type\":\"cadDimension\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"kind\":\"aligned\",\"p1\":{\"x\":0,\"y\":0},\"p2\":{\"x\":1000,\"y\":500},\"offset\":500,\"styleName\":\"Arch\",\"textOverride\":\"<>\",\"styleOverrides\":null,\"dxfPresentation\":\"*PPD1\",\"source\":\"DXF\",\"segments\":[{\"a\":{\"x\":0,\"y\":0},\"b\":{\"x\":-223.60679774997897,\"y\":447.21359549995793}},{\"a\":{\"x\":1000,\"y\":500},\"b\":{\"x\":776.393202250021,\"y\":947.2135954999579}},{\"a\":{\"x\":-223.60679774997897,\"y\":447.21359549995793},\"b\":{\"x\":776.393202250021,\"y\":947.2135954999579}}]}",
+          "geometryKey": "{\"kind\":\"aligned\",\"p1\":{\"x\":0,\"y\":0},\"p2\":{\"x\":1000,\"y\":500},\"offset\":500,\"textOverride\":\"<>\",\"styleName\":\"Arch\"}"
+        },
+        "segments": [
+          {
+            "a": {
+              "x": 0,
+              "y": 0
+            },
+            "b": {
+              "x": -223.60679774997897,
+              "y": 447.21359549995793
+            }
+          },
+          {
+            "a": {
+              "x": 1000,
+              "y": 500
+            },
+            "b": {
+              "x": 776.393202250021,
+              "y": 947.2135954999579
+            }
+          },
+          {
+            "a": {
+              "x": -223.60679774997897,
+              "y": 447.21359549995793
+            },
+            "b": {
+              "x": 776.393202250021,
+              "y": 947.2135954999579
+            }
+          }
+        ]
+      },
+      {
+        "id": "cadDimension-dxf-39",
+        "type": "cadDimension",
+        "cadLayer": "A-DIM",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "kind": "linear",
+        "p1": {
+          "x": 0,
+          "y": 0
+        },
+        "p2": {
+          "x": 1000,
+          "y": 500
+        },
+        "offset": 750,
+        "dimensionAngle": 0,
+        "styleName": "Arch",
+        "textOverride": "<>",
+        "styleOverrides": null,
+        "dxfPresentation": "*PPD2",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "DIMENSION"
+            ],
+            [
+              5,
+              "F"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-DIM"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbDimension"
+            ],
+            [
+              2,
+              "*PPD2"
+            ],
+            [
+              3,
+              "Arch"
+            ],
+            [
+              70,
+              "32"
+            ],
+            [
+              11,
+              "500"
+            ],
+            [
+              21,
+              "875.625"
+            ],
+            [
+              31,
+              "0"
+            ],
+            [
+              1,
+              "<>"
+            ],
+            [
+              10,
+              "1000"
+            ],
+            [
+              20,
+              "750"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              100,
+              "AcDbAlignedDimension"
+            ],
+            [
+              13,
+              "0"
+            ],
+            [
+              23,
+              "0"
+            ],
+            [
+              33,
+              "0"
+            ],
+            [
+              14,
+              "1000"
+            ],
+            [
+              24,
+              "500"
+            ],
+            [
+              34,
+              "0"
+            ],
+            [
+              100,
+              "AcDbRotatedDimension"
+            ],
+            [
+              50,
+              "0"
+            ]
+          ],
+          "ownerId": "cadDimension-dxf-39",
+          "signature": "{\"type\":\"cadDimension\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"kind\":\"linear\",\"p1\":{\"x\":0,\"y\":0},\"p2\":{\"x\":1000,\"y\":500},\"offset\":750,\"dimensionAngle\":0,\"styleName\":\"Arch\",\"textOverride\":\"<>\",\"styleOverrides\":null,\"dxfPresentation\":\"*PPD2\",\"source\":\"DXF\",\"segments\":[{\"a\":{\"x\":0,\"y\":0},\"b\":{\"x\":0,\"y\":750}},{\"a\":{\"x\":1000,\"y\":500},\"b\":{\"x\":1000,\"y\":750}},{\"a\":{\"x\":0,\"y\":750},\"b\":{\"x\":1000,\"y\":750}}]}",
+          "geometryKey": "{\"kind\":\"linear\",\"p1\":{\"x\":0,\"y\":0},\"p2\":{\"x\":1000,\"y\":500},\"offset\":750,\"dimensionAngle\":0,\"textOverride\":\"<>\",\"styleName\":\"Arch\"}"
+        },
+        "segments": [
+          {
+            "a": {
+              "x": 0,
+              "y": 0
+            },
+            "b": {
+              "x": 0,
+              "y": 750
+            }
+          },
+          {
+            "a": {
+              "x": 1000,
+              "y": 500
+            },
+            "b": {
+              "x": 1000,
+              "y": 750
+            }
+          },
+          {
+            "a": {
+              "x": 0,
+              "y": 750
+            },
+            "b": {
+              "x": 1000,
+              "y": 750
+            }
+          }
+        ]
+      },
+      {
+        "id": "cadDimension-dxf-40",
+        "type": "cadDimension",
+        "cadLayer": "A-DIM",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "kind": "radius",
+        "center": {
+          "x": 2000,
+          "y": 0
+        },
+        "radius": 500,
+        "labelPoint": {
+          "x": 2700,
+          "y": 500
+        },
+        "styleName": "Arch",
+        "textOverride": "<>",
+        "styleOverrides": null,
+        "dxfPresentation": "*PPD3",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "DIMENSION"
+            ],
+            [
+              5,
+              "10"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-DIM"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbDimension"
+            ],
+            [
+              2,
+              "*PPD3"
+            ],
+            [
+              3,
+              "Arch"
+            ],
+            [
+              70,
+              "36"
+            ],
+            [
+              11,
+              "2700"
+            ],
+            [
+              21,
+              "500"
+            ],
+            [
+              31,
+              "0"
+            ],
+            [
+              1,
+              "<>"
+            ],
+            [
+              10,
+              "2000"
+            ],
+            [
+              20,
+              "0"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              100,
+              "AcDbRadialDimension"
+            ],
+            [
+              15,
+              "2406.8667356033675"
+            ],
+            [
+              25,
+              "290.6190968595482"
+            ],
+            [
+              35,
+              "0"
+            ],
+            [
+              40,
+              "0"
+            ]
+          ],
+          "ownerId": "cadDimension-dxf-40",
+          "signature": "{\"type\":\"cadDimension\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"kind\":\"radius\",\"center\":{\"x\":2000,\"y\":0},\"radius\":500,\"labelPoint\":{\"x\":2700,\"y\":500},\"styleName\":\"Arch\",\"textOverride\":\"<>\",\"styleOverrides\":null,\"dxfPresentation\":\"*PPD3\",\"source\":\"DXF\",\"segments\":[{\"a\":{\"x\":2000,\"y\":0},\"b\":{\"x\":2700,\"y\":500}}]}",
+          "geometryKey": "{\"kind\":\"radius\",\"center\":{\"x\":2000,\"y\":0},\"radius\":500,\"labelPoint\":{\"x\":2700,\"y\":500},\"textOverride\":\"<>\",\"styleName\":\"Arch\"}"
+        },
+        "segments": [
+          {
+            "a": {
+              "x": 2000,
+              "y": 0
+            },
+            "b": {
+              "x": 2700,
+              "y": 500
+            }
+          }
+        ]
+      },
+      {
+        "id": "cadDimension-dxf-41",
+        "type": "cadDimension",
+        "cadLayer": "A-DIM",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "kind": "diameter",
+        "center": {
+          "x": 2000,
+          "y": 0
+        },
+        "radius": 500,
+        "labelPoint": {
+          "x": 2700,
+          "y": -500
+        },
+        "styleName": "Arch",
+        "textOverride": "<>",
+        "styleOverrides": null,
+        "dxfPresentation": "*PPD4",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "DIMENSION"
+            ],
+            [
+              5,
+              "11"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-DIM"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbDimension"
+            ],
+            [
+              2,
+              "*PPD4"
+            ],
+            [
+              3,
+              "Arch"
+            ],
+            [
+              70,
+              "35"
+            ],
+            [
+              11,
+              "2700"
+            ],
+            [
+              21,
+              "-500"
+            ],
+            [
+              31,
+              "0"
+            ],
+            [
+              1,
+              "<>"
+            ],
+            [
+              10,
+              "1593.1332643966325"
+            ],
+            [
+              20,
+              "290.6190968595482"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              100,
+              "AcDbDiametricDimension"
+            ],
+            [
+              15,
+              "2406.8667356033675"
+            ],
+            [
+              25,
+              "-290.6190968595482"
+            ],
+            [
+              35,
+              "0"
+            ],
+            [
+              40,
+              "0"
+            ]
+          ],
+          "ownerId": "cadDimension-dxf-41",
+          "signature": "{\"type\":\"cadDimension\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"kind\":\"diameter\",\"center\":{\"x\":2000,\"y\":0},\"radius\":500,\"labelPoint\":{\"x\":2700,\"y\":-500},\"styleName\":\"Arch\",\"textOverride\":\"<>\",\"styleOverrides\":null,\"dxfPresentation\":\"*PPD4\",\"source\":\"DXF\",\"segments\":[{\"a\":{\"x\":1593.1332643966325,\"y\":290.6190968595482},\"b\":{\"x\":2700,\"y\":-500}}]}",
+          "geometryKey": "{\"kind\":\"diameter\",\"center\":{\"x\":2000,\"y\":0},\"radius\":500,\"labelPoint\":{\"x\":2700,\"y\":-500},\"textOverride\":\"<>\",\"styleName\":\"Arch\"}"
+        },
+        "segments": [
+          {
+            "a": {
+              "x": 1593.1332643966325,
+              "y": 290.6190968595482
+            },
+            "b": {
+              "x": 2700,
+              "y": -500
+            }
+          }
+        ]
+      },
+      {
+        "id": "cadDimension-dxf-42",
+        "type": "cadDimension",
+        "cadLayer": "A-DIM",
+        "colorIndex": 256,
+        "color": "BYLAYER",
+        "linetype": "BYLAYER",
+        "lineweight": "BYLAYER",
+        "kind": "angular",
+        "vertex": {
+          "x": 3000,
+          "y": 2000
+        },
+        "ray1": {
+          "x": 4000,
+          "y": 2000
+        },
+        "ray2": {
+          "x": 3500,
+          "y": 2500
+        },
+        "radius": 500,
+        "labelPoint": {
+          "x": 3517.3725382063203,
+          "y": 2214.30272212445
+        },
+        "styleName": "Arch",
+        "textOverride": "<>",
+        "styleOverrides": null,
+        "dxfPresentation": "*PPD5",
+        "source": "DXF",
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "DIMENSION"
+            ],
+            [
+              5,
+              "12"
+            ],
+            [
+              330,
+              "1"
+            ],
+            [
+              100,
+              "AcDbEntity"
+            ],
+            [
+              8,
+              "A-DIM"
+            ],
+            [
+              62,
+              "256"
+            ],
+            [
+              6,
+              "BYLAYER"
+            ],
+            [
+              370,
+              "-1"
+            ],
+            [
+              100,
+              "AcDbDimension"
+            ],
+            [
+              2,
+              "*PPD5"
+            ],
+            [
+              3,
+              "Arch"
+            ],
+            [
+              70,
+              "37"
+            ],
+            [
+              11,
+              "3517.3725382063203"
+            ],
+            [
+              21,
+              "2214.30272212445"
+            ],
+            [
+              31,
+              "0"
+            ],
+            [
+              1,
+              "<>"
+            ],
+            [
+              10,
+              "3500"
+            ],
+            [
+              20,
+              "2000"
+            ],
+            [
+              30,
+              "0"
+            ],
+            [
+              100,
+              "AcDb3PointAngularDimension"
+            ],
+            [
+              13,
+              "4000"
+            ],
+            [
+              23,
+              "2000"
+            ],
+            [
+              33,
+              "0"
+            ],
+            [
+              14,
+              "3500"
+            ],
+            [
+              24,
+              "2500"
+            ],
+            [
+              34,
+              "0"
+            ],
+            [
+              15,
+              "3000"
+            ],
+            [
+              25,
+              "2000"
+            ],
+            [
+              35,
+              "0"
+            ]
+          ],
+          "ownerId": "cadDimension-dxf-42",
+          "signature": "{\"type\":\"cadDimension\",\"cadLayer\":\"A-DIM\",\"colorIndex\":256,\"color\":\"BYLAYER\",\"linetype\":\"BYLAYER\",\"lineweight\":\"BYLAYER\",\"kind\":\"angular\",\"vertex\":{\"x\":3000,\"y\":2000},\"ray1\":{\"x\":4000,\"y\":2000},\"ray2\":{\"x\":3500,\"y\":2500},\"radius\":500,\"labelPoint\":{\"x\":3517.3725382063203,\"y\":2214.30272212445},\"styleName\":\"Arch\",\"textOverride\":\"<>\",\"styleOverrides\":null,\"dxfPresentation\":\"*PPD5\",\"source\":\"DXF\",\"segments\":[{\"a\":{\"x\":3000,\"y\":2000},\"b\":{\"x\":3500,\"y\":2000}},{\"a\":{\"x\":3000,\"y\":2000},\"b\":{\"x\":3353.553390593274,\"y\":2353.553390593274}},{\"a\":{\"x\":3500,\"y\":2000},\"b\":{\"x\":3490.392640201615,\"y\":2097.545161008064}},{\"a\":{\"x\":3490.392640201615,\"y\":2097.545161008064},\"b\":{\"x\":3461.9397662556435,\"y\":2191.341716182545}},{\"a\":{\"x\":3461.9397662556435,\"y\":2191.341716182545},\"b\":{\"x\":3415.7348061512726,\"y\":2277.785116509801}},{\"a\":{\"x\":3415.7348061512726,\"y\":2277.785116509801},\"b\":{\"x\":3353.553390593274,\"y\":2353.553390593274}}]}",
+          "geometryKey": "{\"kind\":\"angular\",\"radius\":500,\"labelPoint\":{\"x\":3517.3725382063203,\"y\":2214.30272212445},\"vertex\":{\"x\":3000,\"y\":2000},\"ray1\":{\"x\":4000,\"y\":2000},\"ray2\":{\"x\":3500,\"y\":2500},\"textOverride\":\"<>\",\"styleName\":\"Arch\"}"
+        },
+        "segments": [
+          {
+            "a": {
+              "x": 3000,
+              "y": 2000
+            },
+            "b": {
+              "x": 3500,
+              "y": 2000
+            }
+          },
+          {
+            "a": {
+              "x": 3000,
+              "y": 2000
+            },
+            "b": {
+              "x": 3353.553390593274,
+              "y": 2353.553390593274
+            }
+          },
+          {
+            "a": {
+              "x": 3500,
+              "y": 2000
+            },
+            "b": {
+              "x": 3490.392640201615,
+              "y": 2097.545161008064
+            }
+          },
+          {
+            "a": {
+              "x": 3490.392640201615,
+              "y": 2097.545161008064
+            },
+            "b": {
+              "x": 3461.9397662556435,
+              "y": 2191.341716182545
+            }
+          },
+          {
+            "a": {
+              "x": 3461.9397662556435,
+              "y": 2191.341716182545
+            },
+            "b": {
+              "x": 3415.7348061512726,
+              "y": 2277.785116509801
+            }
+          },
+          {
+            "a": {
+              "x": 3415.7348061512726,
+              "y": 2277.785116509801
+            },
+            "b": {
+              "x": 3353.553390593274,
+              "y": 2353.553390593274
+            }
+          }
+        ]
+      },
+      {
+        "id": "proofdimension",
+        "type": "cadDimension",
+        "cadLayer": "0",
+        "kind": "linear",
+        "p1": {
+          "x": 0,
+          "y": 12000
+        },
+        "p2": {
+          "x": 10000,
+          "y": 12000
+        },
+        "offset": 1000,
+        "dimensionAngle": 0,
+        "styleName": "Architecture",
+        "segments": [
+          {
+            "a": {
+              "x": 0,
+              "y": 12000
+            },
+            "b": {
+              "x": 0,
+              "y": 13000
+            }
+          },
+          {
+            "a": {
+              "x": 10000,
+              "y": 12000
+            },
+            "b": {
+              "x": 10000,
+              "y": 13000
+            }
+          },
+          {
+            "a": {
+              "x": 0,
+              "y": 13000
+            },
+            "b": {
+              "x": 10000,
+              "y": 13000
+            }
+          }
+        ]
+      },
+      {
+        "id": "scale-line",
+        "type": "cadLine",
+        "cadLayer": "0",
+        "a": {
+          "x": 0,
+          "y": 11000
+        },
+        "b": {
+          "x": 1000,
+          "y": 11000
+        },
+        "color": "#ee3300"
+      },
+      {
+        "id": "pdf-caption",
+        "type": "cadText",
+        "point": {
+          "x": 0,
+          "y": 14500
+        },
+        "height": 250,
+        "text": "블록 · 치수 · 표제란 / Architecture",
+        "cadLayer": "0",
+        "alignment": "left",
+        "rotation": 0
+      },
+      {
+        "id": "pdf-symbol",
+        "type": "cadInsert",
+        "blockName": "Parent",
+        "matrix": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "tx": 2000,
+          "ty": 6500
+        },
+        "cadLayer": "0"
+      },
+      {
+        "id": "pdf-room",
+        "type": "cadPolyline",
+        "vertices": [
+          {
+            "id": "p0",
+            "x": 0,
+            "y": 5000,
+            "outgoing": {
+              "id": "e0",
+              "bulge": 0
+            }
+          },
+          {
+            "id": "p1",
+            "x": 10000,
+            "y": 5000,
+            "outgoing": {
+              "id": "e1",
+              "bulge": 0
+            }
+          },
+          {
+            "id": "p2",
+            "x": 10000,
+            "y": 12000,
+            "outgoing": {
+              "id": "e2",
+              "bulge": 0
+            }
+          },
+          {
+            "id": "p3",
+            "x": 0,
+            "y": 12000,
+            "outgoing": {
+              "id": "e3",
+              "bulge": 0
+            }
+          }
+        ],
+        "closed": true,
+        "cadLayer": "0"
+      },
+      {
+        "id": "pdf-label",
+        "type": "cadText",
+        "point": {
+          "x": 5000,
+          "y": 8500
+        },
+        "height": 350,
+        "text": "한글과 English",
+        "cadLayer": "0",
+        "alignment": "center",
+        "rotation": 0
+      }
+    ],
+    "drawingRegions": [],
+    "references": [],
+    "cadLayerDefinitions": [
+      {
+        "name": "0",
+        "color": "#445566",
+        "linetype": "CONTINUOUS",
+        "lineweight": 0.25,
+        "locked": false,
+        "printable": true,
+        "colorIndex": 7,
+        "visible": true,
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "46"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "0"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ]
+          ],
+          "signature": "{\"name\":\"0\",\"colorIndex\":7,\"color\":\"#445566\",\"linetype\":\"CONTINUOUS\",\"lineweight\":0.25,\"locked\":false,\"printable\":true,\"visible\":true}"
+        }
+      },
+      {
+        "name": "A-WALL",
+        "color": "#445566",
+        "linetype": "CONTINUOUS",
+        "lineweight": 0.25,
+        "locked": false,
+        "printable": true,
+        "colorIndex": 7,
+        "visible": true,
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "47"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-WALL"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ]
+          ],
+          "signature": "{\"name\":\"A-WALL\",\"colorIndex\":7,\"color\":\"#445566\",\"linetype\":\"CONTINUOUS\",\"lineweight\":0.25,\"locked\":false,\"printable\":true,\"visible\":true}"
+        }
+      },
+      {
+        "name": "A-TEXT",
+        "color": "#445566",
+        "linetype": "CONTINUOUS",
+        "lineweight": 0.25,
+        "locked": false,
+        "printable": true,
+        "colorIndex": 7,
+        "visible": true,
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "48"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-TEXT"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ]
+          ],
+          "signature": "{\"name\":\"A-TEXT\",\"colorIndex\":7,\"color\":\"#445566\",\"linetype\":\"CONTINUOUS\",\"lineweight\":0.25,\"locked\":false,\"printable\":true,\"visible\":true}"
+        }
+      },
+      {
+        "name": "A-DIM",
+        "color": "#445566",
+        "linetype": "CONTINUOUS",
+        "lineweight": 0.25,
+        "locked": false,
+        "printable": true,
+        "colorIndex": 7,
+        "visible": true,
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "49"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-DIM"
+            ],
+            [
+              70,
+              "0"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ]
+          ],
+          "signature": "{\"name\":\"A-DIM\",\"colorIndex\":7,\"color\":\"#445566\",\"linetype\":\"CONTINUOUS\",\"lineweight\":0.25,\"locked\":false,\"printable\":true,\"visible\":true}"
+        }
+      },
+      {
+        "name": "A-HATCH",
+        "color": "#445566",
+        "linetype": "CONTINUOUS",
+        "lineweight": 0.25,
+        "locked": true,
+        "printable": true,
+        "colorIndex": 7,
+        "visible": true,
+        "dxf": {
+          "raw": [
+            [
+              0,
+              "LAYER"
+            ],
+            [
+              5,
+              "4A"
+            ],
+            [
+              330,
+              "4B"
+            ],
+            [
+              100,
+              "AcDbSymbolTableRecord"
+            ],
+            [
+              100,
+              "AcDbLayerTableRecord"
+            ],
+            [
+              2,
+              "A-HATCH"
+            ],
+            [
+              70,
+              "4"
+            ],
+            [
+              62,
+              "7"
+            ],
+            [
+              420,
+              "4478310"
+            ],
+            [
+              6,
+              "CONTINUOUS"
+            ],
+            [
+              370,
+              "25"
+            ],
+            [
+              290,
+              "1"
+            ]
+          ],
+          "signature": "{\"name\":\"A-HATCH\",\"colorIndex\":7,\"color\":\"#445566\",\"linetype\":\"CONTINUOUS\",\"lineweight\":0.25,\"locked\":true,\"printable\":true,\"visible\":true}"
+        }
+      }
+    ],
+    "cadLayerVisibility": [
+      [
+        "0",
+        true
+      ],
+      [
+        "A-WALL",
+        false
+      ],
+      [
+        "A-TEXT",
+        false
+      ],
+      [
+        "A-DIM",
+        false
+      ],
+      [
+        "A-HATCH",
+        false
+      ]
+    ],
+    "cadRegionLayerVisibility": [],
+    "activeCadLayer": "0",
+    "unitSystem": "metric",
+    "sheets": [
+      {
+        "drawingName": "건축도면 · 한글과 English",
+        "drawingNumber": "A-101",
+        "revision": "A",
+        "date": "2026-10-10",
+        "projectName": "native-artifact.dxf",
+        "titleBlock": {
+          "definitionName": "PP_SHEET_TITLE",
+          "width": 175,
+          "height": 32,
+          "reserve": true
+        },
+        "name": "Plan 100",
+        "paper": "A3",
+        "orientation": "landscape",
+        "sizeMode": "fixed",
+        "scale": 100,
+        "margins": {
+          "top": 10,
+          "right": 10,
+          "bottom": 10,
+          "left": 10
+        },
+        "range": {
+          "minx": -1000,
+          "miny": 4000,
+          "maxx": 11000,
+          "maxy": 16000
+        },
+        "center": {
+          "x": 5000,
+          "y": 10000
+        },
+        "regionId": null,
+        "floorId": null,
+        "rotation": 0,
+        "mode": "cad",
+        "content": {
+          "working": {
+            "visible": true,
+            "opacity": 1
+          },
+          "references": {}
+        },
+        "id": "sheet-43"
+      },
+      {
+        "drawingName": "상세도 · Detail",
+        "drawingNumber": "A-501",
+        "revision": "B",
+        "date": "2026-10-10",
+        "projectName": "native-artifact.dxf",
+        "titleBlock": {
+          "definitionName": "PP_SHEET_TITLE",
+          "width": 175,
+          "height": 32,
+          "reserve": true
+        },
+        "name": "Detail 50",
+        "paper": "A3",
+        "orientation": "portrait",
+        "sizeMode": "fixed",
+        "scale": 50,
+        "margins": {
+          "top": 10,
+          "right": 10,
+          "bottom": 10,
+          "left": 10
+        },
+        "range": {
+          "minx": -1000,
+          "miny": 4000,
+          "maxx": 11000,
+          "maxy": 16000
+        },
+        "center": {
+          "x": 5000,
+          "y": 10000
+        },
+        "regionId": null,
+        "floorId": null,
+        "rotation": 0,
+        "mode": "cad",
+        "content": {
+          "working": {
+            "visible": true,
+            "opacity": 1
+          },
+          "references": {}
+        },
+        "id": "sheet-44"
+      }
+    ],
+    "cadMapping": null,
+    "baseAxisAngle": 0,
+    "baseAxisWallId": null,
+    "camera": {
+      "cx": 2245.9501419195667,
+      "cy": 2153.4318687384707,
+      "zoom": 0.15300939314979503
+    },
+    "toolset": "cad",
+    "toolSettings": {
+      "wallThickness": 150,
+      "wallType": "straight",
+      "doorWidth": 900,
+      "doorType": "hingedSingle",
+      "windowWidth": 1200,
+      "planDisplayMode": false,
+      "planDisplayStyle": "solid",
+      "planLineAppearance": {
+        "color": "#8e9bab",
+        "width": 1.4,
+        "dashScale": 1
+      },
+      "dimensionStyleName": "Architecture"
+    },
+    "planLayerVisibility": [
+      [
+        "drawing",
+        true
+      ],
+      [
+        "walls",
+        true
+      ],
+      [
+        "doors",
+        true
+      ],
+      [
+        "windows",
+        true
+      ],
+      [
+        "spaces",
+        true
+      ],
+      [
+        "dimensions",
+        true
+      ],
+      [
+        "stairs",
+        true
+      ]
+    ],
+    "recognitionHistory": [],
+    "buildings": [
+      {
+        "id": "building_1",
+        "name": "건물 1",
+        "nameSource": null,
+        "order": 0
+      }
+    ],
+    "activeBuildingId": "building_1",
+    "floors": [
+      {
+        "id": "floor_1",
+        "name": "1F",
+        "sourceRegionId": null,
+        "discipline": "architectural",
+        "buildingId": "building_1",
+        "order": 0
+      }
+    ],
+    "activeFloorId": "floor_1",
+    "cadWorkRegionId": null,
+    "cadPlanOverlay": false,
+    "nextId": 45
+  },
+  "debug": {
+    "editLog": []
+  }
+}
