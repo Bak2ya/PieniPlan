@@ -7,14 +7,16 @@
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
     if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>7))bad('unsupported-schema');
-    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.cadPolyline?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1'].filter(Boolean));
+    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.cadPolyline?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
     if(!Array.isArray(caps)||caps.some(c=>!allowedCaps.has(c)))bad('unsupported-capability');
     const d=raw.drawing,vertexIds=new Set(),edgeIds=new Set(),annotationV2=(raw.schemaVersion??1)>=7&&caps.includes('cad.annotation.v2');
     for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory','blockDefinitions','dimensionStyles'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
+    for(const o of d.objects||[])if(o.recognitionExactBaseline!=null&&(!caps.includes('plan.recognition.review.v1')||typeof o.recognitionExactBaseline!=='string'||o.recognitionExactBaseline.length>100000))bad('recognition-review-capability');
     const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
     for(const key of ['objects','references','drawingRegions','floors','sheets']){
       const ids=new Set();for(const o of d[key]||[]){if(!o||typeof o!=='object'||Array.isArray(o))bad(key+'-record');if(o.id){if(ids.has(o.id))bad('duplicate-'+key+'-id');ids.add(o.id);}}
     }
+    if(d.buildings!=null&&!Array.isArray(d.buildings))bad('buildings');for(const b of d.buildings||[])if(b.structuralReferences!=null){if(b.structuralReferences?.length&&!caps.includes('building.structure.v1'))bad('structure-capability-required');try{root.structuralAlignment.validateReferences(b.structuralReferences);for(const r of b.structuralReferences)for(const binding of r.bindings){const floor=(d.floors||[]).find(f=>f.id===binding.floorId);if(floor&&floor.buildingId!==b.id)bad('common-reference-building');}}catch{bad('common-structure-reference');}}
     for(const f of d.floors||[])if(f.viewAlignment!=null&&(!root.floorAlignment?.valid(f.viewAlignment)||f.viewAlignment.referenceFloorId&&!((d.floors||[]).some(r=>r.id===f.viewAlignment.referenceFloorId&&r.id!==f.id&&r.buildingId===f.buildingId))))bad('floor-view-alignment');
     for(const sheet of d.sheets||[]){if(sheet.titleBlock||sheet.drawingNumber!=null||sheet.revision!=null){if(!caps.includes('sheet.architectural.v1'))bad('sheet-capability-required');root.architecturalSheet.validate(sheet,d.blockDefinitions||[]);}if(sheet.range!=null){try{if(!root.sheetLayout)bad('sheet-layout-unavailable');root.sheetLayout.layout(sheet.range,sheet);}catch{bad('sheet-layout');}}}
     const definitions=d.blockDefinitions||[],styles=d.dimensionStyles||[];

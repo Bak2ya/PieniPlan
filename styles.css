@@ -1890,3 +1890,6 @@ html, body { font-size:var(--font-body); }
 /* Share the same tool icons between right-click menus and their settings. */
 .canvas-context-menu .context-menu-label { display:flex;align-items:center;gap:7px;min-width:0; }
 .canvas-context-menu .context-menu-label .ui-icon { width:15px;height:15px;flex:none; }
+
+/* Common geometry analysis shares the established feature dialog grammar. */
+.feature-dialog textarea{box-sizing:border-box;width:100%;max-width:100%;min-height:90px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font:inherit}.structure-candidate-row{border-top:1px solid var(--border);padding:8px 0}.structure-evidence{color:var(--text-2);font-size:.9em}.structure-candidate-row p{margin:5px 0}
