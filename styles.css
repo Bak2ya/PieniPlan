@@ -1893,3 +1893,23 @@ html, body { font-size:var(--font-body); }
 
 /* Common geometry analysis shares the established feature dialog grammar. */
 .feature-dialog textarea{box-sizing:border-box;width:100%;max-width:100%;min-height:90px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font:inherit}.structure-candidate-row{border-top:1px solid var(--border);padding:8px 0}.structure-evidence{color:var(--text-2);font-size:.9em}.structure-candidate-row p{margin:5px 0}
+
+/* Build74 — clearer information hierarchy without altering the main Plan/CAD cards. */
+.start-support-heading strong { font-size:16px; font-weight:710; }
+.start-continue-main strong, .start-tool-copy strong { font-size:15px; font-weight:690; line-height:1.3; }
+.start-continue-main > span, .start-tool-copy span { font-size:13px; color:var(--text-2); line-height:1.4; }
+.start-row-action { font-size:13px; font-weight:650; }
+.start-continue-row, .start-tool-row { min-height:69px; }
+.start-storage-note { font-size:11px; }
+#fileMenu .menu-row { font-size:14px; }
+.file-drop-dialog { max-width:min(460px,calc(100vw - 32px)); padding:20px; display:flex; flex-direction:column; gap:12px; }
+.file-drop-dialog h2 { margin:0; font-size:17px; }
+.file-drop-name { margin:0; overflow-wrap:anywhere; color:var(--text-2); font-size:13px; }
+.file-drop-actions { display:grid; gap:9px; }
+.file-drop-option { display:flex; flex-direction:column; gap:4px; text-align:left; padding:13px 14px; border:1px solid var(--border-strong); background:var(--surface-2); border-radius:10px; color:var(--text); cursor:pointer; }
+.file-drop-option strong { font-size:14px; }
+.file-drop-option span { font-size:12px; color:var(--text-2); line-height:1.4; }
+.file-drop-option:hover,.file-drop-option:focus-visible { border-color:var(--accent); background:var(--surface-3); }
+.file-drop-hint { position:fixed; inset:14px; z-index:390; display:grid; place-items:center; border:2px dashed var(--accent); border-radius:14px; background:color-mix(in srgb,var(--bg) 82%,transparent); pointer-events:none; color:var(--text); font-size:17px; font-weight:650; text-align:center; }
+.file-drop-hint[hidden] { display:none; }
+@media (max-width:600px) { .start-continue-main strong,.start-tool-copy strong {font-size:14px;} .start-continue-main > span,.start-tool-copy span {font-size:12px;} }

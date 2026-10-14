@@ -198,7 +198,7 @@
             <strong id="startContinueHeading" data-i18n="start.continueHeading">Continue</strong>
           </div>
 
-          <button id="startOpenProjectBtn" class="start-continue-row">
+          <button id="startOpenProjectBtn" data-tooltip-key="start.openProjectTooltip" data-tooltip-follow="true" class="start-continue-row">
             <span class="start-continue-main">
               <strong data-i18n="start.openProjectPprj">Open Project (.pprj)</strong>
               <span data-i18n="start.openProjectCopy">Open a saved PieniPlan project file.</span>
@@ -206,7 +206,7 @@
             <span class="start-row-action" data-i18n="start.loadAction">Open →</span>
           </button>
 
-          <button id="startOpenPackageBtn" class="start-continue-row">
+          <button id="startOpenPackageBtn" data-tooltip-key="start.openPackageTooltip" data-tooltip-follow="true" class="start-continue-row">
             <span class="start-continue-main">
               <strong data-i18n="start.openPackagePpkg">Open Plan Package (.ppkg)</strong>
               <span data-i18n="start.openPackageCopy">Open a Plan Mode package containing one or more buildings.</span>
@@ -230,12 +230,12 @@
           <div class="start-support-heading">
             <strong id="startToolsHeading" data-i18n="start.toolsHeading">Additional tools</strong>
           </div>
-          <button id="startMergePlanBtn" class="start-tool-row">
+          <button id="startMergePlanBtn" data-tooltip-key="start.mergePlansTooltip" data-tooltip-follow="true" class="start-tool-row">
             <span class="start-tool-icon ui-icon icon-import" aria-hidden="true"></span>
             <span class="start-tool-copy"><strong data-i18n="start.mergePlans">Merge Plans</strong><span data-i18n="start.mergePlansCopy">Combine multiple Plan packages into one organized project.</span></span>
             <span class="start-tool-arrow" aria-hidden="true">→</span>
           </button>
-          <a id="startDwgTool" class="start-tool-row start-dwg-tool" href="https://bak2ya.github.io/DWGtoDXF/" target="_blank" rel="noopener noreferrer">
+          <a id="startDwgTool" data-tooltip-key="start.dwgToolTooltip" data-tooltip-follow="true" class="start-tool-row start-dwg-tool" href="https://bak2ya.github.io/DWGtoDXF/" target="_blank" rel="noopener noreferrer">
             <span class="start-dwg-icon-wrap" aria-hidden="true">
               <span class="start-dwg-badge"><span>DWG</span><span>DXF</span></span>
               <img class="start-dwg-icon" src="https://bak2ya.github.io/DWGtoDXF/assets/icon-192.png" alt="" onerror="this.hidden=true" />
@@ -263,17 +263,17 @@
 
   <div id="fileMenu" class="top-menu file-menu" role="menu" hidden>
     <button id="fileNewAction" class="menu-row menu-row-icon"><span class="ui-icon icon-file" aria-hidden="true"></span><span data-i18n="action.new">New drawing</span></button>
-    <button id="fileOpenProjectAction" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.openProjectPprj">Open project</span></button>
-    <button id="fileSaveProjectAction" class="menu-row menu-row-icon"><span class="ui-icon icon-save" aria-hidden="true"></span><span data-i18n="action.saveProjectPprj">Save project</span></button>
-    <button id="fileDownloadProjectAction" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.downloadProjectPprj">Save as</span></button>
+    <button id="fileOpenProjectAction" data-tooltip-key="file.tooltipProject" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.openProjectPprj">Open project</span></button>
+    <button id="fileSaveProjectAction" data-tooltip-key="file.tooltipSave" class="menu-row menu-row-icon"><span class="ui-icon icon-save" aria-hidden="true"></span><span data-i18n="action.saveProjectPprj">Save project</span></button>
+    <button id="fileDownloadProjectAction" data-tooltip-key="file.tooltipSaveAs" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.downloadProjectPprj">Save as</span></button>
     <div class="menu-divider"></div>
-    <button id="fileImportPlanPackageAction" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.importPlanPackage">Import plan</span></button>
-    <button id="fileExportPlanPackageAction" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.exportPlanPackage">Export plan</span></button>
+    <button id="fileImportPlanPackageAction" data-tooltip-key="file.tooltipPlanImport" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.importPlanPackage">Import plan</span></button>
+    <button id="fileExportPlanPackageAction" data-tooltip-key="file.tooltipPlanExport" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.exportPlanPackage">Export plan</span></button>
     <div class="menu-divider"></div>
-    <button id="fileOpenDxfAction" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.openDxfEdit">Import DXF</span></button>
-    <button id="fileExportDxfAction" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.exportDxf">Export DXF</span></button>
+    <button id="fileOpenDxfAction" data-tooltip-key="file.tooltipDxfImport" class="menu-row menu-row-icon"><span class="ui-icon icon-folder" aria-hidden="true"></span><span data-i18n="action.openDxfEdit">Import DXF</span></button>
+    <button id="fileExportDxfAction" data-tooltip-key="file.tooltipDxfExport" class="menu-row menu-row-icon"><span class="ui-icon icon-download" aria-hidden="true"></span><span data-i18n="action.exportDxf">Export DXF</span></button>
     <div class="menu-divider"></div>
-    <button id="fileSheetPdfAction" class="menu-row menu-row-icon"><span class="ui-icon icon-print" aria-hidden="true"></span><span data-i18n="action.sheetPdf">Sheet / PDF</span></button>
+    <button id="fileSheetPdfAction" data-tooltip-key="file.tooltipSheet" class="menu-row menu-row-icon"><span class="ui-icon icon-print" aria-hidden="true"></span><span data-i18n="action.sheetPdf">Sheet / PDF</span></button>
   </div>
 
   <div id="settingsMenu" class="top-menu settings-menu" role="menu" hidden>
@@ -562,6 +562,19 @@
     </div>
   </div>
 
+  <!-- Build74: explicit intent for dropped DXF files; no side effect until selection. -->
+  <div id="fileDropBackdrop" class="dialog-backdrop" hidden>
+    <section class="dialog file-drop-dialog" role="dialog" aria-modal="true" aria-labelledby="fileDropTitle">
+      <h2 id="fileDropTitle" data-i18n="drop.chooseTitle">How would you like to use this file?</h2>
+      <p id="fileDropName" class="file-drop-name"></p>
+      <div class="file-drop-actions">
+        <button type="button" id="fileDropEdit" class="file-drop-option"><strong data-i18n="drop.editTitle">Edit CAD drawing</strong><span data-i18n="drop.editCopy">Open editable DXF objects in CAD Mode.</span></button>
+        <button type="button" id="fileDropReference" class="file-drop-option"><strong data-i18n="drop.refTitle">Add as reference</strong><span id="fileDropRefCopy" data-i18n="drop.refCopy">Keep the drawing as a reference without editing its source geometry.</span></button>
+      </div>
+      <button type="button" id="fileDropCancel" class="small-button" data-i18n="action.cancel">Cancel</button>
+    </section>
+  </div>
+  <div id="fileDropHint" class="file-drop-hint" hidden data-i18n="drop.hint">Drop the file to choose how to use it</div>
   <div id="uiTooltip" class="ui-tooltip" role="tooltip" hidden></div>
 
   <script src="i18n.js"></script>

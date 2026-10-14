@@ -8,7 +8,6 @@
     const hud=document.createElement('div');hud.className='selection-instruction';hud.hidden=true;host.append(hud);
     const backdrop=document.createElement('div');backdrop.className='feature-backdrop';backdrop.hidden=true;document.body.append(backdrop);
     let dialog=null,focusBefore=null,ghost=null,overlayIds=new Set(),opacity=.3,projectId=state.projectId,outputJob=null;
-    let scratch=null;
     function errorText(error){const code=String(error?.message||error),messages={'page-margins':L('페이지 여백은 0 이상의 mm 값이어야 합니다.','Page margins must be non-negative millimetres.'),'page-margins-too-large':L('여백이 용지보다 큽니다. 여백을 줄이세요.','Margins exceed the paper size. Reduce them.'),'sheet-scale':L('1: 뒤에 0보다 큰 축척 분모를 입력하세요.','Enter a positive scale denominator after 1:.'),'output-range':L('너비와 높이가 있는 출력 범위를 지정하세요.','Select an output range with positive width and height.'),'alignment-points-too-close':L('서로 다른 두 기준점을 지정하세요. 같은 점으로 회전 방향을 정할 수 없습니다.','Pick two distinct anchors to determine rotation.')};return messages[code]||code;}
     function status(error){p.status(errorText(error),'error');}
     function button(label,run,primary=false){const b=document.createElement('button');b.type='button';b.className=primary?'feature-primary':'';b.textContent=label;b.onclick=async()=>{try{await run();}catch(e){status(e);}};return b;}
@@ -35,8 +34,15 @@
     function pointerUp(e){if(!selection.current)return false;e.preventDefault();selection.up();try{canvas.releasePointerCapture(e.pointerId);}catch{}instruction();p.render();return true;}
     function corners(r){return[{x:r.minx,y:r.miny},{x:r.maxx,y:r.miny},{x:r.maxx,y:r.maxy},{x:r.minx,y:r.maxy}].map(p.screen);}
     function path(points){ctx.beginPath();points.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();}
-    function drawSelection(){const s=selection.current;if(!s){drawStructureErrors();return;}const {w,h}=p.canvasSize();if(!scratch)scratch=document.createElement('canvas');if(scratch.width!==canvas.width||scratch.height!==canvas.height){scratch.width=canvas.width;scratch.height=canvas.height;}scratch.getContext('2d').drawImage(canvas,0,0);ctx.save();ctx.fillStyle='rgba(10,16,23,.52)';ctx.fillRect(0,0,w,h);
-      if(s.rect){const qs=corners(s.rect);ctx.save();path(qs);ctx.clip();ctx.clearRect(0,0,w,h);ctx.drawImage(scratch,0,0,w,h);ctx.restore();ctx.strokeStyle='#63b3ff';ctx.lineWidth=2;path(qs);ctx.stroke();ctx.fillStyle='#fff';for(const q of qs){ctx.fillRect(q.x-4,q.y-4,8,8);ctx.strokeRect(q.x-4,q.y-4,8,8);}}
+    // A destination-out/canvas snapshot reblit was unreliable on high-DPI and Safari
+    // compositor paths: tiny copies of the drawing could repeat inside a selection.
+    // Instead, shade ONLY the area outside the rect with an even-odd path. The original
+    // drawing is never sampled, resized, erased, or repainted by the selection overlay.
+    function drawSelection(){const s=selection.current;if(!s){drawStructureErrors();return;}const {w,h}=p.canvasSize();ctx.save();
+      ctx.fillStyle='rgba(10,16,23,.52)';ctx.beginPath();ctx.rect(0,0,w,h);
+      if(s.rect){const qs=corners(s.rect);for(let i=0;i<qs.length;i++){const q=qs[i];if(i)ctx.lineTo(q.x,q.y);else ctx.moveTo(q.x,q.y);}ctx.closePath();}
+      ctx.fill('evenodd');
+      if(s.rect){const qs=corners(s.rect);ctx.strokeStyle='#63b3ff';ctx.lineWidth=2;path(qs);ctx.stroke();ctx.fillStyle='#fff';for(const q of qs){ctx.fillRect(q.x-4,q.y-4,8,8);ctx.strokeRect(q.x-4,q.y-4,8,8);}}
       if(s.mode==='points'){if(ghost){p.drawGhost(ghost.reference,ghost.reference.viewAlignment,.6);p.drawGhost(ghost.floor,ghost.transform,.95);}ctx.strokeStyle='#63b3ff';ctx.lineWidth=2;for(const pt of s.points){const q=p.screen(pt);ctx.beginPath();ctx.moveTo(q.x-8,q.y);ctx.lineTo(q.x+8,q.y);ctx.moveTo(q.x,q.y-8);ctx.lineTo(q.x,q.y+8);ctx.stroke();}}
       ctx.restore();
     }

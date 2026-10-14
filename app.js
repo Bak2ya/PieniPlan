@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.52.0';
-  const BUILD = 73;
+  const VERSION = '0.53.0';
+  const BUILD = 74;
   let activeImportJob=null;
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
@@ -4711,9 +4711,20 @@
   let tooltipTimer=null,tooltipOwner=null;
   function tooltipTargetFrom(node){return node instanceof Element?node.closest('[data-tooltip-key],[data-tooltip-title-key],[data-tooltip-title]'):null;}
   function hideTooltip(){clearTimeout(tooltipTimer);tooltipTimer=null;tooltipOwner=null;dom.uiTooltip.hidden=true;dom.uiTooltip.innerHTML='';}
-  function showTooltip(owner){if(!owner?.isConnected)return;const title=owner.dataset.tooltipTitleKey?t(owner.dataset.tooltipTitleKey):(owner.dataset.tooltipTitle||''),copy=owner.dataset.tooltipKey?t(owner.dataset.tooltipKey):'',shortcut=owner.dataset.shortcut||'';if(!title&&!copy&&!shortcut)return;const parts=[];if(title)parts.push(`<div class="tooltip-title">${escapeHtml(title)}</div>`);if(copy)parts.push(`<div class="tooltip-copy">${escapeHtml(copy)}</div>`);if(shortcut)parts.push(`<div class="tooltip-shortcut">${escapeHtml(t('tooltip.shortcut'))} · ${escapeHtml(shortcut)}</div>`);dom.uiTooltip.innerHTML=parts.join('');dom.uiTooltip.hidden=false;const rect=owner.getBoundingClientRect(),tip=dom.uiTooltip.getBoundingClientRect(),margin=8;let left=rect.left+rect.width/2-tip.width/2;left=Math.max(margin,Math.min(window.innerWidth-tip.width-margin,left));let top=rect.top-tip.height-margin;if(top<margin)top=rect.bottom+margin;top=Math.max(margin,Math.min(window.innerHeight-tip.height-margin,top));dom.uiTooltip.style.left=`${Math.round(left)}px`;dom.uiTooltip.style.top=`${Math.round(top)}px`;}
+  let tooltipPointer=null;
+  function placeTooltip(owner){if(!owner||dom.uiTooltip.hidden)return;const rect=owner.getBoundingClientRect(),tip=dom.uiTooltip.getBoundingClientRect(),margin=8;
+    const follow=owner.dataset.tooltipFollow==='true'&&tooltipPointer&&tooltipPointer.pointerType!=='touch';
+    let left=follow?tooltipPointer.x+16:rect.left+rect.width/2-tip.width/2;
+    left=Math.max(margin,Math.min(window.innerWidth-tip.width-margin,left));
+    let top=follow?tooltipPointer.y+18:rect.top-tip.height-margin;
+    if(!follow&&top<margin)top=rect.bottom+margin;
+    if(top+tip.height>window.innerHeight-margin)top=follow?tooltipPointer.y-tip.height-12:window.innerHeight-tip.height-margin;
+    dom.uiTooltip.style.left=`${Math.round(Math.max(margin,left))}px`;
+    dom.uiTooltip.style.top=`${Math.round(Math.max(margin,top))}px`;
+  }
+  function showTooltip(owner){if(!owner?.isConnected)return;const title=owner.dataset.tooltipTitleKey?t(owner.dataset.tooltipTitleKey):(owner.dataset.tooltipTitle||''),copy=owner.dataset.tooltipKey?t(owner.dataset.tooltipKey):'',shortcut=owner.dataset.shortcut||'';if(!title&&!copy&&!shortcut)return;const parts=[];if(title)parts.push(`<div class="tooltip-title">${escapeHtml(title)}</div>`);if(copy)parts.push(`<div class="tooltip-copy">${escapeHtml(copy)}</div>`);if(shortcut)parts.push(`<div class="tooltip-shortcut">${escapeHtml(t('tooltip.shortcut'))} · ${escapeHtml(shortcut)}</div>`);dom.uiTooltip.innerHTML=parts.join('');dom.uiTooltip.hidden=false;placeTooltip(owner);}
   function scheduleTooltip(owner,delay){clearTimeout(tooltipTimer);tooltipOwner=owner;tooltipTimer=setTimeout(()=>{if(tooltipOwner===owner)showTooltip(owner);},delay);}
-  function installTooltips(){document.addEventListener('pointerover',e=>{const owner=tooltipTargetFrom(e.target);if(!owner||owner.contains(e.relatedTarget))return;scheduleTooltip(owner,650);});document.addEventListener('pointerout',e=>{const owner=tooltipTargetFrom(e.target);if(!owner||owner.contains(e.relatedTarget))return;hideTooltip();});document.addEventListener('focusin',e=>{const owner=tooltipTargetFrom(e.target);if(owner)scheduleTooltip(owner,450);});document.addEventListener('focusout',e=>{const owner=tooltipTargetFrom(e.target);if(owner)hideTooltip();});document.addEventListener('pointerdown',hideTooltip,true);}
+  function installTooltips(){document.addEventListener('pointerover',e=>{const owner=tooltipTargetFrom(e.target);if(!owner||owner.contains(e.relatedTarget))return;tooltipPointer={x:e.clientX,y:e.clientY,pointerType:e.pointerType};scheduleTooltip(owner,550);});document.addEventListener('pointermove',e=>{if(!tooltipOwner||tooltipOwner.dataset.tooltipFollow!=='true')return;tooltipPointer={x:e.clientX,y:e.clientY,pointerType:e.pointerType};placeTooltip(tooltipOwner);},{passive:true});document.addEventListener('pointerout',e=>{const owner=tooltipTargetFrom(e.target);if(!owner||owner.contains(e.relatedTarget))return;hideTooltip();});document.addEventListener('focusin',e=>{const owner=tooltipTargetFrom(e.target);if(owner){tooltipPointer=null;scheduleTooltip(owner,450);}});document.addEventListener('focusout',e=>{const owner=tooltipTargetFrom(e.target);if(owner)hideTooltip();});document.addEventListener('pointerdown',hideTooltip,true);}
 
   function isEditableTarget(target){return Boolean(target&&target.nodeType===1&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||target.isContentEditable||target.closest?.('[contenteditable="true"]')));}
   function isTyping(){return isEditableTarget(document.activeElement);}
@@ -4859,7 +4870,37 @@
   dom.commandInput.addEventListener('keydown',e=>{if(e.isComposing||e.keyCode===229||state.commandComposing)return;if(e.key==='Tab'&&!dom.commandSuggestions?.hidden){if(commandConsole.completeFirst())e.preventDefault();}else if(e.metaKey&&e.code==='Period'){e.preventDefault();e.stopPropagation();dom.commandInput.value='';commandConsole.hideSuggestions();handleCancelShortcut();host.focus();}else if(e.key==='Enter'){e.preventDefault();e.stopPropagation();const raw=dom.commandInput.value;if(cadCommandSession?.describe()?.phase==='name'||!/[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/.test(raw))dom.commandInput.value='';commandConsole.hideSuggestions();runCommand(raw);}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dom.commandInput.value='';commandConsole.hideSuggestions();handleCancelShortcut();host.focus();}});
 
   canvas.addEventListener('pointermove',onPointerMove);canvas.addEventListener('pointerdown',onPointerDown);canvas.addEventListener('pointerup',onPointerUp);canvas.addEventListener('pointercancel',onPointerCancel);canvas.addEventListener('dblclick',onCanvasDoubleClick);canvas.addEventListener('wheel',onWheel,{passive:false});canvas.addEventListener('contextmenu',showCanvasContextMenu);
-  host.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';});host.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files?.[0];if(file)openReferenceFile(file);});
+  // Explicit file intent. Never import as a reference merely because a file was dropped.
+  const dropBackdrop=document.getElementById('fileDropBackdrop'),dropHint=document.getElementById('fileDropHint');
+  const dropEdit=document.getElementById('fileDropEdit'),dropReference=document.getElementById('fileDropReference');
+  let pendingDrop=null,dragFileDepth=0;
+  const fileDrag=e=>Array.from(e.dataTransfer?.types||[]).includes('Files');
+  function closeFileDropChoice(){pendingDrop=null;dropBackdrop.hidden=true;}
+  function showFileDropChoice(file){
+    if(!file)return false;
+    const name=String(file.name||''),lower=name.toLowerCase();
+    if(/\.(pprj|ppln|pieniplan)$/.test(lower)){void openProjectFile(file);return true;}
+    if(/\.ppkg$/.test(lower)){void importPlanPackageFile(file,{mode:'open'});return true;}
+    const editable=/\.dxf$/.test(lower),referenceOnly=/\.pdf$/.test(lower)||file.type==='application/pdf'||/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(lower)||file.type.startsWith('image/');
+    if(!editable&&!referenceOnly){setCommandStatus(t('drop.unsupported'),'error');return false;}
+    pendingDrop=file;
+    document.getElementById('fileDropName').textContent=name;
+    dropEdit.hidden=!editable;
+    document.getElementById('fileDropRefCopy').textContent=t(referenceOnly?'drop.refImageCopy':'drop.refCopy');
+    dropBackdrop.hidden=false;
+    (editable?dropEdit:dropReference).focus();
+    return true;
+  }
+  dropEdit.addEventListener('click',()=>{const file=pendingDrop;if(!file||!/\.dxf$/i.test(file.name))return;closeFileDropChoice();void openEditableDxf(file);});
+  dropReference.addEventListener('click',()=>{const file=pendingDrop;if(!file)return;closeFileDropChoice();if(state.view==='start')switchToolset('plan',{skipMapping:true});void openReferenceFile(file);});
+  document.getElementById('fileDropCancel').addEventListener('click',closeFileDropChoice);
+  dropBackdrop.addEventListener('pointerdown',e=>{if(e.target===dropBackdrop)closeFileDropChoice();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dropBackdrop.hidden){e.preventDefault();e.stopImmediatePropagation();closeFileDropChoice();}},true);
+  document.addEventListener('dragenter',e=>{if(!fileDrag(e))return;e.preventDefault();dragFileDepth++;dropHint.hidden=false;});
+  document.addEventListener('dragover',e=>{if(!fileDrag(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy';dropHint.hidden=false;});
+  document.addEventListener('dragleave',e=>{if(!fileDrag(e))return;dragFileDepth=Math.max(0,dragFileDepth-1);if(!dragFileDepth)dropHint.hidden=true;});
+  document.addEventListener('drop',e=>{if(!fileDrag(e))return;e.preventDefault();e.stopPropagation();dragFileDepth=0;dropHint.hidden=true;const file=e.dataTransfer.files?.[0];if(file)showFileDropChoice(file);});
+  window.addEventListener('blur',()=>{dragFileDepth=0;dropHint.hidden=true;});
   window.addEventListener('resize',()=>{updateCompactViewerState();resizeCanvas();});
   window.addEventListener('blur',()=>{if(state.dragEdit)cancelDirectDrag({status:false});});
   window.addEventListener('popstate',e=>applyRoute(e.state));
