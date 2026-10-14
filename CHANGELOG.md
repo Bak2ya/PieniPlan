@@ -754,3 +754,10 @@ Direct-manipulation and real-DXF reliability milestone.
 - Line / Wall / Distance / Select / Delete
 - numeric Length / Angle / Wall Thickness input
 - GRID / SNAP / ORTHO and CAD-style navigation
+
+## v0.54.0 · Build 75 — DWG2DXF DXF Handoff receiver (2026-10-14)
+- Same-origin IndexedDB / UUID v4 / `dxfHandoff` query parameter 기반 외부 DXF 수신부 추가. 사용자 선택 전 기존 문서 변경 금지.
+- Build74 파일 선택 UI 재사용: **CAD 편집 / 참조 추가** 의도 선택, 취소/실패시 재시도 가능한 데이터 보존.
+- 기존 DXF 편집 Import 및 DXF 참조 Import 경로 그대로 사용, 검증 주의 메시지, 실제 Import 성공 시 cleanup.
+- PPRJ schema7 유지. DWG2DXF 송신부는 별도 개발 요청/프로토콜 명세로 전달; 실제 양 앱 간 통합/사파리 검증은 미완료 (CONDITIONAL).
+- 세부 문서 `_AI_NOT_GITHUB/BUILD75_DXF_HANDOFF/`.

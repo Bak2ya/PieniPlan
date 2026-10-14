@@ -567,6 +567,7 @@
     <section class="dialog file-drop-dialog" role="dialog" aria-modal="true" aria-labelledby="fileDropTitle">
       <h2 id="fileDropTitle" data-i18n="drop.chooseTitle">How would you like to use this file?</h2>
       <p id="fileDropName" class="file-drop-name"></p>
+      <p id="fileHandoffNotice" class="file-handoff-notice" hidden></p>
       <div class="file-drop-actions">
         <button type="button" id="fileDropEdit" class="file-drop-option"><strong data-i18n="drop.editTitle">Edit CAD drawing</strong><span data-i18n="drop.editCopy">Open editable DXF objects in CAD Mode.</span></button>
         <button type="button" id="fileDropReference" class="file-drop-option"><strong data-i18n="drop.refTitle">Add as reference</strong><span id="fileDropRefCopy" data-i18n="drop.refCopy">Keep the drawing as a reference without editing its source geometry.</span></button>
@@ -633,6 +634,7 @@
   <script src="modules/geometry/precision.js"></script>
   <script src="modules/plan/stair.js"></script>
   <script src="modules/cad/connected-selection.js"></script>
+  <script src="modules/dxf/handoff.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

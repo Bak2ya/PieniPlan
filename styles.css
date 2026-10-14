@@ -1913,3 +1913,7 @@ html, body { font-size:var(--font-body); }
 .file-drop-hint { position:fixed; inset:14px; z-index:390; display:grid; place-items:center; border:2px dashed var(--accent); border-radius:14px; background:color-mix(in srgb,var(--bg) 82%,transparent); pointer-events:none; color:var(--text); font-size:17px; font-weight:650; text-align:center; }
 .file-drop-hint[hidden] { display:none; }
 @media (max-width:600px) { .start-continue-main strong,.start-tool-copy strong {font-size:14px;} .start-continue-main > span,.start-tool-copy span {font-size:12px;} }
+
+/* Build75: local DXF handoff review notice in the existing import-intent dialog. */
+.file-handoff-notice{font-size:13px;line-height:1.5;color:var(--text-secondary,#aeb9c7);margin:0 0 12px;white-space:pre-line}
+.file-handoff-notice[data-warning="true"]{color:var(--warning,#eac27b)}
