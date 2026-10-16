@@ -1,3 +1,11 @@
+## v0.55.0 · Build 76 — Plan door/stair editing and property capsule (2026-10-16)
+
+- Angled straight stairs, configurable treads and ascent reversal using existing stair module.
+- Independent double-leaf split drag handle; original door movement handle retained.
+- Reusable Plan selection property capsule, fire-door attribute editing, coordinated sliding glyphs in Canvas/DXF/SVG.
+- Command history chevron SVG. Existing right-click customizations unchanged.
+- Development candidate; see `_AI_NOT_GITHUB/BUILD76_DEV_VALIDATION.md` for outstanding browser/manual validation.
+
 ## v0.53.0 · Build74 — 선택 영역 렌더링/파일 UX 개선 (2026-10-14)
 
 - CAD 도면 영역 지정 중 선택 내부를 Canvas snapshot에서 다시 그리는 경로 제거; even-odd 외부 마스크 방식으로 변경해 화면 타일링/미세 축소 복사 위험 차단.

@@ -1917,3 +1917,7 @@ html, body { font-size:var(--font-body); }
 /* Build75: local DXF handoff review notice in the existing import-intent dialog. */
 .file-handoff-notice{font-size:13px;line-height:1.5;color:var(--text-secondary,#aeb9c7);margin:0 0 12px;white-space:pre-line}
 .file-handoff-notice[data-warning="true"]{color:var(--warning,#eac27b)}
+
+/* Build76: command history chevron follows expansion state */
+#commandLogExpand svg { transition:transform .15s ease; }
+#commandLogExpand[aria-expanded="true"] svg { transform:rotate(180deg); }
