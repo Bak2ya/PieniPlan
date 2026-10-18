@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.55.0';
-  const BUILD = 76;
+  const VERSION = '0.56.0';
+  const BUILD = 77;
   let activeImportJob=null;
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
@@ -106,6 +106,8 @@
   // Compact split-button ribbon: the main button repeats the group's last-used tool;
   // the adjacent chevron opens the tool list without duplicating the group name.
   const toolCategoryMemory = { plan: Object.create(null), cad: Object.create(null) };
+  let toolbarExpanded = false;
+  try { toolbarExpanded = localStorage.getItem('pieniplan-toolbar-expanded') === 'true'; } catch (_) {}
   const toolIconFallback = {"select": "select", "constraint": "vector", "region": "crop", "line": "line", "xline":"arrows-horizontal", "ray":"arrow-bar-to-right", "linear-dim":"ruler-measure", "polyline": "vector", "rectangle": "rectangle", "circle": "circle", "arc": "arc", "wall": "wall", "displayLine": "line", "displayArc": "arc", "door": "door", "window": "window", "space": "space", "measure": "ruler", "move": "arrows-move", "copy": "copy", "rotate": "rotate", "mirror": "flip-horizontal", "scale": "resize", "stretch": "arrows-horizontal", "array": "layout-grid", "align": "align-left", "chamfer": "corner-up-right", "trim": "cut", "extend": "arrow-bar-to-right", "break": "arrows-split", "join": "arrows-join", "offset": "line-dashed", "fillet": "border-radius", "reconstruct": "vector-spline", "delete": "trash", "stair": "stairs", "component": "component", "text": "letter-t", "mtext": "text-wrap", "leader": "message-2", "hatch": "texture", "aligned-dim": "ruler-measure", "angle-dim": "angle", "radius-dim": "circle", "diameter-dim": "circle", "continuous-dim": "ruler-measure", "baseline-dim": "ruler-measure", "coincident": "link", "horizontal": "arrows-horizontal", "vertical": "vertical", "parallel": "line-dashed", "perpendicular": "corner-up-right", "angle": "angle", "length": "ruler", "fixed": "lock", "baseAxis": "vector", "clearBaseAxis": "vector"};
 
   const wallTypeCatalog = [
@@ -728,6 +730,7 @@
   let cadWorkObjectCacheRevision=-1,cadWorkObjectCacheSource=null,cadWorkObjectCacheLength=-1;
   const cadWorkObjectCache=new Map();
   function activeCadWorkRegion(){return state.cadWorkRegionId?state.drawingRegions.find(r=>r.id===state.cadWorkRegionId)||null:null;}
+  function planScopeMissing(){return state.toolset==='plan'&&Boolean(activeCadWorkRegion())&&!floorForRegion(state.cadWorkRegionId);}
   function floorForRegion(regionId){return state.floors.find(f=>f.sourceRegionId===regionId)||state.floors.find(f=>state.references.some(r=>r.type==='linkedCadRegion'&&r.regionId===regionId&&r.floorId===f.id))||null;}
   let cadRegionMemory={projectId:null,byFloor:new Map()};
   function rememberedCadRegion(floor){if(cadRegionMemory.projectId!==state.projectId)cadRegionMemory={projectId:state.projectId,byFloor:new Map()};const remembered=cadRegionMemory.byFloor.get(floor?.id);return state.drawingRegions.find(r=>r.id===remembered&&floorForRegion(r.id)?.id===floor?.id)?.id||state.drawingRegions.find(r=>r.id===floor?.sourceRegionId)?.id||null;}
@@ -748,6 +751,7 @@
   function renderCadScopeControl(){
     if(!dom.cadScopeHost)return;
     dom.cadScopeHost.innerHTML='';
+    if(planScopeMissing()){dom.cadScopeHost.hidden=false;const notice=document.createElement('div');notice.className='cad-scope-card';notice.setAttribute('role','status');notice.textContent=t('scope.noPlan',{name:activeCadWorkRegion().name||t('region.unnamed')});dom.cadScopeHost.append(notice);return;}
     dom.cadScopeHost.hidden=state.toolset!=='cad';
     if(state.toolset!=='cad')return;
     const active=activeCadWorkRegion();
@@ -884,7 +888,7 @@
   }
   function hideAppConfirm({cancel=false}={}){const cancelFn=cancel?state.confirmCancelAction:null;dom.confirmBackdrop.hidden=true;state.confirmAction=null;state.confirmSecondaryAction=null;state.confirmCancelAction=null;if(dom.confirmSaveBtn)dom.confirmSaveBtn.hidden=true;if(cancelFn)cancelFn();}
   function deleteFloor(floor){ensureFloorModel();if(state.floors.length<=1){setCommandStatus(t('floor.keepOne'),'error');return;}showAppConfirm({title:t('floor.deleteTitle',{name:floor.name}),copy:t('floor.deleteConfirm',{name:floor.name}),confirmLabel:t('floor.deleteAction',{name:floor.name}),onConfirm:()=>{pushHistory();state.objects=state.objects.filter(o=>!o.floorId||o.floorId!==floor.id);state.floors=state.floors.filter(f=>f.id!==floor.id);for(const f of state.floors)if(f.viewAlignment?.referenceFloorId===floor.id)f.viewAlignment={...f.viewAlignment,referenceFloorId:null};state.expandedFloorIds.delete(floor.id);const fallback=state.floors.find(f=>f.buildingId===floor.buildingId)||state.floors[0];state.activeFloorId=fallback.id;state.activeBuildingId=fallback.buildingId;normalizeHierarchyOrder();clearMultiSelection();markDirty(true);rebuildObjectSnapIndex();updateAll();}});}
-  function setActiveFloor(id){if(id!==state.activeFloorId&&state.floors.some(f=>f.id===id))textEditor?.cancel({notify:false});const previous=viewFloor(),position=buildingCamera();const floor=state.floors.find(f=>f.id===id);if(!floor)return;if(id!==state.activeFloorId){cancelImportJob();featureFill?.discardTransient();cancelTransient();}state.activeFloorId=id;state.activeBuildingId=floor.buildingId;if(state.toolset==='cad'){cadCommandSession?.cancel('floor-change');state.cadWorkRegionId=rememberedCadRegion(floor);state.selectedRegionId=state.cadWorkRegionId;state.trimPreview=null;}const preserved=preserveFloorCamera(previous,floor,position);clearSpaceGapDiagnostic({silent:true});clearMultiSelection();rebuildObjectSnapIndex({touch:false,scope:'plan'});const f=activeFloor();if(!preserved&&f?.sourceRegionId){const r=state.drawingRegions.find(x=>x.id===f.sourceRegionId);if(r)fitBounds(r);}updateAll();}
+  function setActiveFloor(id){if(id!==state.activeFloorId&&state.floors.some(f=>f.id===id))textEditor?.cancel({notify:false});const previous=viewFloor(),position=buildingCamera();const floor=state.floors.find(f=>f.id===id);if(!floor)return;if(id!==state.activeFloorId){cancelImportJob();featureFill?.discardTransient();cancelTransient();}state.activeFloorId=id;state.activeBuildingId=floor.buildingId;if(state.toolset==='cad')cadCommandSession?.cancel('floor-change');state.cadWorkRegionId=rememberedCadRegion(floor);state.selectedRegionId=state.cadWorkRegionId;state.trimPreview=null;const preserved=preserveFloorCamera(previous,floor,position);clearSpaceGapDiagnostic({silent:true});clearMultiSelection();rebuildObjectSnapIndex({touch:false,scope:'plan'});const f=activeFloor();if(!preserved&&f?.sourceRegionId){const r=state.drawingRegions.find(x=>x.id===f.sourceRegionId);if(r)fitBounds(r);}updateAll();}
 
   function positionAppearanceMenu(owner) {
     const menu = dom.appearanceMenu;
@@ -1096,7 +1100,7 @@
   function selectOnly(id){setSelectionIds(id?new Set([id]):new Set());}
   function selectionIds(){const ids=new Set(state.selectedObjectIds);if(state.selectedObjectId)ids.add(state.selectedObjectId);return ids;}
   function visibleSelectableObjects(){
-    if(state.toolset==='plan')return getPlanObjects();
+    if(state.toolset==='plan')return planScopeMissing()?[]:getPlanObjects();
     return cadSelectableObjects();
   }
   function objectFullyInsideRect(o,r){if(state.toolset==='cad'&&cadSourceObject(o))return cadGeometry.insideWindow(o,r);const b=objectBoundsWorld(o);return b&&b.minx>=r.minx&&b.maxx<=r.maxx&&b.miny>=r.miny&&b.maxy<=r.maxy;}
@@ -1359,7 +1363,7 @@
     return { w: canvas.width / dpr, h: canvas.height / dpr, dpr };
   }
 
-  function viewFloor(){return state.toolset==='cad'?(activeCadWorkRegion()?floorForRegion(state.cadWorkRegionId):null):activeFloor();}
+  function viewFloor(){return state.toolset==='cad'?(activeCadWorkRegion()?floorForRegion(state.cadWorkRegionId):null):planScopeMissing()?null:activeFloor();}
   function projectionFrame(){return projectionFloorOverride?.transform||projectionFloorOverride?.floor?.viewAlignment||viewFloor()?.viewAlignment;}
   let renderProjection=null;
   function projectionState(frame=projectionFrame()){const {w,h}=cssCanvasSize(),rotation=frame?.rotation||0,a=rad(rotation);return{frame,rotation,c:Math.cos(a),s:Math.sin(a),center:buildingCamera(),zoom:state.camera.zoom,w,h,bounds:new Map()};}
@@ -1438,7 +1442,7 @@
     drawGrid(w, h);
     syncPdfReferenceLayer();
     for (const ref of referencesForRender()) drawReference(ref);
-    featureFill?.drawOverlays();if (state.toolset === 'plan') drawPlanWorkspace(); else drawCadWorkspace();
+    if(!planScopeMissing())featureFill?.drawOverlays();if (state.toolset === 'plan') drawPlanWorkspace(); else drawCadWorkspace();
     drawDrawingRegions();
     drawCadRotateGuide();
     drawWallRecognitionPreview();
@@ -1458,7 +1462,7 @@
     drawSnapIndicator();
     drawConstraintInteraction();
     featureFill?.drawSelection();
-    dom.emptyState.hidden = state.references.length > 0 || state.objects.length > 0;
+    dom.emptyState.hidden = !planScopeMissing() && (state.references.length > 0 || state.objects.length > 0 || state.activeTool!=='select');
     textEditor?.sync();dom.statusZoom.textContent = `${Math.round(state.camera.zoom / 0.12 * 100)}%`;renderProjection=null;
   }
 
@@ -1518,6 +1522,7 @@
   }
   function referencesForRender(){
     if(state.toolset==='cad')return state.references.filter(ref=>ref.visible&&ref.type!=='linkedCadRegion');
+    if(planScopeMissing())return[];
     const floor=activeFloor();
     return state.references.filter(ref=>ref.visible&&referenceBelongsToFloor(ref,floor));
   }
@@ -1701,6 +1706,7 @@
   }
 
   function drawPlanWorkspace() {
+    if(planScopeMissing())return;
     const floor=activeFloor(),regionId=floor?.sourceRegionId||null,region=regionId?state.drawingRegions.find(r=>r.id===regionId)||null:null,linkedCadReference=state.references.find(r=>r.type==='linkedCadRegion'&&r.regionId===regionId),styles = getComputedStyle(document.documentElement),muted=styles.getPropertyValue('--cad-muted').trim(),line=styles.getPropertyValue('--line').trim(),wall=styles.getPropertyValue('--wall').trim(),dim=styles.getPropertyValue('--dimension').trim(),sel=styles.getPropertyValue('--selection').trim(),hover=styles.getPropertyValue('--hover').trim(),planObjects=getPlanObjects();
     if(!linkedCadReference) for (const obj of cadObjectsForRegion(region)) {if (!isCadObject(obj)||isPlanText(obj)) continue;if (!cadLayerVisible(cadLayerForObject(obj),regionId)) continue;const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id);drawCadObject(obj, selected ? sel : preview ? hover : muted, selected ? 2 : preview ? 1.8 : 1);}
     for(const obj of planObjects)if(isPlanText(obj)&&layerVisible('drawing'))drawModelText(obj,isSelectedId(obj.id)?sel:line);
@@ -1729,7 +1735,7 @@
   }
 
 
-  function drawStairPlan(obj){if(!obj.polygon?.length)return;ctx.save();ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue(isSelectedId(obj.id)?'--selection':'--text-2').trim();ctx.lineWidth=isSelectedId(obj.id)?2:1.2;for(const g of modules.planStair.segments(obj)){const a=toScreenCss(g.a),b=toScreenCss(g.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.restore();}
+  function drawStairPlan(obj,color=null){if(!obj.polygon?.length)return;ctx.save();ctx.strokeStyle=color||getComputedStyle(document.documentElement).getPropertyValue(isSelectedId(obj.id)?'--selection':'--text-2').trim();ctx.lineWidth=isSelectedId(obj.id)?2:1.2;for(const g of modules.planStair.segments(obj)){const a=toScreenCss(g.a),b=toScreenCss(g.b);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.restore();}
   function stairAtCorners(a,b){
     const lines=getPlanObjects().filter(o=>(o.type==='wall'||o.type==='line')&&o.a&&o.b&&!isArcWall(o));
     const tol=Math.max(18,12/state.camera.zoom);
@@ -1747,8 +1753,20 @@
     return{type:'stair',layerId:'stairs',stairType:'straight',polygon:modules.planStair.footprint(origin,Math.abs(wx),Math.abs(ly),(angle*180/Math.PI)-90),treadCount:state.toolSettings.stairTreadCount||12,upDirection:ly>=0?1:-1,floorId:state.activeFloorId};
   }
   function commitStair(a,b){const o=stairAtCorners(a,b);if(!o||state.toolset!=='plan')return false;pushHistory();o.id=uid('stair');state.objects.push(o);state.stairDraft=null;selectOnly(o.id);markDirty(true);rebuildObjectSnapIndex();setTool('select');setCommandStatus(t('command.finished'),'strong');updateAll();return o;}
-  function drawStairPreview(){if(state.toolset!=='plan'||state.activeTool!=='stair'||!state.stairDraft||!state.previewEnd)return;const o=stairAtCorners(state.stairDraft,state.previewEnd);if(!o)return;ctx.save();ctx.globalAlpha=.6;drawStairPlan(o);ctx.restore();}
-  function editStair(o,patch){if(state.toolset!=='plan'||o?.type!=='stair'||!objectOnActiveFloor(o))return false;let next;try{next=modules.planStair.edit(o,patch);}catch{setCommandStatus(t('stair.invalid'),'error');return false;}pushHistory();Object.assign(o,next);markDirty(true);rebuildObjectSnapIndex();updateAll();return true;}
+  function drawStairPreview(){
+    if(state.toolset!=='plan'||state.activeTool!=='stair'||!state.stairDraft)return;
+    const start=state.stairDraft,end=state.previewEnd||start,color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),o=stairAtCorners(start,end);
+    ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;
+    if(o){ctx.globalAlpha=.08;canvasPolygon(o.polygon);ctx.fill();ctx.globalAlpha=.65;drawStairPlan(o,color);}
+    ctx.globalAlpha=.9;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);drawDraftGuide(start,end,{markers:true});ctx.restore();
+  }
+  // Canvas-only transient feedback, shared by the segment and stair workflows.
+  function drawDraftGuide(start,end,{markers=false}={}){
+    const a=toScreenCss(start),b=toScreenCss(end);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    if(distance(start,end)>1e-7){ctx.font='11px system-ui';ctx.fillText(`${formatNumber(distance(start,end),1)} mm · ${formatNumber(angleDeg(start,end),1)}°`,b.x+10,b.y-12);}
+    if(markers){ctx.setLineDash([]);ctx.strokeRect(a.x-5,a.y-5,10,10);ctx.beginPath();ctx.arc(b.x,b.y,3,0,Math.PI*2);ctx.fill();}
+  }
+  function editStair(o,patch){if(planScopeMissing()||state.toolset!=='plan'||o?.type!=='stair'||!objectOnActiveFloor(o))return false;let next;try{next=modules.planStair.edit(o,patch);}catch{setCommandStatus(t('stair.invalid'),'error');return false;}pushHistory();Object.assign(o,next);markDirty(true);rebuildObjectSnapIndex();updateAll();return true;}
 
   function drawDrawingRegions(){if(state.toolset!=='cad')return;const color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),active=activeCadWorkRegion();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.setLineDash([6,5]);ctx.lineWidth=1.2;for(const region of state.drawingRegions){if(active&&region.id!==active.id)continue;ctx.globalAlpha=region.id===state.selectedRegionId?.95:.5;canvasPolygon(rangePolygon(region));ctx.stroke();const a=toScreenCss({x:region.minx,y:region.maxy});ctx.setLineDash([]);ctx.font='11px system-ui';ctx.fillText(region.name||t('region.unnamed'),a.x+6,a.y+15);ctx.setLineDash([6,5]);}ctx.restore();}
 
@@ -2154,12 +2172,12 @@
     if(drawCadPrimitivePreview())return;
     if(state.activeTool==='component'&&state.previewEnd){const asset=componentLibrary.get(state.activeComponentAssetId);if(asset){const color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();ctx.save();ctx.globalAlpha=.65;drawComponentObject({id:'__component_preview__',type:'component',assetId:asset.id,point:{...state.previewEnd},rotation:0,mirrorX:false,mirrorY:false,scaleX:1,scaleY:1},color,1.5);ctx.restore();}return;}
     let start=null,end=null,color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),width=1.5;
-    if(state.activeTool==='stair'&&state.toolset==='plan'){const wrap=document.createElement('label');wrap.className='context-field';wrap.textContent=i18n.language==='ko'?'계단 칸 수 ':'Tread count ';const input=document.createElement('input');input.type='number';input.min='2';input.max='256';input.style.width='72px';input.value=String(state.toolSettings.stairTreadCount||12);input.addEventListener('change',()=>{const n=Number(input.value);if(Number.isInteger(n)&&n>=2&&n<=256)state.toolSettings.stairTreadCount=n;else input.value=String(state.toolSettings.stairTreadCount||12);});wrap.append(input);dom.contextFields.append(wrap);hint=t('stair.second');}
+    if(state.activeTool==='stair'&&state.toolset==='plan')return; // Drawn by drawStairPreview; no DOM work during rendering.
     else if(state.activeTool==='line'||state.activeTool==='wall'){start=state.drawStart;end=state.previewEnd;if(state.activeTool==='wall')width=state.toolset==='plan'?2:Math.max(2,currentWallThickness()*state.camera.zoom);}else if(state.activeTool==='measure'){start=state.measureStart;end=state.previewEnd;color=getComputedStyle(document.documentElement).getPropertyValue('--dimension').trim();}
     if(!start||!end)return;if(state.activeTool==='measure'){drawDimension({p1:start,p2:end,offset:Math.max(250,Math.min(600,distance(start,end)*.08))},color);return;}
     ctx.save();ctx.strokeStyle=color;ctx.lineWidth=state.toolset==='plan'&&['line','wall'].includes(state.activeTool)?planLineAppearance().width:width;ctx.setLineDash(state.toolset==='plan'&&['line','wall'].includes(state.activeTool)?planDisplayDash(state.toolSettings.planDisplayStyle||'solid'):[]);ctx.globalAlpha=.72;ctx.lineCap='butt';
     if(state.activeTool==='wall'&&state.toolSettings.wallType==='arc'&&state.arcDraft?.a&&state.arcDraft?.b){const g=circleFromThreePoints(state.arcDraft.a,state.arcDraft.b,end);if(g){const tmp={...g,a:state.arcDraft.a,b:state.arcDraft.b,geometry:'arc'};const steps=Math.max(8,Math.ceil(Math.abs(g.sweep)/6));ctx.beginPath();for(let i=0;i<=steps;i++){const p=toScreenCss(wallPointAt(tmp,i/steps));if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();const bp=toScreenCss(end);ctx.font='11px system-ui';ctx.fillStyle=color;ctx.fillText(`R ${formatNumber(g.radius,1)} mm · ${formatNumber(wallLength(tmp),1)} mm`,bp.x+8,bp.y-8);ctx.restore();return;}}
-    const a=toScreenCss(start),b=toScreenCss(end);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.font='11px system-ui';ctx.fillStyle=color;ctx.fillText(`${formatNumber(distance(start,end),1)} mm · ${formatNumber(angleDeg(start,end),1)}°`,b.x+8,b.y-8);ctx.restore();
+    ctx.fillStyle=color;drawDraftGuide(start,end);ctx.restore();
   }
   function drawOpeningPreview() {
     const p=state.previewOpening;if(!p||!['door','window'].includes(state.activeTool))return;const temp={id:'preview',type:state.activeTool,wallId:p.wall.id,t:p.t,width:currentOpeningWidth(),hinge:'start',swing:1,doorType:state.toolSettings.doorType||'hingedSingle',slideDirection:1};const styles=getComputedStyle(document.documentElement),color=state.activeTool==='door'?styles.getPropertyValue('--door').trim():styles.getPropertyValue('--window').trim();ctx.save();ctx.globalAlpha=.65;drawOpeningPlan(temp,state.activeTool,color);ctx.restore();
@@ -2258,14 +2276,18 @@
     if(capsuleObject){
       const o=capsuleObject;dom.contextToolName.textContent=localizedObjectType(o.type);dom.contextHint.textContent='';
       const choice=(title,value,options,onChange)=>{const wrap=document.createElement('label');wrap.className='context-field';wrap.textContent=title+' ';const sel=document.createElement('select');sel.className='select-input';for(const [val,name] of options){const opt=document.createElement('option');opt.value=val;opt.textContent=name;sel.append(opt);}sel.value=String(value);sel.addEventListener('change',()=>onChange(sel.value));wrap.append(sel);dom.contextFields.append(wrap);};
-      const number=(title,value,min,max,onChange)=>{const wrap=document.createElement('label');wrap.className='context-field';wrap.textContent=title+' ';const input=document.createElement('input');input.type='number';input.value=String(value);input.min=String(min);input.max=String(max);input.style.width='72px';input.addEventListener('change',()=>{const v=Number(input.value);if(Number.isFinite(v)&&v>=min&&v<=max)onChange(v);else input.value=String(value);});wrap.append(input);dom.contextFields.append(wrap);};
+      const number=(title,value,min,max,onChange)=>{const wrap=document.createElement('label');wrap.className='context-field';wrap.textContent=title+' ';const input=document.createElement('input');input.type='number';input.value=String(value);input.min=String(min);input.max=String(max);input.style.width='72px';input.addEventListener('change',()=>{const v=Number(input.value);if(Number.isFinite(v)&&v>=min&&v<=max){if(onChange(v)===false)input.value=String(value);}else input.value=String(value);});wrap.append(input);dom.contextFields.append(wrap);};
       const action=(title,fn)=>{const b=document.createElement('button');b.type='button';b.className='context-choice';b.textContent=title;b.addEventListener('click',fn);dom.contextFields.append(b);};
       if(o.type==='line'&&o.planRole==='display'||o.type==='wall')choice(t('plan.lineStyle'),o.type==='wall'?'solid':o.lineStyle||'solid',['solid','dashed','dotted','dashdot'].map(v=>[v,t('plan.stroke.'+v)]),v=>setPlanStroke(o,v));
       if(o.type==='door'){const dt=o.doorType||'hingedSingle';number(t('context.width'),o.width||900,100,100000,v=>{pushHistory();o.width=v;markDirty(true);rebuildObjectSnapIndex();updateAll();});if(isDoubleLeafDoorType(dt))number(t('property.firstLeafRatio'),Math.round(doubleLeafSplit(o)*100),10,90,v=>{pushHistory();o.firstLeafRatio=v/100;markDirty(true);updateAll();});choice(i18n.language==='ko'?'방화 속성':'Fire protection',o.fireProtection||(['fireDoor','fireShutter'].includes(dt)?dt:'none'),[['none',i18n.language==='ko'?'없음':'None'],['fireDoor',i18n.language==='ko'?'방화문':'Fire door'],['fireShutter',i18n.language==='ko'?'방화셔터':'Fire shutter']].filter(([v])=>v!=='fireShutter'||dt==='fireShutter'),v=>setDoorFireAttribute(o,v));}
       if(o.type==='stair'){number(i18n.language==='ko'?'계단 칸 수':'Tread count',o.treadCount||12,2,256,v=>editStair(o,{treadCount:v}));action(t('stair.reverse'),()=>editStair(o,{upDirection:o.upDirection===-1?1:-1}));}
       return;
     }
-    if(state.activeTool==='line'||state.activeTool==='wall'){
+    if(state.activeTool==='stair'&&state.toolset==='plan'){
+      const wrap=document.createElement('label');wrap.className='context-field';wrap.textContent=t('stair.treadCount')+' ';
+      const input=document.createElement('input');input.type='number';input.min='2';input.max='256';input.step='1';input.dataset.context='stairTreadCount';input.setAttribute('aria-label',t('stair.treadCount'));input.value=String(state.toolSettings.stairTreadCount||12);
+      input.addEventListener('change',()=>{const n=Number(input.value);if(Number.isInteger(n)&&n>=2&&n<=256){state.toolSettings.stairTreadCount=n;render();}else input.value=String(state.toolSettings.stairTreadCount||12);});wrap.append(input);dom.contextFields.append(wrap);hint=t(state.stairDraft?'stair.second':'stair.first');
+    }else if(state.activeTool==='line'||state.activeTool==='wall'){
       dom.contextFields.appendChild(contextNumberField(t('context.length'),'length','','mm'));
       dom.contextFields.appendChild(contextNumberField(t('context.angle'),'angle','','°'));
       if(state.activeTool==='wall'&&state.toolset==='cad')dom.contextFields.appendChild(contextNumberField(t('context.thickness'),'thickness',String(state.toolSettings.wallThickness),'mm'));
@@ -2316,6 +2338,9 @@
   function activateRepresentative(item,category,button){if(!item?.ready)return;if(state.toolset==='plan'&&['line','wall','displayLine','displayArc'].includes(item.id)){activatePlanDrawing(item.id,category);return;}if(item.id==='component'){openComponentPalette(button);return;}if(state.toolset==='plan'&&item.id==='constraint'){openPlanConstraintPalette(button);return;}if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);return;}setTool(item.id,category);}
   function positionToolPopover(anchor){if(!anchor||!dom.toolPopover)return;dom.toolPopover.hidden=false;const anchorRect=anchor.getBoundingClientRect(),menuRect=dom.toolPopover.getBoundingClientRect(),margin=8,gap=5;let left=anchorRect.left;left=Math.max(margin,Math.min(window.innerWidth-menuRect.width-margin,left));let top=anchorRect.bottom+gap;if(top+menuRect.height>window.innerHeight-margin)top=Math.max(margin,anchorRect.top-menuRect.height-gap);dom.toolPopover.style.left=`${Math.round(left)}px`;dom.toolPopover.style.top=`${Math.round(top)}px`;}
   function renderToolRail(){
+    dom.appShell.classList.toggle('toolbar-expanded',toolbarExpanded);
+    const disclosure=$('toolbarExpandBtn');if(disclosure){disclosure.setAttribute('aria-expanded',String(toolbarExpanded));disclosure.setAttribute('aria-label',t(toolbarExpanded?'toolbar.collapse':'toolbar.expand'));disclosure.title=t(toolbarExpanded?'toolbar.collapse':'toolbar.expand');}
+    if(toolbarExpanded){renderExpandedToolRail();return;}
     dom.toolRail.innerHTML='';if(state.toolset==='cad'){const b=document.createElement('button');b.type='button';b.className='tool-category';b.textContent=i18n.language==='ko'?'블록':'Blocks';b.setAttribute('aria-label',b.textContent);b.onclick=()=>cadBlockUI.open();dom.toolRail.append(b);const d=document.createElement('button');d.type='button';d.className='tool-category';d.textContent=i18n.language==='ko'?'치수 스타일':'Dimension styles';d.onclick=()=>dimensionStyleUI.open();dom.toolRail.append(d);}const categories=state.toolset==='plan'?planCategories:cadCategories,catalog=state.toolset==='plan'?planToolCatalog:cadToolCatalog;
     for(const cat of categories){
       const items=catalog[cat.id]||[],active=items.some(x=>x.id===state.activeTool),rep=categoryRepresentative(cat,catalog),icon=(state.toolset==='plan'&&rep?.id==='wall')?'arc':(toolIconFallback[rep?.id]||cat.icon),label=rep?t(rep.labelKey):t(cat.labelKey);
@@ -2324,6 +2349,22 @@
       const menu=document.createElement('button');menu.type='button';menu.className='tool-category-menu';menu.innerHTML='<span aria-hidden="true">▾</span>';menu.setAttribute('aria-label',`${t(cat.labelKey)} · ${t('action.more')}`);menu.addEventListener('click',e=>{e.stopPropagation();openToolCategory(cat.id,split,catalog);});
       split.addEventListener('contextmenu',e=>{e.preventDefault();openToolCategory(cat.id,split,catalog);});split.append(main,menu);dom.toolRail.appendChild(split);
     }
+  }
+  function setToolbarExpanded(expanded){toolbarExpanded=Boolean(expanded);try{localStorage.setItem('pieniplan-toolbar-expanded',String(toolbarExpanded));}catch(_){}dom.toolPopover.hidden=true;renderToolRail();}
+  function renderExpandedToolRail(){
+    dom.toolRail.replaceChildren();const categories=state.toolset==='plan'?planCategories:cadCategories,catalog=state.toolset==='plan'?planToolCatalog:cadToolCatalog;
+    for(const cat of categories){const items=(catalog[cat.id]||[]).filter(item=>item.ready);if(!items.length)continue;
+      const group=document.createElement('section');group.className='expanded-tool-group';group.dataset.category=cat.id;group.setAttribute('aria-label',t(cat.labelKey));
+      const title=document.createElement('div');title.className='expanded-tool-title';title.textContent=t(cat.labelKey);
+      const list=document.createElement('div');list.className='expanded-tool-list';
+      for(const item of items){const b=document.createElement('button');b.type='button';b.className='expanded-tool'+(state.activeTool===item.id?' active':'');b.dataset.tool=item.id;b.setAttribute('aria-pressed',String(state.activeTool===item.id));const icon=state.toolset==='plan'&&item.id==='wall'?'arc':toolIconFallback[item.id]||cat.icon;
+        b.innerHTML=`<span class="ui-icon icon-${icon}" aria-hidden="true"></span><span>${escapeHtml(t(item.labelKey))}</span>`;if(item.note)b.title=t(item.labelKey)+' · '+item.note;
+        b.addEventListener('click',()=>activateRepresentative(item,cat.id,b));list.append(b);
+      }
+      // Keep subtype menus available without adding a second command implementation.
+      const more=document.createElement('button');more.type='button';more.className='expanded-group-menu';more.textContent='▾';more.setAttribute('aria-label',t(cat.labelKey)+' · '+t('action.more'));more.addEventListener('click',()=>openToolCategory(cat.id,more,catalog));title.append(more);group.append(list,title);dom.toolRail.append(group);
+    }
+    if(state.toolset==='cad'){const group=document.createElement('section');group.className='expanded-tool-group';const list=document.createElement('div');list.className='expanded-tool-list';for(const [label,run]of [[t('toolbar.blocks'),()=>cadBlockUI.open()],[t('toolbar.dimStyles'),()=>dimensionStyleUI.open()]]){const b=document.createElement('button');b.type='button';b.className='expanded-tool';b.textContent=label;b.addEventListener('click',run);list.append(b);}group.append(list);dom.toolRail.append(group);}
   }
   function openComponentPalette(anchor){featureFill?.openComponents();dom.toolPopover.hidden=true;}
 
@@ -2596,7 +2637,7 @@
     return true;
   }
 
-  function setTool(tool,category=null){textEditor?.cancel({notify:false});if(state.toolset==='plan'&&['line','wall'].includes(tool))state.toolSettings.planDisplayMode=(state.toolSettings.planDisplayStyle||'solid')!=='solid';
+  function setTool(tool,category=null){if(planScopeMissing()&&!['select','measure'].includes(tool)){setCommandStatus(t('scope.chooseFloor'),'strong');return false;}textEditor?.cancel({notify:false});if(state.toolset==='plan'&&['line','wall'].includes(tool))state.toolSettings.planDisplayMode=(state.toolSettings.planDisplayStyle||'solid')!=='solid';
     if(featureFill?.selection.current)return false;
     if(state.toolset==='cad'&&['xline','ray'].includes(tool))return runCommand(tool.toUpperCase());
     if(tool==='region'&&featureFill){featureFill.selectRegion();return true;}
@@ -2646,15 +2687,16 @@
     if(next!==state.toolset){cadCommandSession?.cancel('mode-change');state.curveReconstruction=null;}
     const previous=state.toolset,sameWorkspace=next===state.toolset&&state.view==='workspace';
     const changed=next!==state.toolset;
-    if(next==='cad'){if(regionId!==undefined)state.cadWorkRegionId=state.drawingRegions.some(r=>r.id===regionId)?regionId:null;else if(previous==='plan'){const rid=rememberedCadRegion(activeFloor());state.cadWorkRegionId=state.drawingRegions.some(r=>r.id===rid)?rid:null;}state.cadPlanOverlay=false;}
+    if(next==='cad'){if(regionId!==undefined)state.cadWorkRegionId=state.drawingRegions.some(r=>r.id===regionId)?regionId:null;else if(state.cadWorkRegionId&&!activeCadWorkRegion())state.cadWorkRegionId=null;state.selectedRegionId=state.cadWorkRegionId;state.cadPlanOverlay=false;}
+    if(next==='plan'&&previous==='cad'){const floor=activeCadWorkRegion()&&floorForRegion(state.cadWorkRegionId);if(floor){state.activeFloorId=floor.id;state.activeBuildingId=floor.buildingId;}}
     state.toolset=next;dom.appShell.classList.toggle('plan-tools',next==='plan');dom.appShell.classList.toggle('cad-tools',next==='cad');dom.planToolsBtn.classList.toggle('active',next==='plan');dom.cadToolsBtn.classList.toggle('active',next==='cad');dom.commandBar.hidden=false;
     if(changed||!(next==='cad'?state.cadSnapIndex:state.planSnapIndex))rebuildObjectSnapIndex({touch:false,scope:next});
-    if(changed){state.activeCategory='select';state.activeTool='select';state.activeCommand=null;state.commandPending=null;clearConstraintInteraction();state.drawStart=null;state.drawReferenceAngle=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.trimPreview=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
+    if(changed){state.activeCategory='select';state.activeTool='select';state.activeCommand=null;state.commandPending=null;clearConstraintInteraction();state.stairDraft=null;state.drawStart=null;state.drawReferenceAngle=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.trimPreview=null;host.dataset.tool='select';dom.toolPopover.hidden=true;}
     if(next==='plan')initializeBuildingNameFromReference();
     updateEmptyState();renderToolRail();renderCadScopeControl();renderPrimaryPanel();renderReferences();renderProperties();updateContextBar();render();showWorkspace({historyMode:sameWorkspace?'none':historyMode});
   }
 
-  function updateEmptyState(){const plan=state.toolset==='plan',compact=isCompactViewer();dom.emptyKicker.hidden=true;dom.emptyTitle.textContent=t(plan?'empty.planTitle':'empty.cadTitle');dom.emptyCopy.textContent=t(compact?'empty.viewerCopy':plan?'empty.planCopy':'empty.cadCopy');dom.emptyPrimaryBtn.hidden=compact;dom.emptyPrimaryBtn.textContent=t(plan?'empty.planPrimary':'empty.cadPrimary');dom.emptyOpenBtn.textContent=t(compact?(plan?'empty.planViewerOpen':'empty.cadViewerOpen'):plan?'empty.planSecondary':'empty.cadSecondary');dom.appShell.classList.toggle('plan-section-inspector',plan);dom.primaryInspectorTab.textContent=t(plan?'tab.sections':'tab.layers');const refTab=document.querySelector('.inspector-tab[data-tab="reference"]');if(refTab){refTab.textContent=t('tab.reference');refTab.hidden=plan;}if(plan&&refTab?.classList.contains('active'))switchInspector('primary');if(dom.primaryPanelTitle)dom.primaryPanelTitle.textContent=t(plan?'panel.sections':'tab.layers');if(dom.primaryPanelSubtitle)dom.primaryPanelSubtitle.textContent='';const refTitle=document.querySelector('[data-panel="reference"] .panel-title'),refSub=document.querySelector('[data-panel="reference"] .panel-subtitle');if(refTitle)refTitle.textContent=t('panel.references');if(refSub)refSub.textContent=t('panel.referencesSub');if(dom.addReferenceBtn)dom.addReferenceBtn.hidden=plan;const showMapping=!plan&&hasSemanticObjects();if(dom.cadMappingCard)dom.cadMappingCard.hidden=!showMapping;if(dom.mappingSettingsBtn)dom.mappingSettingsBtn.hidden=!showMapping;}
+  function updateEmptyState(){const plan=state.toolset==='plan',compact=isCompactViewer();dom.emptyKicker.hidden=true;dom.emptyTitle.textContent=t(plan?'empty.planTitle':'empty.cadTitle');dom.emptyCopy.textContent=t(compact?'empty.viewerCopy':plan?'empty.planCopy':'empty.cadCopy');dom.emptyPrimaryBtn.hidden=compact;dom.emptyPrimaryBtn.textContent=t(plan?'empty.planPrimary':'empty.cadPrimary');dom.emptyOpenBtn.textContent=t(compact?(plan?'empty.planViewerOpen':'empty.cadViewerOpen'):plan?'empty.planSecondary':'empty.cadSecondary');dom.emptyOpenBtn.hidden=planScopeMissing();if(planScopeMissing()){dom.emptyTitle.textContent=t('scope.noPlan',{name:activeCadWorkRegion().name||t('region.unnamed')});dom.emptyCopy.textContent=t('scope.chooseFloor');dom.emptyPrimaryBtn.hidden=true;}dom.appShell.classList.toggle('plan-section-inspector',plan);dom.primaryInspectorTab.textContent=t(plan?'tab.sections':'tab.layers');const refTab=document.querySelector('.inspector-tab[data-tab="reference"]');if(refTab){refTab.textContent=t('tab.reference');refTab.hidden=plan;}if(plan&&refTab?.classList.contains('active'))switchInspector('primary');if(dom.primaryPanelTitle)dom.primaryPanelTitle.textContent=t(plan?'panel.sections':'tab.layers');if(dom.primaryPanelSubtitle)dom.primaryPanelSubtitle.textContent='';const refTitle=document.querySelector('[data-panel="reference"] .panel-title'),refSub=document.querySelector('[data-panel="reference"] .panel-subtitle');if(refTitle)refTitle.textContent=t('panel.references');if(refSub)refSub.textContent=t('panel.referencesSub');if(dom.addReferenceBtn)dom.addReferenceBtn.hidden=plan;const showMapping=!plan&&hasSemanticObjects();if(dom.cadMappingCard)dom.cadMappingCard.hidden=!showMapping;if(dom.mappingSettingsBtn)dom.mappingSettingsBtn.hidden=!showMapping;}
 
   function defaultCadMapping(){return{wallRepresentation:'outline',wallLayer:'WALL',doorLayer:'DOOR',windowLayer:'WINDOW',dimensionLayer:'DIM'};}
   function openMappingDialog(action){const m=state.cadMapping||defaultCadMapping();state.mappingPendingAction=action;dom.wallRepresentation.value=m.wallRepresentation;dom.wallLayerInput.value=m.wallLayer;dom.doorLayerInput.value=m.doorLayer;dom.windowLayerInput.value=m.windowLayer;dom.dimensionLayerInput.value=m.dimensionLayer;dom.mappingBackdrop.hidden=false;setTimeout(()=>dom.wallRepresentation.focus(),0);}
@@ -2984,6 +3026,7 @@
   }
 
   function nearestSnap(p,excludeObjectId=null,base=null){
+    if(planScopeMissing()){state.snapIndicator=null;state.smartGuides=[];return p;}
     state.snapIndicator=null;state.smartGuides=[];if(!state.snap||temporarySnapOverride())return p;const pixels=modules.precision.radius[state.snapSensitivity]||10,threshold=pixels/state.camera.zoom,candidates=[];let best=null,bestD=threshold;
     const test=(q,kind=q.kind||'endpoint',source='plan')=>{if(excludeObjectId&&(q.objectId===excludeObjectId||q.objectIds?.includes(excludeObjectId)))return;if(distance(p,q)>threshold)return;candidates.push({...q,kind,source,objectId:q.objectId||null,ownerId:q.ownerId||q.objectId||null});bestD=Math.min(bestD,distance(p,q));};
     const activeIndex=state.toolset==='cad'?state.cadSnapIndex:state.planSnapIndex;
@@ -3058,7 +3101,7 @@
 
   function hitHandle(p,obj){const tol=9/state.camera.zoom;if(!obj)return null;if(modules.cadPolyline.is(obj)&&obj.vertices.length<=500){for(let i=0;i<obj.vertices.length;i++)if(distance(p,obj.vertices[i])<=tol)return`poly:${i}`;}if((obj.type==='wall'||obj.type==='line'||obj.type==='cadLine')&&obj.a&&obj.b){if(distance(p,obj.a)<=tol)return'a';if(distance(p,obj.b)<=tol)return'b';if(obj.type==='wall'&&isArcWall(obj)&&distance(p,arcControlPoint(obj))<=tol)return'arcControl';}if(obj.type==='door'||obj.type==='window'){const g=openingGeometry(obj);if(g){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';if(obj.type==='door'&&isDoubleLeafDoorType(obj.doorType||'hingedSingle')&&distance(p,doorSplitPoint(obj,g))<=tol)return'leafSplit';if(distance(p,g.center)<=tol)return'center';}}if(obj.type==='dimension'){const g=dimensionGeometry(obj);if(g){if(!g.associated){if(distance(p,g.p1)<=tol)return'p1';if(distance(p,g.p2)<=tol)return'p2';}const c={x:(g.d1.x+g.d2.x)/2,y:(g.d1.y+g.d2.y)/2};if(distance(p,c)<=tol)return'offset';}}return null;}
   function objectBodyDistance(p,o){if(o.type==='cadText')return cadGeometry.hitDistance(o,p);if(o.type==='component')return componentLibrary.hitDistance(o,p);if(state.toolset==='cad'&&cadSourceObject(o))return cadGeometry.hitDistance(o,p);if(o.type==='door'){const g=openingGeometry(o);if(!g)return Infinity;const type=o.doorType||'hingedSingle';if(isHingedDoorType(type)){const sectors=doorSwingSectors(o);if(sectors.some(s=>pointInDoorSwingSector(p,s)))return 0;let d=pointSegmentDistance(p,g.p1,g.p2);for(const s of sectors)d=Math.min(d,pointSegmentDistance(p,s.hinge,s.leafEnd),Math.abs(distance(p,s.hinge)-s.width));return d;}return pointSegmentDistance(p,g.p1,g.p2);}if(o.type==='window'){const g=openingGeometry(o);return g?pointSegmentDistance(p,g.p1,g.p2):Infinity;}if(o.type==='dimension'){const g=dimensionGeometry(o);return g?pointSegmentDistance(p,g.d1,g.d2):Infinity;}if(o.type==='space')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='stair')return o.polygon?.length&&pointInPolygon(p,o.polygon)?0:Infinity;if(o.type==='cadCircle')return Math.abs(distance(p,o.center)-o.radius);if(o.type==='cadArc'||isPlanDisplayArc(o))return projectPointToCadArc(p,o).distance;if(o.type==='wall'&&isArcWall(o)){const d=wallProjectPoint(p,o).distance;return state.toolset==='plan'?d:Math.max(0,d-(o.thickness||150)/2);}if(o.a&&o.b){let d=pointSegmentDistance(p,o.a,o.b);if(o.type==='wall'&&state.toolset!=='plan')d=Math.max(0,d-(o.thickness||150)/2);return d;}return Infinity;}
-  function hitObjectsAt(p){const tolerance=modules.geometryQuery.tolerance.world(modules.geometryQuery.tolerance.clickPixels,state.camera.zoom),spaceHits=[],hits=[],objects=state.toolset==='plan'?getPlanObjects():[...cadQueryCandidates({minx:p.x-tolerance,maxx:p.x+tolerance,miny:p.y-tolerance,maxy:p.y+tolerance}),...componentObjectsForCad(),...(state.cadPlanOverlay?cadPlanOverlayObjects().filter(o=>cadPolicy(o.id,'select').allowed):[])];for(let i=objects.length-1;i>=0;i--){const o=objects[i],d=objectBodyDistance(p,o);if(o.type==='space'){if(d===0)spaceHits.push({o,d:0,order:i});continue;}if(d<tolerance)hits.push({o,d,order:i});}hits.sort((a,b)=>a.d-b.d||b.order-a.order);return hits.length?hits.map(x=>x.o):spaceHits.map(x=>x.o);}
+  function hitObjectsAt(p){const tolerance=modules.geometryQuery.tolerance.world(modules.geometryQuery.tolerance.clickPixels,state.camera.zoom),spaceHits=[],hits=[],objects=state.toolset==='plan'?visibleSelectableObjects():[...cadQueryCandidates({minx:p.x-tolerance,maxx:p.x+tolerance,miny:p.y-tolerance,maxy:p.y+tolerance}),...componentObjectsForCad(),...(state.cadPlanOverlay?cadPlanOverlayObjects().filter(o=>cadPolicy(o.id,'select').allowed):[])];for(let i=objects.length-1;i>=0;i--){const o=objects[i],d=objectBodyDistance(p,o);if(o.type==='space'){if(d===0)spaceHits.push({o,d:0,order:i});continue;}if(d<tolerance)hits.push({o,d,order:i});}hits.sort((a,b)=>a.d-b.d||b.order-a.order);return hits.length?hits.map(x=>x.o):spaceHits.map(x=>x.o);}
   function hitObject(p){return hitObjectsAt(p)[0]||null;}
   function cycleHitObject(p){const list=hitObjectsAt(p);if(!list.length){state.overlapCycle=null;return null;}const tol=modules.geometryQuery.tolerance.world(5,state.camera.zoom),prior=state.overlapCycle,same=prior&&distance(prior.point,p)<=tol&&prior.ids.length===list.length&&prior.ids.every((id,i)=>id===list[i].id),index=same?(prior.index+1)%list.length:0;state.overlapCycle={point:{...p},ids:list.map(o=>o.id),index};return list[index];}
   function pointSegmentDistance(p,a,b){return projectPointToSegment(p,a,b).distance;}
@@ -3167,6 +3210,7 @@
     const start=state.drawStart||state.measureStart||state.calibration?.p1;if(start)p=constrainOrtho(start,nearestSnap(p));else p=nearestSnap(p);state.previewEnd=p;if(state.trimPreview?.kind==='extend'&&state.toolset==='plan')updateSmartGuides(state.trimPreview.b,state.trimPreview.a,state.trimPreview.targetId);render();}
 
   function placeComponent(point){
+    if(planScopeMissing())return false;
     const asset=componentLibrary.get(state.activeComponentAssetId);if(!asset||!point)return false;
     const floor=state.toolset==='cad'?(cadPlanFloor()||activeFloor()):activeFloor();
     pushHistory();
@@ -3182,7 +3226,7 @@
 
   function onPointerDown(e){const textPan=textEditor?.active&&(e.button===1||e.button===0&&state.spaceDown);if(textEditor?.active&&!textPan){e.preventDefault();textEditor.finish();return;}if(textPan)e.preventDefault();state.altDown=Boolean(e.altKey);if(featureFill?.pointerDown(e))return;if(!textPan)host.focus();hideContextMenu();state.shiftDown=Boolean(e.shiftKey);if(state.toolset==='plan')state.ctrlDown=Boolean(e.ctrlKey);const s=fromPointerEvent(e);if(isCompactViewer()){if(e.button===0||e.pointerType==='touch'){e.preventDefault();beginViewerPointer(e,s);}return;}const panGesture=e.button===1||(e.button===0&&state.spaceDown);if(panGesture){e.preventDefault();if(state.spaceGesture)state.spaceGesture.used=true;state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';canvas.setPointerCapture?.(e.pointerId);return;}const ctrlSnapClick=state.toolset==='plan'&&e.ctrlKey&&['line','wall','measure','move','copy','trim','extend'].includes(state.activeTool);if(e.button!==0&&!(ctrlSnapClick&&e.button===2))return;if(ctrlSnapClick)e.preventDefault();const editableLabel=hitEditableLabel(s);if(editableLabel)return;let raw=screenCssToWorld(s),p=nearestSnap(raw);
     if(state.referenceClipDraft){handleReferenceClipPoint(raw);return;}
-    if(state.activeTool==='stair'&&state.toolset==='plan'){if(!state.stairDraft){state.stairDraft={...p};state.previewEnd={...p};setCommandStatus(t('stair.second'),'strong');render();}else if(!commitStair(state.stairDraft,p))setCommandStatus(t('stair.invalid'),'error');return;}
+    if(state.activeTool==='stair'&&state.toolset==='plan'){if(!state.stairDraft){state.stairDraft={...p};state.previewEnd={...p};setCommandStatus(t('stair.second'),'strong');updateContextBar();render();}else if(!commitStair(state.stairDraft,p))setCommandStatus(t('stair.invalid'),'error');return;}
     if(state.activeTool==='component'){placeComponent(p);return;}
     if((state.toolset==='cad'||['text','mtext'].includes(state.activeTool))&&['text','mtext','leader','linear-dim','aligned-dim','radius-dim','diameter-dim','angle-dim','continuous-dim','baseline-dim'].includes(state.activeTool)){handleCadAnnotationPoint(raw);return;}
     if(state.toolset==='cad'&&state.activeTool==='hatch'){commitCadHatchAt(raw);return;}
@@ -4035,7 +4079,7 @@
 
     const buildingList=document.createElement('div');buildingList.className=`building-list ${state.buildingOrderEditing?'order-editing':''}`;let dragBuildingId=null;
     for(const building of state.buildings){
-      const expanded=state.expandedBuildingIds.has(building.id),selected=state.activeBuildingId===building.id,buildingFloors=floorsForBuilding(building.id),floorOrderEditing=state.floorOrderEditingBuildingId===building.id;
+      const expanded=state.expandedBuildingIds.has(building.id),selected=!planScopeMissing()&&state.activeBuildingId===building.id,buildingFloors=floorsForBuilding(building.id),floorOrderEditing=state.floorOrderEditingBuildingId===building.id;
       const card=document.createElement('section');card.className=`building-card ${expanded?'expanded':''} ${selected?'selected':''}`;card.dataset.buildingId=building.id;
       if(state.buildingOrderEditing){
         card.draggable=true;
@@ -4060,7 +4104,7 @@
       if(!buildingFloors.length){const empty=document.createElement('div');empty.className='section-copy building-empty-copy';empty.textContent=t('building.noDrawings');list.append(empty);}
       for(const floor of buildingFloors){
         const objs=state.objects.filter(o=>o.floorId===floor.id&&(isSemanticObject(o)||o.type==='line'||isPlanText(o))),spaces=objs.filter(o=>o.type==='space'),placements=floorReferencePlacements(floor),floorExpanded=state.expandedFloorIds.has(floor.id),hasChildren=Boolean(spaces.length||placements.length);
-        const group=document.createElement('div');group.className=`floor-tree-group ${floor.id===state.activeFloorId?'active':''} ${floorExpanded?'expanded':''}`;group.dataset.floorId=floor.id;
+        const group=document.createElement('div');group.className=`floor-tree-group ${!planScopeMissing()&&floor.id===state.activeFloorId?'active':''} ${floorExpanded?'expanded':''}`;group.dataset.floorId=floor.id;
         if(floorOrderEditing){
           group.draggable=true;
           group.addEventListener('dragstart',e=>{dragFloorId=floor.id;group.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',floor.id);});
@@ -4381,7 +4425,7 @@
       if(obj.type==='stair'){const f=modules.planStair.frame(obj);if(f){propertyNumber(t('stair.length'),f.length,v=>editStair(obj,{length:v}),'mm');propertyNumber(t('stair.width'),f.width,v=>editStair(obj,{width:v}),'mm');propertyNumber(t('property.treads'),Number(obj.treadCount)||12,v=>editStair(obj,{treadCount:v}),'');propertyNumber(t('stair.spacing'),f.length/(obj.treadCount||12),v=>editStair(obj,{length:v*(obj.treadCount||12)}),'mm');propertyNumber(t('component.rotation'),f.rotation,v=>editStair(obj,{rotation:v}),'°');propertyActions([{label:t('stair.reverse'),run:()=>editStair(obj,{upDirection:obj.upDirection===-1?1:-1})},{label:t('component.rotate90'),run:()=>editStair(obj,{rotation:f.rotation+90})},{label:t('action.duplicate'),run:()=>duplicateObject(obj)}]);}propertyText(t('property.status'),obj.recognizedFromCad?t('value.recognizedFromCad'):t('value.free'));}
       if(obj.type==='cadCircle')propertyText(t('property.length'),`R ${cadLengthText(obj.radius,{precision:2})}`);if(obj.source)propertyText(t('property.source'),obj.source);return;}
     const ref=state.references.find(r=>r.id===state.selectedReferenceId);if(ref){propertyText(t('property.reference'),ref.name);propertyText(t('property.type'),ref.type==='dxf'?'DXF':ref.type==='pdf'?'PDF':ref.type==='linkedCadRegion'?t('value.linkedCadReference'):t('value.image'));if(ref.type==='linkedCadRegion'){const region=state.drawingRegions.find(x=>x.id===ref.regionId);if(region)propertyText(t('property.region'),region.name);propertyText(t('property.layers'),String(ref.visibleLayers?.size||0));}else{propertyText(t('property.scale'),`${formatNumber(ref.scale,6)}×`);propertyText(t('property.origin'),`${formatNumber(ref.origin.x,1)}, ${formatNumber(ref.origin.y,1)}`);}propertyText(t('property.opacity'),`${Math.round(ref.opacity*100)}%`);const actions=[{label:t('action.fit'),run:()=>fitReference(ref)}];if(ref.type!=='linkedCadRegion'){actions.push({label:t('reference.reconnect'),run:()=>beginReferenceReconnect(ref)},{label:t(ref.clip?'reference.reclip':'reference.clip'),run:()=>beginReferenceClip(ref)});if(ref.clip)actions.push({label:t('reference.clearClip'),run:()=>clearReferenceClip(ref)});}if(state.toolset==='plan'&&ref.type!=='linkedCadRegion')actions.push({label:t('action.referenceDimension'),run:()=>beginCalibration(ref.id,{preferSelection:true})});propertyActions(actions);return;}
-    if(state.toolset==='plan'){ensureFloorModel();propertyText(t('property.floor'),activeFloor()?.name||'—');propertyText(t('property.document'),currentDocumentName());propertyText(t('property.units'),INTERNAL_UNIT);return;}renderCadLayerProperties();propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);propertyText(t('property.document'),currentDocumentName());propertyText(t('property.toolset'),t('value.cadTools'));propertySelect(t('property.units'),state.unitSystem,[{value:'metric',label:t('units.metric')},{value:'imperial',label:t('units.imperial')}],setCadUnitSystem);propertyText(t('property.tool'),localizedToolName(state.activeTool));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°`);if(state.cadMapping)propertyText(t('property.mapping'),mappingSummary());}
+    if(state.toolset==='plan'){ensureFloorModel();propertyText(t('property.floor'),viewFloor()?.name||'—');propertyText(t('property.document'),currentDocumentName());propertyText(t('property.units'),INTERNAL_UNIT);return;}renderCadLayerProperties();propertyText(t('property.version'),`v${VERSION} · Build ${BUILD}`);propertyText(t('property.document'),currentDocumentName());propertyText(t('property.toolset'),t('value.cadTools'));propertySelect(t('property.units'),state.unitSystem,[{value:'metric',label:t('units.metric')},{value:'imperial',label:t('units.imperial')}],setCadUnitSystem);propertyText(t('property.tool'),localizedToolName(state.activeTool));propertyText(t('property.baseAxis'),`${formatNumber(baseAxisAngle(),1)}°`);if(state.cadMapping)propertyText(t('property.mapping'),mappingSummary());}
   function setCadDrawOrder(ids,front=true){
     const objects=[...ids].map(id=>cadContext.getById(id));if(!objects.length||objects.some(o=>!o||!cadPolicy(o.id,'modify').allowed))return false;
     let edge=0;for(const o of state.objects){if(cadSourceObject(o)&&Number.isFinite(o.drawOrder))edge=front?Math.max(edge,o.drawOrder):Math.min(edge,o.drawOrder);}
@@ -4568,7 +4612,7 @@
   function linkedOutputEntities(ref){const region=state.drawingRegions.find(r=>r.id===ref.regionId);if(!region)return[];const out=[];for(const o of cadDerivedObjects(cadObjectsForRegion(region),{visibility:true,regionId:region.id})){if(isPlanText(o)||!cadLayerVisible(cadLayerForObject(o),region.id)||!cadLayerPrintable(cadLayerForObject(o)))continue;const layer=cadLayerForObject(o);if(modules.cadPolyline.is(o)){for(const edge of modules.cadPolyline.get(o).edges)out.push(edge.type==='cadLine'?{type:'line',x1:edge.a.x,y1:edge.a.y,x2:edge.b.x,y2:edge.b.y,layer}:{type:'arc',cx:edge.center.x,cy:edge.center.y,r:edge.radius,startAngle:edge.startAngle,sweep:edge.sweep,layer});}else if(o.type==='cadLine')out.push({type:'line',x1:o.a.x,y1:o.a.y,x2:o.b.x,y2:o.b.y,layer});else if(o.type==='cadCircle'||o.type==='cadArc')out.push({type:o.type==='cadCircle'?'circle':'arc',cx:o.center.x,cy:o.center.y,r:o.radius,startAngle:o.startAngle,sweep:o.sweep,layer});else if(o.type==='cadText')out.push({type:'text',x:o.point.x,y:o.point.y,height:o.height,rotation:o.rotation,text:o.text,layer});}return out;}
   function outputReferenceMarkup(sheet,scale,prefix){return outputReferenceList(sheet).map(r=>{const setting=outputReferenceSetting(sheet,r);if(!setting.visible)return'';if(r.type==='pdf'&&!sheet.referenceAssets?.[r.id])return `<text data-reference-error="${xmlEsc(r.id)}" x="${r.origin?.x||0}" y="${-(r.origin?.y||0)}" font-size="${2.5*scale}">${xmlEsc(t('output.pdfPreparing'))}</text>`;if(r.type==='linkedCadRegion'){const region=state.drawingRegions.find(x=>x.id===r.regionId);if(!region)return'';const id=prefix+'-'+r.id,clipId=id.replace(/[^\w-]/g,'_');return `<g data-reference-id="${xmlEsc(r.id)}" opacity="${setting.opacity}"><defs><clipPath id="${clipId}"><rect x="${region.minx}" y="${-region.maxy}" width="${region.maxx-region.minx}" height="${region.maxy-region.miny}"/></clipPath></defs><g clip-path="url(#${clipId})">${modules.referenceScene.primitives(linkedOutputEntities(r),{weight:.18*scale,visibleLayers:r.visibleLayers})}</g></g>`;}return modules.referenceScene.markup(r,{id:prefix+'-'+r.id,opacity:setting.opacity,scale,asset:sheet.referenceAssets?.[r.id]});}).join('');}
   async function prepareOutputReferences(job,pages){const refs=new Map();for(const page of pages){const sheet={...job,...page},scale=modules.sheetLayout.layout(page.range,{...job,...page}).scale;for(const r of outputReferenceList(sheet)){if(!outputReferenceSetting(sheet,r).visible)continue;const previous=refs.get(r.id);if(!previous||scale<previous.scale)refs.set(r.id,{ref:r,scale});}}const assets={};for(const [id,{ref,scale}]of refs){if(ref.type==='pdf'){try{assets[id]=await modules.outputDocument.pdfRaster(ref,scale);}catch(e){throw Error((ref.name||id)+' · '+String(e.message||e));}}else if(ref.type==='image'){try{assets[id]=await modules.outputDocument.imageAsset(ref,scale);}catch(e){throw Error((ref.name||id)+' · '+String(e.message||e));}}}return assets;}
-  function currentOutputView(){const {w,h}=cssCanvasSize(),cx=state.camera.cx,cy=state.camera.cy,z=state.camera.zoom,floor=state.toolset==='plan'?activeFloor():cadPlanFloor();return{name:t('output.currentView'),floorId:floor?.id||null,regionId:activeCadWorkRegion()?.id||floor?.sourceRegionId||null,rotation:viewAngle(),range:{minx:cx-w/(2*z),maxx:cx+w/(2*z),miny:cy-h/(2*z),maxy:cy+h/(2*z)}};}
+  function currentOutputView(){const {w,h}=cssCanvasSize(),cx=state.camera.cx,cy=state.camera.cy,z=state.camera.zoom,floor=state.toolset==='plan'?viewFloor():cadPlanFloor();return{name:t('output.currentView'),floorId:floor?.id||null,regionId:activeCadWorkRegion()?.id||floor?.sourceRegionId||null,rotation:viewAngle(),range:{minx:cx-w/(2*z),maxx:cx+w/(2*z),miny:cy-h/(2*z),maxy:cy+h/(2*z)}};}
   function outputSheetModels(job){if(!job?.pages?.length)throw Error('no-output-pages');return job.pages.map((page,i)=>{const options={...job,...page,content:job.content??page.content};modules.architecturalSheet.validate(options,state.blockDefinitions);const mapping=modules.sheetLayout.layout(page.range,options);if(!mapping.fits)throw Error('fixed-scale-does-not-fit');return{drawingName:options.drawingName??page.name??job.name??'',drawingNumber:options.drawingNumber??'',revision:options.revision??'',date:options.date??'',projectName:options.projectName||currentDocumentName(),titleBlock:options.titleBlock?JSON.parse(JSON.stringify(options.titleBlock)):null,name:job.rangeMode==='sheets'?page.name:`${job.name||'Sheet'}${job.pages.length>1?' · '+(page.name||i+1):''}`,paper:options.paper,orientation:options.orientation,sizeMode:options.sizeMode,scale:mapping.scale,margins:{...mapping.paper.margins},range:{...mapping.range},center:{...mapping.center},regionId:page.regionId||null,floorId:page.floorId||null,rotation:page.rotation||0,mode:options.mode||state.toolset,content:options.content?JSON.parse(JSON.stringify(options.content)):outputContentDefaults()};});}
   async function exportSheetPdfJob(job,{open=false,download=true,record=true}={}){
     if(job.project&&job.project!==state.projectId)throw Error('stale-output-job');const revision=captureDocumentRevision(),settings={...job,content:job.content?JSON.parse(JSON.stringify(job.content)):outputContentDefaults()},models=outputSheetModels(settings),win=open?window.open('about:blank','_blank'):null;if(open&&!win){setCommandStatus(t('sheet.popupBlocked'),'error');return false;}
@@ -4577,6 +4621,7 @@
     }catch(e){try{win?.close();}catch{}throw e;}
   }
   function planOutputPages(all=false,content=null){
+    if(!all&&planScopeMissing())return[];
     const floors=all?floorsForBuilding(state.activeBuildingId):[activeFloor()].filter(Boolean),pages=[];
     for(const floor of floors){const objects=state.objects.filter(o=>(isSemanticObject(o)||o.type==='line'||isPlanText(o))&&(!o.floorId||o.floorId===floor.id)),points=[];
       for(const o of objects){if(o.a&&o.b)points.push(o.a,o.b);if(o.polygon)points.push(...o.polygon);if(o.type==='component'){const asset=componentLibrary.get(o.assetId);if(asset)for(const path of componentLibrary.vectorPaths(asset))points.push(...path.points.map(v=>componentLibrary.worldPoint(o,v)));}if(isArcWall(o)||isPlanDisplayArc(o))for(let i=0;i<=32;i++)points.push(cadArcPointAt(o,i/32));if(o.type==='door'||o.type==='window'){const g=openingGeometry(o);if(g){points.push(g.p1,g.p2);for(const side of[-1,1])points.push({x:g.center.x+g.nx*g.width*side,y:g.center.y+g.ny*g.width*side});}}if(o.type==='dimension'){const g=dimensionGeometry(o);if(g)points.push(g.d1,g.d2,g.p1,g.p2);}if(isPlanText(o)){const b=cadGeometry.bounds(o);if(b)points.push({x:b.minx,y:b.miny},{x:b.maxx,y:b.maxy});}}
@@ -4820,6 +4865,7 @@
   dom.backBtn.addEventListener('click',()=>history.back());
   dom.homeBtn.addEventListener('click',()=>showStartScreen());
   dom.planToolsBtn.addEventListener('click',()=>switchToolset('plan'));
+  $('toolbarExpandBtn')?.addEventListener('click',()=>setToolbarExpanded(!toolbarExpanded));
   dom.cadToolsBtn.addEventListener('click',()=>switchToolset('cad'));
   dom.appearanceBtn.addEventListener('click',e=>{e.stopPropagation();toggleAppearanceMenu(dom.appearanceBtn);});
   dom.startAppearanceBtn.addEventListener('click',e=>{e.stopPropagation();toggleAppearanceMenu(dom.startAppearanceBtn);});

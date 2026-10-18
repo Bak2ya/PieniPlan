@@ -3,6 +3,13 @@
 
   const messages = {
     en: {
+      'stair.treadCount':'Tread count',
+      'toolbar.expand':'Expand tools',
+      'toolbar.collapse':'Collapse tools',
+      'toolbar.blocks':'Blocks',
+      'toolbar.dimStyles':'Dimension styles',
+      'scope.noPlan':'No Plan is linked to “{name}”.',
+      'scope.chooseFloor':'Select a Plan floor in the sidebar, or return to CAD to continue in the selected region.',
       'tool.linearDim':'Linear dimension',
       'tool.xline':'Construction line',
       'tool.ray':'Ray',
@@ -1072,6 +1079,13 @@
     },
 
     ko: {
+      'stair.treadCount':'계단 칸 수',
+      'toolbar.expand':'도구 펼치기',
+      'toolbar.collapse':'도구 접기',
+      'toolbar.blocks':'블록',
+      'toolbar.dimStyles':'치수 스타일',
+      'scope.noPlan':'“{name}”에 연결된 Plan이 없습니다.',
+      'scope.chooseFloor':'오른쪽 목록에서 Plan 층을 선택하거나 CAD로 돌아가 선택한 영역에서 작업하세요.',
       'tool.linearDim':'선형 치수',
       'tool.xline':'양방향 기준선',
       'tool.ray':'반직선',

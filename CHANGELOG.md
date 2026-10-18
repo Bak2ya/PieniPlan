@@ -1,3 +1,12 @@
+## v0.56.0 · Build77 — 계단 피드백·작업 범위 유지·선택형 확장 도구 (2026-10-19)
+
+- 계단 칸 수 입력을 도구 옵션 갱신 경로로 이동해 반복 생성과 렌더링 오류 수정. 시작점·대각 기준선·길이/각도·실제 계단 형상 미리보기와 단계 안내 제공. 빈 화면 안내가 그리기를 가리지 않도록 수정.
+- CAD/Plan 왕복만으로 명시적으로 선택한 도면영역을 교체하지 않음. Plan이 연결되지 않은 영역은 빈 상태로 안내하며 다른 층의 객체를 표시·선택·편집하지 않음. 사용자의 층 선택은 기존 경로로 유지.
+- 기존 간결한 도구 모음과 개별 메뉴를 유지하면서 역할별 도구를 펼치는 선택형 UI 추가. 같은 도구 실행 경로 사용, 마지막 펼침 상태는 이 브라우저에 저장.
+- 작은 편집 창에서 텍스트만 있는 Plan/CAD 모드 버튼의 이름이 사라지던 기존 CSS를 보완. 720px 이하의 기존 모바일 보기 전용 정책은 유지.
+- PPRJ schema7 / PPKG1 유지. 사용자 지정 단축키와 독립 기둥은 설계·후속 과제이며 이 빌드에 구현된 기능으로 표시하지 않음.
+- Windows 브라우저 통합·실도면 사본·기존 편집/출력 회귀 검사와 제한은 비공개 개발 검증 기록 참조. 조건부 개발 후보이며 RC·외부 CAD·실제 OS IME 전체 검증 완료를 뜻하지 않음.
+
 ## v0.55.0 · Build 76 — Plan door/stair editing and property capsule (2026-10-16)
 
 - Angled straight stairs, configurable treads and ascent reversal using existing stair module.
@@ -5,6 +14,11 @@
 - Reusable Plan selection property capsule, fire-door attribute editing, coordinated sliding glyphs in Canvas/DXF/SVG.
 - Command history chevron SVG. Existing right-click customizations unchanged.
 - Development candidate; see `_AI_NOT_GITHUB/BUILD76_DEV_VALIDATION.md` for outstanding browser/manual validation.
+
+## v0.54.0 · Build75 — DXF 앱 간 전달 수신부 (2026-10-14)
+
+- 같은 Origin의 IndexedDB와 URL ID로 DXF Handoff v1 수신. 사용자에게 CAD 편집 / 참조 추가 선택을 제공하고 실제 가져오기 성공 시에만 정리.
+- ID·형식·크기·만료 검증 및 실패/취소 보존. PieniPlan 수신부 범위이며 DWG2DXF 송신부와 두 앱 실제 E2E 완료를 의미하지 않음.
 
 ## v0.53.0 · Build74 — 선택 영역 렌더링/파일 UX 개선 (2026-10-14)
 

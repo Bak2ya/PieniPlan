@@ -1921,3 +1921,31 @@ html, body { font-size:var(--font-body); }
 /* Build76: command history chevron follows expansion state */
 #commandLogExpand svg { transition:transform .15s ease; }
 #commandLogExpand[aria-expanded="true"] svg { transform:rotate(180deg); }
+
+/* Build77: optional discovery ribbon. Compact split menus stay the default. */
+.toolbar-expanded .workspace { grid-template-rows: minmax(46px,auto) minmax(0,1fr); }
+.toolbar-expanded .tool-rail { align-items:stretch; gap:0; max-height:180px; padding:5px 8px; }
+.expanded-tool-group { flex:none; display:flex; flex-direction:column; justify-content:space-between; gap:3px; padding:0 9px; border-right:1px solid var(--border); }
+.expanded-tool-group:last-child { border-right:0; }
+.expanded-tool-list { display:grid; grid-auto-flow:column; grid-template-rows:repeat(3,32px); gap:2px 4px; }
+.expanded-tool-group:has(.expanded-tool-list > :only-child) .expanded-tool-list { grid-template-rows:32px; }
+.expanded-tool { min-height:32px; display:flex; align-items:center; gap:7px; padding:4px 7px; border:1px solid transparent; border-radius:6px; background:transparent; color:var(--text); cursor:pointer; white-space:nowrap; font-size:var(--font-control); text-align:left; }
+.expanded-tool .ui-icon { width:18px; height:18px; flex:none; }
+.expanded-tool:hover,.expanded-group-menu:hover { background:var(--surface-3); }
+.expanded-tool.active { background:var(--accent-soft); border-color:var(--border-strong); }
+.plan-tools .expanded-tool.active { background:var(--plan-soft); }
+.expanded-tool-title { display:flex; align-items:center; justify-content:center; gap:6px; color:var(--text-2); font-size:var(--font-micro); }
+.expanded-group-menu { border:0; background:transparent; color:inherit; border-radius:4px; min-width:24px; min-height:22px; cursor:pointer; }
+#toolbarExpandBtn[aria-expanded="true"] svg { transform:rotate(180deg); }
+.context-field input[data-context="stairTreadCount"] { width:72px; }
+@media (max-width:760px) {
+  .toolbar-expanded .tool-rail { max-height:160px; overflow-x:auto; }
+  .expanded-tool-list { grid-template-rows:repeat(2,32px); }
+  .expanded-tool-group { padding-inline:6px; }
+}
+@media print { #toolbarExpandBtn { display:none; } }
+@media (min-width:721px) and (max-width:980px) {
+  /* Current mode buttons contain a text label, not a separate icon. */
+  .toolset-button span:last-child { display:inline; }
+  .toolset-button { width:auto; padding-inline:7px; }
+}
