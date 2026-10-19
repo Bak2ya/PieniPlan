@@ -9,7 +9,7 @@
   const ids=['REC','C','A'];
 
   function install(registry,port){
-    const available=ctx=>ctx.mode==='cad';
+    const available=ctx=>ctx.mode==='cad'||ctx.mode==='plan';
     registry.register({id:'REC',aliases:['RECTANG','RECTANGLE'],available,transactional:false,historyOwner:'cad-change-set',create(){
       const draft={phase:'first',first:null,pointer:null,token:port.contextToken()};
       const resolvePoint=e=>{
@@ -43,7 +43,7 @@
         cancel:()=>port.clearPreview(),finalize:()=>port.clearPreview()};
     }});
 
-    registry.register({id:'A',aliases:['ARC'],available,transactional:false,historyOwner:'cad-change-set',create(){
+    registry.register({id:'A',aliases:['ARC'],available:ctx=>ctx.mode==='cad',transactional:false,historyOwner:'cad-change-set',create(){
       const draft={phase:'start',start:null,through:null,pointer:null,token:port.contextToken()};
       const base=()=>draft.through||draft.start||null;
       const resolvePoint=e=>{

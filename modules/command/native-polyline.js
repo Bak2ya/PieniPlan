@@ -9,7 +9,7 @@
 
   function install(registry, port) {
     registry.register({
-      id:'PL', aliases:['PLINE','POLYLINE'], available:ctx=>ctx.mode==='cad', transactional:false, historyOwner:'cad-change-set',
+      id:'PL', aliases:['PLINE','POLYLINE'], available:ctx=>ctx.mode==='cad'||ctx.mode==='plan', transactional:false, historyOwner:'cad-change-set',
       create(){
         const draft={phase:'start', mode:'line', points:[], arcEnd:null, pointer:null, token:port.contextToken()};
         const current=()=>draft.points.at(-1)||null;

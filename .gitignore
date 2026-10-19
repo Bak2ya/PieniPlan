@@ -3,3 +3,7 @@ _AI_NOT_GITHUB/
 *.sha256
 .DS_Store
 Thumbs.db
+
+# Local collaboration instructions and optional Windows helper
+/AGENTS.md
+/RUN_WINDOWS.cmd

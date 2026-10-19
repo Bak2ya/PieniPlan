@@ -1949,3 +1949,20 @@ html, body { font-size:var(--font-body); }
   .toolset-button span:last-child { display:inline; }
   .toolset-button { width:auto; padding-inline:7px; }
 }
+
+/* Build78: unified controls and project nature appearance, using existing surfaces. */
+.controls-tabs,.controls-scope{display:flex;align-items:center;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.controls-tabs .active{color:var(--accent);background:var(--accent-soft)}
+.controls-scope .select-input{width:140px}
+.settings-page[data-settings-panel="controls"] .controls-tabs,.settings-page[data-settings-panel="controls"] .controls-scope{margin-inline:18px}
+#keyboardSettings{padding-inline:18px;min-width:0}
+#mouseCommonCopy,#mouseSettings>.settings-section-copy{padding-inline:18px}
+#settingsCommandSearch{width:100%;margin-bottom:10px}
+.command-bindings-head,.command-binding-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(110px,1.15fr) minmax(110px,1fr);gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.command-bindings-head{color:var(--text-2);font-size:var(--font-micro)}
+.command-binding-row label{font-size:var(--font-control);overflow-wrap:anywhere}
+.command-binding-row input{width:100%;min-width:0}
+.nature-style-row{display:grid;grid-template-columns:minmax(100px,1fr) 36px minmax(90px,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.nature-style-row input[type=color]{width:32px;height:28px;padding:2px;border:1px solid var(--border);border-radius:4px;background:transparent}
+#settingsCommandFeedback{min-height:1.4em;color:var(--text-2)}
+@media(max-width:580px){.command-bindings-head,.command-binding-row{grid-template-columns:minmax(75px,.9fr) minmax(90px,1fr) minmax(90px,1fr);gap:5px}.nature-style-row{gap:6px;grid-template-columns:minmax(85px,1fr) 32px minmax(80px,1fr) auto}}

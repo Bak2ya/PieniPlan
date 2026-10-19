@@ -7,9 +7,9 @@
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
     if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>7))bad('unsupported-schema');
-    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.cadPolyline?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
+    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.planNature?.capability,root.cadPolyline?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
     if(!Array.isArray(caps)||caps.some(c=>!allowedCaps.has(c)))bad('unsupported-capability');
-    const d=raw.drawing,vertexIds=new Set(),edgeIds=new Set(),annotationV2=(raw.schemaVersion??1)>=7&&caps.includes('cad.annotation.v2');
+    const d=raw.drawing;root.planNature?.validateStyles(d.toolSettings?.planObjectStyles);if(Object.keys(d.toolSettings?.planObjectStyles||{}).length&&!caps.includes(root.planNature?.capability))bad('plan-style-capability');const vertexIds=new Set(),edgeIds=new Set(),annotationV2=(raw.schemaVersion??1)>=7&&caps.includes('cad.annotation.v2');
     for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory','blockDefinitions','dimensionStyles'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
     for(const o of d.objects||[])if(o.recognitionExactBaseline!=null&&(!caps.includes('plan.recognition.review.v1')||typeof o.recognitionExactBaseline!=='string'||o.recognitionExactBaseline.length>100000))bad('recognition-review-capability');
     const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
@@ -26,6 +26,7 @@
     if(!raw.__blockMembers&&(definitions.length||(d.objects||[]).some(o=>o.type==='cadInsert'))){if(!caps.includes('cad.block.v1'))bad('block-capability-required');root.cadBlocks.validate(definitions,d.objects||[]);}
     if(!raw.__blockMembers)for(const definition of definitions)validate({...raw,drawing:{objects:definition.objects,blockDefinitions:definitions,dimensionStyles:styles},__blockMembers:true});
     for(const o of d.objects||[]){
+      if(o.planGeometry||o.planNature){if(!caps.includes(root.planNature?.capability)||!root.planNature)bad('plan-nature-capability');root.planNature.validateObject(o);}
       if(raw.__blockMembers&&(!o.type.startsWith('cad')||o.planRole||o.floorId))bad('non-cad-block-member');
       if(o.type==='cadPoint'&&(!caps.includes('cad.dxf.roundtrip.v1')||!point(o.point)))bad('cad-point');
       if(o.type==='cadDxfRecord'){if(!caps.includes('cad.dxf.roundtrip.v1')||o.readonly!==true||typeof o.recordType!=='string'||!Array.isArray(o.rawGroups)||!o.rawGroups.length||!o.rawGroups.every(p=>Array.isArray(p)&&p.length===2&&Number.isInteger(p[0])&&p[0]>=0&&p[0]<=1071&&typeof p[1]==='string')||!Array.isArray(o.preview))bad('preserved-dxf-record');for(const q of o.preview)if(!q.type?.startsWith('cad')||q.type==='cadInsert'||q.type==='cadDxfRecord')bad('preserved-preview-type');validate({...raw,drawing:{objects:o.preview,dimensionStyles:styles},__blockMembers:true});}

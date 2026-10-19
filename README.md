@@ -4,6 +4,8 @@
 
 # PieniPlan
 
+현재 로컬 개발 후보: **v0.57.0 · Build79**. 설정→조작 및 명령, 도형 선택→속성→성격: 기둥, 설정→Plan Mode→객체 표현을 지원합니다. 소스는 정적 웹 서버에서 실행합니다. 새 Plan 도형/스타일 파일은 `plan.nature-style.v1` 수신 지원이 필요하며 외부 FM 및 스타일 패키지 병합은 별도 확인이 필요합니다.
+
 **Small Web Floor Plan Editor**  
 **Plan simply. Draft precisely.**
 
@@ -20,7 +22,7 @@ Plan Mode와 CAD Mode는 같은 도면과 실제 좌표를 공유하며, 작업 
 
 상단의 **도구 펼치기 / 접기**로 기존 간결한 도구 모음과 역할별 전체 도구 보기를 전환할 수 있습니다. 펼침 상태는 브라우저에 기억되며 도면 객체나 확대 비율을 바꾸지 않습니다. 연결된 Plan이 없는 CAD 영역은 Plan Mode에서 안내를 표시하고, CAD로 돌아오면 선택한 영역을 유지합니다.
 
-Windows에서 로컬로 실행하려면 압축을 푼 뒤 `RUN_WINDOWS.cmd`를 실행하세요. Python 3 또는 이 컴퓨터의 Codex 번들 Python을 이용해 `http://127.0.0.1:8000/`을 열며, 설치 작업은 수행하지 않습니다. 실행 창에서 Ctrl+C로 종료할 수 있습니다. `file://`로 직접 열면 Worker·저장 API가 제한될 수 있습니다.
+로컬에서는 프로젝트 폴더를 정적 HTTP 서버로 제공한 뒤 브라우저에서 열면 됩니다. 예를 들어 Python 3가 있으면 `python -m http.server 8000 --bind 127.0.0.1`을 실행하고 `http://127.0.0.1:8000/`을 엽니다. `file://`로 직접 열면 Worker·저장 API가 제한될 수 있습니다.
 
 ---
 
