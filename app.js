@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.58.0';
-  const BUILD = 80;
+  const VERSION = '0.59.0';
+  const BUILD = 82;
   let activeImportJob=null;
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
@@ -666,10 +666,15 @@
   }
   async function openRecoverySnapshot(){try{const db=await openLocalProjectDb();let record;try{record=await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_PROJECT_STORE,'readonly'),req=tx.objectStore(LOCAL_PROJECT_STORE).get(RECOVERY_PROJECT_KEY);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error('Recovery read failed'));});}finally{db.close();}if(!record?.json)return updateSettingsRecoveryMeta();if(!(await requestWorkspaceReplacement()))return;const file=new File([record.json],record.name||'PieniPlan Recovery.pprj',{type:'application/json'});closeSettingsDialog();await openProjectFile(file,{skipConfirm:true,restoredLocal:true});}catch(err){console.error(err);alert(t('project.openFailed',{message:String(err?.message||err)}));}}
   function showSettingsPage(page){
-    settingsPage=['general','environment','plan','controls'].includes(page)?page:'general';
+    settingsPage=['general','environment','workspace','plan','controls'].includes(page)?page:'general';
     document.querySelectorAll('[data-settings-page]').forEach(button=>button.classList.toggle('active',button.dataset.settingsPage===settingsPage));
     document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.hidden=panel.dataset.settingsPanel!==settingsPage);
     if(settingsPage==='controls')renderControlSettings();if(settingsPage==='plan')renderNatureSettings();
+    if(settingsPage==='workspace') {
+      const pref=workspaceChrome?.preferences()||{openMethod:'hover',closeMethod:'auto'};
+      for(const radio of document.querySelectorAll('[name="inspectorOpenMethod"]'))radio.checked=radio.value===pref.openMethod;
+      for(const radio of document.querySelectorAll('[name="inspectorCloseMethod"]'))radio.checked=radio.value===pref.closeMethod;
+    }
   }
   function contextPreferenceOptions(select,kind,current){
     const options=kind==='visibility'
@@ -4403,7 +4408,7 @@
     requestAnimationFrame(()=>{
       regionList.scrollTop=previousRegionScroll;
       layerList.scrollTop=previousLayerScroll;
-      if(selectedLayer&&state.layerRevealRequested){
+      if(selectedLayer&&state.layerRevealRequested&&workspaceChrome?.panelVisible()&&document.querySelector('[data-panel="primary"]')?.classList.contains('active')){
         const row=layerList.querySelector(`[data-layer="${CSS.escape(selectedLayer)}"]`);
         if(row){
           requestAnimationFrame(()=>revealCadLayerRow(layerList,row));
@@ -4415,18 +4420,18 @@
 
   function revealCadLayerRow(layerList,row){
     if(!layerList||!row)return false;
-    // Let the browser resolve the real rendered geometry first. `nearest` avoids
-    // gratuitous movement when the row is already visible and stays resilient
-    // across text-size presets, Safari/Retina metrics and resized Inspector panes.
-    try{row.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});}catch{row.scrollIntoView(false);}
+    // Never call scrollIntoView() here: it may scroll the drawing workspace or
+    // revive an off-screen auto-hidden inspector, even when that panel is inert.
+    // Scroll only the layer list, and only while its panel is actually visible.
+    if(!workspaceChrome?.panelVisible()||!document.querySelector('[data-panel="primary"]')?.classList.contains('active'))return false;
     requestAnimationFrame(()=>{
-      if(!row.isConnected||!layerList.isConnected)return;
+      if(!row.isConnected||!layerList.isConnected||!workspaceChrome?.panelVisible())return;
       const rr=row.getBoundingClientRect(),lr=layerList.getBoundingClientRect(),style=getComputedStyle(layerList);
       const top=lr.top+(parseFloat(style.paddingTop)||0),bottom=lr.bottom-(parseFloat(style.paddingBottom)||0);
       let correction=0;
       if(rr.top<top)correction=rr.top-top;
       else if(rr.bottom>bottom)correction=rr.bottom-bottom;
-      if(Math.abs(correction)>.5)layerList.scrollBy({top:correction,left:0,behavior:'auto'});
+      if(Math.abs(correction)>.5)layerList.scrollTop+=correction;
       row.classList.remove('focus-reveal');void row.offsetWidth;row.classList.add('focus-reveal');
       setTimeout(()=>{if(row.isConnected)row.classList.remove('focus-reveal');},1100);
     });
@@ -4973,6 +4978,13 @@
   dom.continueWorkBtn.addEventListener('click',async()=>{if(state.sessionKind==='sample'&&sampleReturnWorkspace){restoreSampleReturnWorkspace({openWorkspace:true});return;}if(hasCurrentWork())switchToolset(state.toolset,{skipMapping:true});else if(state.browserSavedMeta)await openBrowserSavedProject();});
   dom.backBtn.addEventListener('click',()=>history.back());
   workspaceChrome = modules.workspaceChrome.create({t,mode:()=>state.toolset,navigate:target=>target==='home'?showStartScreen():switchToolset(target),closeOtherMenus:()=>{closeTopMenus();dom.toolPopover.hidden=true;},interactionBusy:()=>Boolean(state.dragEdit||state.directDrag||state.referenceDrag)});
+  document.getElementById('workspaceInspector').addEventListener('pieniplan:inspector-shown',()=>{
+    if(state.toolset==='cad'&&state.layerRevealRequested&&document.querySelector('[data-panel="primary"]')?.classList.contains('active'))renderCadLayersPanel();
+  });
+  for(const radio of document.querySelectorAll('input[name="inspectorOpenMethod"],input[name="inspectorCloseMethod"]'))radio.addEventListener('change',()=>{
+    if(!radio.checked)return;
+    workspaceChrome.setPreferences(radio.name==='inspectorOpenMethod'?{openMethod:radio.value}:{closeMethod:radio.value});
+  });
   dom.planToolsBtn.addEventListener('click',()=>switchToolset('plan'));
   $('toolbarExpandBtn')?.addEventListener('click',()=>setToolbarExpanded(!toolbarExpanded));
   dom.cadToolsBtn.addEventListener('click',()=>switchToolset('cad'));

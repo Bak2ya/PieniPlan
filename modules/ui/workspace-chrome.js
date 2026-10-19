@@ -13,8 +13,14 @@
     const read = (key, fallback) => { try { return localStorage.getItem(key) ?? fallback; } catch (_) { return fallback; } };
     const write = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
     let pinned = read('pieniplan-inspector-pinned', 'true') !== 'false';
+    const choices = { open: ['hover', 'click'], close: ['auto', 'click'] };
+    const preferenceKey = { open: 'pieniplan-inspector-open-method', close: 'pieniplan-inspector-close-method' };
+    const preference = (kind, value) => choices[kind].includes(value) ? value : choices[kind][0];
+    let openMethod = preference('open', read(preferenceKey.open, 'hover'));
+    let closeMethod = preference('close', read(preferenceKey.close, 'auto'));
     let open = false, menuOpen = false, panelTimer = 0, menuTimer = 0, hoverTimer = 0;
     let pointerInside = false, handleInside = false, held = false, popupOwned = false;
+    let handleHoverOpenedAt = 0;
     let toolbarAnimation = null;
     const hover = matchMedia('(hover: hover)');
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -22,13 +28,25 @@
     const floatingPopup = () => document.querySelector('.layer-color-popover, .floor-action-menu, .component-palette, .constraint-palette, dialog[open], .dialog-backdrop:not([hidden])');
     const busy = () => panel.contains(document.activeElement) || held || (popupOwned && floatingPopup()) || interactionBusy?.();
 
+    function panelVisible() { return pinned || open; }
+    function preferences() { return { openMethod, closeMethod }; }
+    function setPreferences({ openMethod: nextOpen = openMethod, closeMethod: nextClose = closeMethod } = {}) {
+      openMethod = preference('open', nextOpen);
+      closeMethod = preference('close', nextClose);
+      write(preferenceKey.open, openMethod);
+      write(preferenceKey.close, closeMethod);
+      clearPanelTimer();
+      if (closeMethod === 'auto') scheduleClose();
+      return preferences();
+    }
     function paintPanel() {
       shell.classList.toggle('inspector-autohide', !pinned);
       shell.classList.toggle('inspector-revealed', !pinned && open);
       handle.hidden = pinned;
       handle.setAttribute('aria-expanded', String(!pinned && open));
-      handle.setAttribute('aria-label', t('workspace.showPanel'));
-      handle.title = t('workspace.showPanel');
+      const handleAction = !pinned && open ? 'workspace.hidePanel' : 'workspace.showPanel';
+      handle.setAttribute('aria-label', t(handleAction));
+      handle.title = t(handleAction);
       pin.setAttribute('aria-pressed', String(pinned));
       pin.setAttribute('aria-label', t(pinned ? 'workspace.autoHide' : 'workspace.pinPanel'));
       pin.title = t(pinned ? 'workspace.autoHide' : 'workspace.pinPanel');
@@ -37,14 +55,19 @@
     }
     function reveal({ focus = false } = {}) {
       clearPanelTimer();
-      if (!pinned) { open = true; paintPanel(); }
+      if (!pinned && !open) {
+        open = true;
+        paintPanel();
+        // Reconcile pending layer selection only once the inspector becomes usable.
+        panel.dispatchEvent(new CustomEvent('pieniplan:inspector-shown', { bubbles: false }));
+      }
       if (focus) { panel.getBoundingClientRect(); pin.focus({ preventScroll: true }); }
     }
     function scheduleClose() {
       clearPanelTimer();
-      if (pinned || pointerInside || handleInside || busy()) return;
+      if (pinned || closeMethod !== 'auto' || pointerInside || handleInside || busy()) return;
       panelTimer = setTimeout(() => {
-        if (!pinned && !pointerInside && !handleInside && !busy()) { open = false; paintPanel(); }
+        if (!pinned && closeMethod === 'auto' && !pointerInside && !handleInside && !busy()) { open = false; paintPanel(); }
       }, 360);
     }
     function setPinned(value) {
@@ -55,6 +78,7 @@
       const returnToHandle = !pinned && document.activeElement === pin;
       write('pieniplan-inspector-pinned', String(pinned));
       paintPanel();
+      if (pinned) panel.dispatchEvent(new CustomEvent('pieniplan:inspector-shown'));
       if (returnToHandle) handle.focus({ preventScroll: true });
     }
     function paintMenu() {
@@ -129,9 +153,28 @@
     panel.addEventListener('focusout', () => queueMicrotask(scheduleClose));
     panel.addEventListener('pointerenter', () => { pointerInside = true; reveal(); });
     panel.addEventListener('pointerleave', () => { pointerInside = false; scheduleClose(); });
-    handle.addEventListener('pointerenter', event => { handleInside = true; if (event.pointerType !== 'touch' && hover.matches) reveal(); });
+    handle.addEventListener('pointerenter', event => {
+      handleInside = true;
+      if (openMethod === 'hover' && event.pointerType !== 'touch' && hover.matches && !pinned && !open) {
+        handleHoverOpenedAt = Date.now();
+        reveal();
+      }
+    });
     handle.addEventListener('pointerleave', () => { handleInside = false; scheduleClose(); });
-    handle.addEventListener('click', () => reveal({ focus: true }));
+    handle.addEventListener('click', event => {
+      if (pinned) return;
+      // Keyboard activation focuses the pin for accessibility. A pointer click
+      // must not leave focus on the pin or auto-close would never run on exit.
+      if (!open) { reveal({ focus: event.detail === 0 }); return; }
+      // Hover may open/move the handle before a click intended to open it lands.
+      // Do not immediately reverse that same gesture. Later clicks on > close it.
+      if (openMethod === 'hover' && Date.now() - handleHoverOpenedAt < 450) { clearPanelTimer(); return; }
+      // In auto-hide mode the chevron closes without changing the pin preference.
+      clearPanelTimer();
+      open = false;
+      paintPanel();
+      handle.focus({ preventScroll: true });
+    });
     pin.addEventListener('click', () => setPinned(!pinned));
     // Retain a property/name edit's focus when using chrome with a pointer.
     for (const button of [pin, $('toolbarExpandBtn')]) button.addEventListener('mousedown', event => event.preventDefault());
@@ -181,6 +224,7 @@
     paintPanel(); paintMenu();
     return { applyToolbar, refresh: () => { paintMenu(); paintPanel(); measureTitle(); },
       setPinned, reveal, scheduleClose, setMenu, saveTab, restoreTab,
-      status: () => ({ pinned, open, menuOpen }) };
+      preferences, setPreferences, panelVisible,
+      status: () => ({ pinned, open, menuOpen, ...preferences() }) };
   }
 })();

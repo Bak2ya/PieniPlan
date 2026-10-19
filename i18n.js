@@ -4,7 +4,17 @@
   const messages = {
     en: {
       'workspace.appMenu': 'PieniPlan menu',
+      'settings.workspace': 'Workspace',
+      'settings.rightPanel': 'Right panel',
+      'settings.rightPanelCopy': 'Choose how the auto-hidden panel opens and closes. Pinning keeps it visible.',
+      'settings.panelOpen': 'Open panel',
+      'settings.panelOpenHover': 'Hover over handle',
+      'settings.panelOpenClick': 'Click handle',
+      'settings.panelClose': 'Close panel',
+      'settings.panelCloseAuto': 'Automatically when pointer leaves',
+      'settings.panelCloseClick': 'Click handle',
       'workspace.showPanel': 'Show panel',
+      'workspace.hidePanel': 'Hide panel',
       'workspace.autoHide': 'Auto-hide panel',
       'workspace.pinPanel': 'Pin panel',
 
@@ -1137,7 +1147,17 @@
 
     ko: {
       'workspace.appMenu': 'PieniPlan 메뉴',
+      'settings.workspace': '작업공간',
+      'settings.rightPanel': '오른쪽 패널',
+      'settings.rightPanelCopy': '자동 숨김 패널의 열기·닫기 방법을 선택합니다. 핀 고정은 항상 표시됩니다.',
+      'settings.panelOpen': '패널 열기',
+      'settings.panelOpenHover': '손잡이에 마우스 올리기',
+      'settings.panelOpenClick': '손잡이 클릭',
+      'settings.panelClose': '패널 닫기',
+      'settings.panelCloseAuto': '포인터 이탈 시 자동 닫기',
+      'settings.panelCloseClick': '손잡이 클릭 시 닫기',
       'workspace.showPanel': '작업 패널 열기',
+      'workspace.hidePanel': '작업 패널 닫기',
       'workspace.autoHide': '자동 숨김',
       'workspace.pinPanel': '패널 고정',
 

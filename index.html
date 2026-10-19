@@ -133,7 +133,7 @@
 
       <button id="inspectorHandle" class="inspector-handle" type="button" aria-controls="workspaceInspector" aria-expanded="false" aria-label="Show panel" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg></button>
       <aside id="workspaceInspector" class="inspector">
-        <button id="inspectorPin" class="inspector-pin icon-button" type="button" aria-label="Auto-hide panel" aria-pressed="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-4 1-4 4v4l-2 2-3-5-5-3 2-2h4l4-4zM2 22l6-8"/></svg></button>
+        <button id="inspectorPin" class="inspector-pin icon-button" type="button" aria-label="Auto-hide panel" aria-pressed="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v6l-2 4v2h10v-2l-2-4V4m-3 12v5M8 4h8"/><path class="inspector-unpinned-mark" d="M4 4l16 16"/></svg></button>
         <div class="inspector-tabs" role="tablist">
           <button id="primaryInspectorTab" class="inspector-tab active" data-tab="primary" role="tab">Objects</button>
           <button class="inspector-tab" data-tab="reference" role="tab" data-i18n="tab.reference">Reference</button>
@@ -311,7 +311,7 @@
 <button aria-label="Close" class="icon-button settings-close-icon" id="settingsCloseIcon">×</button>
 </div>
 <div class="settings-layout">
-<nav aria-label="Settings sections" class="settings-sidebar"><button class="settings-nav-item active" data-i18n="settings.general" data-settings-page="general">General</button><button class="settings-nav-item" data-i18n="settings.environment" data-settings-page="environment">Environment</button><button class="settings-nav-item" data-i18n="settings.planMode" data-settings-page="plan">Plan Mode</button><button class="settings-nav-item" data-i18n="controls.title" data-settings-page="controls">CAD Mode</button></nav>
+<nav aria-label="Settings sections" class="settings-sidebar"><button class="settings-nav-item active" data-i18n="settings.general" data-settings-page="general">General</button><button class="settings-nav-item" data-i18n="settings.environment" data-settings-page="environment">Environment</button><button class="settings-nav-item" data-i18n="settings.workspace" data-settings-page="workspace">Workspace</button><button class="settings-nav-item" data-i18n="settings.planMode" data-settings-page="plan">Plan Mode</button><button class="settings-nav-item" data-i18n="controls.title" data-settings-page="controls">CAD Mode</button></nav>
 <div class="settings-content"><section class="settings-page" data-settings-panel="general"><div class="settings-page-title" data-i18n="settings.general">General</div><div class="settings-section">
 <div class="settings-section-title" data-i18n="settings.language">Language</div>
 <div class="settings-section-copy" data-i18n="settings.languageCopy">Choose the app language.</div>
@@ -357,7 +357,21 @@
 </div><div class="settings-section">
 <div class="settings-section-title" data-i18n="settings.snapSensitivity">Snap sensitivity</div>
 <select aria-label="Snap sensitivity" class="select-input settings-select" id="settingsSnapSensitivity"><option data-i18n="snap.low" value="low">Low</option><option data-i18n="snap.normal" value="normal">Normal</option><option data-i18n="snap.high" value="high">High</option></select>
-</div></section><section class="settings-page" data-settings-panel="plan" hidden=""><div class="settings-page-title" data-i18n="settings.planMode">Plan Mode</div><div class="settings-section"><div class="settings-section-title" data-i18n="nature.appearance">Object appearance</div><p class="settings-section-copy" data-i18n="nature.styleCopy">Project-wide: applies to existing and future objects. Unset colors retain the previous appearance.</p><div id="settingsNatureStyles"></div><button id="settingsNatureReset" class="small-button" data-i18n="nature.styleReset">Restore inherited appearance</button></div><div class="settings-section">
+</div></section><section class="settings-page" data-settings-panel="workspace" hidden="">
+<div class="settings-page-title" data-i18n="settings.workspace">Workspace</div>
+<div class="settings-section">
+  <div class="settings-section-title" data-i18n="settings.rightPanel">Right panel</div>
+  <div class="settings-section-copy" data-i18n="settings.rightPanelCopy">Choose how the auto-hidden panel opens and closes. Pinning always keeps it visible.</div>
+  <fieldset class="workspace-choice-group"><legend data-i18n="settings.panelOpen">Open panel</legend>
+    <label class="settings-check-row"><input type="radio" name="inspectorOpenMethod" value="hover" checked/><span data-i18n="settings.panelOpenHover">Hover over handle</span></label>
+    <label class="settings-check-row"><input type="radio" name="inspectorOpenMethod" value="click"/><span data-i18n="settings.panelOpenClick">Click handle</span></label>
+  </fieldset>
+  <fieldset class="workspace-choice-group"><legend data-i18n="settings.panelClose">Close panel</legend>
+    <label class="settings-check-row"><input type="radio" name="inspectorCloseMethod" value="auto" checked/><span data-i18n="settings.panelCloseAuto">Automatically when pointer leaves</span></label>
+    <label class="settings-check-row"><input type="radio" name="inspectorCloseMethod" value="click"/><span data-i18n="settings.panelCloseClick">Click handle</span></label>
+  </fieldset>
+</div>
+</section><section class="settings-page" data-settings-panel="plan" hidden=""><div class="settings-page-title" data-i18n="settings.planMode">Plan Mode</div><div class="settings-section"><div class="settings-section-title" data-i18n="nature.appearance">Object appearance</div><p class="settings-section-copy" data-i18n="nature.styleCopy">Project-wide: applies to existing and future objects. Unset colors retain the previous appearance.</p><div id="settingsNatureStyles"></div><button id="settingsNatureReset" class="small-button" data-i18n="nature.styleReset">Restore inherited appearance</button></div><div class="settings-section">
 <div class="settings-section-title" data-i18n="plan.appearanceTitle">Plan lines and curves</div>
 <div class="settings-section-copy" data-i18n="plan.appearanceCopy">Shared by this project’s Plan lines and curves.</div>
 <div class="plan-appearance-fields">
