@@ -3,6 +3,11 @@
 
   const messages = {
     en: {
+      'workspace.appMenu': 'PieniPlan menu',
+      'workspace.showPanel': 'Show panel',
+      'workspace.autoHide': 'Auto-hide panel',
+      'workspace.pinPanel': 'Pin panel',
+
       'nature.symbolPatternLabel':'Symbol pattern',
       'controls.fixed':'Fixed native keys: Ctrl/Cmd+S · Ctrl/Cmd+Z · Ctrl/Cmd+Shift+Z · Enter · Esc · Delete · Space.',
       'nature.packageOpen':'Open this package as a complete project to preserve its shared appearance. Merging styled packages requires an explicit style conflict policy.',
@@ -1131,6 +1136,11 @@
     },
 
     ko: {
+      'workspace.appMenu': 'PieniPlan 메뉴',
+      'workspace.showPanel': '작업 패널 열기',
+      'workspace.autoHide': '자동 숨김',
+      'workspace.pinPanel': '패널 고정',
+
       'nature.symbolPatternLabel':'기호 고유 선',
       'controls.fixed':'고정 기본 키: Ctrl/Cmd+S · Ctrl/Cmd+Z · Ctrl/Cmd+Shift+Z · Enter · Esc · Delete · Space.',
       'nature.packageOpen':'공통 표현을 보존하려면 이 패키지를 새 프로젝트로 여세요. 표현 설정이 있는 패키지의 병합은 별도 충돌 정책이 필요합니다.',

@@ -1,0 +1,186 @@
+/* Workspace presentation only. Never edits drawing state, camera or history. */
+(() => {
+  'use strict';
+  const module = window.PieniPlanModules = window.PieniPlanModules || {};
+  module.workspaceChrome = { create };
+
+  function create({ t, mode, navigate, closeOtherMenus, interactionBusy }) {
+    const $ = id => document.getElementById(id);
+    const shell = $('appShell'), rail = $('toolRail'), workspace = shell.querySelector('.workspace');
+    const left = shell.querySelector('.topbar-left'), anchor = $('brandAnchor'), logo = $('homeBtn'), menu = $('brandMenu');
+    const panel = $('workspaceInspector'), pin = $('inspectorPin'), handle = $('inspectorHandle');
+    const title = $('documentTitle');
+    const read = (key, fallback) => { try { return localStorage.getItem(key) ?? fallback; } catch (_) { return fallback; } };
+    const write = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
+    let pinned = read('pieniplan-inspector-pinned', 'true') !== 'false';
+    let open = false, menuOpen = false, panelTimer = 0, menuTimer = 0, hoverTimer = 0;
+    let pointerInside = false, handleInside = false, held = false, popupOwned = false;
+    let toolbarAnimation = null;
+    const hover = matchMedia('(hover: hover)');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const clearPanelTimer = () => { clearTimeout(panelTimer); panelTimer = 0; };
+    const floatingPopup = () => document.querySelector('.layer-color-popover, .floor-action-menu, .component-palette, .constraint-palette, dialog[open], .dialog-backdrop:not([hidden])');
+    const busy = () => panel.contains(document.activeElement) || held || (popupOwned && floatingPopup()) || interactionBusy?.();
+
+    function paintPanel() {
+      shell.classList.toggle('inspector-autohide', !pinned);
+      shell.classList.toggle('inspector-revealed', !pinned && open);
+      handle.hidden = pinned;
+      handle.setAttribute('aria-expanded', String(!pinned && open));
+      handle.setAttribute('aria-label', t('workspace.showPanel'));
+      handle.title = t('workspace.showPanel');
+      pin.setAttribute('aria-pressed', String(pinned));
+      pin.setAttribute('aria-label', t(pinned ? 'workspace.autoHide' : 'workspace.pinPanel'));
+      pin.title = t(pinned ? 'workspace.autoHide' : 'workspace.pinPanel');
+      panel.inert = !pinned && !open;
+      panel.setAttribute('aria-hidden', String(!pinned && !open));
+    }
+    function reveal({ focus = false } = {}) {
+      clearPanelTimer();
+      if (!pinned) { open = true; paintPanel(); }
+      if (focus) { panel.getBoundingClientRect(); pin.focus({ preventScroll: true }); }
+    }
+    function scheduleClose() {
+      clearPanelTimer();
+      if (pinned || pointerInside || handleInside || busy()) return;
+      panelTimer = setTimeout(() => {
+        if (!pinned && !pointerInside && !handleInside && !busy()) { open = false; paintPanel(); }
+      }, 360);
+    }
+    function setPinned(value) {
+      clearPanelTimer();
+      pinned = Boolean(value);
+      // Explicit unpin collapses unless the user is editing inside the panel.
+      open = !pinned && (panel.contains(document.activeElement) && document.activeElement !== pin);
+      const returnToHandle = !pinned && document.activeElement === pin;
+      write('pieniplan-inspector-pinned', String(pinned));
+      paintPanel();
+      if (returnToHandle) handle.focus({ preventScroll: true });
+    }
+    function paintMenu() {
+      logo.setAttribute('aria-label', t('workspace.appMenu'));
+      logo.title = t('workspace.appMenu');
+      for (const item of menu.querySelectorAll('[data-workspace-destination]')) {
+        const selected = item.dataset.workspaceDestination === mode();
+        if (item.getAttribute('role') === 'menuitemradio') item.setAttribute('aria-checked', String(selected));
+      }
+    }
+    function setMenu(value, { focus = false, restore = false } = {}) {
+      clearTimeout(menuTimer); clearTimeout(hoverTimer);
+      menuOpen = Boolean(value);
+      if (menuOpen) { closeOtherMenus?.(); paintMenu(); }
+      anchor.classList.toggle('menu-open', menuOpen);
+      logo.setAttribute('aria-expanded', String(menuOpen));
+      menu.setAttribute('aria-hidden', String(!menuOpen)); menu.inert = !menuOpen;
+      if (focus && menuOpen) { menu.getBoundingClientRect(); menu.querySelector('button[aria-checked="true"]')?.focus({ preventScroll: true }); }
+      if (restore) logo.focus({ preventScroll: true });
+    }
+    function scheduleMenuClose() {
+      clearTimeout(hoverTimer); clearTimeout(menuTimer);
+      menuTimer = setTimeout(() => {
+        if (!anchor.matches(':hover') && !anchor.contains(document.activeElement)) setMenu(false);
+      }, 240);
+    }
+    logo.addEventListener('click', () => setMenu(!menuOpen));
+    anchor.addEventListener('pointerenter', event => {
+      clearTimeout(menuTimer);
+      if (hover.matches && event.pointerType !== 'touch' && !menuOpen) hoverTimer = setTimeout(() => setMenu(true), 150);
+    });
+    anchor.addEventListener('pointerleave', scheduleMenuClose);
+    anchor.addEventListener('focusout', scheduleMenuClose);
+    // Capture so menu keys never become CAD commands or cancel a live drawing.
+    anchor.addEventListener('keydown', event => {
+      if (!['Enter', ' ', 'Escape', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Tab'].includes(event.key)) return;
+      if (event.key === 'Tab') { setMenu(false); return; }
+      event.stopPropagation();
+      if (event.key === 'Escape') { event.preventDefault(); setMenu(false, { restore: true }); return; }
+      if (event.target === logo && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+        event.preventDefault(); setMenu(true, { focus: true }); return;
+      }
+      const items = [...menu.querySelectorAll('button')];
+      if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const index = items.indexOf(document.activeElement);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items[next].focus();
+      }
+    });
+    menu.addEventListener('click', event => {
+      const target = event.target.closest('[data-workspace-destination]');
+      if (!target) return;
+      setMenu(false, { restore: true }); navigate(target.dataset.workspaceDestination); paintMenu();
+    });
+    document.addEventListener('pointerdown', event => {
+      if (!anchor.contains(event.target)) setMenu(false);
+      if (panel.contains(event.target)) { held = true; popupOwned = true; clearPanelTimer(); }
+      else if (!floatingPopup()?.contains(event.target)) { popupOwned = false; scheduleClose(); }
+    }, true);
+    document.addEventListener('pointerup', () => { held = false; queueMicrotask(scheduleClose); }, true);
+    document.addEventListener('pointercancel', () => { held = false; queueMicrotask(scheduleClose); }, true);
+    document.addEventListener('keydown', event => {
+      if (menuOpen && event.key === 'Escape') {
+        event.preventDefault(); event.stopImmediatePropagation();
+        setMenu(false, { restore: true });
+      }
+    }, true);
+    document.addEventListener('focusin', () => {
+      if (panel.contains(document.activeElement)) clearPanelTimer(); else scheduleClose();
+    });
+    panel.addEventListener('focusout', () => queueMicrotask(scheduleClose));
+    panel.addEventListener('pointerenter', () => { pointerInside = true; reveal(); });
+    panel.addEventListener('pointerleave', () => { pointerInside = false; scheduleClose(); });
+    handle.addEventListener('pointerenter', event => { handleInside = true; if (event.pointerType !== 'touch' && hover.matches) reveal(); });
+    handle.addEventListener('pointerleave', () => { handleInside = false; scheduleClose(); });
+    handle.addEventListener('click', () => reveal({ focus: true }));
+    pin.addEventListener('click', () => setPinned(!pinned));
+    // Retain a property/name edit's focus when using chrome with a pointer.
+    for (const button of [pin, $('toolbarExpandBtn')]) button.addEventListener('mousedown', event => event.preventDefault());
+    for (const button of [pin, handle, $('toolbarExpandBtn')]) button.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
+    });
+    // Closed external popovers may not emit focusout on the inspector itself.
+    const popupObserver = new MutationObserver(() => { if (popupOwned && !floatingPopup()) { popupOwned = false; scheduleClose(); } });
+    popupObserver.observe(document.body, { childList: true, subtree: true });
+
+    function measureTitle() {
+      const text = title.querySelector('.document-title-text');
+      if (!text) return;
+      const clipped = title.clientWidth > 0 && text.scrollWidth > title.clientWidth + 1;
+      title.classList.toggle('title-clipped', clipped);
+      title.title = clipped ? text.textContent : '';
+      title.setAttribute('aria-label', text.textContent);
+      title.style.setProperty('--title-travel', `${Math.max(0, text.scrollWidth - title.clientWidth)}px`);
+      title.style.setProperty('--title-duration', `${Math.max(5, (text.scrollWidth - title.clientWidth) / 30)}s`);
+    }
+    const titleObserver = new ResizeObserver(measureTitle);
+    titleObserver.observe(title);
+    new MutationObserver(measureTitle).observe(title, { childList: true, subtree: true, characterData: true });
+    const measureRail = () => workspace.style.setProperty('--workspace-ribbon-height', `${rail.parentElement === workspace ? rail.getBoundingClientRect().height : 0}px`);
+    new ResizeObserver(measureRail).observe(rail);
+    function applyToolbar(expanded, { animate = false } = {}) {
+      const focus = document.activeElement;
+      const target = expanded ? workspace : left;
+      if (rail.parentElement !== target) {
+        if (expanded) workspace.prepend(rail); else left.append(rail);
+        if (focus && document.contains(focus) && document.activeElement !== focus) focus.focus({ preventScroll: true });
+      }
+      shell.classList.toggle('toolbar-expanded', expanded);
+      if (animate && !reduced.matches) {
+        toolbarAnimation?.cancel();
+        // Animate only tool content; never transform the drawing surface.
+        toolbarAnimation = rail.animate([{ opacity: .3, translate: `0 ${expanded ? '-5px' : '5px'}` }, { opacity: 1, translate: '0 0' }], { duration: 170, easing: 'ease-out' });
+      }
+      measureRail(); measureTitle(); paintMenu(); paintPanel();
+    }
+    function saveTab(tab) { write('pieniplan-inspector-tab', tab); }
+    function restoreTab() {
+      const tab = read('pieniplan-inspector-tab', 'primary');
+      const button = [...panel.querySelectorAll('[data-tab]')].find(el => el.dataset.tab === tab && !el.hidden);
+      return button ? tab : 'primary';
+    }
+    paintPanel(); paintMenu();
+    return { applyToolbar, refresh: () => { paintMenu(); paintPanel(); measureTitle(); },
+      setPinned, reveal, scheduleClose, setMenu, saveTab, restoreTab,
+      status: () => ({ pinned, open, menuOpen }) };
+  }
+})();
