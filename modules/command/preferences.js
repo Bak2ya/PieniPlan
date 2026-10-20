@@ -5,7 +5,8 @@
   const scope=c=>c.cadOnly?'cad':c.planOnly?'plan':'common';
   const overlap=(a,b)=>a==='common'||b==='common'||a===b;
   function chord(raw){
-    const parts=String(raw||'').trim().split('+').map(s=>s.trim()).filter(Boolean);if(!parts.length)return'';
+    const text=String(raw??'');if(text==='')return'';
+    const parts=text.trim().split('+').map(s=>s.trim()).filter(Boolean);if(!parts.length)throw Error('reserved');
     const base=parts.pop().toUpperCase(),mods=new Set(parts.map(s=>s.toUpperCase()));
     if([...mods].some(m=>!['CTRL','ALT','SHIFT','META'].includes(m))||!/^(?:[A-Z0-9]|F(?:[1-9]|1[0-2]))$/.test(base))throw Error('reserved');
     // F3/F7/F8/F10 belong to existing toggles; all browser/OS chords stay native.
@@ -33,7 +34,7 @@
       values[id]=next;if(persist)save();return true;
     }
     function save(){try{storage?.setItem(key,JSON.stringify(values));}catch{}}
-    function load(){values=Object.create(null);let raw={};try{raw=JSON.parse(storage?.getItem(key)||'{}');}catch{}for(const [id,v]of Object.entries(raw||{})){try{set(id,{...(Array.isArray(v.aliases)?{aliases:v.aliases.join(',')}:{}),...(typeof v.shortcut==='string'?{shortcut:v.shortcut}:{})},{persist:false});}catch{}}return values;}
+    function load(){values=Object.create(null);let raw={};try{raw=JSON.parse(storage?.getItem(key)||'{}');}catch{}for(const [id,v]of Object.entries(raw||{})){if(!v||typeof v!=='object')continue;const patch={...(Array.isArray(v.aliases)?{aliases:v.aliases.join(',')}: {})};if(typeof v.shortcut==='string'){try{patch.shortcut=chord(v.shortcut);}catch{/* Ignore only an invalid binding; keep this command's valid aliases. */}}try{set(id,patch,{persist:false});}catch{}}return values;}
     function reset(which){
       const previous=values;values={...values};for(const c of entries)if(scope(c)===which)delete values[c.id];
       try{for(const c of entries)for(const other of entries){if(c===other||!overlap(scope(c),scope(other)))continue;if(shortcut(c)&&shortcut(c)===shortcut(other)||aliases(c).some(a=>[other.name,...aliases(other)].includes(a)))throw Error('conflict:'+other.name);}}
@@ -41,7 +42,7 @@
     }
     function resolve(raw,mode){const q=String(raw||'').trim().toUpperCase();return entries.find(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&c.name===q)||entries.find(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&aliases(c).includes(q));}
     function match(raw,mode){const q=String(raw||'').toUpperCase();return entries.filter(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&[c.name,...aliases(c)].some(a=>a.startsWith(q))).sort((a,b)=>Number([b.name,...aliases(b)].includes(q))-Number([a.name,...aliases(a)].includes(q))).slice(0,6).map(c=>({...c,aliases:[...new Set([c.name,...aliases(c)])]}));}
-    function forEvent(e,mode){let q;try{q=chord([e.ctrlKey?'CTRL':'',e.metaKey?'META':'',e.altKey?'ALT':'',e.shiftKey?'SHIFT':'',e.code?.startsWith('Key')?e.code.slice(3):e.code?.startsWith('Digit')?e.code.slice(5):e.key].filter(Boolean).join('+'));}catch{return null;}return entries.find(c=>overlap(scope(c),mode)&&shortcut(c)===q)||null;}
+    function forEvent(e,mode){let q;try{q=chord([e.ctrlKey?'CTRL':'',e.metaKey?'META':'',e.altKey?'ALT':'',e.shiftKey?'SHIFT':'',e.code?.startsWith('Key')?e.code.slice(3):e.code?.startsWith('Digit')?e.code.slice(5):e.key].filter(Boolean).join('+'));}catch{return null;}if(!q)return null;return entries.find(c=>overlap(scope(c),mode)&&shortcut(c)===q)||null;}
     load();return Object.freeze({entries,scope,aliases,shortcut,set,reset,resolve,match,forEvent,load,key});
   }
   root.commandPreferences=Object.freeze({create,chord,overlap});

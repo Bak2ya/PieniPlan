@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.59.0';
-  const BUILD = 82;
+  const VERSION = '0.59.1';
+  const BUILD = 83;
   let activeImportJob=null;
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
@@ -2165,27 +2165,7 @@
     return{wall,center:c,p1,p2,ux,uy,nx,ny,width,t1:clamp(t-halfT,0,1),t2:clamp(t+halfT,0,1)};
   }
   function setDoorFireAttribute(obj,value){if(obj?.type!=='door')return false;const next=value==='fireDoor'||value==='fireShutter'?value:null;if(next==='fireShutter'&&obj.doorType!=='fireShutter')return false;if((obj.fireProtection||null)===next&&!(obj.doorType==='fireDoor'&&next===null))return true;pushHistory();if(obj.doorType==='fireDoor')obj.doorType='hingedSingle';obj.fireProtection=next;obj.fireRating=obj.fireRating||null;markDirty(true);updateAll();return true;}
-  function slidingDoorSegments(obj,g){
-    const type=obj.doorType||'slidingSingle',dir=obj.slideDirection===-1?-1:1;
-    const half=(g.wall.thickness||150)/2,shift=(p,along=0,across=0)=>({x:p.x+g.ux*along+g.nx*across,y:p.y+g.uy*along+g.ny*across});
-    if(type==='slidingSingle'){
-      // Plan convention: an extended panel slides parallel to the wall, over its adjacent wall bay.
-      const side=dir,off=half*.8*dir,travel=g.width*.84;
-      const a=shift(g.center,side*(g.width*.5-travel*.13),off),b=shift(a,side*travel,0);
-      return [{a,b,weight:2},{a:shift(g.p1,0,half*.23*dir),b:shift(g.p2,0,half*.23*dir),weight:.85}];
-    }
-    if(type==='slidingDouble'){
-      // Centre-opening pair: one leaf travels left, the other right along the wall.
-      const off=half*.8*dir,lines=[];
-      for(const side of[-1,1]){
-        const center=shift(g.center,side*g.width*.5,off),a=shift(center,-g.width*.25,0),b=shift(center,g.width*.25,0);
-        lines.push({a,b,weight:2});
-      }
-      lines.push({a:shift(g.p1,0,half*.23*dir),b:shift(g.p2,0,half*.23*dir),weight:.85});
-      return lines;
-    }
-    return [];
-  }
+  function slidingDoorSegments(obj,g){return modules.slidingDoor.segments(obj,g);}
   function drawOpeningPlan(obj, kind, color) {
     const g=openingGeometry(obj);if(!g)return;const selected=isSelectedId(obj.id),preview=isSelectionPreviewId(obj.id),hovered=obj.id===state.hoveredObjectId&&!selected&&!preview;
     const natureStyle=planObjectAppearance(obj,color);color=natureStyle.color;const styles=getComputedStyle(document.documentElement),stroke=selected?styles.getPropertyValue('--selection').trim():preview?styles.getPropertyValue('--hover').trim():hovered?styles.getPropertyValue('--hover').trim():color;
