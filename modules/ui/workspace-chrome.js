@@ -21,7 +21,7 @@
     const savedOpen = read('pieniplan-inspector-open', null);
     let preferredOpen = savedOpen === 'true' ? true : savedOpen === 'false' ? false : pinned;
     let open = preferredOpen, explicitHold = false, transientHover = false;
-    let menuOpen = false, panelTimer = 0, menuTimer = 0, hoverTimer = 0;
+    let menuOpen = false, menuPinned = false, panelTimer = 0, menuTimer = 0, menuFocusTimer = 0, hoverTimer = 0;
     let pointerInside = false, handleInside = false, held = false, popupOwned = false;
     let handleHoverOpenedAt = 0;
     let toolbarAnimation = null;
@@ -109,9 +109,10 @@
         if (item.getAttribute('role') === 'menuitemradio') item.setAttribute('aria-checked', String(selected));
       }
     }
-    function setMenu(value, { focus = false, restore = false } = {}) {
-      clearTimeout(menuTimer); clearTimeout(hoverTimer);
-      menuOpen = Boolean(value);
+    function setMenu(value, { focus = false, restore = false, pinned = false } = {}) {
+      clearTimeout(menuTimer); clearTimeout(hoverTimer); clearTimeout(menuFocusTimer);
+      menuOpen = Boolean(value); menuPinned=menuOpen&&pinned;
+      anchor.dataset.menuState=menuOpen?(menuPinned?'pinned':'hover'):'closed';
       if (menuOpen) { closeOtherMenus?.(); paintMenu(); }
       anchor.classList.toggle('menu-open', menuOpen);
       logo.setAttribute('aria-expanded', String(menuOpen));
@@ -122,16 +123,26 @@
     function scheduleMenuClose() {
       clearTimeout(hoverTimer); clearTimeout(menuTimer);
       menuTimer = setTimeout(() => {
-        if (!anchor.matches(':hover') && !anchor.contains(document.activeElement)) setMenu(false);
+        if (!menuPinned && !anchor.matches(':hover') && !anchor.contains(document.activeElement)) setMenu(false);
       }, 240);
     }
-    logo.addEventListener('click', () => setMenu(!menuOpen));
+    logo.addEventListener('click', () => setMenu(!menuPinned, {pinned:!menuPinned}));
     anchor.addEventListener('pointerenter', event => {
       clearTimeout(menuTimer);
       if (hover.matches && event.pointerType !== 'touch' && !menuOpen) hoverTimer = setTimeout(() => setMenu(true), 150);
     });
     anchor.addEventListener('pointerleave', scheduleMenuClose);
-    anchor.addEventListener('focusout', scheduleMenuClose);
+    anchor.addEventListener('focusout', event => {
+      // Focusout can run before the browser installs the new activeElement.
+      // Closing here would make the menu inert before a pointer click reaches
+      // its own item. Retain internal focus moves and inspect external ones
+      // only after the browser has completed that focus transition.
+      if (anchor.contains(event.relatedTarget)) return;
+      clearTimeout(menuFocusTimer);
+      menuFocusTimer = setTimeout(() => {
+        if (!anchor.contains(document.activeElement)) setMenu(false);
+      }, 0);
+    });
     // Capture so menu keys never become CAD commands or cancel a live drawing.
     anchor.addEventListener('keydown', event => {
       if (!['Enter', ' ', 'Escape', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Tab'].includes(event.key)) return;
@@ -139,7 +150,7 @@
       event.stopPropagation();
       if (event.key === 'Escape') { event.preventDefault(); setMenu(false, { restore: true }); return; }
       if (event.target === logo && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
-        event.preventDefault(); setMenu(true, { focus: true }); return;
+        event.preventDefault(); setMenu(true, { focus: true, pinned: true }); return;
       }
       const items = [...menu.querySelectorAll('button')];
       if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
@@ -244,6 +255,6 @@
     return { applyToolbar, refresh: () => { paintMenu(); paintPanel(); measureTitle(); },
       setPinned, reveal, close, scheduleClose, setMenu, saveTab, restoreTab,
       preferences, setPreferences, panelVisible,
-      status: () => ({ pinned, open, preferredOpen, explicitHold, menuOpen, ...preferences() }) };
+      status: () => ({ pinned, open, preferredOpen, explicitHold, menuOpen, menuPinned, ...preferences() }) };
   }
 })();

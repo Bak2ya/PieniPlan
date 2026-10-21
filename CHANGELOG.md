@@ -1,5 +1,14 @@
 # v0.60.0 · Build86 — CAD Feature Fill (2026-10-21)
 
+## v0.61.0 · Build87 (2026-10-21)
+
+- Add Fence/WP/CP selection, regular polygons, circle 2P/3P and straight-line TTR, center/angle arcs and rotated rectangles.
+- Extend circular TRIM/EXTEND/BREAK/JOIN, curve grips, curved geometric-center and extension snaps, tracking-point release, additional polar angles and dynamic XY input.
+- Add LENGTHEN Dynamic/Angle, OFFSET layer/source options and MOVE/COPY displacement; preserve existing command history and Plan behavior.
+- Reorganize Settings into General, Controls and commands, Plan and CAD. Preserve existing storage, add scope segments, menu ordering, scoped reset confirmation, page scroll and keyboard focus.
+- Center the Compact filename in remaining space, reorder actions, enlarge seamless toolbar icons and distinguish hover/pinned logo menus. Refine shared sliding-door presentation.
+
+
 - CAD selection now adds by default and removes with Shift; Shift temporarily reverses ORTHO, and ORTHO/Polar are mutually exclusive. Added one-shot OSNAP, running snap settings, tangent/nearest/extension/geometric-center aids, acquired-point tracking, independent grid snap and distance/angle input near the cursor.
 - Added multiple hot grips, straight-segment grips, grip modes/copy, LINE Undo/Close/last-point continuation, rectangle dimensions and circle diameter input. Ordinary rectangle vertices can still skew; Plan interaction stays unchanged.
 - Added TRIM/EXTEND boundary selection and command Undo, repeating/Through OFFSET, FILLET/CHAMFER previous values, Trim and Multiple options, BREAK first-point override, repeating JOIN/COPY, ROTATE/SCALE Reference/Copy, bounded LENGTHEN and PEDIT workflows.

@@ -4,6 +4,8 @@
   const root = window.PieniPlanModules = window.PieniPlanModules || {};
 
   const catalog = Object.freeze([
+    {id:'SELECT',name:'SELECT',aliases:['SELECT'],cadOnly:true},
+    {id:'POL',name:'POLYGON',aliases:['POL','POLYGON'],cadOnly:true},
     {id:'LEN',name:'LENGTHEN',aliases:['LEN','LENGTHEN'],cadOnly:true},
     {id:'PE',name:'PEDIT',aliases:['PE','PEDIT'],cadOnly:true},
     {id:'PROPERTIES',name:'PROPERTIES',aliases:['CH','PR','PROPERTIES'],cadOnly:true},

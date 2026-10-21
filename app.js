@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.60.0';
-  const BUILD = 86;
+  const VERSION = '0.61.0';
+  const BUILD = 87;
   let activeImportJob=null;
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
@@ -227,12 +227,15 @@
     {id:'component',labelKey:'tool.component',icon:'component'},
     {id:'architecture',labelKey:'category.planElements',icon:'architecture'}
   ];
+  cadToolCatalog.select.push({id:'fence',labelKey:'cad87.fence',ready:true,note:'SELECT → F'},{id:'window-polygon',labelKey:'cad87.windowPolygon',ready:true,note:'WP'},{id:'crossing-polygon',labelKey:'cad87.crossingPolygon',ready:true,note:'CP'});
+  cadToolCatalog.draw.push({id:'polygon',labelKey:'cad87.polygon',ready:true});
   cadToolCatalog.component=[{id:'component',labelKey:'tool.component',ready:true}];
   cadToolCatalog.architecture=cadToolCatalog.architecture.filter(x=>x.id!=='component');
 
 
   let featureFill=null,textEditor=null,projectionFloorOverride=null;
   const cadPrecision=modules.cadPrecision.create(localStorage,()=>render());
+  let cadSelectionShape=null;
   let cadSnapCandidates=[],cadSnapCycle=0,cadSnapPointer=null,cadAngleLock=null;
   let cadPrecisionUI=null,cadGripDraft=null,cadGripHot=new Set(),cadLineChain=[],cadTrimState=null;
   const state = {
@@ -491,7 +494,7 @@
   }
 
   // Build78: common command information; preferences never enter project payloads.
-  const commandToolIds={lengthen:'LEN',pedit:'PE',offset:'O',fillet:'F',chamfer:'CH',join:'J',break:'BR',mirror:'MI',stretch:'S',array:'AR',align:'AL',hatch:'H',xline:'XLINE',ray:'RAY',leader:'LE','aligned-dim':'DLI','linear-dim':'DIMLINEAR','radius-dim':'DRA','diameter-dim':'DDI','angle-dim':'DAN','continuous-dim':'DCO','baseline-dim':'DBA',line:'L',polyline:'PL',rectangle:'REC',circle:'C',arc:'A',trim:'TR',extend:'EX',delete:'E',erase:'E',measure:'DI',distance:'DI',text:'T',mtext:'MT',stair:'ST',move:'M',copy:'CO',rotate:'RO',scale:'SC',grid:'GRID',snap:'SNAP',ortho:'ORTHO',polar:'POLAR',zoom:'Z',door:'DOOR',window:'WINDOW'};
+  const commandToolIds={lengthen:'LEN',pedit:'PE',offset:'O',fillet:'F',chamfer:'CH',join:'J',break:'BR',mirror:'MI',stretch:'S',array:'AR',align:'AL',hatch:'H',xline:'XLINE',ray:'RAY',leader:'LE','aligned-dim':'DLI','linear-dim':'DIMLINEAR','radius-dim':'DRA','diameter-dim':'DDI','angle-dim':'DAN','continuous-dim':'DCO','baseline-dim':'DBA',line:'L',polyline:'PL',rectangle:'REC',circle:'C',arc:'A',polygon:'POL',trim:'TR',extend:'EX',delete:'E',erase:'E',measure:'DI',distance:'DI',text:'T',mtext:'MT',stair:'ST',move:'M',copy:'CO',rotate:'RO',scale:'SC',grid:'GRID',snap:'SNAP',ortho:'ORTHO',polar:'POLAR',zoom:'Z',door:'DOOR',window:'WINDOW'};
   let controlsTab='keyboard';
   function commandLabel(c){const special={U:'action.undo',REDO:'action.redo',SHEETMANAGER:'toolbar.sheetManager',DIMSTYLE:'toolbar.dimStyles',BLOCKS:'toolbar.blocks'};if(special[c.id]&&t(special[c.id])!==special[c.id])return`${t(special[c.id])} · ${c.name}`;const tool=Object.keys(commandToolIds).find(k=>commandToolIds[k]===c.id);return tool&&t(`tool.${tool}`)!==`tool.${tool}`?`${t(`tool.${tool}`)} · ${c.name}`:c.name;}
   function commandHint(tool){const c=commandPreferences.entries.find(c=>c.id===commandToolIds[tool]);if(!c)return SHORTCUTS[tool]||'';const aliases=commandPreferences.aliases(c,state.toolset).filter(a=>a!==c.name),key=commandPreferences.shortcut(c);return[aliases.length?`${t('controls.alias')}: ${aliases.join(', ')}`:c.aliases.length?`${t('controls.alias')}: ${c.name}`:'',key?`${t('controls.chord')}: ${key}`:''].filter(Boolean).join(' · ');}
@@ -505,20 +508,22 @@
     runCommand(c.name);return true;
   }
   function renderControlSettings(){
-    const scope=document.getElementById('settingsCommandScope').value;
+    const scope=document.getElementById('settingsCommandScope').value,bindingMode=scope==='cad'||scope==='plan'?scope:state.toolset;
+    document.querySelectorAll('[data-control-scope]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.controlScope===scope)));
     document.querySelectorAll('[data-control-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.controlTab===controlsTab);b.setAttribute('aria-selected',String(b.dataset.controlTab===controlsTab));});
     document.getElementById('keyboardSettings').hidden=controlsTab!=='keyboard';document.getElementById('mouseSettings').hidden=controlsTab!=='mouse';
     document.getElementById('mouseCommonCopy').hidden=scope!=='common';
     document.querySelectorAll('[data-mouse-mode]').forEach(el=>el.hidden=el.dataset.mouseMode!==scope);
     if(controlsTab==='mouse'){if(scope!=='common')renderSettingsContextMenu(scope);return;}
     const query=document.getElementById('settingsCommandSearch').value.trim().toLocaleLowerCase(),list=document.getElementById('settingsCommandList');list.replaceChildren();
-    for(const c of commandPreferences.entries){if(commandPreferences.scope(c)!==scope||query&&![commandLabel(c),c.name,...commandPreferences.aliases(c,state.toolset)].join(' ').toLocaleLowerCase().includes(query))continue;
+    for(const c of commandPreferences.entries){if(commandPreferences.scope(c)!==scope||query&&![commandLabel(c),c.name,...commandPreferences.aliases(c,bindingMode)].join(' ').toLocaleLowerCase().includes(query))continue;
       const row=document.createElement('div');row.className='command-binding-row';row.dataset.commandId=c.id;
-      const label=document.createElement('label');label.textContent=commandLabel(c);
-      const aliases=document.createElement('input');aliases.className='text-input';aliases.value=commandPreferences.aliases(c,state.toolset).join(', ');aliases.disabled=!c.aliases.length;aliases.setAttribute('aria-label',`${commandLabel(c)} · ${t('controls.alias')}`);
+      const label=document.createElement('label');label.textContent=commandLabel(c);if(label.textContent!==c.name){label.textContent=label.textContent.replace(' · '+c.name,'');const canonical=document.createElement('small');canonical.textContent=c.name;label.append(canonical);}
+      const aliases=document.createElement('input');aliases.className='text-input';aliases.value=commandPreferences.aliases(c,bindingMode).join(', ');aliases.disabled=!c.aliases.length;aliases.setAttribute('aria-label',`${commandLabel(c)} · ${t('controls.alias')}`);
       const shortcut=document.createElement('input');shortcut.className='text-input';shortcut.value=commandPreferences.shortcut(c);shortcut.placeholder='Alt+Shift+…';shortcut.setAttribute('aria-label',`${commandLabel(c)} · ${t('controls.chord')}`);
       const commit=(patch,input,old)=>{const feedback=document.getElementById('settingsCommandFeedback');try{commandPreferences.set(c.id,patch);feedback.textContent=t('settings.saved');renderToolRail();refreshCommandHints();}catch(err){input.value=old();feedback.textContent=String(err.message).startsWith('conflict')?t('controls.conflict',{name:String(err.message).split(':')[1]||''}):t(err.message==='alias'?'controls.invalidAlias':'controls.reserved');}};
-      aliases.addEventListener('change',()=>commit({aliases:aliases.value},aliases,()=>commandPreferences.aliases(c,state.toolset).join(', ')));
+      aliases.addEventListener('input',()=>{const f=document.getElementById('settingsCommandFeedback');try{commandPreferences.validate(c.id,{aliases:aliases.value});aliases.removeAttribute('aria-invalid');f.textContent='';}catch(err){aliases.setAttribute('aria-invalid','true');f.textContent=t(String(err.message).startsWith('conflict')?'controls.conflict':'controls.invalidAlias',{name:String(err.message).split(':')[1]||''});}});
+      aliases.addEventListener('change',()=>commit({aliases:aliases.value},aliases,()=>commandPreferences.aliases(c,bindingMode).join(', ')));
       shortcut.addEventListener('change',()=>commit({shortcut:shortcut.value},shortcut,()=>commandPreferences.shortcut(c)));
       shortcut.addEventListener('keydown',e=>{if(e.isComposing||e.keyCode===229)return;if(e.key==='Tab')return;if(e.key==='Enter'){e.preventDefault();shortcut.blur();return;}if(e.key==='Escape'){e.preventDefault();shortcut.value=commandPreferences.shortcut(c);shortcut.blur();return;}if(['Backspace','Delete'].includes(e.key)){e.preventDefault();shortcut.value='';commit({shortcut:''},shortcut,()=>commandPreferences.shortcut(c));return;}if(['Alt','Shift','Control','Meta'].includes(e.key))return;e.preventDefault();try{shortcut.value=modules.commandPreferences.chord([e.ctrlKey?'CTRL':'',e.metaKey?'META':'',e.altKey?'ALT':'',e.shiftKey?'SHIFT':'',e.code.startsWith('Key')?e.code.slice(3):e.code.startsWith('Digit')?e.code.slice(5):e.key].filter(Boolean).join('+'));commit({shortcut:shortcut.value},shortcut,()=>commandPreferences.shortcut(c));}catch{document.getElementById('settingsCommandFeedback').textContent=t('controls.reserved');}});
       row.append(label,aliases,shortcut);list.append(row);
@@ -585,7 +590,7 @@
   }
 
   let contextMenuOverrides = Object.create(null);
-  let settingsPage = 'general';
+  let settingsPage = 'general', settingsUI=null;
   let settingsContextMode = 'cad';
   function safeReadContextMenuOverrides(){
     try{return contextMenuModule.sanitizeOverrides(JSON.parse(localStorage.getItem(CONTEXT_MENU_OVERRIDES_STORAGE_KEY)||'{}'));}
@@ -671,11 +676,11 @@
   }
   async function openRecoverySnapshot(){try{const db=await openLocalProjectDb();let record;try{record=await new Promise((resolve,reject)=>{const tx=db.transaction(LOCAL_PROJECT_STORE,'readonly'),req=tx.objectStore(LOCAL_PROJECT_STORE).get(RECOVERY_PROJECT_KEY);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error('Recovery read failed'));});}finally{db.close();}if(!record?.json)return updateSettingsRecoveryMeta();if(!(await requestWorkspaceReplacement()))return;const file=new File([record.json],record.name||'PieniPlan Recovery.pprj',{type:'application/json'});closeSettingsDialog();await openProjectFile(file,{skipConfirm:true,restoredLocal:true});}catch(err){console.error(err);alert(t('project.openFailed',{message:String(err?.message||err)}));}}
   function showSettingsPage(page){
-    settingsPage=['general','environment','workspace','plan','controls'].includes(page)?page:'general';
-    document.querySelectorAll('[data-settings-page]').forEach(button=>button.classList.toggle('active',button.dataset.settingsPage===settingsPage));
+    settingsPage=settingsUI?.changePage(['general','environment','workspace','plan','controls','cad'].includes(page)?page:'general')||'general';
+    document.querySelectorAll('[data-settings-page]').forEach(button=>{button.classList.toggle('active',button.dataset.settingsPage===settingsPage);if(button.dataset.settingsPage===settingsPage)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
     document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.hidden=panel.dataset.settingsPanel!==settingsPage);
     if(settingsPage==='controls')renderControlSettings();if(settingsPage==='plan')renderNatureSettings();
-    if(settingsPage==='workspace') {
+    if(settingsPage==='general') {
       const pref=workspaceChrome?.preferences()||{openMethod:'hover',closeMethod:'auto'};
       for(const radio of document.querySelectorAll('[name="inspectorOpenMethod"]'))radio.checked=radio.value===pref.openMethod;
       for(const radio of document.querySelectorAll('[name="inspectorCloseMethod"]'))radio.checked=radio.value===pref.closeMethod;
@@ -699,7 +704,7 @@
     const defs=contextCommandDefinitions(mode,{settings:true}),groups=contextSettingsGroups(mode);
     target.replaceChildren();
     for(const group of groups){
-      const commands=defs.filter(command=>command.group===group.id);
+      const commands=contextMenuModule.sort(defs.filter(command=>command.group===group.id),contextMenuOverrides);
       if(!commands.length)continue;
       const wrapper=document.createElement('div');wrapper.className='settings-context-group';
       const heading=document.createElement('div');heading.className='settings-context-group-heading';heading.textContent=group.label;wrapper.appendChild(heading);
@@ -710,6 +715,7 @@
         const icon=contextSettingsIcon(command);
         if(icon){const element=document.createElement('span');element.className=`ui-icon icon-${icon}`;element.setAttribute('aria-hidden','true');label.appendChild(element);}
         const caption=document.createElement('span');caption.textContent=t(command.settingsLabelKey||command.labelKey);label.appendChild(caption);
+        const order=document.createElement('span');order.className='settings-menu-order';for(const delta of [-1,1]){const b=document.createElement('button');b.type='button';b.className='small-button';b.textContent=delta<0?'↑':'↓';b.setAttribute('aria-label',caption.textContent+' · '+t(delta<0?'settings87.up':'settings87.down'));const i=commands.indexOf(command);b.disabled=i+delta<0||i+delta>=commands.length;b.onclick=()=>{const next=[...commands];[next[i],next[i+delta]]=[next[i+delta],next[i]];next.forEach((c,j)=>setContextMenuOverride(c.key,{order:j}));renderSettingsContextMenu(mode);document.querySelector(`[data-command-key="${command.key}"] .settings-menu-order button:not(:disabled)`)?.focus({preventScroll:true});};order.append(b);}label.append(order);
         const visibility=document.createElement('select');visibility.className='select-input';visibility.setAttribute('aria-label',`${caption.textContent} · ${t('settings.contextVisibility')}`);contextPreferenceOptions(visibility,'visibility',pref.visibility);
         visibility.addEventListener('change',()=>{setContextMenuOverride(command.key,{visibility:visibility.value});setCommandStatus(t('settings.saved'),'strong');});
         const priority=document.createElement('select');priority.className='select-input';priority.setAttribute('aria-label',`${caption.textContent} · ${t('settings.contextPriority')}`);contextPreferenceOptions(priority,'priority',pref.priority);
@@ -723,8 +729,10 @@
     for(const key of Object.keys(contextMenuOverrides))if(key.startsWith(`${mode}:`))delete contextMenuOverrides[key];
     persistContextMenuOverrides();renderSettingsContextMenu(mode);setCommandStatus(t('settings.contextResetDone'),'strong');
   }
+  function confirmPersonalReset(kind,scope,apply){const restore=()=>document.getElementById(kind==='keyboard'?'settingsCommandReset':scope==='cad'?'settingsContextResetCad':'settingsContextResetPlan')?.focus({preventScroll:true});showAppConfirm({title:t('settings87.resetTitle'),copy:t('settings87.resetCopy',{kind:t(kind==='keyboard'?'controls.keyboard':'controls.mouse'),scope:scope==='common'?t('controls.common'):scope==='cad'?'CAD Mode':'Plan Mode'}),confirmLabel:t('controls.reset'),focus:'cancel',onCancel:restore,onConfirm:()=>{apply();restore();}});}
   function openSettingsDialog(){
     if(!dom.settingsBackdrop)return;
+    settingsUI?.opened();
     dom.settingsLanguage.value=i18n.language;
     dom.settingsDefaultUnit.value=safeReadDefaultUnit();
     const appearance=planLineAppearance();for(const [id,value] of [['settingsPlanLineColor',appearance.color],['settingsPlanLineWidth',appearance.width],['settingsPlanDashScale',appearance.dashScale]]){const input=document.getElementById(id);if(input)input.value=String(value);}
@@ -736,7 +744,7 @@
     dom.settingsBackdrop.hidden=false;
     closeTopMenus();
   }
-  function closeSettingsDialog(){if(dom.settingsBackdrop)dom.settingsBackdrop.hidden=true;}
+  function closeSettingsDialog(){settingsUI?.rememberScroll();if(dom.settingsBackdrop)dom.settingsBackdrop.hidden=true;settingsUI?.closed();}
   function applyLanguagePreference(value){const next=i18n.setLanguage?.(value)||value;try{localStorage.setItem(LANGUAGE_STORAGE_KEY,next);}catch(_){}renderToolRail();updateEmptyState();updateAll();updateContinueCard();if(!dom.settingsBackdrop?.hidden)openSettingsDialog();}
 
   function isCompactViewer() {
@@ -924,9 +932,10 @@
       parseLength:text=>cadUnitsModule.parseLength(text,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),
       arcFromThreePoints:(start,end,through)=>circleFromThreePoints(start,end,through),
       preview:view=>{state.cadPrimitivePreview=view;render();},
-      prompt:(id,phase)=>{if(['width','height','diameter'].includes(phase)){setCommandStatus(t('cadDraw.'+phase),'strong');updateContextBar();return;}setCommandStatus(t(id==='REC'?(phase==='first'?'command.rectangleFirst':'command.rectangleOpposite'):id==='C'?(phase==='center'?'command.circleCenter':'command.circleRadius'):(phase==='start'?'command.arcStart':phase==='through'?'command.arcThrough':'command.arcEnd')),'strong');},
+      prompt:(id,phase)=>{if(['points','tangent1','tangent2','tangentRadius','centerPick','centerStart','centerEnd','centerAngle','sides','method','edgeStart','edgeEnd','rectangleAngle'].includes(phase)||id==='POL'){setCommandStatus(id+' · '+t('cad87.phase.'+phase),'strong');updateContextBar();return;}if(['width','height','diameter'].includes(phase)){setCommandStatus(t('cadDraw.'+phase),'strong');updateContextBar();return;}setCommandStatus(t(id==='REC'?(phase==='first'?'command.rectangleFirst':'command.rectangleOpposite'):id==='C'?(phase==='center'?'command.circleCenter':'command.circleRadius'):(phase==='start'?'command.arcStart':phase==='through'?'command.arcThrough':'command.arcEnd')),'strong');},
       commitRectangle:(a,b)=>commitNativeCadRectangle(a,b),
       commitCircle:(center,radius)=>commitNativeCadCircle(center,radius),
+      commitPolyline:commitNativeCadPolyline,pick:hitObject,allowed:id=>cadPolicy(id,'select').allowed,
       commitArc:geometry=>commitNativeCadArc(geometry),
       clearPreview:()=>{state.cadPrimitivePreview=null;state.snapIndicator=null;updateAll();}
     });
@@ -935,12 +944,12 @@
       prompt:key=>setCommandStatus(t(key),'strong'),select:ids=>{setSelectionIds(ids);render();},
       apply:(source,ids)=>matchCadProperties(source,ids,{refresh:false}),clear:()=>{state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}
     });
-    modules.nativeEditCommands.install(registry,{token:cadContextToken,current:cadContextTokenCurrent,byId:id=>cadContext.getById(id),allowed:id=>cadPolicy(id,'modify').allowed,pick:hitObject,uid,
+    modules.nativeEditCommands.install(registry,{resolve:(point,base)=>resolveCadPoint(point,{base}).point,parsePoint:parseCadPointText,token:cadContextToken,current:cadContextTokenCurrent,byId:id=>cadContext.getById(id),allowed:id=>cadPolicy(id,'modify').allowed,pick:hitObject,uid,
       parseLength:text=>cadUnitsModule.parseLength(text,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),commit:commitCadOperation,preview:plan=>{cadOperationPreview=plan?{...plan,token:cadContextToken()}:null;render();},select:ids=>{setSelectionIds(new Set(ids));render();},
       measure:(length,angle)=>setCommandStatus('LEN · '+cadLengthText(length,{precision:3})+(angle===null?'':' · '+formatNumber(angle,3)+'°'),'strong'),historyMark:()=>state.history.at(-1),undoOwn:mark=>state.history.at(-1)===mark&&performUndo(),finish:finishActiveCommand,gripHint:()=>setCommandStatus(t('cadAdvanced.vertexHint'),'strong'),
       prompt:(id,phase)=>{setCommandStatus(id+' · '+t('cadAdvanced.phase.'+phase),'strong');updateContextBar();},
       clear:()=>{cadOperationPreview=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}});
-    modules.nativeModifyCommands.install(registry,{
+    modules.nativeModifyCommands.install(registry,{layer:()=>state.activeCadLayer||'0',
       token:cadContextToken,current:cadContextTokenCurrent,allowed:id=>cadPolicy(id,'modify').allowed,
       pick:hitObject,resolve:(point,base)=>resolveCadPoint(point,{base}).point,
       parsePoint:parseCadPointText,parseLength:text=>cadUnitsModule.parseLength(text,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),
@@ -2264,12 +2273,15 @@
 
   function drawCadPrimitivePreview(){
     const p=state.cadPrimitivePreview;if(!p)return false;const color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.5;ctx.globalAlpha=.78;ctx.setLineDash([6,4]);const mark=q=>{if(!q)return;const s=toScreenCss(q);ctx.fillRect(s.x-2.5,s.y-2.5,5,5);};
+    if(p.kind==='polygon'&&p.points?.length){ctx.beginPath();p.points.forEach((q,i)=>{const v=toScreenCss(q);if(i)ctx.lineTo(v.x,v.y);else ctx.moveTo(v.x,v.y);});ctx.closePath();ctx.stroke();}
+    if(p.kind==='arcGeometry'&&p.geometry){const g=p.geometry,c=toScreenCss(g.center);ctx.beginPath();ctx.arc(c.x,c.y,g.radius*state.camera.zoom,-rad(g.startAngle+viewAngle()),-rad(g.startAngle+g.sweep+viewAngle()),g.sweep>0);ctx.stroke();}
     if(p.kind==='rectangle'&&p.first&&p.pointer){const a=toScreenCss(p.first),b=toScreenCss(p.pointer);ctx.strokeRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(b.x-a.x),Math.abs(b.y-a.y));mark(p.first);mark(p.pointer);}
     else if(p.kind==='circle'&&p.center&&p.pointer){const c=toScreenCss(p.center),r=distance(p.center,p.pointer)*state.camera.zoom;if(r>0){ctx.beginPath();ctx.arc(c.x,c.y,r,0,Math.PI*2);ctx.stroke();}mark(p.center);mark(p.pointer);}
     else if(p.kind==='arc'&&p.start){mark(p.start);mark(p.through);mark(p.pointer);if(p.through&&p.pointer){const g=circleFromThreePoints(p.start,p.pointer,p.through);if(g){const c=toScreenCss(g.center);ctx.beginPath();ctx.arc(c.x,c.y,Math.max(.5,g.radius*state.camera.zoom),-rad(g.startAngle+viewAngle()),-rad(g.startAngle+g.sweep+viewAngle()),g.sweep>=0);ctx.stroke();}}else if(p.pointer){const a=toScreenCss(p.start),b=toScreenCss(p.pointer);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
     ctx.restore();return true;
   }
   function drawPreview() {
+    drawCadSelectionShape();
     if(drawPolylinePreview())return;
     if(drawCadPrimitivePreview())return;
     if(state.activeTool==='component'&&state.previewEnd){const asset=componentLibrary.get(state.activeComponentAssetId);if(asset){const color=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();ctx.save();ctx.globalAlpha=.65;drawComponentObject({id:'__component_preview__',type:'component',assetId:asset.id,point:{...state.previewEnd},rotation:0,mirrorX:false,mirrorY:false,scaleX:1,scaleY:1},color,1.5);ctx.restore();}return;}
@@ -2366,7 +2378,7 @@
 
   function updateContextBar(){
     const capsuleObject=state.toolset==='plan'&&state.activeTool==='select'&&selectionIds().size===1?state.objects.find(o=>o.id===[...selectionIds()][0]):null;
-    const contextTools=new Set(['stair','line','polyline','rectangle','circle','arc','trim','extend','wall','door','window','constraint','space','move','copy','rotate','mirror','scale','stretch','array','align','lengthen','pedit','break','offset','fillet','chamfer','reconstruct']);const shouldShow=Boolean(state.calibration)||contextTools.has(state.activeTool)||Boolean(capsuleObject&&['line','wall','door','stair'].includes(capsuleObject.type))||Boolean(cadGripDraft);
+    const contextTools=new Set(['stair','line','polyline','rectangle','circle','arc','polygon','trim','extend','wall','door','window','constraint','space','move','copy','rotate','mirror','scale','stretch','array','align','lengthen','pedit','break','offset','fillet','chamfer','reconstruct']);const shouldShow=Boolean(state.calibration)||contextTools.has(state.activeTool)||Boolean(capsuleObject&&['line','wall','door','stair'].includes(capsuleObject.type))||Boolean(cadGripDraft);
     dom.contextBar.hidden=!shouldShow;
     if(!shouldShow){dom.contextFields.innerHTML='';return;}
     const keys={select:'context.select',constraint:'context.constraint',line:'context.line',polyline:'tool.polyline',wall:'context.wall',door:'context.door',window:'context.window',space:'context.space',region:'context.region',measure:'context.measure',trim:'tool.trim',extend:'tool.extend',delete:'context.delete',move:'tool.move',copy:'tool.copy',rotate:'tool.rotate',mirror:'tool.mirror',scale:'tool.scale',stretch:'tool.stretch',array:'tool.array',align:'tool.align',break:'tool.break',join:'tool.join',offset:'tool.offset',fillet:'tool.fillet',chamfer:'tool.chamfer',reconstruct:'tool.curveReconstruct'};
@@ -2498,9 +2510,10 @@
     if(!target||!cadPolicy(target.id,'modify').allowed)return null;
     let plan=null;
     if(target.type==='cadLine'){const start=distance(click,target.a)<=distance(click,target.b),from=start?target.b:target.a,to=start?target.a:target.b;const raw=mode==='extend'?cadQueryIndex?.rayCandidates({a:from,b:to})||[]:cadQueryCandidates(cadGeometry.bounds(target),'snap');const cutters=cadTrimCutters(raw,target.id);plan=modules.cadModifyGeometry.plan(mode,target,click,cutters);}
+    else if(['cadCircle','cadArc'].includes(target.type)){const raw=cadQueryCandidates({minx:target.center.x-target.radius,miny:target.center.y-target.radius,maxx:target.center.x+target.radius,maxy:target.center.y+target.radius},'snap');const cutters=cadTrimCutters(raw,target.id);plan=modules.cadCurveOperations[mode](target,click,cutters);}
     else if(modules.cadPolyline.is(target)&&mode==='trim'){const hit=modules.cadPolyline.nearest(target,click);if(!hit)return null;const edge=modules.cadPolyline.get(target).edges.find(e=>e.edgeId===hit.edgeId);if(!edge)return null;const raw=cadQueryCandidates(cadGeometry.bounds(edge),'snap');const cutters=cadTrimCutters(raw,target.id);plan=modules.cadPolyline.trimAt(target,click,cutters);}
     else if(mode==='extend'&&modules.cadPolyline.is(target)){const support=modules.cadPolyline.extensionSupport(target,click);if(!support)return null;const raw=support.queryKind==='ray'?(cadQueryIndex?.rayCandidates(support.query)||[]):cadQueryCandidates(cadGeometry.bounds(support.query),'snap');const cutters=cadTrimCutters(raw,target.id);plan=modules.cadPolyline.extendTerminal(target,click,cutters);}
-    return plan?{...plan,token:cadContextToken(),previewTool:state.activeTool,previewCommand:state.activeCommand,previewFloorId:state.activeFloorId}:null;
+    return plan?{...plan,targetId:target.id,...(['cadCircle','cadArc'].includes(target.type)?{previewGeometry:mode==='extend'?plan.after:plan.removed}:{}),token:cadContextToken(),previewTool:state.activeTool,previewCommand:state.activeCommand,previewFloorId:state.activeFloorId}:null;
   }
   function computeCadTrimSegment(target,click){return computeCadModifyPlan('trim',target,click);}
   function updateTrimPreview(raw,{shift=false}={}){
@@ -2512,7 +2525,7 @@
   }
   function commitCadModifyPlan(plan){
     if(!cadModifyPreviewCurrent(plan))return false;
-    const index=state.objects.indexOf(plan.before),after=plan.after.map((o,i)=>({...o,id:i?uid('cadLine'):plan.before.id}));
+    const index=state.objects.indexOf(plan.before),after=plan.after.map((o,i)=>({...o,id:i?uid(o.type):plan.before.id}));
     const changes=[{before:plan.before,after:after[0]||null,index}];for(const o of after.slice(1))changes.push({before:null,after:o,index:state.objects.length});
     try{const ok=commitCadChanges(plan.kind,changes);state.trimPreview=null;if(ok)updateAll();return ok;}catch(error){state.trimPreview=null;setCommandStatus(cadFaultMessage(error.message),'error');return false;}
   }
@@ -2569,7 +2582,7 @@
     state.trimPreview=null;recordEdit('extend',{targetId:target.id,endpoint:plan.endpoint,boundaryId:plan.boundaryId,before:plan.a,after:plan.b});markDirty(true);refreshSpaces();rebuildObjectSnapIndex();updateAll();return true;
   }
 
-  function applyTrimExtendAtPoint(raw,mode,{shift=state.shiftDown}={}){const obj=hitObject(raw);if(!obj)return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const actual=state.toolset==='plan'?mode:(Boolean(shift)?(mode==='trim'?'extend':'trim'):mode);let ok=false;if(state.toolset==='cad'&&(obj.type==='cadLine'||modules.cadPolyline.is(obj)))ok=actual==='trim'?trimCadLineAtClick(obj,raw):extendCadLineAtClick(obj,raw);else if(state.toolset==='plan'&&((obj.type==='line'&&!isPlanDisplayArc(obj))||(obj.type==='wall'&&!isArcWall(obj))))ok=actual==='trim'?trimPlanLinearAtClick(obj,raw):extendPlanLinearAtClick(obj,raw);if(ok){if(state.toolset==='cad'&&cadTrimState)cadTrimState.history.push(state.history.at(-1));recordEdit(actual,{targetId:obj.id,toolset:state.toolset});}setCommandStatus(ok?t(actual==='trim'?'command.trimApplied':'command.extendApplied'):t(actual==='trim'?'command.trimNoBoundary':'command.extendNoBoundary'),ok?'strong':'error');return ok;}
+  function applyTrimExtendAtPoint(raw,mode,{shift=state.shiftDown}={}){const obj=hitObject(raw);if(!obj)return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const actual=state.toolset==='plan'?mode:(Boolean(shift)?(mode==='trim'?'extend':'trim'):mode);let ok=false;if(state.toolset==='cad'&&(['cadLine','cadCircle','cadArc'].includes(obj.type)||modules.cadPolyline.is(obj)))ok=actual==='trim'?trimCadLineAtClick(obj,raw):extendCadLineAtClick(obj,raw);else if(state.toolset==='plan'&&((obj.type==='line'&&!isPlanDisplayArc(obj))||(obj.type==='wall'&&!isArcWall(obj))))ok=actual==='trim'?trimPlanLinearAtClick(obj,raw):extendPlanLinearAtClick(obj,raw);if(ok){if(state.toolset==='cad'&&cadTrimState)cadTrimState.history.push(state.history.at(-1));recordEdit(actual,{targetId:obj.id,toolset:state.toolset});}setCommandStatus(ok?t(actual==='trim'?'command.trimApplied':'command.extendApplied'):t(actual==='trim'?'command.trimNoBoundary':'command.extendNoBoundary'),ok?'strong':'error');return ok;}
 
   function parseCadPointText(raw,{base=null,direction=null}={}){
     const text=String(raw??'').trim();if(!text)return{ok:false,code:'empty-coordinate'};
@@ -2757,7 +2770,7 @@
     return true;
   }
 
-  function setTool(tool,category=null){if(cadGripDraft)cadOperationPreview=null;cadTrimState=state.toolset==='cad'&&['trim','extend'].includes(tool)?{mode:'quick',phase:'targets',ids:new Set(),history:[]}:null;cadGripDraft=null;cadGripHot.clear();cadLineChain=[];cadPrecision.clear();cadAngleLock=null;cadSnapCycle=0;if(planScopeMissing()&&!['select','measure'].includes(tool)){setCommandStatus(t('scope.chooseFloor'),'strong');return false;}textEditor?.cancel({notify:false});if(state.toolset==='plan'&&['line','wall'].includes(tool))state.toolSettings.planDisplayMode=(state.toolSettings.planDisplayStyle||'solid')!=='solid';
+  function setTool(tool,category=null){cadSelectionShape=null;if(state.toolset==='cad'&&['fence','window-polygon','crossing-polygon'].includes(tool)){if(cadCommandSession?.describe()?.phase!=='select')cancelTransient();return startCadSelectionShape({'fence':'F','window-polygon':'WP','crossing-polygon':'CP'}[tool]);}if(cadGripDraft)cadOperationPreview=null;cadTrimState=state.toolset==='cad'&&['trim','extend'].includes(tool)?{mode:'quick',phase:'targets',ids:new Set(),history:[]}:null;cadGripDraft=null;cadGripHot.clear();cadLineChain=[];cadPrecision.clear();cadAngleLock=null;cadSnapCycle=0;if(planScopeMissing()&&!['select','measure'].includes(tool)){setCommandStatus(t('scope.chooseFloor'),'strong');return false;}textEditor?.cancel({notify:false});if(state.toolset==='plan'&&['line','wall'].includes(tool))state.toolSettings.planDisplayMode=(state.toolSettings.planDisplayStyle||'solid')!=='solid';
     if(featureFill?.selection.current)return false;
     if(state.toolset==='cad'&&['xline','ray'].includes(tool))return runCommand(tool.toUpperCase());
     if(tool==='region'&&featureFill){featureFill.selectRegion();return true;}
@@ -2767,16 +2780,16 @@
     if(tool!=='reconstruct')state.curveReconstruction=null;
     cadCommandSession?.cancel('tool-change');
     if(!(state.toolset==='cad'&&tool==='line'))cadLineContinuationPoint=null;
-    state.stairDraft=null;state.smartGuides=[];state.snapIndicator=null;state.activeTool=tool;state.commandPending=null;const commandMap={stair:'ST',line:'L',polyline:'PL',rectangle:'REC',circle:'C',arc:'A',trim:'TR',extend:'EX',break:'BR',join:'J',offset:'O',fillet:'F',chamfer:'CH',reconstruct:'CR',delete:'E',measure:'DI',move:'M',copy:'CO',rotate:'RO',mirror:'MI',scale:'SC',stretch:'S',array:'AR',align:'AL',lengthen:'LEN',pedit:'PE','region-rotate':'RR',text:'T',mtext:'MT',leader:'LE','linear-dim':'DIMLINEAR','aligned-dim':'DLI','radius-dim':'DRA','diameter-dim':'DDI','angle-dim':'DAN','continuous-dim':'DCO','baseline-dim':'DBA',hatch:'H'};state.activeCommand=commandMap[tool]||null;state.spaceHoverPreview=null;state.shiftGuide=null;
+    state.stairDraft=null;state.smartGuides=[];state.snapIndicator=null;state.activeTool=tool;state.commandPending=null;const commandMap={stair:'ST',line:'L',polyline:'PL',rectangle:'REC',circle:'C',arc:'A',polygon:'POL',trim:'TR',extend:'EX',break:'BR',join:'J',offset:'O',fillet:'F',chamfer:'CH',reconstruct:'CR',delete:'E',measure:'DI',move:'M',copy:'CO',rotate:'RO',mirror:'MI',scale:'SC',stretch:'S',array:'AR',align:'AL',lengthen:'LEN',pedit:'PE','region-rotate':'RR',text:'T',mtext:'MT',leader:'LE','linear-dim':'DIMLINEAR','aligned-dim':'DLI','radius-dim':'DRA','diameter-dim':'DDI','angle-dim':'DAN','continuous-dim':'DCO','baseline-dim':'DBA',hatch:'H'};state.activeCommand=commandMap[tool]||null;state.spaceHoverPreview=null;state.shiftGuide=null;
     {const catalog=state.toolset==='plan'?planToolCatalog:cadToolCatalog;for(const [group,items] of Object.entries(catalog))if(items.some(item=>item.id===tool)){toolCategoryMemory[state.toolset][group]=tool;break;}}
-    if(state.toolset==='cad'&&['line','polyline','rectangle','circle','arc'].includes(tool))ensureActiveCadLayerVisible();
+    if(state.toolset==='cad'&&['line','polyline','rectangle','circle','arc','polygon'].includes(tool))ensureActiveCadLayerVisible();
     if(state.toolset==='cad'&&['wall','door','window'].includes(tool)&&!state.cadPlanOverlay){state.cadPlanOverlay=true;renderReferences();}
-    if(state.toolset==='cad'&&['line','polyline','rectangle','circle','arc'].includes(tool)&&cadLayerLocked(state.activeCadLayer||'0')){setCommandStatus(t('cadFault.activeLayerLocked'),'error');tool='select';state.activeTool='select';state.activeCommand=null;}
+    if(state.toolset==='cad'&&['line','polyline','rectangle','circle','arc','polygon'].includes(tool)&&cadLayerLocked(state.activeCadLayer||'0')){setCommandStatus(t('cadFault.activeLayerLocked'),'error');tool='select';state.activeTool='select';state.activeCommand=null;}
     if(tool!=='constraint')clearConstraintInteraction();if(category&&category!=='plan')state.activeCategory=category;state.stairDraft=null;state.drawStart=null;state.drawReferenceAngle=null;state.arcDraft=null;state.polylinePreview=null;state.cadPrimitivePreview=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.snapIndicator=null;state.trimPreview=null;if(tool!=='region-rotate')state.cadRotate=null;host.dataset.tool=tool;dom.toolPopover.hidden=true;
     if(tool==='region-rotate'&&state.toolset==='cad'&&activeCadWorkRegion())beginCadRegionRotation();
     if(tool==='line'&&state.toolset==='cad')startNativeCadLineSession({seed:null});
     if(tool==='polyline'&&['cad','plan'].includes(state.toolset))startNativeCadPolylineSession();
-    if((state.toolset==='cad'&&['rectangle','circle','arc'].includes(tool)||state.toolset==='plan'&&['rectangle','circle'].includes(tool)))reportCadCommand(cadCommands().start(commandMap[tool]));
+    if((state.toolset==='cad'&&['rectangle','circle','arc','polygon'].includes(tool)||state.toolset==='plan'&&['rectangle','circle'].includes(tool)))reportCadCommand(cadCommands().start(commandMap[tool]));
     if(state.toolset==='cad'&&['lengthen','pedit'].includes(tool))reportCadCommand(cadCommands().start(tool==='lengthen'?'LEN':'PE'));
     if(tool==='break'&&state.toolset==='cad')reportCadCommand(cadCommands().start('BR'));
     if(tool==='join'&&state.toolset==='cad')reportCadCommand(cadCommands().start('J'));
@@ -3184,8 +3197,8 @@
     if(state.annotationDraft)return state.annotationDraft.p2||state.annotationDraft.p1||state.annotationDraft.vertex||state.annotationDraft.center||null;
     if(state.activeTool==='measure')return state.measureStart||null;
     const id=cadCommandSession?.activeId,v=cadCommandSession?.view;
-    if(!id)return undefined;if(id==='L')return v?.start||null;if(id==='PL')return v?.points?.at(-1)||null;
-    if(['first','opposite','center','base','direction','axis1','axis2','target','source1','source2','target1','target2','window1','window2','first','result','radius','through','end','position','reference','referenceEnd'].includes(v?.phase))return (v.phase==='referenceEnd'?v.refPoint:null)||v.base||v.first||v.p1||v.center||v.start||v.rectStart||null;
+    if(!id)return undefined;if(v?.phase==='dynamicEnd')return v.sourcePoint;if(id==='L')return v?.start||null;if(id==='PL')return v?.points?.at(-1)||null;
+    if(['first','opposite','center','base','direction','axis1','axis2','target','source1','source2','target1','target2','window1','window2','first','result','radius','through','end','position','reference','referenceEnd','points','centerPick','centerStart','centerEnd','edgeStart','edgeEnd'].includes(v?.phase))return (v.phase==='referenceEnd'?v.refPoint:null)||v.base||v.first||v.p1||v.points?.at(-1)||v.center||v.start||v.rectStart||null;
     return undefined;
   }
   function toggleDraftingSetting(tool){
@@ -3232,7 +3245,7 @@
     }
     if(state.toolset==='cad'&&Number.isFinite(cadAngleLock)){const a=rad(cadAngleLock);return{x:start.x+Math.cos(a)*len,y:start.y+Math.sin(a)*len};}
     if(effectiveOrtho(shift)){const a=rad(base),ux=Math.cos(a),uy=Math.sin(a),vx=-uy,vy=ux,du=dx*ux+dy*uy,dv=dx*vx+dy*vy;return Math.abs(du)>=Math.abs(dv)?{x:start.x+ux*du,y:start.y+uy*du}:{x:start.x+vx*dv,y:start.y+vy*dv};}
-    if(state.polar){const ang=angleDeg(start,p),relative=angleDelta(ang,base),step=state.toolset==='cad'?cadPrecision.status().polarAngle:45,snapped=Math.round(relative/step)*step,diff=Math.abs(angleDelta(relative,snapped));if(diff<=7){const a=rad(base+snapped);return{x:start.x+Math.cos(a)*len,y:start.y+Math.sin(a)*len};}}
+    if(state.polar){const ang=angleDeg(start,p),relative=angleDelta(ang,base),step=state.toolset==='cad'?cadPrecision.status().polarAngle:45,snapped=[Math.round(relative/step)*step,...(state.toolset==='cad'?cadPrecision.status().polarAdditional:[])].sort((a,b)=>Math.abs(angleDelta(relative,a))-Math.abs(angleDelta(relative,b)))[0],diff=Math.abs(angleDelta(relative,snapped));if(diff<=7){const a=rad(base+snapped);return{x:start.x+Math.cos(a)*len,y:start.y+Math.sin(a)*len};}}
     return p;
   }
   function constrainOrtho(start,p){return constrainTracking(start,p);}
@@ -3357,7 +3370,7 @@
   function moveViewerPointer(e,s){if(!state.viewerPointers.has(e.pointerId))return false;state.viewerPointers.set(e.pointerId,s);if(state.viewerPointers.size>=2&&state.viewerGesture){const pts=[...state.viewerPointers.values()].slice(0,2),c={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2},dist=Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y)),g=state.viewerGesture;state.camera.zoom=clamp(g.startZoom*(dist/g.startDistance),.002,8);const after=screenCssToWorld(c);state.camera.cx+=g.worldAtCenter.x-after.x;state.camera.cy+=g.worldAtCenter.y-after.y;render();return true;}if(state.pan&&state.pan.pointerId===e.pointerId){const dx=(s.x-state.pan.startScreen.x)/state.camera.zoom,dy=(s.y-state.pan.startScreen.y)/state.camera.zoom;const v=modules.floorAlignment.inverse({x:-dx,y:dy},{version:1,x:0,y:0,rotation:viewAngle()});state.camera.cx=state.pan.startCamera.cx+v.x;state.camera.cy=state.pan.startCamera.cy+v.y;render();return true;}return true;}
   function endViewerPointer(e){state.viewerPointers.delete(e.pointerId);if(state.viewerPointers.size<2)state.viewerGesture=null;if(!state.viewerPointers.size){state.pan=null;host.dataset.pan='false';}try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}return true;}
 
-  function onPointerMove(e){state.altDown=Boolean(e.altKey);state.lastCanvasPointer={clientX:e.clientX,clientY:e.clientY,pointerId:e.pointerId,buttons:e.buttons,shiftKey:e.shiftKey,ctrlKey:e.ctrlKey,altKey:e.altKey};if(featureFill?.pointerMove(e))return;state.shiftDown=Boolean(e.shiftKey);if(state.toolset==='plan')state.ctrlDown=Boolean(e.ctrlKey);const s=fromPointerEvent(e);let p=screenCssToWorld(s);state.cursorWorld=p;dom.statusX.textContent=`X ${state.toolset==='cad'?cadLengthText(p.x,{precision:1}):formatNumber(p.x,1)}`;dom.statusY.textContent=`Y ${state.toolset==='cad'?cadLengthText(p.y,{precision:1}):formatNumber(p.y,1)}`;if(dom.statusUnits)dom.statusUnits.textContent=state.toolset==='cad'?(state.unitSystem==='imperial'?'ft/in':'mm'):'mm';
+  function onPointerMove(e){state.altDown=Boolean(e.altKey);state.lastCanvasPointer={clientX:e.clientX,clientY:e.clientY,pointerId:e.pointerId,buttons:e.buttons,shiftKey:e.shiftKey,ctrlKey:e.ctrlKey,altKey:e.altKey};if(featureFill?.pointerMove(e))return;state.shiftDown=Boolean(e.shiftKey);if(state.toolset==='plan')state.ctrlDown=Boolean(e.ctrlKey);const s=fromPointerEvent(e);let p=screenCssToWorld(s);state.cursorWorld=p;if(cadSelectionShape){cadSelectionShape.pointer=p;render();return;}dom.statusX.textContent=`X ${state.toolset==='cad'?cadLengthText(p.x,{precision:1}):formatNumber(p.x,1)}`;dom.statusY.textContent=`Y ${state.toolset==='cad'?cadLengthText(p.y,{precision:1}):formatNumber(p.y,1)}`;if(dom.statusUnits)dom.statusUnits.textContent=state.toolset==='cad'?(state.unitSystem==='imperial'?'ft/in':'mm'):'mm';
     if(isCompactViewer()&&moveViewerPointer(e,s))return;
     if(state.referenceClipDraft){const ref=state.references.find(r=>r.id===state.referenceClipDraft.refId);if(ref){state.referenceClipDraft.current=referenceWorldToLocal(ref,p);render();return;}}
     if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){state.regionDrag.current={...p};render();return;}
@@ -3396,7 +3409,7 @@
   function rotateComponent90(obj){return editComponent(obj,{rotation:((Number(obj.rotation)||0)+90)%360},'rotate90');}
   function mirrorComponent(obj,axis){return editComponent(obj,axis==='y'?{mirrorY:!obj.mirrorY}:{mirrorX:!obj.mirrorX},axis==='y'?'mirrorY':'mirrorX');}
 
-  function onPointerDown(e){const textPan=textEditor?.active&&(e.button===1||e.button===0&&state.spaceDown);if(textEditor?.active&&!textPan){e.preventDefault();textEditor.finish();return;}if(textPan)e.preventDefault();state.altDown=Boolean(e.altKey);if(featureFill?.pointerDown(e))return;if(!textPan)host.focus();hideContextMenu();state.shiftDown=Boolean(e.shiftKey);if(state.toolset==='plan')state.ctrlDown=Boolean(e.ctrlKey);const s=fromPointerEvent(e);if(isCompactViewer()){if(e.button===0||e.pointerType==='touch'){e.preventDefault();beginViewerPointer(e,s);}return;}const panGesture=e.button===1||(e.button===0&&state.spaceDown);if(panGesture){e.preventDefault();if(state.spaceGesture)state.spaceGesture.used=true;state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';canvas.setPointerCapture?.(e.pointerId);return;}const ctrlSnapClick=state.toolset==='plan'&&e.ctrlKey&&['line','wall','measure','move','copy','trim','extend'].includes(state.activeTool);if(e.button!==0&&!(ctrlSnapClick&&e.button===2))return;if(ctrlSnapClick)e.preventDefault();const editableLabel=hitEditableLabel(s);if(editableLabel)return;let raw=screenCssToWorld(s),p=nearestSnap(raw,null,state.toolset==='cad'?cadPointInputBase()||null:null);if(state.toolset==='cad'&&cadPointInputBase()!==undefined&&cadPrecision.status().oneShot&&cadPrecision.status().oneShot!=='none'&&!state.snapIndicator){setCommandStatus(t('cadPrecision.noSnap'),'error');return;}
+  function onPointerDown(e){const textPan=textEditor?.active&&(e.button===1||e.button===0&&state.spaceDown);if(textEditor?.active&&!textPan){e.preventDefault();textEditor.finish();return;}if(textPan)e.preventDefault();state.altDown=Boolean(e.altKey);if(featureFill?.pointerDown(e))return;if(!textPan)host.focus();hideContextMenu();state.shiftDown=Boolean(e.shiftKey);if(state.toolset==='plan')state.ctrlDown=Boolean(e.ctrlKey);const s=fromPointerEvent(e);if(isCompactViewer()){if(e.button===0||e.pointerType==='touch'){e.preventDefault();beginViewerPointer(e,s);}return;}const panGesture=e.button===1||(e.button===0&&state.spaceDown);if(panGesture){e.preventDefault();if(state.spaceGesture)state.spaceGesture.used=true;state.pan={pointerId:e.pointerId,startScreen:s,startCamera:{...state.camera}};host.dataset.pan='true';canvas.setPointerCapture?.(e.pointerId);return;}const ctrlSnapClick=state.toolset==='plan'&&e.ctrlKey&&['line','wall','measure','move','copy','trim','extend'].includes(state.activeTool);if(e.button!==0&&!(ctrlSnapClick&&e.button===2))return;if(ctrlSnapClick)e.preventDefault();const editableLabel=hitEditableLabel(s);if(editableLabel)return;let raw=screenCssToWorld(s),p=nearestSnap(raw,null,state.toolset==='cad'?cadPointInputBase()||null:null);if(cadSelectionShape){cadSelectionShape.remove=Boolean(e.shiftKey)||cadSelectionShape.remove;cadSelectionShape.points.push({...raw});cadSelectionShape.pointer=null;render();return;}if(state.toolset==='cad'&&cadPointInputBase()!==undefined&&cadPrecision.status().oneShot&&cadPrecision.status().oneShot!=='none'&&!state.snapIndicator){setCommandStatus(t('cadPrecision.noSnap'),'error');return;}
     if(state.toolset==='cad'&&cadGripDraft){cadGripCommit(raw,{copy:Boolean(e.ctrlKey||e.metaKey)});return;}
     if(state.toolset==='cad'&&state.activeTool==='select'){const h=cadGripHit(raw);if(h){if(e.shiftKey){const key=cadGripKey(h);cadGripHot.has(key)?cadGripHot.delete(key):cadGripHot.add(key);render();}else cadGripStart(h);return;}}
     if(state.referenceClipDraft){handleReferenceClipPoint(raw);return;}
@@ -4694,9 +4707,29 @@
     if(state.activeTool!=='select'||state.activeCommand||sessionId){setTool('select',state.toolset==='plan'?'plan':'select');setCommandStatus(t('command.finished'),'strong');return true;}
     return false;
   }
+  function startCadSelectionShape(mode){
+    if(state.toolset!=='cad')return false;const phase=cadCommandSession?.describe()?.phase;
+    if(cadCommandSession?.activeId&&phase!=='select')return false;
+    dom.toolPopover.hidden=true;state.selectionDrag=null;cadSelectionShape={mode,points:[],pointer:null,remove:false};setCommandStatus(t('cad87.selection'+mode),'strong');dom.commandInput.blur();host.focus();render();return{ok:true};
+  }
+  function cadSelectionShapeInput(text){
+    const d=cadSelectionShape;if(!d)return false;const k=String(text).toUpperCase();
+    if(d.mode==='prompt'&&['F','FENCE','WP','CP'].includes(k))return startCadSelectionShape(k==='FENCE'?'F':k);
+    if(['U','UNDO'].includes(k)){d.points.pop();render();return{ok:true};}
+    if(['R','REMOVE','ADD'].includes(k)){d.remove=k!=='ADD';return{ok:true};}
+    if(k===''){if(d.points.length<(d.mode==='F'?2:3)||d.mode!=='F'&&!modules.cadSelectionShapes.simple(d.points)){setCommandStatus(t('cad87.invalidSelection'),'error');return{ok:false};}
+      const ids=cadSelectableObjects().filter(o=>modules.cadSelectionShapes.matches(o,d.points,d.mode,{geometry:cadGeometry})).map(o=>o.id);cadSelectionShape=null;
+      if(cadCommandSession?.describe()?.phase==='select')reportCadCommand(cadCommands().dispatch({type:'selection',ids,remove:d.remove}));else applySelectionSet(ids,d.remove?'remove':'add');updateAll();return{ok:true,count:ids.length};}
+    const q=parseCadPointText(text,{base:d.points.at(-1)||null});if(!q?.ok)return{ok:false,code:'invalid-coordinate'};d.points.push({...q.point});render();return{ok:true};
+  }
+  function drawCadSelectionShape(){if(!cadSelectionShape)return;const d=cadSelectionShape,p=[...d.points,...(d.pointer?[d.pointer]:[])];if(!p.length)return;const styles=getComputedStyle(document.documentElement),color=styles.getPropertyValue(d.mode==='WP'?'--accent':'--success').trim();ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.2;ctx.setLineDash(d.mode==='WP'?[]:[6,4]);ctx.beginPath();p.forEach((q,i)=>{const v=toScreenCss(q);if(i)ctx.lineTo(v.x,v.y);else ctx.moveTo(v.x,v.y);});if(d.mode!=='F'){ctx.closePath();ctx.globalAlpha=.08;ctx.fill();ctx.globalAlpha=.9;}ctx.stroke();ctx.restore();}
   function runCommand(raw){if(state.commandComposing)return false;if(cadCommandSession?.describe()?.phase!=='name'&&/[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/.test(String(raw))){setCommandStatus(t('command.englishOnly'),'error');return false;}if(featureFill?.selection.current)return false;
     if(String(raw||'').trim())commandConsole.push('› '+String(raw).trim(),'input');
     let command=String(raw||'').trim(),upper=command.toUpperCase();
+    if(state.toolset==='cad'&&cadSelectionShape)return cadSelectionShapeInput(command);
+    if(state.toolset==='cad'&&upper==='SELECT')return startCadSelectionShape('prompt');
+    if(state.toolset==='cad'&&['WP','CP'].includes(upper)&&(!cadCommandSession?.activeId||cadCommandSession.describe()?.phase==='select'))return startCadSelectionShape(upper);
+    if(state.toolset==='cad'&&cadCommandSession?.describe()?.phase==='select'&&['F','FENCE'].includes(upper))return startCadSelectionShape('F');
     if(state.toolset==='cad'&&cadTrimState&&['trim','extend'].includes(state.activeTool)&&['','Q','QUICK','S','STANDARD','U','UNDO'].includes(upper))return cadTrimOption(upper);
     if(state.toolset==='cad'&&cadGripDraft)return cadGripText(command);
     if(state.toolset==='cad'&&cadCommandSession?.activeId==='L'&&['U','UNDO','C','CLOSE'].includes(upper))return cadLineOption(upper);
@@ -4710,6 +4743,7 @@
     if(sessionId&&command&&exactCommandToken(upper)&&!plineKeyword&&cadCommandSession.describe()?.phase!=='name'&&!modules.nativeArchitecturalCommands.keyword(sessionId,cadCommandSession.describe()?.phase,upper)&&!modules.nativeDrawCommands.keyword(sessionId,cadCommandSession.describe()?.phase,upper)&&!modules.nativeModifyCommands.keyword(sessionId,cadCommandSession.describe()?.phase,upper)&&!modules.nativeEditCommands.keyword(sessionId,cadCommandSession.describe()?.phase,upper)&&!modules.nativeTransformCommands.keyword(sessionId,cadCommandSession.describe()?.phase,upper)){cadCommandSession.cancel('superseded');cadOperationPreview=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';}
     if(state.toolset==='cad'&&upper==='PROPERTIES'){openInspector('properties');return{ok:true};}
     if(state.toolset==='cad'&&upper==='OSNAP'){cadPrecisionUI.open();return{ok:true};}
+    if(modules.nativeTransformCommands.keyword(sessionId,cadCommandSession?.describe()?.phase,upper)){const r=reportCadCommand(dispatchCadPoint({type:'text',text:command}));updateContextBar();render();return r;}
     if(modules.nativeModifyCommands.keyword(sessionId,cadCommandSession?.describe()?.phase,upper)){const r=reportCadCommand(dispatchCadPoint({type:'text',text:command}));updateContextBar();render();return r;}
     if(modules.nativeDrawCommands.keyword(sessionId,cadCommandSession?.describe()?.phase,upper)){const result=reportCadCommand(dispatchCadPoint({type:'text',text:command}));updateContextBar();render();return result;}
     if(state.toolset==='cad'&&state.annotationDraft&&command&&(!exactCommandToken(upper)||(state.annotationDraft.kind==='linearDim'&&state.annotationDraft.phase==='offset'&&['H','HORIZONTAL','V','VERTICAL'].includes(upper)))){const d=state.annotationDraft;if(d.kind==='linearDim'&&d.phase==='offset'&&['H','HORIZONTAL','V','VERTICAL'].includes(upper)){d.dimensionAngle=upper.startsWith('H')?0:90;render();return{ok:true};}if(!['source'].includes(d.phase)){const base=d.p2||d.p1||d.vertex||d.center||d.base?.p2||null,direction=base&&state.cursorWorld?{x:state.cursorWorld.x-base.x,y:state.cursorWorld.y-base.y}:null,parsed=parseCadPointText(command,{base,direction});if(!parsed.ok){setCommandStatus(t('command.invalidCoordinate'),'error');return{ok:false,code:'invalid-coordinate'};}return{ok:handleCadAnnotationPoint(parsed.point,{typed:true})};}}
@@ -4734,7 +4768,7 @@
     if(state.toolset==='cad'&&state.activeCommand==='RR'&&state.cadRotate?.phase==='target'){const result=reportCadCommand(cadCommands().dispatch({type:'text',text:upper}));if(result.ok||result.code==='command-failed')return;}
     const plan=state.toolset==='plan';
     const nativeDrawId=(!plan||['C','CIRCLE','REC','RECTANG','RECTANGLE'].includes(upper))?modules.nativeDrawCommands.resolve(upper):null;
-    if(nativeDrawId){const tool={REC:'rectangle',C:'circle',A:'arc'}[nativeDrawId];state.lastCommand=nativeDrawId;const activated=setTool(tool,'draw');if(activated!==false&&state.activeTool===tool){state.activeCommand=nativeDrawId;dom.commandInput.blur();host.focus();}return{ok:activated!==false&&state.activeTool===tool,code:activated!==false?'started':'unavailable'};}
+    if(nativeDrawId){const tool={REC:'rectangle',C:'circle',A:'arc',POL:'polygon'}[nativeDrawId];state.lastCommand=nativeDrawId;const activated=setTool(tool,'draw');if(activated!==false&&state.activeTool===tool){state.activeCommand=nativeDrawId;dom.commandInput.blur();host.focus();}return{ok:activated!==false&&state.activeTool===tool,code:activated!==false?'started':'unavailable'};}
     if(plan&&['ST','STAIR'].includes(upper)){state.lastCommand='ST';activateCommand('ST','stair','architecture','stair.first');}
     else if(upper==='L'||upper==='LINE'){state.lastCommand='L';if(plan)activateCommand('L','line','draw','command.line');else{const activated=setTool('line','draw');if(activated!==false&&state.activeTool==='line'){state.activeCommand='L';dom.commandInput.blur();host.focus();setCommandStatus(t('command.lineFirst'),'strong');}}}
     else if(['PL','PLINE','POLYLINE'].includes(upper)){state.lastCommand='PL';const activated=setTool('polyline','draw');if(activated!==false&&state.activeTool==='polyline'){state.activeCommand='PL';dom.commandInput.blur();host.focus();setCommandStatus(t('command.polylineFirst'),'strong');}}
@@ -4772,6 +4806,8 @@
   }
 
   function acceptCanvasCommand(){
+    if(cadSelectionShape)return cadSelectionShapeInput('');
+    if(cadCommandSession?.activeId==='POL'&&['sides','method'].includes(cadCommandSession.describe()?.phase))return reportCadCommand(cadCommands().dispatch({type:'enter'}));
     if(state.toolset==='cad'&&cadCommandSession?.activeId==='L'&&!cadCommandSession.view?.start&&cadLineLastPoint){const r=reportCadCommand(cadCommands().dispatch({type:'text',text:'',parsed:{ok:true,kind:'point',point:{...cadLineLastPoint}}}));updateContextBar();render();return r;}
     if(state.toolset==='cad'&&cadTrimState&&['trim','extend'].includes(state.activeTool))return cadTrimOption('');
     if(state.toolset==='cad'&&modules.nativeModifyCommands.ids.includes(cadCommandSession?.activeId)){const r=reportCadCommand(cadCommands().dispatch({type:'enter'}));updateContextBar();render();return r;}
@@ -5047,8 +5083,8 @@
   function isEditableTarget(target){return Boolean(target&&target.nodeType===1&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||target.isContentEditable||target.closest?.('[contenteditable="true"]')));}
   function isTyping(){return isEditableTarget(document.activeElement);}
   function canvasShortcutContext(){const a=document.activeElement;return !a||a===document.body||a===host||a===canvas;}
-  function cancelTransient(){cadTrimState=null;if(cadGripDraft){cadGripDraft=null;cadOperationPreview=null;cadGripHot.clear();cadPrecision.clear();updateContextBar();render();return;}cadGripHot.clear();cadLineChain=[];cadPrecision.clear();cadAngleLock=null;cadSnapCycle=0;textEditor?.cancel({notify:false});if(featureFill?.selection.current){featureFill.cancelSelection();return;}if(state.dragEdit){cancelDirectDrag();return;}cadCommandSession?.cancel('escape');cadLineContinuationPoint=null;const wasDrawing=['line','polyline','rectangle','circle','arc','trim','extend','break','join','offset','fillet','chamfer','reconstruct','move','copy','rotate','mirror','scale','stretch','array','align','region-rotate','text','mtext','leader','linear-dim','aligned-dim','radius-dim','diameter-dim','angle-dim','continuous-dim','baseline-dim','hatch','component','stair','floor-refine'].includes(state.activeTool);state.stairDraft=null;state.drawStart=null;state.drawReferenceAngle=null;state.arcDraft=null;state.polylinePreview=null;state.cadPrimitivePreview=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.curveReconstruction=null;state.annotationDraft=null;state.referenceClipDraft=null;state.selectionDrag=null;state.snapIndicator=null;state.smartGuides=[];state.trimPreview=null;state.spaceHoverPreview=null;state.shiftGuide=null;state.cadRotate=null;state.commandPending=null;state.activeCommand=null;clearConstraintInteraction();if(state.activeTool==='constraint'||wasDrawing)state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;if(dom.annotationTextBackdrop)dom.annotationTextBackdrop.hidden=true;state.annotationDialogDraft=null;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
-  function handleCancelShortcut(){if(cancelImportJob())return;if(featureFill?.cancelActive())return;
+  function cancelTransient(){cadSelectionShape=null;cadTrimState=null;if(cadGripDraft){cadGripDraft=null;cadOperationPreview=null;cadGripHot.clear();cadPrecision.clear();updateContextBar();render();return;}cadGripHot.clear();cadLineChain=[];cadPrecision.clear();cadAngleLock=null;cadSnapCycle=0;textEditor?.cancel({notify:false});if(featureFill?.selection.current){featureFill.cancelSelection();return;}if(state.dragEdit){cancelDirectDrag();return;}cadCommandSession?.cancel('escape');cadLineContinuationPoint=null;const wasDrawing=['line','polyline','rectangle','circle','arc','polygon','trim','extend','break','join','offset','fillet','chamfer','reconstruct','move','copy','rotate','mirror','scale','stretch','array','align','region-rotate','text','mtext','leader','linear-dim','aligned-dim','radius-dim','diameter-dim','angle-dim','continuous-dim','baseline-dim','hatch','component','stair','floor-refine'].includes(state.activeTool);state.stairDraft=null;state.drawStart=null;state.drawReferenceAngle=null;state.arcDraft=null;state.polylinePreview=null;state.cadPrimitivePreview=null;state.measureStart=null;state.previewEnd=null;state.previewOpening=null;state.calibration=null;state.regionDrag=null;state.wallRecognitionPreview=null;state.curveReconstruction=null;state.annotationDraft=null;state.referenceClipDraft=null;state.selectionDrag=null;state.snapIndicator=null;state.smartGuides=[];state.trimPreview=null;state.spaceHoverPreview=null;state.shiftGuide=null;state.cadRotate=null;state.commandPending=null;state.activeCommand=null;clearConstraintInteraction();if(state.activeTool==='constraint'||wasDrawing)state.activeTool='select';host.dataset.tool=state.activeTool;dom.toolPopover.hidden=true;dom.dialogBackdrop.hidden=true;if(dom.annotationTextBackdrop)dom.annotationTextBackdrop.hidden=true;state.annotationDialogDraft=null;dom.recognitionBackdrop.hidden=true;setCommandStatus(t('command.cancelled'));renderToolRail();updateContextBar();renderProperties();render();}
+  function handleCancelShortcut(){if(!dom.confirmBackdrop.hidden){hideAppConfirm({cancel:true});return true;}if(cancelImportJob())return;if(featureFill?.cancelActive())return;
     if(dom.annotationTextBackdrop&&!dom.annotationTextBackdrop.hidden){closeAnnotationTextDialog();state.annotationDraft=null;setTool('select','select');return true;}
     if(state.referenceClipDraft){state.referenceClipDraft=null;setCommandStatus(t('command.cancelled'));render();return true;}
     if(dom.settingsBackdrop&&!dom.settingsBackdrop.hidden){closeSettingsDialog();return true;}
@@ -5081,6 +5117,7 @@
   dom.continueWorkBtn.addEventListener('click',async()=>{if(state.sessionKind==='sample'&&sampleReturnWorkspace){restoreSampleReturnWorkspace({openWorkspace:true});return;}if(hasCurrentWork())switchToolset(state.toolset,{skipMapping:true});else if(state.browserSavedMeta)await openBrowserSavedProject();});
   dom.backBtn.addEventListener('click',()=>history.back());
   workspaceChrome = modules.workspaceChrome.create({t,mode:()=>state.toolset,navigate:target=>target==='home'?showStartScreen():switchToolset(target),closeOtherMenus:()=>{closeTopMenus();dom.toolPopover.hidden=true;},interactionBusy:()=>Boolean(state.dragEdit||state.directDrag||state.referenceDrag)});
+  settingsUI=modules.settingsUI.create({t,precision:cadPrecision,configure:patch=>{cadPrecision.configure(patch);render();},close:closeSettingsDialog});
   document.getElementById('workspaceInspector').addEventListener('pieniplan:inspector-shown',()=>{
     if(state.toolset==='cad'&&state.layerRevealRequested&&document.querySelector('[data-panel="primary"]')?.classList.contains('active'))renderCadLayersPanel();
   });
@@ -5093,7 +5130,8 @@
   dom.cadToolsBtn.addEventListener('click',()=>switchToolset('cad'));
   dom.appearanceBtn.addEventListener('click',e=>{e.stopPropagation();toggleAppearanceMenu(dom.appearanceBtn);});
   dom.startAppearanceBtn.addEventListener('click',e=>{e.stopPropagation();toggleAppearanceMenu(dom.startAppearanceBtn);});
-  dom.viewMenuBtn?.addEventListener('click',e=>{e.stopPropagation();updateViewMenuActions();toggleTopMenu(dom.viewMenu,dom.viewMenuBtn);});
+  dom.viewMenuBtn?.addEventListener('click',e=>{e.stopPropagation();fitAll();});
+  dom.viewMenuBtn?.addEventListener('contextmenu',e=>{e.preventDefault();updateViewMenuActions();toggleTopMenu(dom.viewMenu,dom.viewMenuBtn);});
   dom.fileMenuBtn?.addEventListener('click',e=>{e.stopPropagation();toggleTopMenu(dom.fileMenu,dom.fileMenuBtn);});
   dom.settingsMenuBtn?.addEventListener('click',e=>{e.stopPropagation();toggleTopMenu(dom.settingsMenu,dom.settingsMenuBtn);});
   dom.openSettingsAction?.addEventListener('click',openSettingsDialog);
@@ -5109,11 +5147,12 @@
   for(const [id,key,min,max] of [['settingsPlanLineColor','color',null,null],['settingsPlanLineWidth','width',.5,6],['settingsPlanDashScale','dashScale',.5,3]]){const el=document.getElementById(id);el?.addEventListener('change',()=>{const old=planLineAppearance(),value=key==='color'?el.value:Number(el.value);if(key==='color'?!/^#[\da-f]{6}$/i.test(value):!Number.isFinite(value)||value<min||value>max){el.value=String(old[key]);return;}if(String(old[key])===String(value))return;pushHistory();state.toolSettings.planLineAppearance={...old,[key]:value};markDirty(true);updateAll();});}
   document.querySelectorAll('[data-control-tab]').forEach(b=>b.addEventListener('click',()=>{controlsTab=b.dataset.controlTab;renderControlSettings();}));
   document.getElementById('settingsCommandScope').addEventListener('change',renderControlSettings);
+  document.querySelectorAll('[data-control-scope]').forEach(b=>b.addEventListener('click',()=>{document.getElementById('settingsCommandScope').value=b.dataset.controlScope;renderControlSettings();}));
   document.getElementById('settingsCommandSearch').addEventListener('input',renderControlSettings);
-  document.getElementById('settingsCommandReset').addEventListener('click',()=>{try{commandPreferences.reset(document.getElementById('settingsCommandScope').value);renderControlSettings();renderToolRail();refreshCommandHints();document.getElementById('settingsCommandFeedback').textContent=t('settings.saved');}catch(error){document.getElementById('settingsCommandFeedback').textContent=t('controls.conflict',{name:error.message.split(':')[1]||''});}});
+  document.getElementById('settingsCommandReset').addEventListener('click',()=>{const scope=document.getElementById('settingsCommandScope').value;confirmPersonalReset('keyboard',scope,()=>{try{commandPreferences.reset(scope);renderControlSettings();renderToolRail();refreshCommandHints();document.getElementById('settingsCommandFeedback').textContent=t('settings.saved');}catch(error){document.getElementById('settingsCommandFeedback').textContent=t('controls.conflict',{name:error.message.split(':')[1]||''});}});});
   document.getElementById('settingsNatureReset').addEventListener('click',()=>{if(Object.keys(state.toolSettings.planObjectStyles||{}).length){pushHistory();state.toolSettings.planObjectStyles={};markDirty(true);updateAll();}renderNatureSettings();});
-  document.getElementById('settingsContextResetPlan')?.addEventListener('click',()=>resetContextMenuMode('plan'));
-  document.getElementById('settingsContextResetCad')?.addEventListener('click',()=>resetContextMenuMode('cad'));
+  document.getElementById('settingsContextResetPlan')?.addEventListener('click',()=>confirmPersonalReset('mouse','plan',()=>resetContextMenuMode('plan')));
+  document.getElementById('settingsContextResetCad')?.addEventListener('click',()=>confirmPersonalReset('mouse','cad',()=>resetContextMenuMode('cad')));
   document.getElementById('settingsPlanLineReset')?.addEventListener('click',()=>{
     const old=planLineAppearance(),fresh={color:'#8e9bab',width:2.2,dashScale:1};
     if(JSON.stringify(old)===JSON.stringify(fresh))return;
@@ -5365,7 +5404,8 @@
   cadBlockUI=modules.cadBlockUI.create({state,language:()=>i18n.language,token:cadContextToken,current:cadContextTokenCurrent,run:runCommand,commit:(before,after)=>commitCadLibrary('BEDIT',before,after),status:(code,kind)=>setCommandStatus(cadFaultMessage(code),kind),error:cadFaultMessage,uid});
   featureFill=modules.postFeatureFill.create({state,host,canvas,ctx,t,language:()=>i18n.language,status:setCommandStatus,render,update:updateAll,history:pushHistory,changed:()=>markDirty(true),rebuild:()=>rebuildObjectSnapIndex(),uid,eventWorld:e=>screenCssToWorld(fromPointerEvent(e)),snap:nearestSnap,screen:toScreenCss,canvasSize:cssCanvasSize,cancelEditing:()=>{cancelTransient();if(state.pan)try{canvas.releasePointerCapture(state.pan.pointerId);}catch{}state.pan=null;state.spaceDown=false;state.spaceGesture=null;host.dataset.pan='false';},setFloor:setActiveFloor,viewFloor,buildingCamera,drawGhost:drawFloorGhost,floorGeometry:featureFloorGeometry,revision:()=>documentWriteEpoch,selectObjects:ids=>{setSelectionIds(new Set(ids));updateAll();},structuralAnalysisInput,structuralPackageCurrent,commitStructuralMetadata,refinementPlan:planFloorRefinement,refinementCommit:commitFloorRefinement,selectionIds:()=>[...selectionIds()],tool:setTool,inspector:switchInspector,currentRegion:activeCadWorkRegion,planOutputPages,currentOutputView,outputContentDefaults,manageSheets:()=>{featureFill.discardTransient();sheetUI.open();},prepareOutputReferences,exportPdf:exportSheetPdfJob,svg:sheetSvg,print:printSheetOutputJob,closeMenus:closeTopMenus});
   cadPrecisionUI=modules.cadPrecisionUI.create({host,t,kinds:cadPrecision.kinds,settings:cadPrecision.status,configure:patch=>{cadPrecision.configure(patch);render();},focus:()=>host.focus(),toScreen:toScreenCss,
-    view:()=>{const base=cadPointInputBase(),raw=state.cursorWorld,point=raw&&base?resolveCadPoint(raw,{base}).point:raw;if(state.view!=='workspace'||state.toolset!=='cad'||!cadPrecision.status().dynamic||!base||!point||featureFill?.selection.current)return null;return{base,point,length:distance(base,point),angle:angleDeg(base,point)};},
+    view:()=>{const base=cadPointInputBase(),raw=state.cursorWorld,point=raw&&base?resolveCadPoint(raw,{base}).point:raw;if(state.view!=='workspace'||state.toolset!=='cad'||!cadPrecision.status().dynamic||base===undefined||!point||featureFill?.selection.current)return null;return{base:base||{x:0,y:0},point,length:base?distance(base,point):0,angle:base?angleDeg(base,point):0};},
+    submitCoordinates:(x,y,relative)=>{const options={defaultUnit:state.unitSystem==='imperial'?'in':'mm'},px=cadUnitsModule.parseLength(x,options),py=cadUnitsModule.parseLength(y,options);if(!px.ok||!py.ok)return false;return runCommand((relative?'@':'')+px.mm.toFixed(9)+'mm,'+py.mm.toFixed(9)+'mm');},
     submit:(length,angle)=>{const n=cadUnitsModule.parseLength(length,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),a=Number(angle),base=cadPointInputBase();if(!n.ok||!base||!Number.isFinite(a)||n.mm<=0)return false;const p={x:base.x+n.mm*Math.cos(rad(a)),y:base.y+n.mm*Math.sin(rad(a))};return runCommand(`${p.x.toFixed(9)}mm,${p.y.toFixed(9)}mm`);}});
   dom.snapToggle.addEventListener('contextmenu',e=>{if(state.toolset!=='cad')return;e.preventDefault();cadPrecisionUI.open();});
   dom.commandInput.addEventListener('keydown',e=>{if(/^F(?:2|3|7|8|9|10|11|12)$/.test(e.key)&&handlePersonalShortcut(e))e.stopPropagation();});

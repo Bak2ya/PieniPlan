@@ -8,8 +8,9 @@
     if (!value || typeof value !== 'object') return null;
     const visibility = VISIBILITY.has(value.visibility) ? value.visibility : 'auto';
     const priority = PRIORITY.has(value.priority) ? value.priority : 'default';
-    if (visibility === 'auto' && priority === 'default') return null;
-    return Object.freeze({ visibility, priority });
+    const order=Number.isInteger(value.order)&&value.order>=0&&value.order<=5000?value.order:null;
+    if (visibility === 'auto' && priority === 'default' && order===null) return null;
+    return Object.freeze({ visibility, priority, ...(order===null?{}:{order}) });
   }
 
   function sanitizeOverrides(raw) {
@@ -26,7 +27,7 @@
     const override = overrides?.[command.key] || null;
     return {
       visibility: override?.visibility || 'auto',
-      priority: override?.priority || 'default'
+      priority: override?.priority || 'default', order:override?.order??null
     };
   }
 
@@ -49,7 +50,7 @@
   }
 
   function sort(commands, overrides) {
-    return [...commands].sort((a,b) => score(b, overrides) - score(a, overrides) || String(a.label || a.key).localeCompare(String(b.label || b.key)));
+    return [...commands].sort((a,b) => ((preference(a,overrides).order??5001)-(preference(b,overrides).order??5001)) || score(b, overrides) - score(a, overrides) || String(a.label || a.key).localeCompare(String(b.label || b.key)));
   }
 
   root.contextMenu = Object.freeze({ sanitizeOverride, sanitizeOverrides, preference, isVisible, score, sort });

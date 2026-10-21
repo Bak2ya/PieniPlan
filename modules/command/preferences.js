@@ -45,7 +45,8 @@
     function resolve(raw,mode){const q=String(raw||'').trim().toUpperCase();return entries.find(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&c.name===q)||entries.find(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&values[c.id]?.aliases?.includes(q))||entries.find(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&!values[c.id]?.aliases&&defaults(c,mode).includes(q));}
     function match(raw,mode){const q=String(raw||'').toUpperCase();return entries.filter(c=>!toggles.includes(c)&&overlap(scope(c),mode)&&[c.name,...aliases(c,mode)].some(a=>a.startsWith(q))).sort((a,b)=>Number([b.name,...aliases(b,mode)].includes(q))-Number([a.name,...aliases(a,mode)].includes(q))).slice(0,6).map(c=>({...c,aliases:[...new Set([c.name,...aliases(c,mode)])]}));}
     function forEvent(e,mode){let q;try{q=chord([e.ctrlKey?'CTRL':'',e.metaKey?'META':'',e.altKey?'ALT':'',e.shiftKey?'SHIFT':'',e.code?.startsWith('Key')?e.code.slice(3):e.code?.startsWith('Digit')?e.code.slice(5):e.key].filter(Boolean).join('+'));}catch{return null;}if(!q)return null;return entries.find(c=>overlap(scope(c),mode)&&shortcut(c)===q)||null;}
-    load();return Object.freeze({entries,scope,aliases,shortcut,set,reset,resolve,match,forEvent,load,key});
+    function validate(id,patch){const old=values;values={...values};try{return set(id,patch,{persist:false});}finally{values=old;}}
+    load();return Object.freeze({entries,scope,aliases,shortcut,set,validate,reset,resolve,match,forEvent,load,key});
   }
   root.commandPreferences=Object.freeze({create,chord,overlap});
 })();

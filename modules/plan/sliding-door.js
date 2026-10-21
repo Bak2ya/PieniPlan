@@ -8,7 +8,7 @@
     if(!Number.isFinite(width)||width<1e-6)return [];
     const ux=dx/width,uy=dy/width,nx=-uy,ny=ux,dir=obj.slideDirection===-1?-1:1;
     const thickness=Math.max(1,Number(g.wall.thickness)||150),half=thickness/2;
-    const depth=Math.min(thickness*7/15,width*.045),face=dir*half*.9,out=[];
+    const depth=Math.min(thickness*.28,width*.032),face=dir*half*.7,out=[];
     const point=(along,across)=>({x:g.p1.x+ux*along+nx*across,y:g.p1.y+uy*along+ny*across});
     const line=(a,b,role,weight=1.2)=>out.push({a,b,role,weight});
     const edge=(x1,y1,x2,y2,role,weight)=>line(point(x1,y1),point(x2,y2),role,weight);
@@ -22,7 +22,7 @@
     const double=obj.doorType==='slidingDouble';
     if(double){const gap=Math.min(depth*.35,width*.012);leaf(0,width/2-gap/2);leaf(width/2+gap/2,width);}
     else leaf(0,width);
-    const arrowY=face+dir*depth*.9;
+    const arrowY=face+dir*depth*.85;
     const arrow=(start,end)=>{
       const sign=Math.sign(end-start),head=Math.min(width*.025,depth*.75,Math.abs(end-start)*.24),wing=head*.5;
       edge(start,arrowY,end,arrowY,'arrow',1.2);
