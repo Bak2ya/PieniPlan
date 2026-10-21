@@ -8,6 +8,7 @@
       const current=new Set(getIds());const incoming=normalize(ids);
       if(mode==='replace')return setIds(incoming);
       if(mode==='add'){for(const id of incoming)current.add(id);return setIds(current);}
+      if(mode==='remove'){for(const id of incoming)current.delete(id);return setIds(current);}
       if(mode==='toggle'){for(const id of incoming)current.has(id)?current.delete(id):current.add(id);return setIds(current);}
       return setIds(current);
     }

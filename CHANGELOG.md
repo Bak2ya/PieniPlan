@@ -1,3 +1,33 @@
+# v0.60.0 · Build86 — CAD Feature Fill (2026-10-21)
+
+- CAD selection now adds by default and removes with Shift; Shift temporarily reverses ORTHO, and ORTHO/Polar are mutually exclusive. Added one-shot OSNAP, running snap settings, tangent/nearest/extension/geometric-center aids, acquired-point tracking, independent grid snap and distance/angle input near the cursor.
+- Added multiple hot grips, straight-segment grips, grip modes/copy, LINE Undo/Close/last-point continuation, rectangle dimensions and circle diameter input. Ordinary rectangle vertices can still skew; Plan interaction stays unchanged.
+- Added TRIM/EXTEND boundary selection and command Undo, repeating/Through OFFSET, FILLET/CHAMFER previous values, Trim and Multiple options, BREAK first-point override, repeating JOIN/COPY, ROTATE/SCALE Reference/Copy, bounded LENGTHEN and PEDIT workflows.
+- CAD defaults now use T/DT, CH/CHA and DLI/DAL consistently. Explicit personal aliases retain priority. Advanced curve/options, browser/OS keys and external CAD interoperability have remaining limits.
+
+## v0.59.3 · Build85 — LINE 연속 입력 및 MIRROR 원본 선택 (2026-10-21)
+
+- CAD LINE에서 포인터를 움직이지 않고 절대·상대 좌표를 계속 입력해도 선분을 이어 그립니다. Enter 종료와 명령 반복을 구분하고, 다음 점 안내도 함께 갱신합니다.
+- MIRROR에서 대칭축 두 점 뒤 원본 유지·삭제를 선택합니다. Enter 또는 N/NO는 원본을 유지하고, Y/YES는 원본 위치를 제거합니다. 선택 전에는 미리보기만 표시하며 취소·Undo/Redo를 지원합니다.
+- 기존 도면·패널·슬라이딩 도어·프로젝트 저장 형식을 유지합니다.
+
+---
+
+## v0.59.2 · Build84 — 작업 패널 상태 및 슬라이딩 도어 정돈 (2026-10-20)
+
+- 속성·레이어에서 보기와 참조 추가 후 필요한 패널을 열고 조작할 수 있게 했습니다. 명시 호출 직후 포인터가 아직 패널에 들어오지 않았다는 이유로 닫히지 않으며, 일반 객체 선택은 접힌 패널을 열지 않습니다.
+- 고정·임시 패널을 같은 위치와 너비로 겹쳐 표시해 핀 전환 시 도면이 움직이는 현상을 수정했습니다. 고정을 해제해도 열린 상태를 유지하고, 표시 상태·열기/닫기 방법·마지막 탭을 개인 설정으로 기억합니다.
+- 단일·양개 슬라이딩 도어의 연장 레일과 중복 프레임을 제거하고, 중앙 문짝·짧은 끝선·가까운 작은 화살표로 정돈했습니다. 미리보기와 Plan/CAD·SVG/PDF·DXF에 공통 형상을 사용합니다.
+- 기존 객체·프로젝트 스타일·PPRJ/PPKG와 Undo/Redo를 유지합니다.
+
+---
+
+## 문서 정리 — 2026-10-20 (v0.59.1 · Build83 유지)
+
+- 개발 기준과 CAD 조작 조사 자료를 정리했습니다. 앱 기능·문 심볼·저장 형식은 변경하지 않았으며 Version/Build도 유지합니다.
+
+---
+
 ## v0.59.1 · Build83 — Plan Space 및 슬라이딩 도어 표현 (2026-10-20)
 
 - Plan에서 Space를 누르면 단축키가 지정되지 않은 시트 관리 명령이 실행되던 오류를 수정했습니다. 짧은 Space의 선택 복귀, Space 드래그의 화면 이동, CAD의 확인·반복 동작과 기존 사용자 별칭·키 조합을 유지합니다. 예약된 Space 키 조합은 설정할 수 없습니다.

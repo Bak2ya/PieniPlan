@@ -11,32 +11,36 @@
   function install(registry,port){
     const available=ctx=>ctx.mode==='cad'||ctx.mode==='plan';
     registry.register({id:'REC',aliases:['RECTANG','RECTANGLE'],available,transactional:false,historyOwner:'cad-change-set',create(){
-      const draft={phase:'first',first:null,pointer:null,token:port.contextToken()};
+      const draft={phase:'first',first:null,pointer:null,width:null,height:null,token:port.contextToken()};
       const resolvePoint=e=>{
         if(e.type==='point'&&finite(e.point))return port.resolvePoint(e.point,{base:draft.first,shift:Boolean(e.shift),typed:false}).point;
         if(e.type==='text'){const q=port.parsePoint(String(e.text||''),{base:draft.first,direction:draft.first&&draft.pointer?{x:draft.pointer.x-draft.first.x,y:draft.pointer.y-draft.first.y}:null});return q?.ok?q.point:null;}
         return null;
       };
+      const dimensioned=p=>draft.width&&draft.height?{x:draft.first.x+(p.x<draft.first.x?-1:1)*draft.width,y:draft.first.y+(p.y<draft.first.y?-1:1)*draft.height}:p;
       const notify=()=>port.preview({kind:'rectangle',phase:draft.phase,first:draft.first&&clone(draft.first),pointer:draft.pointer&&clone(draft.pointer)});
       port.prompt('REC',draft.phase);
-      return{describe:()=>({phase:draft.phase,promptKey:draft.phase==='first'?'command.rectangleFirst':'command.rectangleOpposite',input:['point','coordinate']}),view:()=>draft,
-        preview(e){if(draft.phase==='opposite'&&finite(e.point)){draft.pointer=clone(port.resolvePoint(e.point,{base:draft.first,shift:Boolean(e.shift),typed:false}).point);notify();}return{ok:true};},
-        input(e){const p=resolvePoint(e);if(!p)return{ok:false,code:'invalid-coordinate'};if(draft.phase==='first'){draft.first=clone(p);draft.pointer=clone(p);draft.phase='opposite';notify();port.prompt('REC',draft.phase);return{ok:true};}if(same(draft.first,p)||Math.abs(p.x-draft.first.x)<1e-8||Math.abs(p.y-draft.first.y)<1e-8)return{ok:false,code:'zero-size'};return{ok:true,commit:true,value:{a:clone(draft.first),b:clone(p),token:draft.token}};},
+      return{describe:()=>({phase:draft.phase,promptKey:draft.phase==='first'?'command.rectangleFirst':'command.rectangleOpposite',input:['point','coordinate'],actions:draft.first?[{id:'D',labelKey:'cadDraw.dimensions'}]:[]}),view:()=>draft,
+        preview(e){if(draft.phase==='opposite'&&finite(e.point)){draft.pointer=clone(dimensioned(port.resolvePoint(e.point,{base:draft.first,shift:Boolean(e.shift),typed:false}).point));notify();}return{ok:true};},
+        input(e){const text=e.type==='keyword'?String(e.value):e.type==='text'?String(e.text).toUpperCase():'';
+          if(draft.first&&['D','DIMENSIONS'].includes(text)){draft.phase='width';port.prompt('REC','width');return{ok:true};}
+          if(['width','height'].includes(draft.phase)){const n=e.type==='text'?port.parseLength(e.text):null;if(!n?.ok||n.mm<=0)return{ok:false,code:'invalid-distance'};draft[draft.phase]=n.mm;draft.phase=draft.phase==='width'?'height':'opposite';port.prompt('REC',draft.phase);return{ok:true};}
+          let p=resolvePoint(e);if(!p)return{ok:false,code:'invalid-coordinate'};if(draft.phase==='first'){draft.first=clone(p);draft.pointer=clone(p);draft.phase='opposite';notify();port.prompt('REC',draft.phase);return{ok:true};}p=dimensioned(p);if(same(draft.first,p)||Math.abs(p.x-draft.first.x)<1e-8||Math.abs(p.y-draft.first.y)<1e-8)return{ok:false,code:'zero-size'};return{ok:true,commit:true,value:{a:clone(draft.first),b:clone(p),token:draft.token}};},
         commit(value){if(!port.contextCurrent(value?.token,{geometry:true,layer:true,reference:false,region:true})){const err=new Error('stale-context');err.code='stale-context';throw err;}return port.commitRectangle(value.a,value.b);},
         cancel:()=>port.clearPreview(),finalize:()=>port.clearPreview()};
     }});
 
     registry.register({id:'C',aliases:['CIRCLE'],available,transactional:false,historyOwner:'cad-change-set',create(){
-      const draft={phase:'center',center:null,pointer:null,token:port.contextToken()};
+      const draft={phase:'center',center:null,pointer:null,diameter:false,token:port.contextToken()};
       const notify=()=>port.preview({kind:'circle',phase:draft.phase,center:draft.center&&clone(draft.center),pointer:draft.pointer&&clone(draft.pointer)});
       port.prompt('C',draft.phase);
-      return{describe:()=>({phase:draft.phase,promptKey:draft.phase==='center'?'command.circleCenter':'command.circleRadius',input:['point','coordinate','length']}),view:()=>draft,
+      return{describe:()=>({phase:draft.phase,promptKey:draft.phase==='center'?'command.circleCenter':'command.circleRadius',input:['point','coordinate','length'],actions:draft.center?[{id:'D',labelKey:'cadDraw.diameter',active:draft.diameter},{id:'R',labelKey:'cadDraw.radius',active:!draft.diameter}]:[]}),view:()=>draft,
         preview(e){if(draft.phase==='radius'&&finite(e.point)){draft.pointer=clone(port.resolvePoint(e.point,{base:draft.center,shift:false,typed:false}).point);notify();}return{ok:true};},
-        input(e){if(draft.phase==='center'){
+        input(e){const key=e.type==='keyword'?String(e.value).toUpperCase():e.type==='text'?String(e.text).toUpperCase():'';if(draft.phase==='radius'&&['D','DIAMETER','R','RADIUS'].includes(key)){draft.diameter=key.startsWith('D');port.prompt('C',draft.diameter?'diameter':'radius');return{ok:true};}if(draft.phase==='center'){
           let p=null;if(e.type==='point'&&finite(e.point))p=port.resolvePoint(e.point,{base:null,shift:false,typed:false}).point;else if(e.type==='text'){const q=port.parsePoint(String(e.text||''),{base:null});if(q?.ok)p=q.point;}if(!p)return{ok:false,code:'invalid-coordinate'};draft.center=clone(p);draft.pointer=clone(p);draft.phase='radius';notify();port.prompt('C',draft.phase);return{ok:true};
         }
         let radius=null;if(e.type==='point'&&finite(e.point)){const p=port.resolvePoint(e.point,{base:draft.center,shift:false,typed:false}).point;radius=Math.hypot(p.x-draft.center.x,p.y-draft.center.y);}else if(e.type==='text'){
-          const raw=String(e.text||'').trim();if(/[,@<]/.test(raw)){const q=port.parsePoint(raw,{base:draft.center,direction:draft.pointer?{x:draft.pointer.x-draft.center.x,y:draft.pointer.y-draft.center.y}:null});if(q?.ok)radius=Math.hypot(q.point.x-draft.center.x,q.point.y-draft.center.y);}else{const q=port.parseLength(raw);if(q?.ok)radius=q.mm;}
+          const raw=String(e.text||'').trim();if(/[,@<]/.test(raw)){const q=port.parsePoint(raw,{base:draft.center,direction:draft.pointer?{x:draft.pointer.x-draft.center.x,y:draft.pointer.y-draft.center.y}:null});if(q?.ok)radius=Math.hypot(q.point.x-draft.center.x,q.point.y-draft.center.y);}else{const q=port.parseLength(raw);if(q?.ok)radius=q.mm/(draft.diameter?2:1);}
         }
         if(!(radius>1e-8))return{ok:false,code:'invalid-distance'};return{ok:true,commit:true,value:{center:clone(draft.center),radius,token:draft.token}};},
         commit(value){if(!port.contextCurrent(value?.token,{geometry:true,layer:true,reference:false,region:true})){const err=new Error('stale-context');err.code='stale-context';throw err;}return port.commitCircle(value.center,value.radius);},
@@ -62,5 +66,5 @@
   }
 
   const aliasMap=new Map([['REC','REC'],['RECTANG','REC'],['RECTANGLE','REC'],['C','C'],['CIRCLE','C'],['A','A'],['ARC','A']]);
-  root.nativeDrawCommands=Object.freeze({install,ids,resolve:raw=>aliasMap.get(String(raw||'').trim().toUpperCase())||null});
+  root.nativeDrawCommands=Object.freeze({install,ids,keyword:(id,phase,key)=>id==='REC'&&phase!=='first'&&['D','DIMENSIONS'].includes(key)||id==='C'&&phase==='radius'&&['D','DIAMETER','R','RADIUS'].includes(key),resolve:raw=>aliasMap.get(String(raw||'').trim().toUpperCase())||null});
 })();

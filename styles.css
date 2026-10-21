@@ -1999,16 +1999,15 @@ html, body { font-size:var(--font-body); }
 .app-shell:not(.toolbar-expanded) .workspace { grid-template-rows:minmax(0,1fr); }
 .app-shell:not(.toolbar-expanded) .canvas-host,
 .app-shell:not(.toolbar-expanded) .inspector { grid-row:1; }
-.app-shell .workspace { grid-template-columns:minmax(0,1fr) var(--workspace-inspector-width); }
-.app-shell.inspector-autohide .workspace { grid-template-columns:minmax(0,1fr) 0; }
-.app-shell .inspector { position:relative; display:grid!important; min-width:0; }
+.app-shell .workspace { grid-template-columns:minmax(0,1fr) 0; }
+.app-shell .inspector { position:absolute; display:grid!important; min-width:0; grid-column:auto; grid-row:auto; inset:0 0 0 auto; width:var(--workspace-inspector-width); z-index:28; transform:translateX(0); pointer-events:auto; transition:transform var(--workspace-motion) ease; }
 .app-shell .inspector-tabs { padding-left:38px; }
 .app-shell .inspector-pin { position:absolute; top:2px; left:7px; border-color:transparent; background:transparent; z-index:2; }
 .inspector-pin[aria-pressed="true"] { color:var(--accent); background:var(--accent-soft); }
 .inspector-pin[aria-pressed="true"] .inspector-unpinned-mark { display:none; }
 .inspector-pin[aria-pressed="false"] .inspector-unpinned-mark { display:block; }
-.app-shell.inspector-autohide .inspector { position:absolute; grid-column:auto; grid-row:auto; inset:0 0 0 auto; width:var(--workspace-inspector-width); z-index:28; transform:translateX(100%); pointer-events:none; transition:transform var(--workspace-motion) ease; }
-.app-shell.toolbar-expanded.inspector-autohide .inspector { top:var(--workspace-ribbon-height, 0px); }
+.app-shell.inspector-autohide .inspector { transform:translateX(100%); pointer-events:none; }
+.app-shell.toolbar-expanded .inspector { top:var(--workspace-ribbon-height, 0px); }
 .app-shell.inspector-autohide.inspector-revealed .inspector { transform:translateX(0); pointer-events:auto; }
 .inspector-handle { position:absolute; z-index:29; right:0; top:48%; width:30px; height:56px; padding:0; display:grid; place-items:center; border:0; background:transparent; color:var(--text-2); cursor:pointer; transition:right var(--workspace-motion) ease; }
 .app-shell.inspector-autohide.inspector-revealed .inspector-handle { right:var(--workspace-inspector-width); }
@@ -2050,3 +2049,8 @@ html, body { font-size:var(--font-body); }
 /* The title and unsaved dot travel as a single unit at the far edge of the spare header space. */
 .app-shell:not(.toolbar-expanded) .topbar-document { justify-content:flex-end; }
 .app-shell:not(.toolbar-expanded) .project-title-control { flex:0 1 auto; width:auto; min-width:0; }
+
+/* CAD precision is progressive; Compact toolbar geometry stays unchanged. */
+.cad-precision-dialog{color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:10px;max-width:430px;width:calc(100% - 36px);padding:18px;box-shadow:0 16px 60px #0006}.cad-precision-dialog::backdrop{background:#0005}.cad-precision-dialog fieldset{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0;border:1px solid var(--border)}.cad-precision-dialog label{display:flex;align-items:center;gap:7px;margin:8px 0}.cad-precision-dialog input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}.cad-precision-dialog input[type=number]{width:100px}.cad-precision-dialog select{margin-left:auto}.cad-precision-dialog p{font-size:12px;line-height:1.5;color:var(--text-2)}.cad-dynamic-input{position:absolute;z-index:16;display:flex;gap:6px;background:var(--surface);color:var(--text);padding:5px;border:1px solid var(--border);border-radius:5px;pointer-events:auto;font-size:11px}.cad-dynamic-input[hidden]{display:none}.cad-dynamic-input label{display:flex;align-items:center;gap:4px}.cad-dynamic-input input{width:76px;min-width:0;background:var(--canvas);color:var(--text);border:1px solid var(--border);padding:4px}.cad-dynamic-input input:focus{outline:2px solid var(--accent)}.cad-dynamic-input input[aria-invalid=true]{outline:2px solid var(--danger)}
+
+.cad-precision-dialog{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow:auto}.cad-precision-dialog h3{margin:0 0 12px}.cad-precision-dialog fieldset{gap:4px 12px;margin:10px 0;padding:10px}.cad-precision-dialog fieldset label{margin:0;min-height:28px;padding:0;line-height:1.35}.cad-precision-dialog>label{margin:6px 0;min-height:26px}.cad-precision-dialog p{margin:10px 0}.cad-precision-dialog input[type=checkbox]{flex:0 0 16px}

@@ -63,7 +63,7 @@
               const raw=String(event.text??'').trim(), upper=raw.toUpperCase();
               if(['L','LINE'].includes(upper))return setMode('line');
               if(['A','ARC'].includes(upper))return setMode('arc');
-              if(['B','BACK','UNDO'].includes(upper))return back();
+              if(['U','B','BACK','UNDO'].includes(upper))return back();
               if(['C','CLOSE'].includes(upper))return finish(true);
               const parsed=event.parsed?.ok&&event.parsed.kind==='point'?event.parsed:port.parsePoint(raw,{base:current(),direction:current()&&draft.pointer?{x:draft.pointer.x-current().x,y:draft.pointer.y-current().y}:null});
               if(!parsed?.ok)return{ok:false,code:'invalid-coordinate'};

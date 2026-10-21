@@ -4,6 +4,10 @@
   const root = window.PieniPlanModules = window.PieniPlanModules || {};
 
   const catalog = Object.freeze([
+    {id:'LEN',name:'LENGTHEN',aliases:['LEN','LENGTHEN'],cadOnly:true},
+    {id:'PE',name:'PEDIT',aliases:['PE','PEDIT'],cadOnly:true},
+    {id:'PROPERTIES',name:'PROPERTIES',aliases:['CH','PR','PROPERTIES'],cadOnly:true},
+    {id:'OSNAP',name:'OSNAP',aliases:['OSNAP'],cadOnly:true},
     {id:'SHEETMANAGER',name:'SHEETMANAGER',aliases:['SHEETMANAGER']},
     ...[['DIMSTYLE','D'],['DIMLINEAR','DIMLINEAR'],['BLOCK','B'],['INSERT','I'],['EXPLODE','X'],['XLINE','XL'],['RAY','RAY'],['BEDIT','BE'],['BLOCKS','BLOCKS']].map(([id,alias])=>({id,name:id,aliases:[...new Set([id,alias])],cadOnly:true})),
     ...[['O','OFFSET'],['F','FILLET'],['BR','BREAK'],['J','JOIN']].map(([id,name])=>({id,name,aliases:[id,name],cadOnly:true})),
