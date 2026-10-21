@@ -7,6 +7,7 @@
   const defaults=['endpoint','midpoint','center','intersection','perpendicular'];
   const finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y),distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   function centroid(o){
+    if(root.cadEllipse?.is(o)&&root.cadEllipse.full(o))return{...o.center};
     if(o?.type==='cadCircle')return{...o.center};
     if(o?.type!=='cadPolyline'||!o.closed||o.vertices.length<3)return null;
     // Translate before integration to avoid loss of significance at survey coordinates.
@@ -19,6 +20,7 @@
     return Math.abs(area)>1e-10?{x:origin.x+mx/area,y:origin.y+my/area}:null;
   }
   function tangent(o,base){
+    if(root.cadEllipse?.is(o))return root.cadEllipse.tangent(o,base);
     if(!finite(base)||!['cadCircle','cadArc'].includes(o?.type)||!(o.radius>0))return[];
     const x=base.x-o.center.x,y=base.y-o.center.y,ds=x*x+y*y,r=o.radius;
     if(ds<=r*r+1e-10)return[];
@@ -31,6 +33,7 @@
       const parts=root.cadPolyline?.is(o)?root.cadPolyline.get(o).edges:root.cadBlocks?.is(o)?root.cadBlocks.expand(o):null;
       if(parts){for(const p of candidates(pointer,parts,{base,modes:modes.filter(k=>k!=='geometricCenter'),nearest}))out.push({...p,objectId:o.id,ownerId:o.id});if(enabled.has('geometricCenter'))add(centroid(o),'geometricCenter',o);continue;}
 
+      if(root.cadEllipse?.is(o)){const e=root.cadEllipse;if(enabled.has('center'))add(o.center,'center',o);if(!e.full(o)){if(enabled.has('endpoint'))for(const t of [0,1])add(e.at(o,t),'endpoint',o);if(enabled.has('midpoint'))add(e.at(o,.5),'midpoint',o);}if(enabled.has('quadrant'))for(const t of [0,Math.PI/2,Math.PI,Math.PI*1.5])if(e.contains(o,t))add(e.point(o,t),'quadrant',o);}
       if(enabled.has('nearest')){const q=nearest(o,pointer);if(q)add(q.point,'nearest',o);}
       if(enabled.has('tangent'))for(const p of tangent(o,base))add(p,'tangent',o);
       if(enabled.has('geometricCenter'))add(centroid(o),'geometricCenter',o);

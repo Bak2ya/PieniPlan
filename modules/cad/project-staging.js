@@ -2,15 +2,15 @@
 (() => {
   'use strict';
   const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{};
-  const supportedTypes=new Set(['cadDxfRecord','cadPoint','cadInsert','cadXline','cadRay','cadLine','cadCircle','cadArc','cadText','cadPolyline','cadDimension','cadHatch','cadLeader','line','wall','door','window','dimension','space','stair','component']);
+  const supportedTypes=new Set(['cadEllipse','cadDxfRecord','cadPoint','cadInsert','cadXline','cadRay','cadLine','cadCircle','cadArc','cadText','cadPolyline','cadDimension','cadHatch','cadLeader','line','wall','door','window','dimension','space','stair','component']);
   function validate(raw){
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
     if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>7))bad('unsupported-schema');
-    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.planNature?.capability,root.cadPolyline?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
+    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.planNature?.capability,root.cadPolyline?.capability,root.cadEllipse?.capability,root.cadTextStyles?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
     if(!Array.isArray(caps)||caps.some(c=>!allowedCaps.has(c)))bad('unsupported-capability');
     const d=raw.drawing;root.planNature?.validateStyles(d.toolSettings?.planObjectStyles);if(Object.keys(d.toolSettings?.planObjectStyles||{}).length&&!caps.includes(root.planNature?.capability))bad('plan-style-capability');const vertexIds=new Set(),edgeIds=new Set(),annotationV2=(raw.schemaVersion??1)>=7&&caps.includes('cad.annotation.v2');
-    for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory','blockDefinitions','dimensionStyles'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
+    for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory','blockDefinitions','dimensionStyles','textStyles'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
     for(const o of d.objects||[])if(o.recognitionExactBaseline!=null&&(!caps.includes('plan.recognition.review.v1')||typeof o.recognitionExactBaseline!=='string'||o.recognitionExactBaseline.length>100000))bad('recognition-review-capability');
     const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
     for(const key of ['objects','references','drawingRegions','floors','sheets']){
@@ -19,6 +19,7 @@
     if(d.buildings!=null&&!Array.isArray(d.buildings))bad('buildings');for(const b of d.buildings||[])if(b.structuralReferences!=null){if(b.structuralReferences?.length&&!caps.includes('building.structure.v1'))bad('structure-capability-required');try{root.structuralAlignment.validateReferences(b.structuralReferences);for(const r of b.structuralReferences)for(const binding of r.bindings){const floor=(d.floors||[]).find(f=>f.id===binding.floorId);if(floor&&floor.buildingId!==b.id)bad('common-reference-building');}}catch{bad('common-structure-reference');}}
     for(const f of d.floors||[])if(f.viewAlignment!=null&&(!root.floorAlignment?.valid(f.viewAlignment)||f.viewAlignment.referenceFloorId&&!((d.floors||[]).some(r=>r.id===f.viewAlignment.referenceFloorId&&r.id!==f.id&&r.buildingId===f.buildingId))))bad('floor-view-alignment');
     for(const sheet of d.sheets||[]){if(sheet.titleBlock||sheet.drawingNumber!=null||sheet.revision!=null){if(!caps.includes('sheet.architectural.v1'))bad('sheet-capability-required');root.architecturalSheet.validate(sheet,d.blockDefinitions||[]);}if(sheet.range!=null){try{if(!root.sheetLayout)bad('sheet-layout-unavailable');root.sheetLayout.layout(sheet.range,sheet);}catch{bad('sheet-layout');}}}
+    if(d.textStyles?.length){if(!caps.includes(root.cadTextStyles?.capability))bad('text-style-capability-required');root.cadTextStyles.validate(d.textStyles);}
     const definitions=d.blockDefinitions||[],styles=d.dimensionStyles||[];
     if(styles.length){if(!caps.includes('cad.dimstyle.v1'))bad('dimstyle-capability-required');root.cadDimensionStyles.validate(styles);}
     if(d.dxfArchive!=null){if(!caps.includes('cad.dxf.roundtrip.v1')||typeof d.dxfArchive!=='object'||!Array.isArray(d.dxfArchive.sections)||!Number.isFinite(d.dxfArchive.unitFactor)||d.dxfArchive.unitFactor<=0)bad('dxf-archive');}
@@ -28,6 +29,7 @@
     for(const o of d.objects||[]){
       if(o.planGeometry||o.planNature){if(!caps.includes(root.planNature?.capability)||!root.planNature)bad('plan-nature-capability');root.planNature.validateObject(o);}
       if(raw.__blockMembers&&(!o.type.startsWith('cad')||o.planRole||o.floorId))bad('non-cad-block-member');
+      if(o.type==='cadEllipse'){if(!caps.includes(root.cadEllipse?.capability))bad('ellipse-capability-required');root.cadEllipse.validate(o);}
       if(o.type==='cadPoint'&&(!caps.includes('cad.dxf.roundtrip.v1')||!point(o.point)))bad('cad-point');
       if(o.type==='cadDxfRecord'){if(!caps.includes('cad.dxf.roundtrip.v1')||o.readonly!==true||typeof o.recordType!=='string'||!Array.isArray(o.rawGroups)||!o.rawGroups.length||!o.rawGroups.every(p=>Array.isArray(p)&&p.length===2&&Number.isInteger(p[0])&&p[0]>=0&&p[0]<=1071&&typeof p[1]==='string')||!Array.isArray(o.preview))bad('preserved-dxf-record');for(const q of o.preview)if(!q.type?.startsWith('cad')||q.type==='cadInsert'||q.type==='cadDxfRecord')bad('preserved-preview-type');validate({...raw,drawing:{objects:o.preview,dimensionStyles:styles},__blockMembers:true});}
       if(o.type==='cadInsert'&&!root.cadBlocks.matrixValid(o.matrix))bad('block-transform');

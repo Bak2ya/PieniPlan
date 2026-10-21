@@ -1,3 +1,11 @@
+## v0.62.0 · Build88 (2026-10-21)
+
+- Refine Compact tool surfaces with existing House tokens, scale Build87 icons to 90%, add a filled caret and retain action hit areas.
+- Align Settings operations by their right edge, retain natural control widths, present panel preferences as segmented choices and use two mouse scopes. Distinguish unassigned, waiting, valid and invalid shortcuts without replacing saved bindings.
+- Add exact native ellipses and elliptical arcs, analytic snapping, grips, transforms and bounded TRIM/EXTEND/BREAK/JOIN. Preserve conic geometry through project and native DXF exchange; add explicit capability gates for older readers.
+- Add named document text styles using the bundled Noto Sans KR font, default height, width and oblique angle; connect TEXT/MTEXT, shared SVG/PDF output and STYLE tables. Source fonts remain preserved with explicit display limits.
+- Extend circle TTR to line/circle/arc pairs and add bounded mixed-curve FILLET NoTrim. Advanced curve options, PEDIT fitting and DWG XREF remain incomplete. This is a Feature Fill build, not a final interoperability audit.
+
 # v0.60.0 · Build86 — CAD Feature Fill (2026-10-21)
 
 ## v0.61.0 · Build87 (2026-10-21)

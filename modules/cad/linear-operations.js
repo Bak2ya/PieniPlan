@@ -18,6 +18,10 @@
   const pts=[a.a,a.b,b.a,b.b].sort((p,q)=>G.parameter(a,p)-G.parameter(a,q));return{before:[a,b],after:[{...a,a:{...pts[0]},b:{...pts[3]}}]};
  }
  function fillet(a,pa,b,pb,radius,{trim=true}={}){
+  if(a.type!=='cadLine'||b.type!=='cadLine'){
+   if(trim&&!(a.type==='cadCircle'&&b.type==='cadCircle'))return null;const q=root.cadCreation?.tangentPair(a,b,radius,pa,pb);if(!q)return null;for(const [o,p]of [[a,q.tangentA],[b,q.tangentB]])if(o.type==='cadLine'&&(G.parameter(o,p)<-1e-9||G.parameter(o,p)>1+1e-9))return null;const startAngle=Math.atan2(q.tangentA.y-q.center.y,q.tangentA.x-q.center.x)*180/Math.PI,end=Math.atan2(q.tangentB.y-q.center.y,q.tangentB.x-q.center.x)*180/Math.PI,sweep=((end-startAngle+540)%360)-180;if(Math.abs(sweep)<1e-8)return null;return{before:[],after:[{type:'cadArc',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center:q.center,radius,startAngle,sweep}]};
+  }
+
   if(a.type!=='cadLine'||b.type!=='cadLine'||a.id===b.id||!(radius>=0))return null;
   const hits=G.intersections({...a,mode:'line'},{...b,mode:'line'});if(hits.length!==1)return null;const origin=hits[0];
   const side=(e,p)=>{const t=G.parameter(e,origin),tp=G.parameter(e,p),end=tp>=t?'b':'a',far=e[end],u=unit(origin,far);return u?{far,u,move:end==='a'?'b':'a'}:null;};

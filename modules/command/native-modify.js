@@ -11,12 +11,13 @@
    const prompt=()=>port.prompt(id,draft.phase,draft),clearPreview=()=>{draft.plan=null;port.preview(null);};
    const sourceReset=()=>{draft.source=null;draft.sourcePoint=null;draft.first=null;draft.phase='source';port.source(null);clearPreview();prompt();};
    const getPoint=e=>{if(e.type==='point')return port.resolve(e.point,draft.first||draft.sourcePoint);if(e.type==='text'){const p=port.parsePoint(e.text,{base:draft.first||draft.sourcePoint,direction:draft.lastPointer&&draft.first?{x:draft.lastPointer.x-draft.first.x,y:draft.lastPointer.y-draft.first.y}:null});return p.ok?p.point:null;}return null;};
-   function compute(e){const p=getPoint(e),source=draft.source;if(!p||!source)return null;
+   function compute(e){draft.failure=null;const p=getPoint(e),source=draft.source;if(!p||!source)return null;
     if(id==='O'){const n=draft.through?(root.cadPolyline?.is(source)?root.cadPolyline.nearest(source,p):root.geometryQuery.projectNearest(source,p)):null,distance=draft.through?n?.distance:draft.distance;const plan=root.cadPolyline?.is(source)?root.cadPolyline.offset(source,distance,p):ops.offset(source,distance,p);if(plan){if(draft.offsetLayer==='current')for(const o of plan.after)o.cadLayer=port.layer();if(draft.offsetErase){plan.before=[source];for(const o of plan.after)o.id='__offset_new_owner__';}}return plan;}
-    if(id==='BR')return root.cadPolyline?.is(source)?root.cadPolyline.breakBetween(source,draft.first,p):['cadCircle','cadArc'].includes(source.type)?root.cadCurveOperations.breakBetween(source,draft.first,p):ops.breakLine(source,draft.first,p);
+    if(id==='BR')return root.cadPolyline?.is(source)?root.cadPolyline.breakBetween(source,draft.first,p):['cadCircle','cadArc','cadEllipse'].includes(source.type)?root.cadCurveOperations.breakBetween(source,draft.first,p):ops.breakLine(source,draft.first,p);
     const target=port.pick(e.point||p);if(!target||!port.allowed(target.id))return null;
-    if(id==='J')return root.cadPolyline?.is(source)?root.cadPolyline.joinOpen(source,target):source.type==='cadArc'?root.cadCurveOperations.join(source,target):ops.join(source,target);
+    if(id==='J')return root.cadPolyline?.is(source)?root.cadPolyline.joinOpen(source,target):['cadArc','cadEllipse'].includes(source.type)?root.cadCurveOperations.join(source,target):ops.join(source,target);
     if(root.cadPolyline?.is(source)){if(target.id!==source.id||!draft.trim||id==='CH'&&Math.abs(draft.distance-draft.distance2)>1e-8)return null;return id==='CH'?root.cadPolyline.chamferAt(source,draft.sourcePoint,e.point||p,draft.distance):root.cadPolyline.filletAt(source,draft.sourcePoint,e.point||p,draft.distance);}
+    if(id==='F'&&draft.trim&&['cadLine','cadCircle','cadArc'].includes(source.type)&&['cadLine','cadCircle','cadArc'].includes(target.type)&&(source.type!=='cadLine'||target.type!=='cadLine')&&!(source.type==='cadCircle'&&target.type==='cadCircle')){draft.failure='curved-fillet-trim';return null;}
     return id==='CH'?e.shift?ops.fillet(source,draft.sourcePoint,target,e.point||p,0,{trim:draft.trim}):ops.chamfer(source,draft.sourcePoint,target,e.point||p,draft.distance,{distance2:e.shift?0:draft.distance2,trim:draft.trim}):ops.fillet(source,draft.sourcePoint,target,e.point||p,e.shift?0:draft.distance,{trim:draft.trim});
    }
    function apply(plan){if(!plan)return{ok:false,code:'no-valid-result'};if(id==='O'||id==='J'||draft.multiple){if(!port.commit(id,plan))return{ok:false,code:'no-valid-result'};draft.history.push(port.historyMark());draft.token=port.token();sourceReset();return{ok:true,code:'applied-repeat'};}return{ok:true,commit:true,value:plan};}
@@ -42,11 +43,11 @@
       if(draft.phase!=='source')return{ok:false,code:'invalid-distance'};
      }
      if(draft.phase==='source'){const obj=e.type==='point'?port.pick(e.point):null;if(!obj||!port.allowed(obj.id))return{ok:false,code:'target-not-modifiable'};
-      const supported=id==='O'?(['cadLine','cadCircle','cadArc'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='BR'?(['cadLine','cadCircle','cadArc'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='J'?(['cadLine','cadArc'].includes(obj.type)||root.cadPolyline?.is(obj)&&!obj.closed):(obj.type==='cadLine'||root.cadPolyline?.is(obj));
+      const supported=id==='O'?(['cadLine','cadCircle','cadArc'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='BR'?(['cadLine','cadCircle','cadArc','cadEllipse'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='J'?(['cadLine','cadArc','cadEllipse'].includes(obj.type)||root.cadPolyline?.is(obj)&&!obj.closed):(obj.type==='cadLine'||root.cadPolyline?.is(obj)||id==='F'&&['cadCircle','cadArc'].includes(obj.type));
       if(!supported)return{ok:false,code:'unsupported-geometry'};draft.source=obj;draft.sourcePoint=e.point;port.source(obj.id);draft.phase=['J','F','CH'].includes(id)?'second':'result';if(id==='BR')draft.first=(root.cadPolyline?.is(obj)?root.cadPolyline.nearest(obj,e.point):root.geometryQuery.projectNearest(obj,e.point))?.point;prompt();return{ok:true};}
      if(draft.phase==='first'){const p=getPoint(e);if(!p)return{ok:false,code:'invalid-coordinate'};draft.first=(root.cadPolyline?.is(draft.source)?root.cadPolyline.nearest(draft.source,p):root.geometryQuery.projectNearest(draft.source,p))?.point;if(!draft.first)return{ok:false,code:'no-valid-result'};draft.phase='result';prompt();return{ok:true};}
      if(id==='BR'&&key==='@')return apply(ops.breakLine(draft.source,draft.first,draft.first));
-     const plan=compute(e);if(!plan){clearPreview();return{ok:false,code:'no-valid-result'};}draft.plan=plan;port.preview(plan);return apply(plan);
+     const plan=compute(e);if(!plan){clearPreview();return{ok:false,code:draft.failure||'no-valid-result'};}draft.plan=plan;port.preview(plan);return apply(plan);
     },commit(plan){if(!port.current(draft.token))throw Error('stale-context');return port.commit(id,plan);},cancel:()=>port.clear(),finalize:()=>port.clear()
    };
   }});

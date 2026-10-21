@@ -1,0 +1,34 @@
+/* Exact canonical 2D ellipses. Parameters are radians, coordinates canonical mm.
+ * Numerical root isolation evaluates the conic, never a tessellated replacement. */
+(() => {
+ 'use strict';const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},TAU=Math.PI*2,EPS=1e-9;
+ const is=o=>o?.type==='cadEllipse',norm=t=>(t%TAU+TAU)%TAU,dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+ const full=o=>Math.abs(Math.abs(o.sweepParam)-TAU)<1e-9;
+ function validate(o){if(!is(o)||!finite(o.center)||!finite(o.major)||Math.hypot(o.major.x,o.major.y)<1e-8||!Number.isFinite(o.ratio)||o.ratio<=1e-9||o.ratio>1||!Number.isFinite(o.startParam)||!Number.isFinite(o.sweepParam)||Math.abs(o.sweepParam)<1e-10||Math.abs(o.sweepParam)>TAU+1e-9)throw Error('invalid-ellipse');return o;}
+ const minor=o=>({x:-o.major.y*o.ratio,y:o.major.x*o.ratio});
+ function point(o,t){const b=minor(o);return{x:o.center.x+o.major.x*Math.cos(t)+b.x*Math.sin(t),y:o.center.y+o.major.y*Math.cos(t)+b.y*Math.sin(t)};}
+ const at=(o,t)=>point(o,o.startParam+o.sweepParam*t);
+ function local(o,p){const a=Math.hypot(o.major.x,o.major.y),dx=p.x-o.center.x,dy=p.y-o.center.y;return{x:(dx*o.major.x+dy*o.major.y)/(a*a),y:(-dx*o.major.y+dy*o.major.x)/(a*a*o.ratio)};}
+ const parameter=(o,p)=>{const q=local(o,p);return Math.atan2(q.y,q.x);};
+ const contains=(o,t,tol=1e-9)=>full(o)||norm((t-o.startParam)*Math.sign(o.sweepParam))<=Math.abs(o.sweepParam)+tol||TAU-norm((t-o.startParam)*Math.sign(o.sweepParam))<=tol;
+ const progress=(o,p)=>norm((parameter(o,p)-o.startParam)*Math.sign(o.sweepParam))/Math.abs(o.sweepParam);
+ function create(center,axis,other,start=0,sweep=TAU){const a=Math.hypot(axis.x,axis.y);if(!(a>1e-8&&other>1e-8))return null;let major={...axis},ratio=other/a;if(ratio>1){major={x:-axis.y*ratio,y:axis.x*ratio};ratio=1/ratio;start-=Math.PI/2;}const q={type:'cadEllipse',center:{...center},major,ratio,startParam:start,sweepParam:sweep};try{return validate(q);}catch{return null;}}
+ function bounds(o){const b=minor(o),angles=[o.startParam,o.startParam+o.sweepParam];for(const k of ['x','y']){const t=Math.atan2(b[k],o.major[k]);for(const v of [t,t+Math.PI])if(contains(o,v))angles.push(v);}const p=angles.map(t=>point(o,t));return{minx:Math.min(...p.map(p=>p.x)),maxx:Math.max(...p.map(p=>p.x)),miny:Math.min(...p.map(p=>p.y)),maxy:Math.max(...p.map(p=>p.y))};}
+ function roots(coeff){let a=coeff.slice(),scale=Math.max(...a.map(Math.abs));if(!scale)return[];a=a.map(v=>v/scale);while(a.length>1&&Math.abs(a.at(-1))<1e-14)a.pop();const n=a.length-1;if(!n)return[];if(n===1)return[-a[0]/a[1]];const f=x=>a.reduceRight((v,c)=>v*x+c,0),crit=roots(a.slice(1).map((v,i)=>v*(i+1))),bound=1+Math.max(...a.slice(0,-1).map(v=>Math.abs(v/a.at(-1)))),xs=[-bound,...crit.filter(v=>v>-bound&&v<bound),bound].sort((x,y)=>x-y),out=[];
+  const near=(x,v)=>Math.abs(v)<1e-10*Math.max(1,...a.map((c,i)=>Math.abs(c*x**i)));
+  for(const x of crit)if(near(x,f(x)))out.push(x);
+  for(let i=1;i<xs.length;i++){let l=xs[i-1],r=xs[i],fl=f(l),fr=f(r);if(fl*fr>=0)continue;for(let k=0;k<100;k++){const m=(l+r)/2,fm=f(m);if(fl*fm<=0){r=m;fr=fm;}else{l=m;fl=fm;}}out.push((l+r)/2);}
+  return out.sort((a,b)=>a-b).filter((x,i,a)=>!i||Math.abs(x-a[i-1])>1e-7*Math.max(1,Math.abs(x)));
+ }
+ function stationary(o,p){const a=Math.hypot(o.major.x,o.major.y),b=a*o.ratio,q=local(o,p),A=a*a*q.x,B=b*b*q.y,D=b*b-a*a,angles=roots([-B,2*(D+A),0,2*(A-D),B]).map(z=>2*Math.atan(z));if(Math.abs(B)<1e-9*Math.max(1,a*a,b*b))angles.push(Math.PI);return angles.filter(t=>contains(o,t));}
+ function nearest(o,p){const ts=[...stationary(o,p),o.startParam,o.startParam+o.sweepParam];return ts.map(t=>({point:point(o,t),parameter:t})).map(q=>({...q,distance:dist(q.point,p)})).sort((a,b)=>a.distance-b.distance)[0];}
+ const perpendicular=(o,p)=>stationary(o,p).map(t=>point(o,t));
+ function tangent(o,p){if(!finite(p))return[];const q=local(o,p),r=Math.hypot(q.x,q.y);if(r<1-EPS)return[];const a=Math.atan2(q.y,q.x),d=Math.acos(Math.min(1,1/r));return[a-d,a+d].filter(t=>contains(o,t)).map(t=>point(o,t)).filter((p,i,a)=>!i||dist(p,a[0])>1e-7);}
+ function lineIntersections(o,l){const a=local(o,l.a),b=local(o,l.b),dx=b.x-a.x,dy=b.y-a.y,A=dx*dx+dy*dy,B=2*(a.x*dx+a.y*dy),C=a.x*a.x+a.y*a.y-1,D=B*B-4*A*C;if(A<EPS*EPS||D< -1e-10*Math.max(1,B*B,Math.abs(4*A*C)))return[];const sd=Math.sqrt(Math.max(0,D)),ts=sd<1e-12?[-B/(2*A)]:[(-B-sd)/(2*A),(-B+sd)/(2*A)];return ts.filter(t=>(l.mode==='line'||t>=-1e-9)&&(l.mode==='line'||l.mode==='ray'||t<=1+1e-9)).map(t=>({x:l.a.x+(l.b.x-l.a.x)*t,y:l.a.y+(l.b.y-l.a.y)*t})).filter(p=>contains(o,parameter(o,p)));}
+ function intersections(o,q){if(q.a&&q.b)return lineIntersections(o,q);if(!is(q)&&!['cadCircle','cadArc'].includes(q.type))return[];const e=is(q)?q:{type:'cadEllipse',center:q.center,major:{x:q.radius,y:0},ratio:1,startParam:(q.startAngle||0)*Math.PI/180,sweepParam:(q.type==='cadCircle'?360:q.sweep)*Math.PI/180},c=local(e,o.center),p=local(e,{x:o.center.x+o.major.x,y:o.center.y+o.major.y}),b=minor(o),v=local(e,{x:o.center.x+b.x,y:o.center.y+b.y}),u={x:p.x-c.x,y:p.y-c.y},w={x:v.x-c.x,y:v.y-c.y},A=u.x*u.x+u.y*u.y,B=w.x*w.x+w.y*w.y,C=2*(u.x*w.x+u.y*w.y),D=2*(c.x*u.x+c.y*u.y),E=2*(c.x*w.x+c.y*w.y),F=c.x*c.x+c.y*c.y-1,co=[A+D+F,2*(C+E),-2*A+4*B+2*F,2*(E-C),A-D+F];
+  if(co.every(v=>Math.abs(v)<1e-10))return[];const ts=roots(co).map(v=>2*Math.atan(v));if(Math.abs(A-D+F)<1e-9)ts.push(Math.PI);return ts.filter(t=>contains(o,t)).map(t=>point(o,t)).filter(p=>contains(e,parameter(e,p))).filter((p,i,a)=>a.findIndex(q=>dist(p,q)<1e-6)===i);
+ }
+ function transform(o,m){const c={x:m.a*o.center.x+m.c*o.center.y+m.tx,y:m.b*o.center.x+m.d*o.center.y+m.ty},b=minor(o),A={x:m.a*o.major.x+m.c*o.major.y,y:m.b*o.major.x+m.d*o.major.y},B={x:m.a*b.x+m.c*b.y,y:m.b*b.x+m.d*b.y},xx=A.x*A.x+B.x*B.x,yy=A.y*A.y+B.y*B.y,xy=A.x*A.y+B.x*B.y,angle=Math.atan2(2*xy,xx-yy)/2,disc=Math.hypot(xx-yy,2*xy),r=Math.sqrt((xx+yy+disc)/2),s=Math.abs(A.x*B.y-A.y*B.x)/r,ux=Math.cos(angle),uy=Math.sin(angle),phi=Math.atan2((B.x*ux+B.y*uy)/r,(A.x*ux+A.y*uy)/r),sign=Math.sign(A.x*B.y-A.y*B.x);if(!(r>1e-8&&s>1e-8))return null;return validate({...o,center:c,major:{x:ux*r,y:uy*r},ratio:Math.min(1,s/r),startParam:sign*(o.startParam-phi),sweepParam:sign*o.sweepParam});}
+ function svgPath(o){const a=Math.hypot(o.major.x,o.major.y),b=a*o.ratio,rot=-Math.atan2(o.major.y,o.major.x)*180/Math.PI,start=at(o,0),steps=full(o)?2:1;let d=`M ${start.x} ${-start.y}`;for(let i=1;i<=steps;i++){const p=at(o,i/steps);d+=` A ${a} ${b} ${rot} ${Math.abs(o.sweepParam/steps)>Math.PI?1:0} ${o.sweepParam<0?1:0} ${p.x} ${-p.y}`;}return d;}
+ root.cadEllipse=Object.freeze({capability:'cad.ellipse.v1',is,full,validate,minor,point,at,local,parameter,contains,progress,create,bounds,roots,nearest,perpendicular,tangent,intersections,transform,svgPath,TAU});
+})();

@@ -28,6 +28,7 @@
   }
   function transform(o,m){if(!validMatrix(m)||!o)return null;const s=scaleOf(m),sign=Math.sign(det(m))||1;
     if(root.cadPolyline?.is(o))return root.cadPolyline.transform(o,m);
+    if(root.cadEllipse?.is(o))return root.cadEllipse.transform(o,m);
     if(o.type==='cadPoint')return{...o,point:point(m,o.point)};
     if(o.type==='cadInsert')return{...o,matrix:multiply(m,o.matrix)};
     if(['cadLine','cadRay','cadXline'].includes(o.type))return{...o,a:point(m,o.a),b:point(m,o.b)};
@@ -39,6 +40,6 @@
     if(o.type==='cadLeader')return{...o,points:(o.points||[]).map(p=>point(m,p)),height:(Number(o.height)||140)*s,width:(Number(o.width)||0)*s};
     return null;
   }
-  function supports(o){return Boolean(o&&(root.cadPolyline?.is(o)||['cadPoint','cadInsert','cadXline','cadRay','cadLine','cadCircle','cadArc','cadText','cadDimension','cadHatch','cadLeader'].includes(o.type)));}
+  function supports(o){return Boolean(o&&(root.cadPolyline?.is(o)||['cadEllipse','cadPoint','cadInsert','cadXline','cadRay','cadLine','cadCircle','cadArc','cadText','cadDimension','cadHatch','cadLeader'].includes(o.type)));}
   root.cadTransformOperations=Object.freeze({identity,multiply,translate,rotate,scale,mirror,align,point,det,scaleOf,validMatrix,transform,supports});
 })();

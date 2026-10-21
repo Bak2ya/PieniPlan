@@ -5,6 +5,8 @@
 
   const catalog = Object.freeze([
     {id:'SELECT',name:'SELECT',aliases:['SELECT'],cadOnly:true},
+    {id:'STYLE',name:'STYLE',aliases:['STYLE','TEXTSTYLE','ST'],cadOnly:true},
+    {id:'EL',name:'ELLIPSE',aliases:['EL','ELLIPSE'],cadOnly:true},
     {id:'POL',name:'POLYGON',aliases:['POL','POLYGON'],cadOnly:true},
     {id:'LEN',name:'LENGTHEN',aliases:['LEN','LENGTHEN'],cadOnly:true},
     {id:'PE',name:'PEDIT',aliases:['PE','PEDIT'],cadOnly:true},

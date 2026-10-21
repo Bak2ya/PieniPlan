@@ -2100,3 +2100,42 @@ html, body { font-size:var(--font-body); }
 .settings-menu-order{display:flex;gap:2px;margin-left:auto}.settings-menu-order button{padding:1px 4px;min-width:20px;min-height:26px;height:26px}.settings-context-label{white-space:normal;overflow:visible}.settings-context-label>span:not(.ui-icon){overflow-wrap:anywhere}
 
 .settings-page .settings-section:has(>.settings-row){padding-block:8px}.settings-row{padding-block:4px}.settings-section>.small-button{justify-self:start;max-width:100%}
+
+/* Build88: use existing House surface/state tokens; right action surfaces retained. */
+.app-shell:not(.toolbar-expanded) .tool-category-split{background:var(--surface-2);border-color:transparent;overflow:hidden}
+.app-shell:not(.toolbar-expanded) .tool-category,.app-shell:not(.toolbar-expanded) .tool-category-menu{border-color:transparent;background:transparent}
+.app-shell:not(.toolbar-expanded) .tool-category:hover,.app-shell:not(.toolbar-expanded) .tool-category-menu:hover{background:var(--surface-3);border-color:transparent}
+.app-shell:not(.toolbar-expanded) .tool-category:active,.app-shell:not(.toolbar-expanded) .tool-category-menu:active{background:var(--surface-4)}
+.app-shell:not(.toolbar-expanded) .tool-category.active{background:var(--accent-strong);color:var(--text)}
+.app-shell .topbar-right{gap:4px;margin-right:0}
+.app-shell .topbar-right>.icon-button{box-sizing:border-box;width:30px;min-width:30px;flex:0 0 30px;display:inline-flex;align-items:center;justify-content:center;padding-inline:0}
+.app-shell .topbar-right .ui-icon,.app-shell .topbar-right svg,.app-shell:not(.toolbar-expanded) .tool-category .ui-icon{width:21.06px;height:21.06px}
+.app-shell .tool-category-menu .tool-caret{width:18px;height:18px;display:block;margin:auto}
+.settings-row{grid-template-columns:minmax(0,1fr) minmax(0,max-content)}
+.settings-operation{justify-content:flex-end}
+.settings-row-label{overflow-wrap:anywhere}
+.settings-operation>input.text-input{max-width:100%}
+.settings-row-label small.settings-section-copy{display:block;color:var(--text-2);font-size:var(--font-secondary)}
+.settings-state-choice{display:flex;gap:0;width:max-content;max-width:100%;margin:0;padding:3px;border:1px solid var(--border);border-radius:7px;background:var(--surface-2)}
+.settings-state-choice .settings-check-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:30px;padding:3px 9px;margin:0;border:1px solid transparent;border-radius:4px;font-size:var(--font-secondary);cursor:pointer;white-space:normal}
+.settings-state-choice input{position:absolute;opacity:0;width:1px;height:1px}
+.settings-state-choice label:hover{background:var(--surface-3)}
+.settings-state-choice label:has(input:checked),.settings-dialog .controls-tabs .active,.settings-dialog .controls-scope [aria-pressed=true]{background:var(--accent-strong);border-color:var(--accent);color:var(--text);font-weight:600}
+.settings-state-choice label:has(input:focus-visible),.settings-dialog .controls-tabs button:focus-visible,.settings-dialog .controls-scope button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.settings-dialog .controls-scope>[hidden]{display:none!important}
+.settings-auxiliary{min-height:34px;padding-block:4px}
+.settings-auxiliary .settings-section-copy{margin:0}
+.settings-dialog .dialog-actions{padding-block:9px;min-height:0}
+.command-binding-row .shortcut-input{min-width:0;text-overflow:clip}
+@media(max-width:760px){.settings-row{grid-template-columns:1fr}.settings-operation{justify-content:flex-end}.settings-row-label .settings-section-copy{margin-top:3px}}
+
+@font-face{font-family:PieniPlanOutputSans;src:url('vendor/output/PieniPlanOutputSans.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+.text-style-dialog{max-width:36rem}.text-style-dialog>.settings-row{padding-block:5px}.text-style-dialog>.settings-row input{width:12em;max-width:100%}.text-style-actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end;margin-top:12px}
+.settings-dialog .settings-dialog-actions{padding-block:9px;min-height:0}
+
+.command-bindings-head,.command-binding-row{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(12ch,1fr)}
+@media(max-width:520px){.command-bindings-head,.command-binding-row{grid-template-columns:1fr}}
+
+.icon-caret-down-filled{--icon-url:url('assets/icons/caret-down-filled.svg')}
+.icon-ellipse{--icon-url:url('assets/icons/ellipse.svg')}
+.settings-row-label>.settings-section-title{margin:0}

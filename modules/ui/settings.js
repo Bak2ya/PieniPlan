@@ -16,6 +16,20 @@
       if(select){const label=document.createElement('label');label.htmlFor=select.id;label.textContent=title.textContent;if(title.dataset.i18n)label.dataset.i18n=title.dataset.i18n;title.remove();section.append(row(label,desc,select));}
       else if(section.querySelector('#settingsThemeChoices')){const label=section.querySelector('.settings-section-title');section.append(row(label,null,$('settingsThemeChoices')));}
     }
+    // State choices keep the original radio nodes, listeners and preference keys.
+    for(const group of general.querySelectorAll('.workspace-choice-group')){
+      const legend=group.querySelector('legend'),label=document.createElement('span');label.textContent=legend.textContent;label.dataset.i18n=legend.dataset.i18n;
+      group.setAttribute('aria-label',legend.textContent);group.dataset.i18nAria=legend.dataset.i18n;legend.remove();group.classList.add('settings-state-choice');
+      for(const option of group.querySelectorAll('label')){const input=option.querySelector('input'),span=option.querySelector('span'),kind=input.name==='inspectorOpenMethod'?'Open':'Close',value=input.value==='hover'?'Hover':input.value==='auto'?'Auto':'Click';span.dataset.i18n='settings.panel'+kind+value+'Short';span.textContent=port.t(span.dataset.i18n);}
+      const parent=group.parentElement;parent.append(row(label,null,group));
+    }
+    for(const [id,buttonId]of [['settingsRecoveryEnabled','settingsOpenRecovery'],['settingsImportPlan','settingsImportProject']]){
+      const input=$(id),old=input.closest('label'),section=old.closest('.settings-section'),strong=old.querySelector('strong'),copy=old.querySelector('small')||section.querySelector(':scope > .settings-section-copy');
+      const label=document.createElement('label');label.htmlFor=id;label.dataset.i18n=strong.dataset.i18n;label.textContent=strong.textContent;
+      if(copy)copy.classList.add('settings-section-copy');section.insertBefore(row(label,copy,input),old);old.remove();
+      const button=$(buttonId),status=id==='settingsRecoveryEnabled'?$('settingsRecoveryMeta'):null,aux=document.createElement('div');aux.className='settings-row settings-auxiliary';
+      const text=document.createElement('div');text.className='settings-section-copy';if(status)text.append(status);const op=document.createElement('div');op.className='settings-operation';op.append(button);aux.append(text,op);section.append(aux);
+    }
     const cad=document.querySelector('[data-settings-panel="cad"]');
     function renderPrecision(){
       const focus=document.activeElement;if(cad.contains(focus))return;
