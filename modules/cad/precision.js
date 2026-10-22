@@ -9,7 +9,7 @@
   function centroid(o){
     if(root.cadEllipse?.is(o)&&root.cadEllipse.full(o))return{...o.center};
     if(o?.type==='cadCircle')return{...o.center};
-    if(o?.type!=='cadPolyline'||!o.closed||o.vertices.length<3)return null;
+    if(o?.type!=='cadPolyline'||!o.closed||o.vertices.length<3||o.curveFit)return null;
     // Translate before integration to avoid loss of significance at survey coordinates.
     const origin=o.vertices[0];let edges;try{edges=root.cadPolyline.get(o).edges;}catch{return null;}let area=0,mx=0,my=0;
     for(const e of edges){if(e.type==='cadLine'){const a={x:e.a.x-origin.x,y:e.a.y-origin.y},b={x:e.b.x-origin.x,y:e.b.y-origin.y},c=a.x*b.y-b.x*a.y;area+=c/2;mx+=(a.x+b.x)*c/6;my+=(a.y+b.y)*c/6;}
@@ -19,7 +19,7 @@
         mx+=(fx(b)-fx(a))/2;my+=(fy(b)-fy(a))/2;}}
     return Math.abs(area)>1e-10?{x:origin.x+mx/area,y:origin.y+my/area}:null;
   }
-  function tangent(o,base){
+  function tangent(o,base){if(root.cadBezier?.is(o))return root.cadBezier.tangent(o,base);
     if(root.cadEllipse?.is(o))return root.cadEllipse.tangent(o,base);
     if(!finite(base)||!['cadCircle','cadArc'].includes(o?.type)||!(o.radius>0))return[];
     const x=base.x-o.center.x,y=base.y-o.center.y,ds=x*x+y*y,r=o.radius;
@@ -30,7 +30,7 @@
   function candidates(pointer,owners,{base=null,modes=defaults,nearest=root.geometryQuery.projectNearest}={}){
     const enabled=new Set(modes),out=[],add=(q,kind,o)=>{if(finite(q))out.push({...q,kind,objectId:o.id,ownerId:o.id,source:'cad'});};
     for(const o of owners){
-      const parts=root.cadPolyline?.is(o)?root.cadPolyline.get(o).edges:root.cadBlocks?.is(o)?root.cadBlocks.expand(o):null;
+      const parts=root.cadPolylineWidth?.isAffine(o)?root.cadPolylineWidth.affineEdges(o):root.cadHatchCurves?.is(o)?root.cadHatchCurves.loops(o).flat():root.cadPolyline?.is(o)?root.cadPolyline.get(o).edges:root.cadBlocks?.is(o)?root.cadBlocks.expand(o):null;
       if(parts){for(const p of candidates(pointer,parts,{base,modes:modes.filter(k=>k!=='geometricCenter'),nearest}))out.push({...p,objectId:o.id,ownerId:o.id});if(enabled.has('geometricCenter'))add(centroid(o),'geometricCenter',o);continue;}
 
       if(root.cadEllipse?.is(o)){const e=root.cadEllipse;if(enabled.has('center'))add(o.center,'center',o);if(!e.full(o)){if(enabled.has('endpoint'))for(const t of [0,1])add(e.at(o,t),'endpoint',o);if(enabled.has('midpoint'))add(e.at(o,.5),'midpoint',o);}if(enabled.has('quadrant'))for(const t of [0,Math.PI/2,Math.PI,Math.PI*1.5])if(e.contains(o,t))add(e.point(o,t),'quadrant',o);}

@@ -1,3 +1,12 @@
+## v0.63.0 · Build89 (2026-10-22)
+
+- Add geometric polyline widths, including tapered line/arc segments, PEDIT vertex controls, multiple conversion and Add fuzz joins. Preserve widths through transforms, splits, exchange and vector output.
+- Add frame-preserving arc Fit and quadratic/cubic Spline fitting with analytic arcs and polynomial spans. Keep Decurve, control-frame editing and explicit project capabilities; native fitted DXF parity and some curve operations remain limited.
+- Extend mixed LINE/ARC/CIRCLE FILLET Trim, CHAMFER Angle/Polyline, planar TRIM/EXTEND Edge/Project/Fence and elliptical-arc LENGTHEN.
+- Add text-style rename, clone, purge and defaults, per-object text width/oblique/direction overrides and DIMSTYLE text-style selection. Use the existing bundled font; external font and SHX support remain limited.
+- Add exact curved hatch boundaries and holes, document associations, pattern spacing/scale, affine block curve presentation and linked Plan reference paths. Reject unrepresentable explosions and unsupported metadata conversions.
+- Correct Controls descriptions for the chosen keyboard scope and hide keyboard copy in mouse settings. Retain the existing Compact workspace and saved preferences.
+
 ## v0.62.0 · Build88 (2026-10-21)
 
 - Refine Compact tool surfaces with existing House tokens, scale Build87 icons to 90%, add a filled caret and retain action hit areas.

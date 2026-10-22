@@ -19,7 +19,15 @@
  }
  function fillet(a,pa,b,pb,radius,{trim=true}={}){
   if(a.type!=='cadLine'||b.type!=='cadLine'){
-   if(trim&&!(a.type==='cadCircle'&&b.type==='cadCircle'))return null;const q=root.cadCreation?.tangentPair(a,b,radius,pa,pb);if(!q)return null;for(const [o,p]of [[a,q.tangentA],[b,q.tangentB]])if(o.type==='cadLine'&&(G.parameter(o,p)<-1e-9||G.parameter(o,p)>1+1e-9))return null;const startAngle=Math.atan2(q.tangentA.y-q.center.y,q.tangentA.x-q.center.x)*180/Math.PI,end=Math.atan2(q.tangentB.y-q.center.y,q.tangentB.x-q.center.x)*180/Math.PI,sweep=((end-startAngle+540)%360)-180;if(Math.abs(sweep)<1e-8)return null;return{before:[],after:[{type:'cadArc',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center:q.center,radius,startAngle,sweep}]};
+   if(a.id===b.id||!(radius>E))return null;const q=root.cadCreation?.tangentPair(a,b,radius,pa,pb);if(!q)return null;const before=[],after=[];
+   for(const [o,p,pick]of [[a,q.tangentA,pa],[b,q.tangentB,pb]]){
+    if(o.type==='cadLine'&&(G.parameter(o,p)<-1e-9||G.parameter(o,p)>1+1e-9))return null;
+    if(!trim||o.type==='cadCircle')continue;let result;
+    if(o.type==='cadLine'){const t=G.parameter(o,p),tp=G.parameter(o,pick);if(Math.abs(t-tp)<1e-9)return null;const move=tp<t?'b':'a';result={...o,[move]:{...p}};if(d(result.a,result.b)<=E)return null;}
+    else if(o.type==='cadArc'){if(!G.onArc(o,p))return null;const norm=a=>(a%360+360)%360,sign=Math.sign(o.sweep),angle=Math.atan2(p.y-o.center.y,p.x-o.center.x)*180/Math.PI,t=norm((angle-o.startAngle)*sign)/Math.abs(o.sweep),pickAngle=Math.atan2(pick.y-o.center.y,pick.x-o.center.x)*180/Math.PI,tp=norm((pickAngle-o.startAngle)*sign)/Math.abs(o.sweep);if(t<=1e-9||t>=1-1e-9||Math.abs(t-tp)<1e-9)return null;result=tp<t?{...o,sweep:o.sweep*t}:{...o,startAngle:o.startAngle+o.sweep*t,sweep:o.sweep*(1-t)};}
+    else return null;before.push(o);after.push(result);
+   }
+   const startAngle=Math.atan2(q.tangentA.y-q.center.y,q.tangentA.x-q.center.x)*180/Math.PI,end=Math.atan2(q.tangentB.y-q.center.y,q.tangentB.x-q.center.x)*180/Math.PI,sweep=((end-startAngle+540)%360)-180;if(Math.abs(sweep)<1e-8)return null;after.push({type:'cadArc',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center:q.center,radius,startAngle,sweep});return{before,after};
   }
 
   if(a.type!=='cadLine'||b.type!=='cadLine'||a.id===b.id||!(radius>=0))return null;
@@ -32,12 +40,12 @@
   return{before:trim?[a,b]:[],after:[...(trim?[{...a,[x.move]:p},{...b,[y.move]:q}]:[]),{type:'cadArc',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center,radius,startAngle,sweep}]};
  }
 
- function chamfer(a,pa,b,pb,distance,{distance2=distance,trim=true}={}){
+ function chamfer(a,pa,b,pb,distance,{distance2=distance,angle=null,trim=true}={}){
   if(a.type!=='cadLine'||b.type!=='cadLine'||a.id===b.id||!(distance>=0)||!(distance2>=0))return null;
   if(['cadLayer','color','linetype','lineweight','drawOrder'].some(k=>(a[k]??null)!==(b[k]??null)))return null;
   const hits=G.intersections({...a,mode:'line'},{...b,mode:'line'});if(hits.length!==1)return null;const origin=hits[0];
   const side=(e,p)=>{const t=G.parameter(e,origin),tp=G.parameter(e,p),end=tp>=t?'b':'a',far=e[end],u=unit(origin,far);return u?{far,u,move:end==='a'?'b':'a'}:null;};
-  const x=side(a,pa),y=side(b,pb);if(!x||!y||distance>=d(origin,x.far)-E||distance2>=d(origin,y.far)-E)return null;
+  const x=side(a,pa),y=side(b,pb);if(!x||!y)return null;if(angle!==null){const theta=Math.acos(Math.max(-1,Math.min(1,x.u.x*y.u.x+x.u.y*y.u.y))),alpha=angle*Math.PI/180;if(!(alpha>1e-8&&theta+alpha<Math.PI-1e-8))return null;distance2=distance*Math.sin(alpha)/Math.sin(theta+alpha);}if(distance>=d(origin,x.far)-E||distance2>=d(origin,y.far)-E)return null;
   const p=add(origin,x.u,distance),q=add(origin,y.u,distance2);if(d(p,q)<=E)return trim?{before:[a,b],after:[{...a,[x.move]:p},{...b,[y.move]:q}]}:null;
   return{before:trim?[a,b]:[],after:[...(trim?[{...a,[x.move]:p},{...b,[y.move]:q}]:[]),{type:'cadLine',cadLayer:a.cadLayer||'0',color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,drawOrder:a.drawOrder??null,a:p,b:q}]};
  }

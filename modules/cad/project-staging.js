@@ -7,7 +7,7 @@
     const bad=why=>{throw new Error('invalid-project:'+why);};
     if(raw?.format!=='PieniPlan'||!raw.drawing||typeof raw.drawing!=='object'||Array.isArray(raw.drawing))bad('drawing');
     if(raw.schemaVersion!=null&&(!Number.isInteger(raw.schemaVersion)||raw.schemaVersion<1||raw.schemaVersion>7))bad('unsupported-schema');
-    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.planNature?.capability,root.cadPolyline?.capability,root.cadEllipse?.capability,root.cadTextStyles?.capability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
+    const caps=raw.requiredCapabilities??[],allowedCaps=new Set([root.planNature?.capability,root.cadPolyline?.capability,root.cadPolylineFit?.capability,root.cadHatchCurves?.capability,root.cadPolylineWidth?.capability,root.cadEllipse?.capability,root.cadTextStyles?.capability,root.cadTextStyles?.overrideCapability,'cad.annotation.v1','cad.annotation.v2','reference.pdf.v1','cad.block.v1','cad.construction.v1','cad.dxf.roundtrip.v1','cad.dimstyle.v1','sheet.architectural.v1','building.structure.v1','plan.recognition.review.v1'].filter(Boolean));
     if(!Array.isArray(caps)||caps.some(c=>!allowedCaps.has(c)))bad('unsupported-capability');
     const d=raw.drawing;root.planNature?.validateStyles(d.toolSettings?.planObjectStyles);if(Object.keys(d.toolSettings?.planObjectStyles||{}).length&&!caps.includes(root.planNature?.capability))bad('plan-style-capability');const vertexIds=new Set(),edgeIds=new Set(),annotationV2=(raw.schemaVersion??1)>=7&&caps.includes('cad.annotation.v2');
     for(const key of ['objects','references','drawingRegions','floors','sheets','cadLayerDefinitions','cadLayerVisibility','cadRegionLayerVisibility','planLayerVisibility','recognitionHistory','blockDefinitions','dimensionStyles','textStyles'])if(d[key]!=null&&!Array.isArray(d[key]))bad(key);
@@ -37,7 +37,7 @@
       if(!supportedTypes.has(o.type))bad('unsupported-object-type:'+String(o.type));
       if(o.type==='cadPolyline'){
         if((raw.schemaVersion??1)<5||!caps.includes(root.cadPolyline?.capability))bad('polyline-capability-required');
-        root.cadPolyline.validate(o);
+        root.cadPolyline.validate(o);if(o.curveFit){if(!caps.includes(root.cadPolylineFit?.capability))bad('polyline-fit-capability-required');root.cadPolyline.get(o);}if(o.vertices.some(v=>v.outgoing&&(Object.hasOwn(v.outgoing,'startWidth')||Object.hasOwn(v.outgoing,'endWidth')))&&!caps.includes(root.cadPolylineWidth?.capability))bad('polyline-width-capability-required');
         for(const v of o.vertices){if(vertexIds.has(v.id))bad('duplicate-vertex-id');vertexIds.add(v.id);if(v.outgoing){if(edgeIds.has(v.outgoing.id))bad('duplicate-edge-id');edgeIds.add(v.outgoing.id);}}
       }
       for(const key of ['constraints','attachments'])if(o[key]!=null&&(typeof o[key]!=='object'||Array.isArray(o[key])))bad(key);
@@ -46,7 +46,7 @@
       if(['cadLine','line','wall'].includes(o.type)&&(!point(o.a)||!point(o.b)))bad('line');
       if(['cadCircle','cadArc'].includes(o.type)&&(!point(o.center)||!Number.isFinite(o.radius)||o.radius<=0))bad('circle');
       if(o.type==='cadArc'&&(!Number.isFinite(o.startAngle)||!Number.isFinite(o.sweep)))bad('arc');
-      if(o.type==='cadText'){if(o.alignment!=null&&!['left','center','right'].includes(o.alignment))bad('text-alignment');if(!point(o.point)||typeof o.text!=='string')bad('text');if(o.width!=null&&(!Number.isFinite(o.width)||o.width<0))bad('text-width');if((o.mtext===true||o.text.includes('\n'))&&!annotationV2)bad('annotation-v2-capability-required');}
+      if(o.type==='cadText'){if(o.textOverrides){if(!caps.includes(root.cadTextStyles?.overrideCapability))bad('text-override-capability-required');root.cadTextStyles.validateOverrides(o);}if(o.alignment!=null&&!['left','center','right'].includes(o.alignment))bad('text-alignment');if(!point(o.point)||typeof o.text!=='string')bad('text');if(o.width!=null&&(!Number.isFinite(o.width)||o.width<0))bad('text-width');if((o.mtext===true||o.text.includes('\n'))&&!annotationV2)bad('annotation-v2-capability-required');}
       if(o.type==='cadDimension'){
         const kind=o.kind||'aligned';
         if(kind==='aligned'||kind==='linear'){if(kind==='linear'&&(!caps.includes('cad.dimstyle.v1')||!Number.isFinite(o.dimensionAngle)))bad('cad-linear-dimension');if(!point(o.p1)||!point(o.p2)||!Number.isFinite(o.offset))bad('cad-dimension');}
@@ -56,7 +56,8 @@
         if(o.styleName!=null&&(!caps.includes('cad.dimstyle.v1')||typeof o.styleName!=='string'||!styles.some(d=>d.name.toUpperCase()===o.styleName.toUpperCase())))bad('dimension-style-reference');
         if(!Array.isArray(o.segments)||!o.segments.every(seg=>point(seg?.a)&&point(seg?.b)))bad('cad-dimension-segments');
       }
-      if(o.type==='cadHatch'){if(o.hatchPatternTransform&&!root.cadBlocks.matrixValid(o.hatchPatternTransform))bad('hatch-pattern-transform');if(!Array.isArray(o.points)||o.points.length<3||!o.points.every(point))bad('cad-hatch');if(o.angle!=null&&!Number.isFinite(o.angle))bad('cad-hatch-angle');if(o.loops!=null&&(!Array.isArray(o.loops)||!o.loops.length||!o.loops.every(l=>Array.isArray(l)&&l.length>=3&&l.every(point))))bad('hatch-loops');}
+      if(o.type==='cadHatch'&&o.boundaryCurves){if(!caps.includes(root.cadHatchCurves?.capability))bad('hatch-curve-capability-required');root.cadHatchCurves.validate(o);}
+      else if(o.type==='cadHatch'){if(o.hatchPatternTransform&&!root.cadBlocks.matrixValid(o.hatchPatternTransform))bad('hatch-pattern-transform');if(!Array.isArray(o.points)||o.points.length<3||!o.points.every(point))bad('cad-hatch');if(o.angle!=null&&!Number.isFinite(o.angle))bad('cad-hatch-angle');if(o.loops!=null&&(!Array.isArray(o.loops)||!o.loops.length||!o.loops.every(l=>Array.isArray(l)&&l.length>=3&&l.every(point))))bad('hatch-loops');}
       if(o.type==='cadLeader'){if(!annotationV2)bad('annotation-v2-capability-required');if(!Array.isArray(o.points)||o.points.length<2||!o.points.every(point)||typeof o.text!=='string')bad('cad-leader');if(o.height!=null&&(!Number.isFinite(o.height)||o.height<=0))bad('cad-leader-height');if(o.width!=null&&(!Number.isFinite(o.width)||o.width<0))bad('cad-leader-width');}
       if(o.type==='stair'&&o.upDirection!=null){if(![1,-1].includes(o.upDirection)||!Number.isInteger(o.treadCount)||o.treadCount<2||o.treadCount>256||!o.polygon||o.polygon.length!==4||!root.planStair?.frame(o))bad('stair-properties');}
       if(o.type==='component'){

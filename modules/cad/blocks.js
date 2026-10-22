@@ -28,8 +28,11 @@
   if(similarity(m)){const result=root.cadTransformOperations.transform(o,m);if(result)return result;}
   if(o.type==='cadPoint')return{...o,point:point(m,o.point)};
   if(o.type==='cadLine'||o.type==='cadRay'||o.type==='cadXline')return{...o,a:point(m,o.a),b:point(m,o.b)};
+  if(!similarity(m)&&['cadCircle','cadArc'].includes(o.type)&&root.cadEllipse){const q={...o,type:'cadEllipse',major:{x:o.radius,y:0},ratio:1,startParam:(o.startAngle||0)*Math.PI/180,sweepParam:(o.type==='cadCircle'?360:o.sweep)*Math.PI/180};delete q.radius;delete q.startAngle;delete q.sweep;return root.cadEllipse.transform(q,m);}
+  if(root.cadPolyline?.is(o)&&(root.cadPolylineWidth?.has(o)||o.curveFit||o.vertices.some(v=>v.outgoing?.bulge))){if(!approximate)throw Error('explode-nonuniform-polyline-authority-not-supported');return{type:'cadAffinePolyline',id:o.id,original:o,matrix:m};}
   if(root.cadPolyline?.is(o)&&o.vertices.every(v=>!v.outgoing?.bulge))return{...o,vertices:o.vertices.map(v=>({...v,...point(m,v)}))};
   if(root.cadPolyline?.is(o)&&approximate){const points=[];for(const e of root.cadPolyline.get(o).edges){if(!points.length)points.push(point(m,e.type==='cadLine'?e.a:root.geometryQuery.pointAt(e,e.startAngle)));if(e.type==='cadLine')points.push(point(m,e.b));else{const n=Math.max(4,Math.ceil(Math.abs(e.sweep)/3));for(let i=1;i<=n;i++)points.push(point(m,root.geometryQuery.pointAt(e,e.startAngle+e.sweep*i/n)));if(points.length>100000)throw Error('block-preview-geometry-budget');}}if(o.closed&&points.length>1)points.pop();return{...o,vertices:points.map((p,i)=>({id:o.id+'-av'+i,...p,...(i<points.length-1||o.closed?{outgoing:{id:o.id+'-ae'+i,bulge:0}}:{})})),approximation:'nonuniform-polyline'};}
+  if(root.cadHatchCurves?.is(o))return root.cadHatchCurves.transform(o,m);
   if(o.type==='cadHatch'){const q={...o,points:o.points.map(p=>point(m,p)),loops:o.loops?.map(loop=>loop.map(p=>point(m,p)))};if(o.dxf?.raw||o.hatchPatternTransform)q.hatchPatternTransform=mul(m,o.hatchPatternTransform||identity());return q;}
   if(o.type==='cadDxfRecord')return{...o,preview:(o.preview||[]).map(q=>transformLeaf(q,m,{approximate:true})),readonly:true};
   if(!approximate)throw Error('explode-nonuniform-geometry-not-supported');

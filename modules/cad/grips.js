@@ -8,7 +8,7 @@
     if(o.type==='cadLine'){add('a',o.a);add('b',o.b);add('mid',mid(o.a,o.b),'move');}
     else if(root.cadPolyline.is(o)&&o.vertices.length<=500){
       o.vertices.forEach((v,i)=>add('v:'+i,v,'vertex',[i]));
-      for(let i=0;i<o.vertices.length-(o.closed?0:1);i++){const j=(i+1)%o.vertices.length;if(Math.abs(o.vertices[i].outgoing?.bulge||0)<1e-10)add('e:'+i,mid(o.vertices[i],o.vertices[j]),'edge',[i,j]);else{const e=root.cadPolyline.get(o).edges[i];add('arcMid:'+i,root.geometryQuery.pointAt(e,e.startAngle+e.sweep/2),'bulge',[i,j]);}}
+      if(!o.curveFit)for(let i=0;i<o.vertices.length-(o.closed?0:1);i++){const j=(i+1)%o.vertices.length;if(Math.abs(o.vertices[i].outgoing?.bulge||0)<1e-10)add('e:'+i,mid(o.vertices[i],o.vertices[j]),'edge',[i,j]);else{const e=root.cadPolyline.get(o).edges[i];add('arcMid:'+i,root.geometryQuery.pointAt(e,e.startAngle+e.sweep/2),'bulge',[i,j]);}}
     }else if(root.cadEllipse?.is(o)){const e=root.cadEllipse;add('center',o.center,'move');for(const [key,t]of [['ellipseMajor',0],['ellipseMinor',Math.PI/2]])add(key,e.point(o,t),'ellipseAxis');if(!e.full(o)){add('ellipseStart',e.at(o,0),'ellipseEnd');add('ellipseEnd',e.at(o,1),'ellipseEnd');}
     }else if(['cadCircle','cadArc'].includes(o.type)){
       add('center',o.center,'move');if(o.type==='cadArc'){add('arcStart',root.geometryQuery.pointAt(o,o.startAngle),'arcEndpoint');add('arcEnd',root.geometryQuery.pointAt(o,o.startAngle+o.sweep),'arcEndpoint');add('arcMid',root.geometryQuery.pointAt(o,o.startAngle+o.sweep/2),'arcMidpoint');}if(o.type==='cadCircle')for(const a of [0,90,180,270])add('radius:'+a,root.geometryQuery.pointAt(o,a),'radius');

@@ -30,7 +30,7 @@
       if(transformed){
         // Generic hatch transforms intentionally detach a moved hatch from its source
         // boundary. RR rotates the frozen source set together, so preserve ownership.
-        if(object.type==='cadHatch'){if(Object.prototype.hasOwnProperty.call(object,'sourceBoundaryId'))transformed.sourceBoundaryId=object.sourceBoundaryId;else delete transformed.sourceBoundaryId;}
+        if(object.type==='cadHatch'){if(object.sourceBoundaryIds)transformed.sourceBoundaryIds=object.sourceBoundaryIds.slice();if(Object.prototype.hasOwnProperty.call(object,'sourceBoundaryId'))transformed.sourceBoundaryId=object.sourceBoundaryId;else delete transformed.sourceBoundaryId;}
         // RR is a geometry-only stabilization path. Shared transform helpers normalize
         // a few optional style fields for generic RO; avoid materializing defaults that
         // were absent on the Region source object when rotation does not need them.
