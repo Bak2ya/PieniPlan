@@ -2139,3 +2139,28 @@ html, body { font-size:var(--font-body); }
 .icon-caret-down-filled{--icon-url:url('assets/icons/caret-down-filled.svg')}
 .icon-ellipse{--icon-url:url('assets/icons/ellipse.svg')}
 .settings-row-label>.settings-section-title{margin:0}
+
+/* Build90: a stable Compact anchor; expanded tools never consume Canvas space. */
+.app-shell .workspace{grid-template-rows:minmax(0,1fr)}
+.app-shell .canvas-host{grid-row:1}
+.app-shell.toolbar-expanded .topbar{display:flex;gap:8px;padding-inline:8px}
+.app-shell.toolbar-expanded .topbar-left{flex:0 0 auto;min-width:0;gap:6px}
+.app-shell.toolbar-expanded .brand-home{padding-inline:2px}
+.app-shell.toolbar-expanded .brand-name,.app-shell.toolbar-expanded .toolset-switch{display:none}
+.app-shell.toolbar-expanded .topbar-document{flex:1 1 0;min-width:0;max-width:none;width:auto;justify-content:center;overflow:hidden}
+.app-shell.toolbar-expanded .project-title-control{flex:0 1 auto;max-width:100%;min-width:0;justify-content:center}
+.app-shell.toolbar-expanded .project-name-edit{width:100%}
+.app-shell .topbar #toolRail{display:flex!important;flex:1;min-width:0;height:40px;max-height:40px;padding:0;gap:5px;overflow-x:auto;scrollbar-width:thin;border:0;background:transparent;align-items:center}
+.app-shell.toolbar-expanded .topbar .tool-category-split{min-width:0;grid-template-columns:auto 26px;width:max-content;background:var(--surface-2);border-color:transparent;overflow:hidden}
+.app-shell.toolbar-expanded .topbar .tool-category{padding-inline:7px;gap:6px;background:transparent;border-color:transparent}
+.app-shell.toolbar-expanded .topbar .tool-category-menu{width:26px;background:transparent;border-color:transparent}
+.app-shell.toolbar-expanded .topbar .tool-category:hover,.app-shell.toolbar-expanded .topbar .tool-category-menu:hover{background:var(--surface-3)}
+.app-shell.toolbar-expanded .topbar .tool-category.active{background:var(--accent-strong);color:var(--text)}
+.app-shell.toolbar-expanded .topbar .tool-category .ui-icon{width:21.06px;height:21.06px;flex-shrink:0}
+.app-shell #expandedToolRail{position:absolute;inset:0 0 auto 0;z-index:35;display:flex;align-items:stretch;grid-column:1/-1;grid-row:auto;max-height:min(180px,40vh);height:auto;overflow:auto;gap:0;padding:5px 8px;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 4px 12px #0002}
+.app-shell #expandedToolRail[hidden]{display:none!important}
+@media(max-width:720px){.app-shell.toolbar-expanded .topbar{gap:4px;padding-inline:5px}.app-shell.toolbar-expanded .topbar-document{flex-basis:28px}.app-shell.toolbar-expanded .topbar .tool-category .tool-text{display:none}.app-shell #expandedToolRail{max-height:min(160px,40vh)}}
+
+.view-fit-split{display:flex;align-items:center;flex:none;gap:0}.app-shell .view-fit-split>.icon-button{width:30px;min-width:30px;padding:0;display:inline-flex;align-items:center;justify-content:center}.app-shell .view-fit-split>.view-fit-caret{width:18px;min-width:18px}.view-fit-caret .ui-icon{width:18px!important;height:18px!important}#viewMenu [aria-checked=true]{background:var(--accent-soft)}#viewMenu [aria-checked=true]::after{content:'✓';margin-left:auto}
+.drawing-dialog{max-width:44rem;max-height:calc(100dvh - 32px);overflow:auto}.drawing-dialog .settings-row input:not([type=checkbox]),.drawing-dialog .settings-row select{width:15em;max-width:100%}.drawing-dialog .settings-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent)}.drawing-reference-summary{padding:7px 0;border-top:1px solid var(--border)}.drawing-reference-summary .floor-toolbar{flex-wrap:wrap;margin-top:5px}
+.app-shell.plan-tools .primary-controls{display:block}.plan-tools .primary-controls>.floor-toolbar{grid-template-columns:repeat(3,minmax(0,1fr));padding-inline:0}.plan-tools .primary-controls>.floor-toolbar .small-button{padding-inline:4px;white-space:nowrap}.drawing-reference-summary .floor-toolbar{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));padding-inline:0}.drawing-reference-summary .small-button{white-space:nowrap}

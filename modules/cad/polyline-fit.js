@@ -18,10 +18,20 @@
    return{...e,ownerId:o.id,edgeId:o.id+'-fit-'+i,fromVertexId:o.vertices[e.frameIndex||0].id,toVertexId:o.vertices[((e.frameIndex||0)+1)%o.vertices.length].id,startWidth:sw,endWidth:ew};});
  }
  function set(o,kind,degree=3){if(!root.cadPolyline.is(o))return null;const q=JSON.parse(JSON.stringify(o));for(const v of q.vertices)if(v.outgoing)v.outgoing.bulge=0;if(kind==='decurve')delete q.curveFit;else q.curveFit=kind==='arc'?{kind}:{kind,degree};try{root.cadPolyline.validate(q);if(q.curveFit)derive(q);}catch{return null;}return{before:[o],after:[q],topology:'cadPolyline',kind:'PEDIT '+kind.toUpperCase()};}
+ function permanentArcs(o){if(o.curveFit?.kind!=='arc')return null;const es=derive(o),vertices=[],used=new Set(),point=(e,t)=>e.type==='cadLine'?{x:e.a.x+(e.b.x-e.a.x)*t,y:e.a.y+(e.b.y-e.a.y)*t}:root.geometryQuery.pointAt(e,e.startAngle+e.sweep*t);
+  const vertex=p=>{const original=o.vertices.find(v=>!used.has(v.id)&&Math.hypot(v.x-p.x,v.y-p.y)<1e-7),id=original?.id||'__fit_new_cadVertex_'+vertices.length+'__';used.add(id);return{id,x:p.x,y:p.y};};
+  for(const e of es){const v=vertex(point(e,0));v.outgoing={id:'__fit_new_cadEdge_'+vertices.length+'__',bulge:e.type==='cadArc'?Math.tan(e.sweep*Math.PI/720):0,...(e.startWidth?{startWidth:e.startWidth}:{}),...(e.endWidth?{endWidth:e.endWidth}:{})};vertices.push(v);}
+  if(!o.closed)vertices.push(vertex(point(es.at(-1),1)));const q={...o,vertices};delete q.curveFit;try{return root.cadPolyline.validate(q);}catch{return null;}
+ }
+ function extendFrame(o,p,cutters){if(!has(o)||o.closed)return null;const ps=o.vertices,first=ps[0],last=ps.at(-1),start=Math.hypot(p.x-first.x,p.y-first.y)<=Math.hypot(p.x-last.x,p.y-last.y),moving=start?first:last,fixed=start?ps[1]:ps.at(-2),ray={type:'cadLine',a:fixed,b:moving,mode:'ray'},hits=cutters.filter(c=>c.id!==o.id).flatMap(c=>root.geometryQuery.intersections(ray,c)).map(p=>({p,t:root.geometryQuery.parameter(ray,p)})).filter(q=>q.t>1+1e-9).sort((a,b)=>a.t-b.t);if(!hits.length)return null;
+  const q=JSON.parse(JSON.stringify(o)),v={...hits[0].p,id:'__fit_extend_new_cadVertex__'};delete v.bezierParameters;
+  if(start){v.outgoing={...q.vertices[0].outgoing,id:'__fit_extend_new_cadEdge__',bulge:0};q.vertices.unshift(v);}else{q.vertices.at(-1).outgoing={...q.vertices.at(-2).outgoing,id:'__fit_extend_new_cadEdge__',bulge:0};q.vertices.push(v);}
+  try{root.cadPolyline.validate(q);derive(q);}catch{return null;}return{kind:'extend',topology:'cadPolyline',before:o,after:[q],removed:[],a:{x:moving.x,y:moving.y},b:{...hits[0].p},previewGeometry:derive(q)};
+ }
  function fingerprint(pairs){const s=JSON.stringify(pairs.filter(p=>[10,20,40,41,42,70,75].includes(p[0])).map(([c,v])=>[c,Number(v)]));let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return(h>>>0).toString(16);}
  const byteLength=s=>{let n=0;for(const c of String(s)){const p=c.codePointAt(0);n+=p<128?1:p<2048?2:p<65536?3:4;}return n;};
  function chunks(s){const out=[];let text='',bytes=0;for(const c of s){const size=byteLength(c);if(bytes+size>200){out.push(text);text='';bytes=0;}text+=c;bytes+=size;}if(text)out.push(text);return out;}
  function dxfData(o,f,body){const data=JSON.stringify({version:1,unitFactor:f,closed:o.closed,vertices:o.vertices,curveFit:o.curveFit,fingerprint:fingerprint(body)});if(data.length>500000)throw Error('fit-dxf-frame-budget');return[[1001,'PIENIPLAN_FIT'],...chunks(data).map(s=>[1000,s])];}
  function fromDxf(raw,f,external=null){const i=raw.findIndex(p=>p[0]===1001&&p[1]==='PIENIPLAN_FIT');if(i<0&&!external)return null;let data=external||'';if(!external)for(let j=i+1;j<raw.length&&raw[j][0]===1000;j++)data+=raw[j][1];try{const q=JSON.parse(data);if(q.version!==1||q.unitFactor!==f||q.fingerprint!==fingerprint(raw)||!Array.isArray(q.vertices))return null;return{closed:q.closed,vertices:q.vertices,curveFit:q.curveFit};}catch{return null;}}
- root.cadPolylineFit=Object.freeze({capability:'cad.polyline.fit.v1',has,validate,derive,set,dxfData,fromDxf,chunks,byteLength});
+ root.cadPolylineFit=Object.freeze({capability:'cad.polyline.fit.v1',has,validate,derive,set,permanentArcs,extendFrame,dxfData,fromDxf,chunks,byteLength});
 })();

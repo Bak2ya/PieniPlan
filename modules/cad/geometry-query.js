@@ -29,7 +29,7 @@
     if(existing)existing.entities.push(...refs);else out.push({x:p.x,y:p.y,point:{x:p.x,y:p.y},...ref,entities:refs});
    }return out;
   }
-  if(root.cadBezier?.is(a))return root.cadBezier.intersections(a,b);if(root.cadBezier?.is(b))return root.cadBezier.intersections(b,a);const sa=segments(a),sb=segments(b);if(!line(a)&&sa.length)return unique(sa.flatMap(s=>intersections(s,b,tol)),tol);if(!line(b)&&sb.length)return unique(sb.flatMap(s=>intersections(a,s,tol)),tol);
+  if(root.cadBezier?.is(a))return root.cadBezier.intersections(a,b,tol).filter(p=>!scope||pointIn(p,scope,tol));if(root.cadBezier?.is(b))return root.cadBezier.intersections(b,a,tol).filter(p=>!scope||pointIn(p,scope,tol));const sa=segments(a),sb=segments(b);if(!line(a)&&sa.length)return unique(sa.flatMap(s=>intersections(s,b,tol)),tol);if(!line(b)&&sb.length)return unique(sb.flatMap(s=>intersections(a,s,tol)),tol);
   if(root.cadEllipse?.is(a))return root.cadEllipse.intersections(a,b);if(root.cadEllipse?.is(b))return root.cadEllipse.intersections(b,a);
   let pts=[];
   if(line(a)&&line(b)){

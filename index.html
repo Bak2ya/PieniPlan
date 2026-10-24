@@ -51,7 +51,7 @@
       <div class="topbar-zone topbar-right">
         <button id="undoBtn" class="icon-button" aria-label="Undo" data-i18n-aria="action.undo" data-tooltip-title-key="action.undo" data-tooltip-key="tooltip.undo" data-shortcut="Ctrl/Cmd+Z"><span class="ui-icon icon-undo" aria-hidden="true"></span></button>
         <button id="redoBtn" class="icon-button" aria-label="Redo" data-i18n-aria="action.redo" data-tooltip-title-key="action.redo" data-tooltip-key="tooltip.redo" data-shortcut="Ctrl/Cmd+Shift+Z"><span class="ui-icon icon-redo" aria-hidden="true"></span></button>
-        <button id="viewMenuBtn" data-i18n-aria="action.fit" class="icon-button" aria-label="Fit" data-tooltip-title-key="action.fit"><span class="ui-icon icon-viewport" aria-hidden="true"></span></button>
+        <div class="view-fit-split"><button id="viewMenuBtn" data-i18n-aria="action.fit" class="icon-button" aria-label="Fit" data-tooltip-title-key="action.fit"><span class="ui-icon icon-viewport" aria-hidden="true"></span></button><button id="viewMenuCaret" class="icon-button view-fit-caret" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="viewMenu" data-i18n-aria="view90.options" aria-label="Fit options"><span class="ui-icon icon-caret-down-filled" aria-hidden="true"></span></button></div>
         <button id="fileMenuBtn" class="icon-button" aria-label="File" data-tooltip-title="File"><span class="ui-icon icon-folder" aria-hidden="true"></span></button>
         <button id="toolbarExpandBtn" class="icon-button" type="button" aria-controls="toolRail" aria-expanded="false" aria-label="Expand tools" title="Expand tools"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 12 5 5 5-5M7 7l5 5 5-5"/></svg></button>
         <button id="settingsMenuBtn" class="icon-button" aria-label="Settings" data-tooltip-title="Settings"><span class="ui-icon icon-settings" aria-hidden="true"></span></button>
@@ -269,6 +269,8 @@
     <button id="viewFitAction" class="menu-row menu-row-icon"><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="action.fit">Fit</span></button>
     <button id="viewRegionAction" class="menu-row menu-row-icon" hidden><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="action.fitDrawingRegion">Fit drawing region</span></button>
     <button id="viewAllAction" class="menu-row menu-row-icon"><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="action.fitAllEntities">All extents</span></button>
+    <button id="viewWindowAction" class="menu-row menu-row-icon"><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="view90.window">Fit window</span></button>
+    <button id="viewSelectionAction" class="menu-row menu-row-icon"><span class="ui-icon icon-viewport" aria-hidden="true"></span><span data-i18n="view90.selection">Fit selection</span></button>
     <div class="menu-divider"></div><button id="floorOverlayAction" class="menu-row menu-row-icon"><span class="ui-icon icon-layers" aria-hidden="true"></span><span data-i18n="feature.overlay">Floor overlay</span></button>
   </div>
 
@@ -445,6 +447,15 @@
     <div class="dialog plan-package-dialog" role="dialog" aria-modal="true" aria-labelledby="planPackageTitle">
       <div class="dialog-title" id="planPackageTitle" data-i18n="ppkg.exportTitle">Export Plan Package (PPKG)</div>
       <div class="dialog-copy" data-i18n="ppkg.exportCopy">Export only semantic Plan drawings. CAD source and reference files are not included.</div>
+      <label class="field-label" for="planPackageScope" data-i18n="ppkg.scope">Export scope</label>
+      <select id="planPackageScope" class="select-input">
+        <option value="full" data-i18n="ppkg.scopeFull">Whole package</option>
+        <option value="building" data-i18n="ppkg.scopeBuilding">Current building</option>
+        <option value="drawing" data-i18n="ppkg.scopeDrawing">Current drawing and dependencies</option>
+        <option value="discipline" data-i18n="ppkg.scopeDiscipline">Drawing discipline and dependencies</option>
+      </select>
+      <label class="field-label" hidden><span data-i18n="ppkg.discipline">Drawing discipline</span><select id="planPackageScopeDiscipline" class="select-input"></select></label>
+      <div id="planPackageScopeHint" class="dialog-copy"></div>
       <label class="field-label" for="planPackageBuildingName" data-i18n="ppkg.buildingName">Building name</label>
       <input id="planPackageBuildingName" class="text-input" type="text" autocomplete="off" />
       <label class="field-label" for="planPackageDiscipline" data-i18n="ppkg.discipline">Drawing discipline</label>
@@ -655,6 +666,7 @@
   <script src="modules/cad/curve-reconstruction.js"></script>
   <script src="modules/cad/annotation2.js"></script>
   <script src="modules/cad/dimension-styles.js"></script>
+<script src="modules/cad/dimension-association.js"></script>
   <script src="modules/dxf/architectural-codec.js"></script>
   <script src="modules/dxf/architectural-writer.js"></script>
   <script src="modules/dxf/architectural-bridge.js"></script>
@@ -688,6 +700,10 @@
   <script src="modules/cad/connected-selection.js"></script>
   <script src="modules/dxf/handoff.js"></script>
   <script src="modules/ui/workspace-chrome.js"></script>
+<script src="modules/view/viewport-fit.js"></script>
+<script src="modules/plan/drawing-model.js"></script>
+<script src="modules/plan/package-exchange.js"></script>
+<script src="modules/ui/plan-drawings.js"></script>
 <script src="modules/ui/settings.js"></script>
   <script src="modules/ui/cad-precision.js"></script>
   <script src="app.js"></script>

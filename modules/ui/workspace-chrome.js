@@ -25,6 +25,13 @@
     let pointerInside = false, handleInside = false, held = false, popupOwned = false;
     let handleHoverOpenedAt = 0;
     let toolbarAnimation = null;
+    const expandedRail = document.createElement('div');
+    expandedRail.id = 'expandedToolRail';
+    expandedRail.className = 'tool-rail expanded-tool-rail';
+    expandedRail.hidden = true;
+    expandedRail.setAttribute('role', 'toolbar');
+    expandedRail.setAttribute('aria-label', t('toolbar.expand'));
+    workspace.prepend(expandedRail);
     const hover = matchMedia('(hover: hover)');
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const clearPanelTimer = () => { clearTimeout(panelTimer); panelTimer = 0; };
@@ -228,20 +235,21 @@
     const titleObserver = new ResizeObserver(measureTitle);
     titleObserver.observe(title);
     new MutationObserver(measureTitle).observe(title, { childList: true, subtree: true, characterData: true });
-    const measureRail = () => workspace.style.setProperty('--workspace-ribbon-height', `${rail.parentElement === workspace ? rail.getBoundingClientRect().height : 0}px`);
-    new ResizeObserver(measureRail).observe(rail);
+    const measureRail = () => workspace.style.setProperty('--workspace-ribbon-height', `${expandedRail.hidden ? 0 : expandedRail.getBoundingClientRect().height}px`);
+    new ResizeObserver(measureRail).observe(expandedRail);
     function applyToolbar(expanded, { animate = false } = {}) {
       const focus = document.activeElement;
-      const target = expanded ? workspace : left;
-      if (rail.parentElement !== target) {
-        if (expanded) workspace.prepend(rail); else left.append(rail);
+      // Compact remains the fixed layout anchor. Extra tools are a separate overlay.
+      if (rail.parentElement !== left) {
+        left.append(rail);
         if (focus && document.contains(focus) && document.activeElement !== focus) focus.focus({ preventScroll: true });
       }
       shell.classList.toggle('toolbar-expanded', expanded);
+      expandedRail.hidden = !expanded;
       if (animate && !reduced.matches) {
         toolbarAnimation?.cancel();
         // Animate only tool content; never transform the drawing surface.
-        toolbarAnimation = rail.animate([{ opacity: .3, translate: `0 ${expanded ? '-5px' : '5px'}` }, { opacity: 1, translate: '0 0' }], { duration: 170, easing: 'ease-out' });
+        toolbarAnimation = expandedRail.animate([{ opacity: .3, translate: '0 -5px' }, { opacity: 1, translate: '0 0' }], { duration: 170, easing: 'ease-out' });
       }
       measureRail(); measureTitle(); paintMenu(); paintPanel();
     }
