@@ -42,12 +42,12 @@
     q.segments = g.segments; if (JSON.stringify(q) === JSON.stringify(o)) return o;
     delete q.dxfPresentation; return q;
   }
-  function augment(objects, changes) {
+  function augment(objects, changes, {defer=()=>false}={}) {
     const touched = new Map(changes.map(c => [(c.before || c.after).id, c])), next = new Map(objects.map(o => [o.id, o]));
     for (const c of changes) { if (c.before) next.delete(c.before.id); if (c.after) next.set(c.after.id, c.after); }
     const result = changes.slice();
     for (const o of next.values()) {
-      if (o.type !== 'cadDimension' || o.association?.status !== 'current') continue;
+      if (o.type !== 'cadDimension' || o.association?.status !== 'current' || defer(o) && !touched.has(o.id)) continue;
       const explicit = touched.get(o.id), sourceTouched = Object.values(o.association.anchors).some(a => touched.has(a.sourceId));
       let after = o;
       if (explicit && !sourceTouched) {

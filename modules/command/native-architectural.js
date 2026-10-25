@@ -3,6 +3,7 @@
  'use strict';const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},ids=['BLOCK','INSERT','EXPLODE','XLINE','RAY'],names={BLOCK:['B'],INSERT:['I'],EXPLODE:['X'],XLINE:['XL'],RAY:[]};
  function install(registry,p){let lastInsert=null,nextRepeat=false;
   for(const id of ids)registry.register({id,aliases:names[id],available:c=>c.mode==='cad',transactional:false,historyOwner:'cad-library-change',create(){
+   if(['XLINE','RAY'].includes(id))return root.nativeConstructionLines.create(id,p);
    const selected=p.selected();if(id!=='INSERT'&&id!=='XLINE'&&id!=='RAY'&&selected.some(x=>!p.allowed(x)))throw Error('target-not-modifiable');
    const repeating=id==='INSERT'&&nextRepeat&&lastInsert;nextRepeat=false;
    const draft={id,token:p.token(),ids:new Set(selected.filter(x=>p.allowed(x))),phase:'',name:repeating?lastInsert.name:null,base:null,inputBase:lastInsert?.point||{x:0,y:0},pointer:null,rotation:lastInsert?.rotation||0,scaleX:lastInsert?.scaleX||1,scaleY:lastInsert?.scaleY||1,multiple:Boolean(repeating),preview:null};
@@ -28,5 +29,5 @@
   }});
  }
  const aliases=new Map(ids.flatMap(id=>[[id,id],...names[id].map(a=>[a,id])]));
- root.nativeArchitecturalCommands=Object.freeze({ids,install,resolve:s=>aliases.get(String(s).trim().toUpperCase())||null,keyword:(id,phase,text)=>id==='INSERT'&&phase==='position'&&['R','ROTATION','S','SCALE','M','MULTIPLE','N','NAME'].includes(String(text).toUpperCase())});
+ root.nativeArchitecturalCommands=Object.freeze({ids,install,resolve:s=>aliases.get(String(s).trim().toUpperCase())||null,keyword:(id,phase,text)=>root.nativeConstructionLines.keyword(id,phase,String(text).toUpperCase())||id==='INSERT'&&phase==='position'&&['R','ROTATION','S','SCALE','M','MULTIPLE','N','NAME'].includes(String(text).toUpperCase())});
 })();

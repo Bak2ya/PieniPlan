@@ -245,6 +245,7 @@
         if (focus && document.contains(focus) && document.activeElement !== focus) focus.focus({ preventScroll: true });
       }
       shell.classList.toggle('toolbar-expanded', expanded);
+      rail.hidden = expanded; rail.inert = expanded;
       expandedRail.hidden = !expanded;
       if (animate && !reduced.matches) {
         toolbarAnimation?.cancel();

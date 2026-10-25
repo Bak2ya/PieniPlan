@@ -1,3 +1,36 @@
+## v0.67.0 · Build93 (2026-10-26)
+
+- Extend CAD PLINE with exact two-vertex closure and Angle/Center/Radius/chord-direction routes. Add deferred tangent CIRCLE constraints and polyline subedge TTR. Preserve Plan's existing drawing grammar.
+- Extend FILLET/CHAMFER polyline corners, NoTrim, zero distances and intervening-segment handling, with shared preview and commit geometry.
+- Add LTSCALE, PLINEGEN, PEDIT Ltypegen and object linetype scales. Share simple model-space patterns and continuous polyline phase across Canvas, SVG, PDF and DXF; retain legacy project display until explicitly changed. Preserve fractional dash phase in vector PDF conversion.
+- Add multiple OR rows, nested property/group layer filters, live previews and filter Undo. Extend atomic batch properties to INSERT transforms, dimension overrides, hatch settings and text content/appearance.
+- Add searchable session command history, selected/filtered copy and text export through TEXTSCR/COMMANDLOG, with immediate COPYHIST. Keep the existing F2 pane; retain a bounded in-memory history without storing it in projects.
+- Display supported original DXF hatch line families, including offsets/dashes, holes and transforms, with the same geometry in vector output and DXF. Keep old project display unchanged; expose an explicit original/basic pattern choice and reject over-dense edits.
+- Add independent global layer Freeze/Thaw, basic -LAYER prompts and command-group Undo. Preserve off/lock state and unrelated DXF flags. Defer frozen linked annotation updates until Thaw; keep existing-object edit protection.
+- Use mutually exclusive Compact/Expanded tool surfaces, stable group labels and one evenly spaced Fit/Undo/Redo/File/Expand/Settings row with localized shared tooltips. Keep all five fit choices accessible through File → View and the Fit keyboard/context menu.
+- Browse doors and components in one temporary inspector catalog with Back/Close/Esc and no new persistent tab. Add versioned CC0 2D furnishing definitions and an original urinal symbol; retain old placed geometry and allow explicit replacement while preserving its footprint.
+- Add generic 2D surface sliding, two-track bypass, pocket and paired-guide folding mechanisms with editable panels/stack/side/opening state. Old door symbols remain unchanged until explicitly upgraded. Draw Plan walls at their real thickness with selectable centerlines and unchanged semantic topology/opening ownership.
+- Keep schema7, Plan semantics and drawing/space identities. Feature-bearing files advertise optional capabilities for compatible readers. Full native options, original-hatch pattern transfer, advanced linetypes/annotation, viewport layer states and external CAD/device verification remain incomplete.
+
+## v0.66.0 · Build92 (2026-10-25)
+
+- Add configurable Select Similar matching and a real selection prompt, with Previous/Last and polygon selection shared with PEDIT and MATCHPROP.
+- Apply MATCHPROP to destinations immediately, choose supported property families in Settings, and undo a sequence of applications together. Preserve text content, hatch boundaries/origins, variable polyline widths and curve topology.
+- Edit compatible geometry properties across multiple CAD objects with mixed-value drafts, validation before publication, linked dimension updates and atomic Undo/Redo.
+- Add bounded wildcard layer searches and saved property/group filters. Keep selected layers discoverable and preserve groups across layer renames and Undo.
+- Preserve Plan workflows, schema7, drawing/space identities and existing project/package exchange. Full native options, advanced filters/properties and external CAD/device verification remain incomplete.
+
+## v0.65.0 · Build91 (2026-10-25)
+
+- Complete planar rectangle Dimensions/Area/Rotation with chamfer, exact fillet corners and polyline widths. Support limiting capsule/circle shapes without flattening curves.
+- Extend native CAD PLINE with tangent arcs, Width/Halfwidth, Length and angle/center/direction/radius/second-point routes. Preserve Plan Mode's endpoint/control workflow.
+- Complete COPY Single/Multiple/Mode and vector Array/Fit, SCALE pointer/Reference/Copy/Points, one-pair ALIGN and XLINE/RAY construction options. Continue LINE/ARC from the previous path tangent.
+- Add absolute or previous-segment polar measurement while retaining absolute additional angles and saved precision preferences.
+- Keep remembered CAD construction settings separate from Plan Mode defaults when switching modes.
+- Extend LENGTHEN to open line/arc polylines, retaining tapered widths and terminal identity. Add session-local OOPS for the last CAD ERASE without undoing later work.
+- Protect layer0, Defpoints, current and used layers; make current-layer changes undoable. Allow new geometry and layer assignment on locked layers while protecting existing locked objects. Add ByBlock common property controls, all standard lineweights and reliable layer-search focus.
+- Preserve schema7 and existing conditional capabilities. Native fitted-curve editing, advanced annotation/block/style options, DWG XREF and external CAD/device verification remain incomplete.
+
 ## v0.63.0 · Build89 (2026-10-22)
 
 - Add geometric polyline widths, including tapered line/arc segments, PEDIT vertex controls, multiple conversion and Add fuzz joins. Preserve widths through transforms, splits, exchange and vector output.

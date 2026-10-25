@@ -14,11 +14,11 @@
   function create(store){const map=store||new Map();return Object.freeze({
     map,get:name=>map.get(name)||null,has:name=>map.has(name),names:()=>[...map.keys()],values:()=>[...map.values()],
     ensure(name){name=String(name||'0').trim()||'0';if(!map.has(name))map.set(name,defaults(name));return map.get(name);},
-    create(name){name=String(name||'').trim();if(!name||map.has(name))return null;const d=defaults(name);map.set(name,d);return d;},
-    remove(name){if(name==='0')return false;return map.delete(name);},
-    rename(from,to){to=String(to||'').trim();if(!map.has(from)||!to||map.has(to))return false;const d={...map.get(from),name:to};map.delete(from);map.set(to,d);return d;},
+    create(name){name=String(name||'').trim();if(!name||[...map.keys()].some(n=>n.toUpperCase()===name.toUpperCase()))return null;const d=defaults(name);map.set(name,d);return d;},
+    remove(name){if(['0','DEFPOINTS'].includes(String(name).toUpperCase()))return false;return map.delete(name);},
+    rename(from,to){to=String(to||'').trim();if(from==='0'||!map.has(from)||!to||[...map.keys()].some(n=>n!==from&&n.toUpperCase()===to.toUpperCase()))return false;const d={...map.get(from),name:to};map.delete(from);map.set(to,d);return d;},
     setLocked(name,locked){const d=this.ensure(name);d.locked=Boolean(locked);return d;},
     serialize:()=>serialize(map)
   });}
-  root.cadLayers = Object.freeze({ defaults, normalize, synthesize, serialize, create });
+  root.cadLayers = Object.freeze({defaults,normalize,synthesize,serialize,create,requiresFreeze:(defs,filters=[])=>[...(defs instanceof Map?defs.values():defs||[])].some(v=>(Array.isArray(v)?v[1]:v)?.frozen===true)||(filters||[]).some(f=>(f.rows||[]).some(r=>r.frozen!=null))});
 })();

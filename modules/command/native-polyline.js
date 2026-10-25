@@ -11,6 +11,7 @@
     registry.register({
       id:'PL', aliases:['PLINE','POLYLINE'], available:ctx=>ctx.mode==='cad'||ctx.mode==='plan', transactional:false, historyOwner:'cad-change-set',
       create(){
+        if(port.mode?.()==='cad')return root.nativeCadPolyline.create(port);
         const draft={phase:'start', mode:'line', points:[], arcEnd:null, pointer:null, token:port.contextToken()};
         const current=()=>draft.points.at(-1)||null;
         const view=()=>({phase:draft.phase,mode:draft.mode,points:draft.points.map(p=>({...p})),arcEnd:draft.arcEnd&&clonePoint(draft.arcEnd),pointer:draft.pointer&&clonePoint(draft.pointer)});

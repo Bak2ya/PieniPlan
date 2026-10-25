@@ -43,11 +43,18 @@
     return out;
   }
   function create(storage=globalThis.localStorage,onAcquire=()=>{}){
-    let settings={modes:[...defaults],tracking:false,dynamic:false,grid:false,gridSpacing:100,polarAngle:90,polarAdditional:[]},oneShot=null,acquired=[],hover=null;
-    try{const q=JSON.parse(storage?.getItem('pieniplan-cad-precision-v1')||'null');if(q){settings.modes=Array.isArray(q.modes)?[...new Set(q.modes.filter(k=>kinds.includes(k)))]:settings.modes;if(Number.isFinite(q.gridSpacing)&&q.gridSpacing>0)settings.gridSpacing=q.gridSpacing;for(const k of ['tracking','dynamic','grid'])if(typeof q[k]==='boolean')settings[k]=q[k];if([5,10,15,18,22.5,30,45,90].includes(q.polarAngle))settings.polarAngle=q.polarAngle;if(Array.isArray(q.polarAdditional))settings.polarAdditional=[...new Set(q.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);}}catch{}
+    let settings={modes:[...defaults],tracking:false,dynamic:false,grid:false,gridSpacing:100,polarAngle:90,polarAdditional:[],polarRelative:false},oneShot=null,acquired=[],hover=null;
+    try{const q=JSON.parse(storage?.getItem('pieniplan-cad-precision-v1')||'null');if(q){settings.modes=Array.isArray(q.modes)?[...new Set(q.modes.filter(k=>kinds.includes(k)))]:settings.modes;if(Number.isFinite(q.gridSpacing)&&q.gridSpacing>0)settings.gridSpacing=q.gridSpacing;for(const k of ['tracking','dynamic','grid','polarRelative'])if(typeof q[k]==='boolean')settings[k]=q[k];if([5,10,15,18,22.5,30,45,90].includes(q.polarAngle))settings.polarAngle=q.polarAngle;if(Array.isArray(q.polarAdditional))settings.polarAdditional=[...new Set(q.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);}}catch{}
     const save=()=>{try{storage?.setItem('pieniplan-cad-precision-v1',JSON.stringify(settings));}catch{}};
-    function configure(patch){if(patch.modes)settings.modes=[...new Set(patch.modes.filter(k=>kinds.includes(k)))];if(Number.isFinite(patch.gridSpacing)&&patch.gridSpacing>0)settings.gridSpacing=patch.gridSpacing;for(const k of ['tracking','dynamic','grid'])if(typeof patch[k]==='boolean')settings[k]=patch[k];if([5,10,15,18,22.5,30,45,90].includes(patch.polarAngle))settings.polarAngle=patch.polarAngle;if(Array.isArray(patch.polarAdditional))settings.polarAdditional=[...new Set(patch.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);save();return status();}
+    function configure(patch){if(patch.modes)settings.modes=[...new Set(patch.modes.filter(k=>kinds.includes(k)))];if(Number.isFinite(patch.gridSpacing)&&patch.gridSpacing>0)settings.gridSpacing=patch.gridSpacing;for(const k of ['tracking','dynamic','grid','polarRelative'])if(typeof patch[k]==='boolean')settings[k]=patch[k];if([5,10,15,18,22.5,30,45,90].includes(patch.polarAngle))settings.polarAngle=patch.polarAngle;if(Array.isArray(patch.polarAdditional))settings.polarAdditional=[...new Set(patch.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);save();return status();}
     function status(){return{...settings,modes:[...settings.modes],polarAdditional:[...settings.polarAdditional],oneShot,acquired:acquired.map(q=>({...q}))};}
+    function polarDirection(angle,{base=0,previous=null,tolerance=7}={}){
+      if(!Number.isFinite(angle)||!Number.isFinite(base))return null;
+      const delta=(a,b)=>((a-b+540)%360+360)%360-180,basis=settings.polarRelative&&Number.isFinite(previous)?previous:base;
+      const candidates=[basis+Math.round(delta(angle,basis)/settings.polarAngle)*settings.polarAngle,...settings.polarAdditional.map(a=>base+a)];
+      candidates.sort((a,b)=>Math.abs(delta(angle,a))-Math.abs(delta(angle,b)));
+      return Math.abs(delta(angle,candidates[0]))<=tolerance?candidates[0]:null;
+    }
     function arm(kind){const k=kinds.includes(kind)||kind==='none'?kind:aliases[String(kind).toUpperCase()];if(!k)return false;oneShot=k;return true;}
     function consume(){oneShot=null;}
     function clear(){oneShot=null;acquired=[];hover=null;}
@@ -64,7 +71,7 @@
       if((oneShot==='extension'||!oneShot&&settings.modes.includes('extension')))for(const a of acquired){const o=objectById(a.objectId);if(!o)continue;const supports=root.cadPolyline?.is(o)?root.cadPolyline.get(o).edges.filter(e=>[e.type==='cadArc'?root.geometryQuery.pointAt(e,e.startAngle):e.a,e.type==='cadArc'?root.geometryQuery.pointAt(e,e.startAngle+e.sweep):e.b].some(p=>finite(p)&&distance(p,a)<1e-6)):[o];for(const e of supports){if(e.a&&e.b){const q=root.geometryQuery.projectNearest({...e,mode:'line'},p);if(q&&q.distance<=tolerance&&(q.t<0||q.t>1))out.push({...q.point,kind:'extension',objectId:o.id,guide:{kind:'parallel',a,b:q.point}});}else if(e.type==='cadArc'&&a.kind==='endpoint'){const q=root.geometryQuery.projectNearest({...e,type:'cadCircle'},p);if(q&&q.distance<=tolerance&&!root.geometryQuery.onArc(e,q.point))out.push({...q.point,kind:'extension',objectId:o.id,guide:{kind:'parallel',a,b:q.point}});}}}
       return out;
     }
-    return Object.freeze({status,configure,arm,consume,clear,acquire,track,kinds,resolve:s=>aliases[String(s).toUpperCase()]||null,enabled:kind=>oneShot?oneShot===kind:settings.modes.includes(kind)});
+    return Object.freeze({status,configure,polarDirection,arm,consume,clear,acquire,track,kinds,resolve:s=>aliases[String(s).toUpperCase()]||null,enabled:kind=>oneShot?oneShot===kind:settings.modes.includes(kind)});
   }
   root.cadPrecision=Object.freeze({kinds,defaults,aliases,centroid,tangent,candidates,create});
 })();

@@ -1,0 +1,175 @@
+{
+  "licenseEvidence": "https://github.com/pjm4github/FloorPlanner/blob/main/assets/furnishings/LICENSE",
+  "licenseSha256": "9dec4148f9ca26757ee2f2652165d1171eeb496ab6edf180c617b6bce4286d24",
+  "date": "2026-10-26",
+  "assets": [
+    {
+      "definitionId": "fixture.toilet.v2",
+      "file": "toilet.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/toilet.svg",
+      "gitBlobSha": "14849963e37f74fe4d1bb4f371e365f619849b64",
+      "sha256": "2d209ca52d2a1e10bca93b3f79666015048b4fc38df6fc13522908d673057d5e",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        508.0,
+        711.1999999999999
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "fixture.lavatory.rect.v2",
+      "file": "vanity.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/vanity.svg",
+      "gitBlobSha": "43f6dd8630895f1810f85798dba33a95cfe054f9",
+      "sha256": "6a2cdb5677bf36f827b96d2baa317fd43dc286f52b34ce49970a97295c0943d6",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        762.0,
+        533.4
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "fixture.kitchen-sink.double.v2",
+      "file": "kitchen_sink.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/kitchen_sink.svg",
+      "gitBlobSha": "17a4734dd2952aed06831704625c97b71a1ec3a3",
+      "sha256": "93a3d010d8c3f6e067848ae349575dff06db3ca3c22cc45d6ced73970a568281",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        838.1999999999999,
+        558.8
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "fixture.bathtub.v2",
+      "file": "bathtub.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/bathtub.svg",
+      "gitBlobSha": "010c42c06ad4e062fa0720b0f51bbc188c869985",
+      "sha256": "e00b285abfde39825efbc2a67882a20aa54831412ecb25edb6d6bdb197a479f5",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        762.0,
+        1524.0
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "appliance.refrigerator.v2",
+      "file": "refrigerator.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/refrigerator.svg",
+      "gitBlobSha": "b26b58038307b8bea4e0e5ab397e2aa7c36482a3",
+      "sha256": "dc1831fa26ad7ae679a042319a3c7729c6b6ac937b5a018d5c5fddcbf68f107b",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        914.4,
+        762.0
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output; PieniPlan-authored refrigerator handles/front edge or desk drawer subdivision added, retaining original footprint"
+    },
+    {
+      "definitionId": "appliance.washer.v2",
+      "file": "washer.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/washer.svg",
+      "gitBlobSha": "654645677ee8946a9854c8a836e60e6367b2d2a1",
+      "sha256": "c2dad782ffb69830ed1a8b683f4657d6d97f920802d8476d2d7e812d5474ddd1",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        685.8,
+        762.0
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "appliance.range.v2",
+      "file": "range.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/range.svg",
+      "gitBlobSha": "1b3a22a4532c38fa25b54ae7668bd4a8c79e2a75",
+      "sha256": "7c43b6a8ede93ac92882302283b21d9e93ab38445d10534053536ead63029691",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        762.0,
+        660.4
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "furniture.desk48.v2",
+      "file": "desk.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/desk.svg",
+      "gitBlobSha": "bd8efdd0c8422534cb9cb9f340f144088e6314cd",
+      "sha256": "faa3ba9d9644cff83ac6733754c2e3f2c8fa5e527479a7f7b8f4370445a35da0",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        1524.0,
+        762.0
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output; PieniPlan-authored refrigerator handles/front edge or desk drawer subdivision added, retaining original footprint"
+    },
+    {
+      "definitionId": "furniture.chair.dining.v2",
+      "file": "dining_chair.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/dining_chair.svg",
+      "gitBlobSha": "4ec2f1741293deb7a51a80371988a3c25c7edbc0",
+      "sha256": "1ca3db204244034b17745614584d69155fb7aba4b1281f8c5c8da3c540e06ae8",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        457.2,
+        457.2
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "fixture.shower.v2",
+      "file": "shower.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/shower.svg",
+      "gitBlobSha": "1e749ed869e15ab91a894514f4768bff11daed46",
+      "sha256": "2353ce9829c643f2ddbfa8b1db1c8488caa2b652b2b027c32a8080aae5578c5a",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        914.4,
+        914.4
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "appliance.dishwasher.v2",
+      "file": "dishwasher.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/dishwasher.svg",
+      "gitBlobSha": "ce9b548616238893d80e04fd0d8a02566d1f83b2",
+      "sha256": "0e1026a3e08ebefb9f0ab352c29649a5c262f079a8b1169a4ff5eff58211c323",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        609.5999999999999,
+        609.5999999999999
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    },
+    {
+      "definitionId": "appliance.dryer.v2",
+      "file": "dryer.svg",
+      "url": "https://raw.githubusercontent.com/pjm4github/FloorPlanner/main/assets/furnishings/dryer.svg",
+      "gitBlobSha": "868225d1bfdd77bde4a45c0cf802cb1297dbe8a1",
+      "sha256": "ee36907a6141f503e3e904daa32966b52ff05cf4ba1f955eb41daf822ffa416b",
+      "license": "CC0-1.0",
+      "dimensionsMm": [
+        685.8,
+        762.0
+      ],
+      "modifications": "inches ×25.4; y-up; back datum; source colours/fills removed; redundant closing point removed; arcs tessellated to <=0.04mm chord deviation; shared 2D geometry for thumbnail/placement/output"
+    }
+  ],
+  "excluded": "program code, prices, materials, 3D forms/models, fonts, logos; no brand-specific product claims",
+  "originalAdditions": [
+    {
+      "definitionId": "fixture.urinal.v2",
+      "source": "PieniPlan original nonbranded 2D silhouette",
+      "license": "MIT",
+      "dimensionsMm": [
+        457.2,
+        355.6
+      ]
+    }
+  ]
+}

@@ -18,7 +18,9 @@
     "version": "2.8.1",
     "url": "https://registry.npmjs.org/svg2pdf.js/-/svg2pdf.js-2.8.1.tgz",
     "file": "vendor/output/svg2pdf.js/svg2pdf.umd.min.js",
-    "sha256": "2f10c0d16959e9a0c4cfd8605cfce0830ddc384337f74fa0351a6eff1c1efb8b"
+    "sha256": "6cc8320f04435b1a203e6370ebcac0e8fef3e0a972dd741f4780bd1fd5882424",
+    "upstreamSha256": "2f10c0d16959e9a0c4cfd8605cfce0830ddc384337f74fa0351a6eff1c1efb8b",
+    "localPatch": "PieniPlan Build93: parseFloat rather than parseInt for stroke-dashoffset; retain fractional vector dash phase. Original MIT header/license retained."
   },
   {
     "package": "svg2pdf.js",

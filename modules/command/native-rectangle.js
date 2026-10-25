@@ -1,0 +1,31 @@
+/* Planar RECTANG options share exact construction with preview and commit. */
+(() => {
+ 'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},finite=p=>M.commandFoundation.finitePoint(p),clone=p=>({x:p.x,y:p.y});
+ function install(registry,p){registry.register({id:'REC',aliases:['RECTANG','RECTANGLE'],available:c=>c.mode==='cad'||c.mode==='plan',transactional:false,historyOwner:'cad-change-set',create(){
+  const d={phase:'first',first:null,pointer:null,width:null,height:null,rotation:0,fillet:0,chamfer:[0,0],polyWidth:0,area:null,areaSide:null,token:p.contextToken(),...p.constructionSettings?.('rectangle')};
+  const show=()=>p.prompt('REC',d.phase,d),key=e=>String(e.type==='keyword'?e.value:e.text||'').trim().toUpperCase();
+  const getPoint=e=>e.type==='point'&&finite(e.point)?p.resolvePoint(e.point,{base:d.first,shift:!!e.shift}).point:e.type==='text'?p.parsePoint(e.text,{base:d.first,direction:d.first&&d.pointer?{x:d.pointer.x-d.first.x,y:d.pointer.y-d.first.y}:null})?.point:null;
+  const length=e=>e.type==='text'?p.parseLength(e.text)?.mm:null;
+  const local=q=>{const a=d.rotation*Math.PI/180,x=q.x-d.first.x,y=q.y-d.first.y;return{x:x*Math.cos(a)+y*Math.sin(a),y:-x*Math.sin(a)+y*Math.cos(a)};};
+  const world=(x,y)=>{const a=d.rotation*Math.PI/180;return{x:d.first.x+x*Math.cos(a)-y*Math.sin(a),y:d.first.y+x*Math.sin(a)+y*Math.cos(a)};};
+  const opposite=q=>{const v=local(q);return d.width&&d.height?world(Math.sign(v.x||1)*d.width,Math.sign(v.y||1)*d.height):q;};
+  const geometry=q=>M.cadCreation.rectangle(d.first,opposite(q),{rotation:d.rotation,fillet:d.fillet,chamfer:d.chamfer,width:d.polyWidth});
+  const finish=q=>{const points=q&&geometry(q);return points?{ok:true,commit:true,value:{points,first:clone(d.first),opposite:opposite(q),settings:{rotation:d.rotation,fillet:d.fillet,chamfer:[...d.chamfer],polyWidth:d.polyWidth},token:d.token}}:{ok:false,code:'invalid-rectangle'};};
+  show();return{view:()=>d,describe:()=>({phase:d.phase,input:['point','coordinate','length','keyword'],actions:d.phase==='first'?[{id:'C',labelKey:'cad91.chamfer'},{id:'F',labelKey:'cad91.fillet'},{id:'W',labelKey:'cad91.width'}]:d.phase==='opposite'?[{id:'D',labelKey:'cadDraw.dimensions'},{id:'A',labelKey:'cad91.area'},{id:'R',labelKey:'cad87.rotation'}]:d.phase==='areaSide'?[{id:'L',labelKey:'cad91.length'},{id:'W',labelKey:'cad91.width'}]:[]}),
+   preview(e){e={...e,type:e.type||'point'};if(d.phase==='opposite'&&finite(e.point)){d.pointer=getPoint(e);const points=geometry(d.pointer);p.preview(points?(!d.rotation&&!d.fillet&&!d.polyWidth&&!d.chamfer.some(Boolean)?{kind:'rectangle',phase:d.phase,first:clone(d.first),pointer:opposite(d.pointer)}:{kind:'polygon',points}):null);}return{ok:true};},
+   input(e){const k=key(e);
+    if(d.phase==='first'&&['C','CHAMFER','F','FILLET','W','WIDTH','E','ELEVATION','T','THICKNESS'].includes(k)){d.phase=({C:'chamfer1',CHAMFER:'chamfer1',F:'filletValue',FILLET:'filletValue',W:'polyWidth',WIDTH:'polyWidth',E:'elevation',ELEVATION:'elevation',T:'thickness',THICKNESS:'thickness'})[k];show();return{ok:true};}
+    if(['elevation','thickness'].includes(d.phase)){const n=e.type==='enter'?0:length(e);if(n!==0)return{ok:false,code:'planar-only'};d.phase='first';show();return{ok:true};}
+    if(['chamfer1','chamfer2','filletValue','polyWidth'].includes(d.phase)){const n=e.type==='enter'?({chamfer1:d.chamfer[0],chamfer2:d.chamfer[1],filletValue:d.fillet,polyWidth:d.polyWidth})[d.phase]:length(e);if(!(n>=0))return{ok:false,code:'invalid-distance'};if(d.phase==='chamfer1'){d.chamfer=[n,n];d.fillet=0;d.phase='chamfer2';}else{if(d.phase==='chamfer2')d.chamfer[1]=n;else if(d.phase==='filletValue'){d.fillet=n;d.chamfer=[0,0];}else d.polyWidth=n;d.phase='first';}show();return{ok:true};}
+    if(d.phase==='opposite'&&['D','DIMENSIONS','A','AREA','R','ROTATION'].includes(k)){d.phase=k.startsWith('D')?'width':k.startsWith('A')?'areaValue':'rectangleAngle';show();return{ok:true};}
+    if(d.phase==='rectangleAngle'){let n=e.type==='text'?Number(e.text):null;if(e.type==='point'){const q=getPoint(e);if(q)n=Math.atan2(q.y-d.first.y,q.x-d.first.x)*180/Math.PI;}if(!Number.isFinite(n))return{ok:false,code:'invalid-number'};d.rotation=n;d.phase='opposite';show();return{ok:true};}
+    if(['width','height'].includes(d.phase)){const n=length(e);if(!(n>0))return{ok:false,code:'invalid-distance'};d[d.phase]=n;d.phase=d.phase==='width'?'height':'opposite';show();return{ok:true};}
+    if(d.phase==='areaValue'){const n=e.type==='text'?Number(e.text):NaN,unit=p.parseLength('1')?.mm||1;if(!(n>0&&Number.isFinite(n)))return{ok:false,code:'invalid-number'};d.area=n*unit*unit;d.phase='areaSide';show();return{ok:true};}
+    if(d.phase==='areaSide'){if(e.type!=='enter'&&!['L','LENGTH','W','WIDTH'].includes(k))return{ok:false,code:'invalid-keyword'};d.areaSide=k.startsWith('W')?'height':'width';d.phase='areaLength';show();return{ok:true};}
+    if(d.phase==='areaLength'){const n=length(e);if(!(n>0))return{ok:false,code:'invalid-distance'};const removed=d.fillet?(4-Math.PI)*d.fillet*d.fillet:2*d.chamfer[0]*d.chamfer[1],other=(d.area+removed)/n;d.width=d.areaSide==='width'?n:other;d.height=d.areaSide==='height'?n:other;return finish(world(d.width,d.height));}
+    const q=getPoint(e);if(!q)return{ok:false,code:'invalid-coordinate'};if(d.phase==='first'){d.first=clone(q);d.pointer=clone(q);d.phase='opposite';show();return{ok:true};}if(d.phase==='opposite')return finish(q);return{ok:false,code:'input-not-supported'};
+   },commit(v){if(!p.contextCurrent(v.token,{geometry:true,layer:true,reference:false,region:true}))throw Error('stale-context');const basic=!v.settings.rotation&&!v.settings.fillet&&!v.settings.polyWidth&&!v.settings.chamfer.some(Boolean),result=basic?p.commitRectangle(v.first,v.opposite):p.commitPolyline(v.points,true);if(result!==false)p.setConstructionSettings?.('rectangle',v.settings);return result;},cancel:()=>p.clearPreview(),finalize:()=>p.clearPreview()};
+ }});}
+ const options=['C','CHAMFER','F','FILLET','W','WIDTH','E','ELEVATION','T','THICKNESS','D','DIMENSIONS','A','AREA','R','ROTATION','L','LENGTH'];
+ M.nativeRectangleCommand=Object.freeze({install,keyword:(phase,k)=>['first','opposite','areaSide'].includes(phase)&&options.includes(k)});
+})();

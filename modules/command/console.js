@@ -7,8 +7,8 @@
     return String(value).replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
   }
 
-  function create({ input, status, history, suggestions, getPlanMode, readyText, bar=null, expandButton=null, pinButton=null, maxLog = 80 }) {
-    const log = [];
+  function create({ input, status, history, suggestions, getPlanMode, readyText, bar=null, expandButton=null, pinButton=null, maxLog = 80,allowSuggestions=()=>true }) {
+    const log = [],archive=[];let archiveBytes=0,archiveDropped=0;
     let expanded=false,pinned=false;
 
     function matches() {
@@ -17,6 +17,7 @@
 
     function renderSuggestions() {
       if (!suggestions || !input) return;
+      if(!allowSuggestions()){suggestions.hidden=true;return;}
       const query = input.value.trim();
       const items = query ? matches() : [];
       suggestions.innerHTML = '';
@@ -59,7 +60,7 @@
     function push(text, kind = '') {
       const value = String(text ?? '').trim() || readyText();
       const last = log[log.length - 1];
-      if (!last || last.text !== value || last.kind !== kind) log.push({ text: value, kind, at: Date.now() });
+      if (!last || last.text !== value || last.kind !== kind){const item={text:value,kind,at:Date.now()};log.push(item);const retained={...item,text:value.length>16000?value.slice(0,16000)+' … [truncated]':value};archive.push(retained);archiveBytes+=retained.text.length*2;while(archive.length>5000||archiveBytes>2*1024*1024){archiveBytes-=archive.shift().text.length*2;archiveDropped++;}}
       if (log.length > maxLog) log.splice(0, log.length - maxLog);
       render();
     }
@@ -82,7 +83,7 @@
     document.addEventListener('pointerdown',e=>{if(expanded&&!pinned&&bar&&!bar.contains(e.target)){expanded=false;render();}});
     bar?.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.isComposing&&expanded&&!pinned){expanded=false;render();}});
 
-    return Object.freeze({ push, render, renderSuggestions, hideSuggestions, completeFirst, getLog: () => log.slice(), get expanded(){return expanded;}, get pinned(){return pinned;} });
+    return Object.freeze({ push, render, renderSuggestions, hideSuggestions, completeFirst, getLog: () => log.slice(),getHistory:()=>({rows:archive.map(r=>({...r})),dropped:archiveDropped,limit:5000,byteLimit:2*1024*1024,lineLimit:16000}), get expanded(){return expanded;}, get pinned(){return pinned;} });
   }
 
   root.commandConsole = Object.freeze({ create });

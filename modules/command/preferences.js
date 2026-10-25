@@ -24,7 +24,7 @@
     function set(id,patch,{persist=true}={}){
       const c=byId.get(id);if(!c)throw Error('command');
       const old=values[id]||{},next={...old};
-      if(Object.hasOwn(patch,'aliases')){if(toggles.includes(c))throw Error('command');next.aliases=[...new Set(String(patch.aliases).split(/[ ,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean))];if(next.aliases.some(a=>! /^[A-Z][A-Z0-9_-]{0,31}$/.test(a)))throw Error('alias');}
+      if(Object.hasOwn(patch,'aliases')){if(toggles.includes(c))throw Error('command');next.aliases=[...new Set(String(patch.aliases).split(/[ ,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean))];if(next.aliases.some(a=>! /^[A-Z][A-Z0-9_-]{0,31}$/.test(a)&&!(c.id==='-LAYER'&&['-LA','-LAYER'].includes(a))))throw Error('alias');}
       if(Object.hasOwn(patch,'shortcut'))next.shortcut=chord(patch.shortcut);
       for(const other of entries){if(other===c||!overlap(scope(c),scope(other)))continue;
         const names=new Set([other.name,...(values[other.id]?.aliases||[])]);

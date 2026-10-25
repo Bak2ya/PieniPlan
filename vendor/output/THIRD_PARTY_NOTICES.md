@@ -14,3 +14,5 @@ Declared bundled-dependency license texts are also retained under dependency-not
 PROVENANCE.json records downloaded files' exact SHA256. dependency-notices/MANIFEST.json records additional notice files' SHA256. Existing CADdillo and Tabler notices remain unchanged.
 
 QuickJS bundled WASM retains its MIT notice under pdfjs-dist/wasm/LICENSE_QUICKJS_MIT. Upstream provenance/licensing: https://github.com/mozilla/pdf.js/tree/master/external/quickjs . PDF scripting is not used by this output raster path.
+
+PieniPlan Build93 local patch to svg2pdf.js 2.8.1: stroke-dashoffset uses parseFloat instead of parseInt to retain fractional vector dash phase. No new dependency. Original MIT header and LICENSE retained; upstream and patched distribution hashes are both recorded in PROVENANCE.json. All other distribution bytes are unchanged.

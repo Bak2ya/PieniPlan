@@ -41,8 +41,12 @@
     A('furniture.bookshelf36','책장','36-inch Bookshelf','furniture',36,12,'back-left','cabinet','36-inch Bookshelf','https://caddillo.com/blocks/storage-furniture/'),
     A('furniture.dining-table','식탁','Dining Table','furniture',110,78,'near-left','dining-table','Dining Table','https://caddillo.com/blocks/tables-and-desks/')
   ];
+  assets.push(...(root.componentDefinitions93||[]));
   const byId = new Map(assets.map(a=>[a.id,Object.freeze(a)]));
 
+  const capability='plan.components.v2';
+  function validateDefinition(a){const fields=new Set('id previousId definitionVersion nameKo nameEn category width depth datum source license sourceUrl sourceSha256 sourceUnit normalized paths nominalHeightMm installationElevationMm'.split(' '));if(a&&Object.keys(a).some(k=>!fields.has(k)))throw Error('component-definition-field');if(a)for(const [k,v]of Object.entries(a)){if(typeof v==='string'&&v.length>2048)throw Error('component-definition-text');if(['nominalHeightMm','installationElevationMm'].includes(k)&&(!Number.isFinite(v)||v<0||v>100000))throw Error('component-installation-dimension');}if(!a||typeof a.id!=='string'||!a.id.trim()||a.id.length>255||a.definitionVersion!==2||![a.width,a.depth].every(n=>Number.isFinite(n)&&n>0&&n<100000)||!['back-center','center','back-left','near-left'].includes(a.datum)||!Array.isArray(a.paths)||!a.paths.length||a.paths.length>256)throw Error('component-definition');let count=0;for(const path of a.paths){if(!Array.isArray(path.points)||path.points.length<2||typeof path.closed!=='boolean')throw Error('component-path');for(const p of path.points){if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||Math.abs(p.x)>100000||Math.abs(p.y)>100000)throw Error('component-point');if(++count>20000)throw Error('component-budget');}}return a;}
+  function resolve(instance){return instance.componentDefinition||byId.get(instance.assetId)||null;}
   function localBounds(asset){
     const w=asset.width,d=asset.depth;
     switch(asset.datum){
@@ -52,7 +56,7 @@
     }
   }
   function localPoint(instance,p){
-    const asset=byId.get(instance.assetId); if(!asset||!instance.point)return null;
+    const asset=resolve(instance); if(!asset||!instance.point)return null;
     const dx=p.x-instance.point.x,dy=p.y-instance.point.y,a=-(Number(instance.rotation)||0)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
     let x=dx*c-dy*s,y=dx*s+dy*c;
     const sx=(Number(instance.scaleX)||1)*(instance.mirrorX?-1:1),sy=(Number(instance.scaleY)||1)*(instance.mirrorY?-1:1);
@@ -64,20 +68,21 @@
     return {x:instance.point.x+x*c-y*s,y:instance.point.y+x*s+y*c};
   }
   function bounds(instance){
-    const asset=byId.get(instance.assetId); if(!asset||!instance.point)return null;const b=localBounds(asset),pts=[{x:b.minx,y:b.miny},{x:b.maxx,y:b.miny},{x:b.maxx,y:b.maxy},{x:b.minx,y:b.maxy}].map(p=>worldPoint(instance,p));
+    const asset=resolve(instance); if(!asset||!instance.point)return null;const b=localBounds(asset),pts=[{x:b.minx,y:b.miny},{x:b.maxx,y:b.miny},{x:b.maxx,y:b.maxy},{x:b.minx,y:b.maxy}].map(p=>worldPoint(instance,p));
     return pts.reduce((r,p)=>({minx:Math.min(r.minx,p.x),miny:Math.min(r.miny,p.y),maxx:Math.max(r.maxx,p.x),maxy:Math.max(r.maxy,p.y)}),{minx:Infinity,miny:Infinity,maxx:-Infinity,maxy:-Infinity});
   }
   function hitDistance(instance,p){
-    const asset=byId.get(instance.assetId),q=localPoint(instance,p);if(!asset||!q)return Infinity;const b=localBounds(asset);
+    const asset=resolve(instance),q=localPoint(instance,p);if(!asset||!q)return Infinity;const b=localBounds(asset);
     if(q.x>=b.minx&&q.x<=b.maxx&&q.y>=b.miny&&q.y<=b.maxy)return 0;
     const dx=Math.max(b.minx-q.x,0,q.x-b.maxx),dy=Math.max(b.miny-q.y,0,q.y-b.maxy);return Math.hypot(dx,dy);
   }
   function snapPoints(instance){
-    const asset=byId.get(instance.assetId);if(!asset||!instance.point)return[];const b=localBounds(asset),local=[{x:0,y:0},{x:(b.minx+b.maxx)/2,y:(b.miny+b.maxy)/2},{x:b.minx,y:b.miny},{x:b.maxx,y:b.miny},{x:b.maxx,y:b.maxy},{x:b.minx,y:b.maxy}];return local.map(p=>worldPoint(instance,p));
+    const asset=resolve(instance);if(!asset||!instance.point)return[];const b=localBounds(asset),local=[{x:0,y:0},{x:(b.minx+b.maxx)/2,y:(b.miny+b.maxy)/2},{x:b.minx,y:b.miny},{x:b.maxx,y:b.miny},{x:b.maxx,y:b.maxy},{x:b.minx,y:b.maxy}];return local.map(p=>worldPoint(instance,p));
   }
   function label(asset,language='ko'){return language==='en'?asset.nameEn:asset.nameKo;}
-  function categoryLabel(category,language='ko'){const m={bathroom:['욕실·위생','Bathroom'],kitchen:['주방','Kitchen'],laundry:['세탁','Laundry'],furniture:['가구','Furniture']};return (m[category]||[category,category])[language==='en'?1:0];}
+  function categoryLabel(category,language='ko'){const m={bathroom:['욕실·위생','Bathroom'],kitchen:['주방','Kitchen'],laundry:['세탁','Laundry'],furniture:['가구','Furniture'],equipment:['가전·기기','Appliances'],other:['기타','Other']};return (m[category]||[category,category])[language==='en'?1:0];}
   function vectorPaths(asset){
+    if(asset.paths)return asset.paths;
     const b=localBounds(asset),paths=[],poly=(points,{close=false}={})=>paths.push({points,closed:close});
     const rect=(x1,y1,x2,y2)=>poly([{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}],{close:true});
     const ellipse=(cx,cy,rx,ry,start=0,end=Math.PI*2)=>{const pts=[];for(let i=0;i<=32;i++){const a=start+(end-start)*i/32;pts.push({x:cx+Math.cos(a)*rx,y:cy+Math.sin(a)*ry});}poly(pts,{close:Math.abs(end-start)>=Math.PI*2-.01});};
@@ -122,5 +127,5 @@
     if(asset.symbol==='drain'){poly([{x:b.minx+w*.23,y:cy},{x:b.maxx-w*.23,y:cy}]);poly([{x:cx,y:b.miny+d*.23},{x:cx,y:b.maxy-d*.23}]);}
     return paths;
   }
-  root.componentLibrary=Object.freeze({assets:Object.freeze(assets.slice()),get:id=>byId.get(id)||null,list:()=>assets.slice(),label,categoryLabel,localBounds,localPoint,worldPoint,bounds,hitDistance,snapPoints,vectorPaths});
+  root.componentLibrary=Object.freeze({assets:Object.freeze(assets.slice()),get:id=>byId.get(id)||null,list:()=>assets.filter(a=>!assets.some(b=>b.previousId===a.id)),capability,validateDefinition,resolve,label,categoryLabel,localBounds,localPoint,worldPoint,bounds,hitDistance,snapPoints,vectorPaths});
 })();

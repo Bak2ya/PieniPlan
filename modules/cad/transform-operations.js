@@ -36,8 +36,8 @@
     if(o.type==='cadArc')return arc(o,m);
     if(o.type==='cadText')return{...o,point:point(m,o.point),leaderAnchor:o.leaderAnchor?point(m,o.leaderAnchor):undefined,height:(Number(o.height)||180)*s,width:(Number(o.width)||0)*s,rotation:transformedAngle(m,Number(o.rotation)||0),mirrored:sign<0?!Boolean(o.mirrored):Boolean(o.mirrored)};
     if(o.type==='cadDimension')return dimension(o,m);
-    if(root.cadHatchCurves?.is(o)){const q=root.cadHatchCurves.transform(o,m);q.angle=transformedAngle(m,finite(o.angle)?o.angle:45);return q;}
-    if(o.type==='cadHatch'){const q={...o,points:(o.points||[]).map(p=>point(m,p)),loops:o.loops?.map(loop=>loop.map(p=>point(m,p))),angle:transformedAngle(m,finite(o.angle)?o.angle:45),sourceBoundaryId:null};if(o.dxf?.raw||o.hatchPatternTransform){const hm=multiply(m,o.hatchPatternTransform||{a:1,b:0,c:0,d:1,tx:0,ty:0});if([hm.a-1,hm.b,hm.c,hm.d-1,hm.tx,hm.ty].every(v=>Math.abs(v)<1e-10))delete q.hatchPatternTransform;else q.hatchPatternTransform=hm;if(o.patternScale!=null)q.patternScale=o.patternScale*s;}return q;}
+    if(root.cadHatchCurves?.is(o)){const q=root.cadHatchCurves.transform(o,m);q.angle=transformedAngle(m,finite(o.angle)?o.angle:45);return root.cadHatchPatterns?.transformStyle(o,m,q)||q;}
+    if(o.type==='cadHatch'){const q={...o,points:(o.points||[]).map(p=>point(m,p)),loops:o.loops?.map(loop=>loop.map(p=>point(m,p))),angle:transformedAngle(m,finite(o.angle)?o.angle:45),sourceBoundaryId:null};if(o.dxf?.raw||o.hatchPatternTransform){const hm=multiply(m,o.hatchPatternTransform||{a:1,b:0,c:0,d:1,tx:0,ty:0});if([hm.a-1,hm.b,hm.c,hm.d-1,hm.tx,hm.ty].every(v=>Math.abs(v)<1e-10))delete q.hatchPatternTransform;else q.hatchPatternTransform=hm;if(o.patternScale!=null)q.patternScale=o.patternScale*s;}return root.cadHatchPatterns?.transformStyle(o,m,q)||q;}
     if(o.type==='cadLeader')return{...o,points:(o.points||[]).map(p=>point(m,p)),height:(Number(o.height)||140)*s,width:(Number(o.width)||0)*s};
     return null;
   }

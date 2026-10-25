@@ -4,6 +4,8 @@
   const root = window.PieniPlanModules = window.PieniPlanModules || {};
 
   const catalog = Object.freeze([
+    {id:'LAYER',name:'LAYER',aliases:['LA','LAYER'],cadOnly:true},
+    {id:'-LAYER',name:'-LAYER',aliases:['-LA','-LAYER'],cadOnly:true},
     {id:'SELECT',name:'SELECT',aliases:['SELECT'],cadOnly:true},
     {id:'STYLE',name:'STYLE',aliases:['STYLE','TEXTSTYLE','ST'],cadOnly:true},
     {id:'EL',name:'ELLIPSE',aliases:['EL','ELLIPSE'],cadOnly:true},
@@ -11,6 +13,7 @@
     {id:'LEN',name:'LENGTHEN',aliases:['LEN','LENGTHEN'],cadOnly:true},
     {id:'PE',name:'PEDIT',aliases:['PE','PEDIT'],cadOnly:true},
     {id:'PROPERTIES',name:'PROPERTIES',aliases:['CH','PR','PROPERTIES'],cadOnly:true},
+    ...['TEXTSCR','COMMANDLOG','COPYHIST','LTSCALE','PLINEGEN','SELECTSIMILARMODE','MATCHPROPSETTINGS','BATCHPROPERTIES','LAYERFILTER'].map(id=>({id,name:id,aliases:[id],cadOnly:true})),
     {id:'OSNAP',name:'OSNAP',aliases:['OSNAP'],cadOnly:true},
     {id:'SHEETMANAGER',name:'SHEETMANAGER',aliases:['SHEETMANAGER']},
     ...[['DIMSTYLE','D'],['DIMLINEAR','DIMLINEAR'],['BLOCK','B'],['INSERT','I'],['EXPLODE','X'],['XLINE','XL'],['RAY','RAY'],['BEDIT','BE'],['BLOCKS','BLOCKS']].map(([id,alias])=>({id,name:id,aliases:[...new Set([id,alias])],cadOnly:true})),
@@ -25,6 +28,7 @@
     { id: 'TR', name: 'TRIM', aliases: ['TR', 'TRIM'] },
     { id: 'EX', name: 'EXTEND', aliases: ['EX', 'EXTEND'] },
     { id: 'E', name: 'ERASE', aliases: ['E', 'ERASE'] },
+    { id: 'OOPS', name: 'OOPS', aliases: ['OOPS'], cadOnly: true },
     { id: 'DI', name: 'DIST', aliases: ['DI', 'DIST'] },
     { id: 'T', name: 'TEXT', aliases: ['T','TEXT'] },
     { id: 'MT', name: 'MTEXT', aliases: ['MT','MTEXT'] },
