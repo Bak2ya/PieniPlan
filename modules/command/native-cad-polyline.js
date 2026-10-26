@@ -4,6 +4,7 @@
  const keywords=['L','LINE','A','ARC','U','UNDO','B','BACK','C','CLOSE','W','WIDTH','H','HALFWIDTH','CE','ANGLE','D','DIRECTION','R','RADIUS','S','SECOND','SECONDPT','LENGTH'];
  function create(p){
   const d={cadNative:true,phase:'start',mode:'line',points:[],pointer:null,arcEnd:null,widthStart:0,widthEnd:0,widthFactor:1,center:null,second:null,arcAngle:null,arcRadius:null,direction:null,token:p.contextToken()};
+  const initialWidth=p.initialWidth?.()??0;if(Number.isFinite(initialWidth)&&initialWidth>=0&&initialWidth<=1e7)d.widthStart=d.widthEnd=initialWidth;
   const current=()=>d.points.at(-1)||null,G=()=>M.cadCreation;
   function tangent(){if(d.points.length>1){const a=d.points.at(-2),b=current();return angle(a,b)+2*Math.atan(a.bulge||0)*180/Math.PI;}return d.direction??p.continuation?.()?.tangent??0;}
   function base(){return d.phase==='arcCenterEnd'||d.phase==='arcCenterAngle'||d.phase==='arcCenterLength'?d.center:current();}
@@ -26,7 +27,7 @@
   function show(){const view={...d,points:copy(d.points),pointer:d.pointer&&{...d.pointer}};let s=null;if(d.pointer&&d.points.length){if(['next','arcAngleEnd','arcCenterEnd','arcDirectionEnd','arcRadiusEnd','arcSecondEnd'].includes(d.phase))s=segment(d.pointer);else if(d.phase==='arcAngleCenter')s=geometrySegment(G().arcCenter(current(),d.pointer,null,d.arcAngle));else if(d.phase==='arcChordDirection')s=geometrySegment(directionalArc(d.pointer));}if(s){view.previewPoints=copy(d.points);Object.assign(view.previewPoints.at(-1),{bulge:s.bulge,startWidth:s.startWidth,endWidth:s.endWidth});view.previewPoints.push(s.point);}p.preview(view);p.prompt('cad91.pl.'+d.phase);}
   function add(q){const s=segment(q);if(!s)return{ok:false,code:'invalid-arc'};Object.assign(current(),{bulge:s.bulge,startWidth:s.startWidth,endWidth:s.endWidth});d.points.push(s.point);d.widthStart=d.widthEnd;nextPhase();show();return{ok:true};}
   function addGeometry(g){if(!g)return{ok:false,code:'invalid-arc'};const a=(g.startAngle+g.sweep)*Math.PI/180,q={x:g.center.x+g.radius*Math.cos(a),y:g.center.y+g.radius*Math.sin(a)};if(Math.hypot(q.x-current().x,q.y-current().y)<1e-8)return{ok:false,code:'invalid-arc'};Object.assign(current(),{bulge:Math.tan(g.sweep*Math.PI/720),startWidth:d.widthStart,endWidth:d.widthEnd});d.points.push(q);d.widthStart=d.widthEnd;nextPhase();show();return{ok:true};}
-  function finish(closed=false){if(d.points.length<2)return{ok:false,code:'polyline-too-short'};const points=copy(d.points);if(closed){const s=segment(points[0]);if(!s)return{ok:false,code:'invalid-arc'};Object.assign(points.at(-1),{bulge:s.bulge,startWidth:s.startWidth,endWidth:s.endWidth});}return{ok:true,commit:true,value:{points,closed,token:d.token}};}
+  function finish(closed=false){if(d.points.length<2)return{ok:false,code:'polyline-too-short'};const points=copy(d.points);if(closed){const s=segment(points[0]);if(!s)return{ok:false,code:'invalid-arc'};Object.assign(points.at(-1),{bulge:s.bulge,startWidth:s.startWidth,endWidth:s.endWidth});}return{ok:true,commit:true,value:{points,closed,token:d.token,defaultWidth:d.widthEnd}};}
   show();return{view:()=>copy(d),describe:()=>({phase:d.phase,input:['point','coordinate','length','keyword'],actions:['arcAngleEnd','arcRadiusEnd'].includes(d.phase)?(d.phase==='arcAngleEnd'?[{id:'CE',labelKey:'cad87.center'},{id:'R',labelKey:'cadDraw.radius'}]:[{id:'A',labelKey:'context.angle'}]):d.points.length?[{id:'L',labelKey:'polyline.line',active:d.mode==='line'},{id:'A',labelKey:'polyline.arc',active:d.mode==='arc'},{id:'W',labelKey:'cad91.width'},{id:'H',labelKey:'cad91.halfwidth'},{id:'U',labelKey:'polyline.back'},...(d.mode==='line'?[{id:'LENGTH',labelKey:'cad91.length'}]:[{id:'CE',labelKey:'cad87.center'},{id:'D',labelKey:'cad91.direction'},{id:'R',labelKey:'cadDraw.radius'},{id:'S',labelKey:'cad91.second'}]),{id:'C',labelKey:'polyline.close',enabled:d.points.length>=2}]:[]}),
    preview(e){e={...e,type:e.type||'point'};const q=point(e);if(q){d.pointer={...q};show();}return{ok:true};},
    input(e){const k=String(e.type==='keyword'?e.value:e.text||'').trim().toUpperCase();
@@ -61,7 +62,7 @@
     if(d.phase==='start'){d.points.push({x:q.x,y:q.y});d.phase='next';show();return{ok:true};}
     if(d.phase==='arcCenter'||d.phase==='arcSecond'){if(Math.hypot(q.x-current().x,q.y-current().y)<1e-8)return{ok:false,code:'zero-length'};if(d.phase==='arcCenter'){d.center={...q};d.phase='arcCenterEnd';}else{d.second={...q};d.phase='arcSecondEnd';}show();return{ok:true};}
     return add(q);
-   },commit(v){if(!p.contextCurrent(v.token,{geometry:true,layer:true,reference:false,region:true}))throw Error('stale-context');return p.commitPolyline(v.points,v.closed);},cancel:()=>p.clearPreview(),finalize:()=>p.clearPreview()};
+   },commit(v){if(!p.contextCurrent(v.token,{geometry:true,layer:true,reference:false,region:true}))throw Error('stale-context');return p.commitPolyline(v.points,v.closed,{defaultWidth:v.defaultWidth});},cancel:()=>p.clearPreview(),finalize:()=>p.clearPreview()};
  }
  M.nativeCadPolyline=Object.freeze({create,keyword:k=>keywords.includes(k)});
 })();

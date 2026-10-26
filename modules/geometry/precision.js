@@ -3,7 +3,7 @@
  'use strict';
  const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{};
  const radius=Object.freeze({low:6,normal:10,high:16});
- const rank=Object.freeze({endpoint:7,node:7,intersection:6,midpoint:5,center:4,geometricCenter:4,quadrant:4,tangent:4,perpendicular:3,extension:3,tracking:2,wall:2,nearest:1,grid:0});
+ const rank=Object.freeze({endpoint:7,node:7,insertion:7,intersection:6,midpoint:5,center:4,geometricCenter:4,quadrant:4,tangent:4,perpendicular:3,extension:3,tracking:2,wall:2,nearest:1,grid:0});
  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  function choose(pointer,candidates,zoom,pixels=10){
   const z=Math.max(1e-9,zoom),items=candidates.map(q=>({q,d:dist(pointer,q)*z})).filter(x=>Number.isFinite(x.d)&&x.d<=pixels);

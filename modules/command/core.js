@@ -13,7 +13,7 @@
     {id:'LEN',name:'LENGTHEN',aliases:['LEN','LENGTHEN'],cadOnly:true},
     {id:'PE',name:'PEDIT',aliases:['PE','PEDIT'],cadOnly:true},
     {id:'PROPERTIES',name:'PROPERTIES',aliases:['CH','PR','PROPERTIES'],cadOnly:true},
-    ...['SELECTIONCYCLING','POLARMODE','LOGFILEON','LOGFILEOFF','TEXTSCR','COMMANDLOG','COPYHIST','LTSCALE','PLINEGEN','SELECTSIMILARMODE','MATCHPROPSETTINGS','BATCHPROPERTIES','LAYERFILTER'].map(id=>({id,name:id,aliases:[id],cadOnly:true})),
+    ...['INSUNITSDEFSOURCE','INSUNITSDEFTARGET','SELECTIONCYCLING','POLARMODE','LOGFILEON','LOGFILEOFF','TEXTSCR','COMMANDLOG','COPYHIST','LTSCALE','PLINEWID','PLINEGEN','SELECTSIMILARMODE','MATCHPROPSETTINGS','BATCHPROPERTIES','LAYERFILTER'].map(id=>({id,name:id,aliases:[id],cadOnly:true})),
     {id:'OSNAP',name:'OSNAP',aliases:['OSNAP'],cadOnly:true},
     {id:'SHEETMANAGER',name:'SHEETMANAGER',aliases:['SHEETMANAGER']},
     ...[['DIMSTYLE','D'],['DIMLINEAR','DIMLINEAR'],['BLOCK','B'],['INSERT','I'],['EXPLODE','X'],['XLINE','XL'],['RAY','RAY'],['BEDIT','BE'],['BLOCKS','BLOCKS']].map(([id,alias])=>({id,name:id,aliases:[...new Set([id,alias])],cadOnly:true})),

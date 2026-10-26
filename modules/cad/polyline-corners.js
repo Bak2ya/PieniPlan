@@ -10,6 +10,9 @@
    incoming.endWidth=wa;Object.assign(corner,{x:q.x,y:q.y,outgoing:{...copy.vertices[b].outgoing,startWidth:wb}});copy.vertices.splice(removed,1);try{P.validate(copy);}catch{continue;}
    const fresh=P.get(copy).edges,first=fresh.find(e=>e.edgeId===h1.edgeId),second=fresh.find(e=>e.edgeId===h2.edgeId);if(!first||!second)continue;
    out.push({object:copy,p1:mid(first),p2:mid(second),score:distance(p1,q)+distance(p2,q),bridged:true});
+  }
+  if(!o.closed&&n>1&&new Set([i,j]).has(0)&&new Set([i,j]).has(n-1)&&es[0].type==='cadLine'&&es.at(-1).type==='cadLine'){
+   const first=es[0],last=es.at(-1),hits=M.geometryQuery.intersections({...last,mode:'line'},{...first,mode:'line'});if(hits.length===1){const q=hits[0],ta=M.geometryQuery.parameter(first,q),tb=M.geometryQuery.parameter(last,q),wa=(first.startWidth||0)+((first.endWidth||0)-(first.startWidth||0))*ta,wb=(last.startWidth||0)+((last.endWidth||0)-(last.startWidth||0))*tb;if(ta<1-1e-8&&tb>1e-8&&wa>=0&&wb>=0){const closed=clone(o);closed.closed=true;closed.vertices.pop();Object.assign(closed.vertices[0],q);closed.vertices[0].outgoing.startWidth=wa;closed.vertices.at(-1).outgoing.endWidth=wb;try{P.validate(closed);const es2=P.get(closed).edges,pick0=i===0?p1:p2,pick1=i===0?p2:p1;out.push({object:closed,p1:mid(es2[0]),p2:mid(es2.at(-1)),score:distance(pick0,o.vertices[0])+distance(pick1,o.vertices.at(-1)),bridged:true,closedEndpoints:true});}catch{}}}
   }return out.sort((a,b)=>a.score-b.score);
  }
  function appearance(o){return Object.fromEntries(['cadLayer','layer','color','linetype','lineweight','linetypeScale','transparency'].filter(k=>Object.hasOwn(o,k)).map(k=>[k,o[k]]));}

@@ -8,14 +8,14 @@
  function fromSpans(o,spans,{id=o.id,used=new Set()}={}){
   if(!spans.length||spans.length>3000||spans.some(e=>e.type!=='cadBezier'))return null;
   const degree=spans[0].controls.length-1;if(![2,3].includes(degree)||spans.some(e=>e.controls.length!==degree+1))return null;
-  const controls=[],knots=Array(degree+1).fill(0),widths=[];let t=0,seq=0;
+  const controls=[],knots=Array(degree+1).fill(0),widths=[],reserved=new Set(o.vertices.map(v=>v.id));let t=0,seq=0;
   for(const [i,e]of spans.entries()){
    if(i&&dist(spans[i-1].controls.at(-1),e.controls[0])>1e-6)return null;
    controls.push(...e.controls.slice(i?1:0).map(p=>({x:p.x,y:p.y})));
    for(let j=0;j<degree;j++)widths.push({startWidth:(e.startWidth||0)+((e.endWidth||0)-(e.startWidth||0))*j/degree,endWidth:(e.startWidth||0)+((e.endWidth||0)-(e.startWidth||0))*(j+1)/degree});
    t+=e.spanDuration||1;knots.push(...Array(i===spans.length-1?degree+1:degree).fill(t));
   }
-  const vertices=controls.map((p,i)=>{const old=o.vertices.find(v=>!used.has(v.id)&&dist(v,p)<1e-8),vertexId=old?.id||'__fit_new_cadVertex_'+id+'_'+seq+++'__';used.add(vertexId);const v={...p,id:vertexId};if(i<controls.length-1){const w=widths[i];v.outgoing={id:'__fit_new_cadEdge_'+id+'_'+i+'__',bulge:0,...(w.startWidth?{startWidth:w.startWidth}:{}),...(w.endWidth?{endWidth:w.endWidth}:{})};}return v;});
+  const vertices=controls.map((p,i)=>{const old=o.vertices.find(v=>!used.has(v.id)&&dist(v,p)<1e-8);let vertexId=old?.id;if(!vertexId){do{vertexId='__fit_new_cadVertex_'+id+'_'+seq+++'__';}while(used.has(vertexId)||reserved.has(vertexId));}used.add(vertexId);const v={...p,id:vertexId};if(i<controls.length-1){const w=widths[i];v.outgoing={id:'__fit_new_cadEdge_'+id+'_'+i+'__',bulge:0,...(w.startWidth?{startWidth:w.startWidth}:{}),...(w.endWidth?{endWidth:w.endWidth}:{})};}return v;});
   const q={...copy(o),id,closed:false,vertices,curveFit:{kind:'spline',degree,knots}};
   try{P().validate(q);const es=P().get(q).edges;if(!es.length||es.every(e=>e.controls.every(p=>dist(p,e.controls[0])<EPS)))return null;}catch{return null;}
   return q;

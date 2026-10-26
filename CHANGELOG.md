@@ -1,3 +1,14 @@
+## v0.69.0 · Build95 (2026-10-26)
+
+- Complete PLINE width defaults with PLINEWID, unit-aware input, Halfwidth/taper options and one-command Undo/Redo. Preserve the drawing default through PPRJ and native DXF headers without changing Plan defaults.
+- Convert explicitly assigned block units for new INSERT instances, including reflected/nonuniform scale, rotation and repeated insertion. Preserve existing instance matrices and compensate nested definition frames during native DXF unit rebasing.
+- Create associative HATCH from connected loose boundaries; retain exact line/arc/ellipse and supported polynomial spline paths. Read and write native HATCH boundary handles and managed reactors, validate bindings and preserve unrelated raw data.
+- Restore unchanged HATCH and dimension dependencies with OOPS after ERASE or BLOCK, including delayed frozen-layer updates. Protect later dependent edits and keep recovery transient to the current document.
+- Extend native JOIN with source properties, collinear/cocircular gaps, Close and exact polynomial spline concatenation. Keep PEDIT's control-frame join separate and reject implicit loss of explicit spline knots. Add open-polyline endpoint FILLET/CHAMFER closure and preserve corner source styles.
+- Extend acquired endpoint tracking to ellipse arcs and polynomial endpoint tangents, draw curved extension guides, and improve exact geometric-center, dimension Node and insertion-point snapping.
+- Add transparent 'ZOOM and 'PAN that preserve the active CAD command, point base, selection, snaps and drawing history. Support window/center/extents/preselected-object/previous/relative scale and real-time drag. Refresh the resumed draft at the stationary cursor immediately after view changes or CAD pan release; preserve ordinary ZOOM and Plan Space behavior.
+- Keep schema7 and Plan-only PPKG1. Explicit block units and grouped/exact hatch loops declare optional capabilities; older readers reject unsupported semantics. General rational joins/offsets, advanced annotation, nested subentity snapping, macros and external CAD/device validation remain limited.
+
 ## v0.68.0 · Build94 (2026-10-26)
 
 - Add optional time-sensitive right-click and overlap candidate selection with keyboard navigation. Extend Object Snap Tracking to acquired polar paths, relative angles and Shift acquisition; store these as personal preferences. Keep a newly reopened OSNAP dialog independent of a previous close event.
