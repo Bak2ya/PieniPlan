@@ -1,3 +1,14 @@
+## v0.68.0 · Build94 (2026-10-26)
+
+- Add optional time-sensitive right-click and overlap candidate selection with keyboard navigation. Extend Object Snap Tracking to acquired polar paths, relative angles and Shift acquisition; store these as personal preferences. Keep a newly reopened OSNAP dialog independent of a previous close event.
+- Complete remaining ARC input families and Ctrl pointer previews. Extend polyline vertex menus and PEDIT editing while preserving control-frame and edge identities.
+- Edit fitted splines with exact BREAK, TRIM, tangent EXTEND and measured LENGTHEN, including retained command defaults. Export exact planar quadratic/cubic native SPLINE controls and knots; preserve unsupported rational and nonplanar entities as raw data.
+- Transfer original hatch line-family patterns through MATCHPROP without copying another entity's boundaries, source records or associations. Keep shared Canvas/SVG/PDF/DXF pattern geometry.
+- Add explicit LOGFILEON/OFF session recording and downloadable UTF-8 logs, with visible retention limits and no project history fields.
+- End Space gestures on mode changes, document replacement and focus loss. Prevent interrupted Plan gestures from replaying a CAD command while retaining Plan select/pan, CAD repeat and native text spaces.
+- Improve legacy and current sliding-door arrow spacing and direction readability. Keep actual panel travel and thickness; omit extended rails for plain sliding doors while retaining pocket/bypass/folding mechanisms.
+- Preserve schema7, Plan-only PPKG1 and existing drawing/space identifiers. Exact knot frames and independent hatch definitions declare optional capabilities; older readers reject unsupported semantics before publication. Advanced annotation, general fitted offsets/joins, complex corners and external CAD/device verification remain limited.
+
 ## v0.67.0 · Build93 (2026-10-26)
 
 - Extend CAD PLINE with exact two-vertex closure and Angle/Center/Radius/chord-direction routes. Add deferred tangent CIRCLE constraints and polyline subedge TTR. Preserve Plan's existing drawing grammar.

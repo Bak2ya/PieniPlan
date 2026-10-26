@@ -22,15 +22,15 @@
     const double=obj.doorType==='slidingDouble';
     if(double){const gap=Math.min(depth*.35,width*.012);leaf(0,width/2-gap/2);leaf(width/2+gap/2,width);}
     else leaf(0,width);
-    const arrowY=face+dir*depth*.85;
+    const arrowY=face+dir*depth*1.6;
     const arrow=(start,end)=>{
-      const sign=Math.sign(end-start),head=Math.min(width*.025,depth*.75,Math.abs(end-start)*.24),wing=head*.5;
+      const sign=Math.sign(end-start),head=Math.min(width*.04,depth*1.25,Math.abs(end-start)*.24),wing=head*.5;
       edge(start,arrowY,end,arrowY,'arrow',1.2);
       edge(end-sign*head,arrowY-wing,end,arrowY,'arrow',1.2);
       edge(end-sign*head,arrowY+wing,end,arrowY,'arrow',1.2);
     };
-    if(double){arrow(width*.41,width*.15);arrow(width*.59,width*.85);}
-    else arrow(width*(dir===1?.36:.64),width*(dir===1?.75:.25));
+    if(double){arrow(width*.40,width*.03);arrow(width*.60,width*.97);}
+    else arrow(width*(dir===1?.15:.85),width*(dir===1?.85:.15));
     return out;
   }
   root.slidingDoor=Object.freeze({segments});

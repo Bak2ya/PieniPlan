@@ -24,8 +24,8 @@
       for(const yy of[y,y+t+8])edge([0,yy],[w,yy],'rail');panel([travel,y],[travel+L,y]);panel([w-L,y+t+8],[w,y+t+8]);arrow([L*.35,y+2*t+30],[L*.35+sign*Math.min(w*.2,L*.4),y+2*t+30]);
     }else{
       const pocket=o.doorType.startsWith('pocket'),double=o.doorType==='pocketDouble'||o.doorType==='slidingDouble',L=double?w/2:w,sign=o.slideDirection===-1?-1:1,y=pocket?0:sign*(wallHalf+t/2+10),travel=L*m.openRatio;
-      const leaf=(start,dir)=>{const a=start+dir*travel,b=a+L;panel([a,y],[b,y]);arrow([a+L*.4,y+sign*(t+25)],[a+L*.4+dir*Math.min(150,L*.2),y+sign*(t+25)]);};
-      const railMin=double?-L:sign===-1?-w:0,railMax=double?w+L:sign===1?2*w:w;edge([railMin,y],[railMax,y],'rail',pocket);
+      const leaf=(start,dir)=>{const a=start+dir*travel,b=a+L;panel([a,y],[b,y]);if(pocket)arrow([a+L*.4,y+sign*(t+25)],[a+L*.4+dir*Math.min(150,L*.2),y+sign*(t+25)]);else arrow([a+L*(dir<0?.85:.15),y+sign*(t+25)],[a+L*(dir<0?-.05:1.05),y+sign*(t+25)]);};
+      const railMin=double?-L:sign===-1?-w:0,railMax=double?w+L:sign===1?2*w:w;if(pocket)edge([railMin,y],[railMax,y],'rail',true);
       if(double){leaf(0,-1);leaf(w/2,1);}else leaf(0,sign);
       if(pocket){const cavity=(a,b)=>{for(const yy of[-t/2-8,t/2+8])edge([a,yy],[b,yy],'pocket',true);edge([a,-t/2-8],[a,t/2+8],'pocket',true);edge([b,-t/2-8],[b,t/2+8],'pocket',true);};if(double){cavity(-L,0);cavity(w,w+L);}else cavity(sign===1?w:-w,sign===1?2*w:0);}
     }

@@ -43,35 +43,41 @@
     return out;
   }
   function create(storage=globalThis.localStorage,onAcquire=()=>{}){
-    let settings={modes:[...defaults],tracking:false,dynamic:false,grid:false,gridSpacing:100,polarAngle:90,polarAdditional:[],polarRelative:false},oneShot=null,acquired=[],hover=null;
-    try{const q=JSON.parse(storage?.getItem('pieniplan-cad-precision-v1')||'null');if(q){settings.modes=Array.isArray(q.modes)?[...new Set(q.modes.filter(k=>kinds.includes(k)))]:settings.modes;if(Number.isFinite(q.gridSpacing)&&q.gridSpacing>0)settings.gridSpacing=q.gridSpacing;for(const k of ['tracking','dynamic','grid','polarRelative'])if(typeof q[k]==='boolean')settings[k]=q[k];if([5,10,15,18,22.5,30,45,90].includes(q.polarAngle))settings.polarAngle=q.polarAngle;if(Array.isArray(q.polarAdditional))settings.polarAdditional=[...new Set(q.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);}}catch{}
+    let settings={modes:[...defaults],tracking:false,dynamic:false,grid:false,gridSpacing:100,polarAngle:90,polarAdditional:[],polarRelative:false,trackingPolar:false,shiftAcquire:false,additionalEnabled:false},oneShot=null,acquired=[],hover=null;
+    try{const q=JSON.parse(storage?.getItem('pieniplan-cad-precision-v1')||'null');if(q){settings.modes=Array.isArray(q.modes)?[...new Set(q.modes.filter(k=>kinds.includes(k)))]:settings.modes;if(Number.isFinite(q.gridSpacing)&&q.gridSpacing>0)settings.gridSpacing=q.gridSpacing;for(const k of ['tracking','dynamic','grid','polarRelative','trackingPolar','shiftAcquire','additionalEnabled'])if(typeof q[k]==='boolean')settings[k]=q[k];if(Number.isFinite(q.polarAngle)&&q.polarAngle>0&&q.polarAngle<=360)settings.polarAngle=q.polarAngle;if(q.additionalEnabled===undefined&&q.polarAdditional?.length)settings.additionalEnabled=true;if(Array.isArray(q.polarAdditional))settings.polarAdditional=[...new Set(q.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);}}catch{}
     const save=()=>{try{storage?.setItem('pieniplan-cad-precision-v1',JSON.stringify(settings));}catch{}};
-    function configure(patch){if(patch.modes)settings.modes=[...new Set(patch.modes.filter(k=>kinds.includes(k)))];if(Number.isFinite(patch.gridSpacing)&&patch.gridSpacing>0)settings.gridSpacing=patch.gridSpacing;for(const k of ['tracking','dynamic','grid','polarRelative'])if(typeof patch[k]==='boolean')settings[k]=patch[k];if([5,10,15,18,22.5,30,45,90].includes(patch.polarAngle))settings.polarAngle=patch.polarAngle;if(Array.isArray(patch.polarAdditional))settings.polarAdditional=[...new Set(patch.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);save();return status();}
+    function configure(patch){if(patch.modes)settings.modes=[...new Set(patch.modes.filter(k=>kinds.includes(k)))];if(Number.isFinite(patch.gridSpacing)&&patch.gridSpacing>0)settings.gridSpacing=patch.gridSpacing;for(const k of ['tracking','dynamic','grid','polarRelative','trackingPolar','shiftAcquire','additionalEnabled'])if(typeof patch[k]==='boolean')settings[k]=patch[k];if(Number.isFinite(patch.polarAngle)&&patch.polarAngle>0&&patch.polarAngle<=360)settings.polarAngle=patch.polarAngle;if(patch.additionalEnabled===undefined&&Array.isArray(patch.polarAdditional))settings.additionalEnabled=true;if(Array.isArray(patch.polarAdditional))settings.polarAdditional=[...new Set(patch.polarAdditional.filter(n=>Number.isFinite(n)&&n>=0&&n<360))].slice(0,32);save();return status();}
     function status(){return{...settings,modes:[...settings.modes],polarAdditional:[...settings.polarAdditional],oneShot,acquired:acquired.map(q=>({...q}))};}
     function polarDirection(angle,{base=0,previous=null,tolerance=7}={}){
       if(!Number.isFinite(angle)||!Number.isFinite(base))return null;
       const delta=(a,b)=>((a-b+540)%360+360)%360-180,basis=settings.polarRelative&&Number.isFinite(previous)?previous:base;
-      const candidates=[basis+Math.round(delta(angle,basis)/settings.polarAngle)*settings.polarAngle,...settings.polarAdditional.map(a=>base+a)];
+      const candidates=[basis+Math.round(delta(angle,basis)/settings.polarAngle)*settings.polarAngle,...(settings.additionalEnabled?settings.polarAdditional:[]).map(a=>base+a)];
       candidates.sort((a,b)=>Math.abs(delta(angle,a))-Math.abs(delta(angle,b)));
       return Math.abs(delta(angle,candidates[0]))<=tolerance?candidates[0]:null;
     }
     function arm(kind){const k=kinds.includes(kind)||kind==='none'?kind:aliases[String(kind).toUpperCase()];if(!k)return false;oneShot=k;return true;}
     function consume(){oneShot=null;}
     function clear(){oneShot=null;acquired=[];hover=null;}
-    function acquire(q,now=performance.now()){
+    function acquire(q,now=performance.now(),{shift=false}={}){
+      if(settings.shiftAcquire&&!shift){hover=null;return false;}
       if(!(settings.tracking||oneShot==='extension'||settings.modes.includes('extension'))||!q||!['endpoint','midpoint','center','intersection','geometricCenter'].includes(q.kind)){hover=null;return false;}
-      const key=[q.objectId,q.kind,q.x,q.y].join(':');if(hover?.key!==key){hover={key,since:now,toggled:false};setTimeout(()=>{if(hover?.key!==key)return;if(acquire(q,now+351))onAcquire();},360);return false;}
-      if(now-hover.since<350||hover.toggled)return false;hover.toggled=true;const existing=acquired.findIndex(a=>distance(a,q)<1e-7);if(existing>=0){acquired.splice(existing,1);return true;}
+      const key=[q.objectId,q.kind,q.x,q.y].join(':');if(hover?.key!==key){hover={key,since:now,toggled:false};if(!settings.shiftAcquire){setTimeout(()=>{if(hover?.key!==key)return;if(acquire(q,now+351,{shift}))onAcquire();},360);return false;}}
+      if(!settings.shiftAcquire&&now-hover.since<350||hover.toggled)return false;hover.toggled=true;const existing=acquired.findIndex(a=>distance(a,q)<1e-7);if(existing>=0){acquired.splice(existing,1);return true;}
       acquired.push({...q});if(acquired.length>7)acquired.shift();return true;
     }
-    function track(p,tolerance,{objectById=()=>null,allowed=()=>true}={}){
+    function track(p,tolerance,{objectById=()=>null,allowed=()=>true,baseAngle=0,previous=null}={}){
       acquired=acquired.filter(q=>(q.objectIds||[q.objectId].filter(Boolean)).every(allowed));const out=[],xs=[],ys=[];
-      if(settings.tracking)for(const a of acquired){if(Math.abs(p.x-a.x)<=tolerance){xs.push(a);out.push({x:a.x,y:p.y,kind:'tracking',anchor:a,guide:{kind:'vertical',a,b:{x:a.x,y:p.y}}});}if(Math.abs(p.y-a.y)<=tolerance){ys.push(a);out.push({x:p.x,y:a.y,kind:'tracking',anchor:a,guide:{kind:'horizontal',a,b:{x:p.x,y:a.y}}});}}
+      if(settings.tracking&&settings.trackingPolar){
+        const rays=[];
+        for(const a of acquired){const dx=p.x-a.x,dy=p.y-a.y,angle=polarDirection(Math.atan2(dy,dx)*180/Math.PI,{base:baseAngle,previous,tolerance:180});if(angle===null)continue;const r=angle*Math.PI/180,u={x:Math.cos(r),y:Math.sin(r)},along=dx*u.x+dy*u.y,error=Math.abs(dx*u.y-dy*u.x);if(along<0||error>tolerance)continue;const q={x:a.x+along*u.x,y:a.y+along*u.y},guide={kind:'parallel',a,b:q,angle};rays.push({a,u,guide});out.push({...q,kind:'tracking',anchor:a,guide});}
+        for(let i=0;i<rays.length;i++)for(let j=i+1;j<rays.length;j++){const x=rays[i],y=rays[j],den=x.u.x*y.u.y-x.u.y*y.u.x;if(Math.abs(den)<1e-10)continue;const dx=y.a.x-x.a.x,dy=y.a.y-x.a.y,t=(dx*y.u.y-dy*y.u.x)/den,v=(dx*x.u.y-dy*x.u.x)/den,q={x:x.a.x+t*x.u.x,y:x.a.y+t*x.u.y};if(t>=-1e-9&&v>=-1e-9&&distance(p,q)<=tolerance)out.push({...q,kind:'tracking',guides:[{...x.guide,b:q},{...y.guide,b:q}]});}
+      }
+      if(settings.tracking&&!settings.trackingPolar)for(const a of acquired){if(Math.abs(p.x-a.x)<=tolerance){xs.push(a);out.push({x:a.x,y:p.y,kind:'tracking',anchor:a,guide:{kind:'vertical',a,b:{x:a.x,y:p.y}}});}if(Math.abs(p.y-a.y)<=tolerance){ys.push(a);out.push({x:p.x,y:a.y,kind:'tracking',anchor:a,guide:{kind:'horizontal',a,b:{x:p.x,y:a.y}}});}}
       for(const x of xs)for(const y of ys)out.push({x:x.x,y:y.y,kind:'tracking',guides:[{kind:'vertical',a:x,b:{x:x.x,y:y.y}},{kind:'horizontal',a:y,b:{x:x.x,y:y.y}}]});
       if((oneShot==='extension'||!oneShot&&settings.modes.includes('extension')))for(const a of acquired){const o=objectById(a.objectId);if(!o)continue;const supports=root.cadPolyline?.is(o)?root.cadPolyline.get(o).edges.filter(e=>[e.type==='cadArc'?root.geometryQuery.pointAt(e,e.startAngle):e.a,e.type==='cadArc'?root.geometryQuery.pointAt(e,e.startAngle+e.sweep):e.b].some(p=>finite(p)&&distance(p,a)<1e-6)):[o];for(const e of supports){if(e.a&&e.b){const q=root.geometryQuery.projectNearest({...e,mode:'line'},p);if(q&&q.distance<=tolerance&&(q.t<0||q.t>1))out.push({...q.point,kind:'extension',objectId:o.id,guide:{kind:'parallel',a,b:q.point}});}else if(e.type==='cadArc'&&a.kind==='endpoint'){const q=root.geometryQuery.projectNearest({...e,type:'cadCircle'},p);if(q&&q.distance<=tolerance&&!root.geometryQuery.onArc(e,q.point))out.push({...q.point,kind:'extension',objectId:o.id,guide:{kind:'parallel',a,b:q.point}});}}}
       return out;
     }
-    return Object.freeze({status,configure,polarDirection,arm,consume,clear,acquire,track,kinds,resolve:s=>aliases[String(s).toUpperCase()]||null,enabled:kind=>oneShot?oneShot===kind:settings.modes.includes(kind)});
+    return Object.freeze({status,configure,polarDirection,polarMode:()=>Number(settings.polarRelative)+2*Number(settings.trackingPolar)+4*Number(settings.additionalEnabled)+8*Number(settings.shiftAcquire),setPolarMode:n=>Number.isInteger(n)&&n>=0&&n<=15?configure({polarRelative:!!(n&1),trackingPolar:!!(n&2),additionalEnabled:!!(n&4),shiftAcquire:!!(n&8)}):false,arm,consume,clear,acquire,track,kinds,resolve:s=>aliases[String(s).toUpperCase()]||null,enabled:kind=>oneShot?oneShot===kind:settings.modes.includes(kind)});
   }
   root.cadPrecision=Object.freeze({kinds,defaults,aliases,centroid,tangent,candidates,create});
 })();
