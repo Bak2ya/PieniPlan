@@ -1,0 +1,16 @@
+/* Independent anchors for new/explicitly reassociated dimensions only.
+ * Lost witnesses never resolve implicitly; saved v1 relations keep v1 behavior. */
+(() => {
+ 'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},capability='cad.dimension.partial.v1',clone=o=>JSON.parse(JSON.stringify(o)),equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ function slots(o){return o.kind==='arcLength'?['arc']:o.kind==='ordinate'?['feature']:['linear','aligned'].includes(o.kind||'aligned')?['p1','p2']:o.kind==='angular'?['vertex','ray1','ray2']:['radius','diameter'].includes(o.kind)?['radial']:[];}
+ function relation(o,anchors={},lost={}){anchors=clone(anchors);lost=clone(lost);if(!Object.keys(anchors).length&&!Object.keys(lost).length)return null;return{version:2,status:!Object.keys(anchors).length?'detached':slots(o).every(s=>anchors[s])?'current':'partial',anchors,...(Object.keys(lost).length?{lost}:{})};}
+ function validate(o){const r=o.association;if(r?.version!==2||Object.keys(r).some(k=>!['version','status','anchors','lost'].includes(k))||!r.anchors||typeof r.anchors!=='object'||Array.isArray(r.anchors)||r.lost!==undefined&&(!r.lost||typeof r.lost!=='object'||Array.isArray(r.lost)||!Object.keys(r.lost).length))throw Error('invalid-partial-dimension-association');const allowed=slots(o),active=Object.keys(r.anchors),lost=Object.keys(r.lost||{});if(!active.length&&!lost.length||[...active,...lost].some(k=>!allowed.includes(k))||active.some(k=>lost.includes(k))||relation(o,r.anchors,r.lost).status!==r.status)throw Error('invalid-partial-dimension-association');}
+ function fields(slot){return slot==='arc'?['center','radius','startAngle','sweep']:slot==='radial'?['center','radius']:[slot];}
+ function release(o,slotsToRelease){const q=clone(o),a=q.association.anchors,lost=q.association.lost||{};for(const slot of slotsToRelease)if(a[slot]){lost[slot]=a[slot];delete a[slot];}q.association=relation(q,a,lost);return q;}
+ function regenerate(o,byId){if(o.association?.version!==2||!Object.keys(o.association.anchors).length)return o;let q=clone(o),a=q.association.anchors,lost=q.association.lost||{};const changed=[];
+  for(const [slot,anchor]of Object.entries(a)){const value=M.cadDimensionAssociation.resolve(anchor,byId);if(!value||slot!=='radial'&&slot!=='arc'&&!value.point){lost[slot]=anchor;delete a[slot];continue;}if(slot==='arc')Object.assign(q,value.arc);else if(slot==='radial')Object.assign(q,value);else q[slot]=value.point;if(fields(slot).some(k=>!equal(o[k],q[k])))changed.push(slot);}
+  let g=M.cadAnnotation2.geometry(q);if(!g?.segments?.length){for(const slot of changed){for(const k of fields(slot))q[k]=clone(o[k]);lost[slot]=a[slot];delete a[slot];}g=M.cadAnnotation2.geometry(q);if(!g?.segments?.length)return release(o,Object.keys(o.association.anchors));}
+  q.association=relation(q,a,lost);q.segments=g.segments;if(changed.some(slot=>fields(slot).some(k=>!equal(o[k],q[k]))))delete q.dxfPresentation;return equal(o,q)?o:q;
+ }
+ M.cadDimensionPartial=Object.freeze({capability,slots,relation,validate,release,regenerate});
+})();

@@ -16,6 +16,16 @@
     }
     return {kind:'cad-change-set',version:1,label:String(label),ops};
   }
+  // Explicit command-owned grouping of existing-owner edits only. Creation,
+  // deletion and auxiliary history payloads require their own ownership contract.
+  function composeEdits(label,entries){
+    const owners=new Map();
+    for(const e of entries){
+      if(e?.kind!=='cad-change-set'||e.version!==1||Object.keys(e).some(k=>!['kind','version','label','ops'].includes(k))||!Array.isArray(e.ops))fail('invalid-edit-history-group');
+      const seen=new Set();for(const op of e.ops){if(!op.before||!op.after||op.id!==op.before.id||op.id!==op.after.id||seen.has(op.id)||!Number.isInteger(op.index)||op.index<0)fail('invalid-edit-history-group');seen.add(op.id);const old=owners.get(op.id);if(old){if(!equal(old.after,op.before)||old.index!==op.index)fail('stale-edit-history-group');old.after=op.after;}else owners.set(op.id,{before:op.before,after:op.after,index:op.index});}
+    }
+    return create(label,[...owners.values()]);
+  }
   // Preflight ALL targets and materialize replacements before touching the array.
   // A shallow array copy makes rollback safe; unchanged geometry is never cloned.
   function apply(entry,objects,{inverse=false}={}){
@@ -50,5 +60,5 @@
       clear(){resources.clear();},get size(){return resources.size;}
     });
   }
-  root.cadChangeSet=Object.freeze({create,apply,clone,createResourcePool});
+  root.cadChangeSet=Object.freeze({create,composeEdits,apply,clone,createResourcePool});
 })();

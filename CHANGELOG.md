@@ -1,3 +1,17 @@
+## v0.70.0 · Build96 (2026-10-28)
+
+- Extend nested 2D block/annotation snaps, deferred constraints and command point bases. Keep dynamic input, typed coordinates and live previews consistent across rotated and reflected planar UCS frames.
+- Add planar UCS authoring and native DXF header/table exchange while preserving shared world coordinates and existing Plan geometry. Extend isometric ellipse and elliptic-arc input options without introducing 3D objects.
+- Export whole drawings, selected objects and named blocks through WBLOCK in DXF, including base points and source units. Complete save-before-remove transactions and semantic Plan recovery without undoing newer unrelated work.
+- Extend multi-owner and multifunction grips for annotations and exact hatch loops. Preserve explicit source ownership, curve controls, source identity and bounded atomic editing.
+- Add independent dimension origin/source links, explicit lost-link recovery and grouped reassociation. Support DIMASSOC creation modes, manual text placement/rotation/leader, and partial continuous/baseline associations without claiming native reactor exchange.
+- Extend FILLET/CHAMFER with exact supported conic and polynomial spline solutions, infinite line/ray supports and mixed polyline endpoints. Preserve exact geometry and refuse unsupported extension or topology cases without flattening.
+- Retain native creation defaults, including session-only POLYSIDES, accepted polygon counts and independent rectangle chamfer/rotation values. Forward Enter to the active constructor rather than restarting it.
+- Add DIMORDINATE with captured UCS datum/axis, Text/Mtext/Angle options and independent leader/source editing. Add DIMARC with analytic source length, partial spans, text/leader options and standard ARC_DIMENSION exchange.
+- Add optional dimension rounding, zero suppression, decimal separator, symmetric/deviation/limits tolerances, relative text size and alignment. Support alternate-unit formats, independent conversion/precision/rounding and after/below placement; render stacked fractions as actual vector text and bars.
+- Read and edit exact planar DXF SOLID/TRACE fills while preserving native corner order, source units, handles and unrelated raw fields. Keep unsupported nonplanar or invalid fills as preserved records.
+- Keep schema7, Plan-only PPKG1 and drawing/space identifiers. New semantics require explicit capabilities before older readers load them. Advanced annotation/fit, general rational joins/offsets and external CAD/device verification remain incomplete; DWG authoring and XREF are outside the product scope.
+
 ## v0.69.0 · Build95 (2026-10-26)
 
 - Complete PLINE width defaults with PLINEWID, unit-aware input, Halfwidth/taper options and one-command Undo/Redo. Preserve the drawing default through PPRJ and native DXF headers without changing Plan defaults.

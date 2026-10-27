@@ -5,8 +5,8 @@
   const clone=o=>JSON.parse(JSON.stringify(o)),mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
   function handles(o){
     const out=[],add=(key,point,kind='vertex',indices=[])=>out.push({objectId:o.id,key,point:{...point},kind,indices});
-    if(o.type==='cadLine'){add('a',o.a);add('b',o.b);add('mid',mid(o.a,o.b),'move');}
-    else if(root.cadPolyline.is(o)&&o.vertices.length<=500){
+    if(['cadLine','cadXline','cadRay'].includes(o.type)){add('a',o.a);add('b',o.b);add('mid',mid(o.a,o.b),'move');}
+    else if(root.cadPolyline.is(o)&&o.vertices.length<=50000){
       o.vertices.forEach((v,i)=>add('v:'+i,v,'vertex',[i]));
       if(!o.curveFit)for(let i=0;i<o.vertices.length-(o.closed?0:1);i++){const j=(i+1)%o.vertices.length;if(Math.abs(o.vertices[i].outgoing?.bulge||0)<1e-10)add('e:'+i,mid(o.vertices[i],o.vertices[j]),'edge',[i,j]);else{const e=root.cadPolyline.get(o).edges[i];add('arcMid:'+i,root.geometryQuery.pointAt(e,e.startAngle+e.sweep/2),'bulge',[i,j]);}}
     }else if(root.cadEllipse?.is(o)){const e=root.cadEllipse;add('center',o.center,'move');for(const [key,t]of [['ellipseMajor',0],['ellipseMinor',Math.PI/2]])add(key,e.point(o,t),'ellipseAxis');if(!e.full(o)){add('ellipseStart',e.at(o,0),'ellipseEnd');add('ellipseEnd',e.at(o,1),'ellipseEnd');}
@@ -14,21 +14,24 @@
       add('center',o.center,'move');if(o.type==='cadArc'){add('arcStart',root.geometryQuery.pointAt(o,o.startAngle),'arcEndpoint');add('arcEnd',root.geometryQuery.pointAt(o,o.startAngle+o.sweep),'arcEndpoint');add('arcMid',root.geometryQuery.pointAt(o,o.startAngle+o.sweep/2),'arcMidpoint');}if(o.type==='cadCircle')for(const a of [0,90,180,270])add('radius:'+a,root.geometryQuery.pointAt(o,a),'radius');
     }else if(o.type==='cadInsert')add('insert',{x:o.matrix.tx,y:o.matrix.ty},'move');
     else if(['cadText','cadPoint'].includes(o.type)&&o.point)add('point',o.point,'move');
-    return out;
+    return out.concat(root.cadAnnotationGrips?.handles(o)||[]);
   }
   function stretch(o,hot,delta,target){
     if(hot.some(h=>h.kind==='move'))return root.cadTransformOperations.transform(o,root.cadTransformOperations.translate(delta.x,delta.y));
     const q=clone(o);
-    if(q.type==='cadLine'){for(const k of ['a','b'])if(hot.some(h=>h.key===k))q[k]={x:q[k].x+delta.x,y:q[k].y+delta.y};if(Math.hypot(q.b.x-q.a.x,q.b.y-q.a.y)<1e-8)return null;}
+    if(['cadLine','cadXline','cadRay'].includes(q.type)){for(const k of ['a','b'])if(hot.some(h=>h.key===k))q[k]={x:q[k].x+delta.x,y:q[k].y+delta.y};if(Math.hypot(q.b.x-q.a.x,q.b.y-q.a.y)<1e-8)return null;}
     else if(root.cadPolyline.is(q)){if(hot.some(h=>h.kind==='bulge')){if(hot.length!==1)return null;const [i,j]=hot[0].indices,g=root.cadCreation.arc3(q.vertices[i],q.vertices[j],target);if(!g)return null;q.vertices[i].outgoing.bulge=Math.tan(g.sweep*Math.PI/720);try{return root.cadPolyline.validate(q);}catch{return null;}}const indices=new Set(hot.flatMap(h=>h.indices));q.vertices.forEach((v,i)=>{if(indices.has(i)){v.x+=delta.x;v.y+=delta.y;}});if(o.closed&&o.curveFit?.knots&&Math.hypot(o.vertices[0].x-o.vertices.at(-1).x,o.vertices[0].y-o.vertices.at(-1).y)<1e-8){if(indices.has(0)&&!indices.has(o.vertices.length-1))Object.assign(q.vertices.at(-1),{x:q.vertices[0].x,y:q.vertices[0].y});if(!indices.has(0)&&indices.has(o.vertices.length-1))Object.assign(q.vertices[0],{x:q.vertices.at(-1).x,y:q.vertices.at(-1).y});}try{root.cadPolyline.validate(q);if(q.curveFit)root.cadPolylineFit.derive(q);}catch{return null;}}
     else if(root.cadEllipse?.is(q)&&hot.length===1){const e=root.cadEllipse,h=hot[0];if(h.kind==='ellipseAxis'){const a=Math.hypot(q.major.x,q.major.y),b=a*q.ratio;if(h.key==='ellipseMajor'){const axis={x:target.x-q.center.x,y:target.y-q.center.y},g=e.create(q.center,axis,b,q.startParam,q.sweepParam);if(!g)return null;Object.assign(q,g);}else{const g=e.create(q.center,q.major,Math.hypot(target.x-q.center.x,target.y-q.center.y),q.startParam,q.sweepParam);if(!g)return null;Object.assign(q,g);}}else if(h.kind==='ellipseEnd'){const t=e.parameter(q,target),end=q.startParam+q.sweepParam,sign=Math.sign(q.sweepParam),norm=n=>(n%e.TAU+e.TAU)%e.TAU;if(h.key==='ellipseStart'){q.startParam=t;q.sweepParam=sign*norm((end-t)*sign);}else q.sweepParam=sign*norm((t-q.startParam)*sign);if(Math.abs(q.sweepParam)<1e-9)return null;}else return null;}
     else if(q.type==='cadCircle'&&hot.length===1&&hot[0].kind==='radius'){q.radius=Math.hypot(target.x-q.center.x,target.y-q.center.y);if(q.radius<1e-8)return null;}
     else if(q.type==='cadArc'&&hot.length===1){const h=hot[0],G=root.geometryQuery,start=h.key==='arcStart'?target:G.pointAt(q,q.startAngle),end=h.key==='arcEnd'?target:G.pointAt(q,q.startAngle+q.sweep),through=h.key==='arcMid'?target:G.pointAt(q,q.startAngle+q.sweep/2),g=root.cadCreation.arc3(start,end,through);if(!g)return null;Object.assign(q,g);}
-    else return null;
+    else return root.cadAnnotationGrips?.stretch(o,hot,delta,target)||null;
     return q;
   }
   function plan(objects,hot,{base,target,mode='stretch',copy=false,value=null,referenceLength=1}){
     if(!base||!target)return null;
+    if(['hatchAdd','hatchArc','hatchLine','hatchRemove'].includes(mode)){if(objects.length!==1||hot.length!==1)return null;const plan=root.cadHatchGrips.action(objects[0],hot[0],mode,target);return plan?{...plan,copy}:null;}
+    if(['textOnly','textLeader','dimensionLine'].includes(mode)){if(objects.length!==1||hot.length!==1||objects[0].type!=='cadDimension'||!['linear','aligned'].includes(objects[0].kind||'aligned'))return null;const o=objects[0];let q;if(mode==='dimensionLine'){q=root.cadDimensionText.set(o,null);const a=(o.kind==='linear'?o.dimensionAngle:Math.atan2(o.p2.y-o.p1.y,o.p2.x-o.p1.x)*180/Math.PI)*Math.PI/180;q.offset=(target.x-o.p1.x)*-Math.sin(a)+(target.y-o.p1.y)*Math.cos(a);}else q=root.cadDimensionText.set(o,target,{leader:mode==='textLeader'});q.segments=root.cadAnnotation2.segments(q);return{before:[o],after:[q],copy};}
+    if(mode==='lengthen'){if(objects.length!==1||hot.length!==1)return null;const o=objects[0],h=hot[0];let after=null;if(o.type==='cadLine'&&['a','b'].includes(h.key)){const fixed=o[h.key==='a'?'b':'a'],old=o[h.key],dx=old.x-fixed.x,dy=old.y-fixed.y,len=Math.hypot(dx,dy),n=((target.x-fixed.x)*dx+(target.y-fixed.y)*dy)/(len*len);if(n>1e-10)after={...clone(o),[h.key]:{x:fixed.x+dx*n,y:fixed.y+dy*n}};}else if(o.type==='cadArc'&&h.kind==='arcEndpoint'){const angle=Math.atan2(target.y-o.center.y,target.x-o.center.x)*180/Math.PI,sign=Math.sign(o.sweep),norm=a=>(a%360+360)%360,end=o.startAngle+o.sweep,start=h.key==='arcStart'?angle:o.startAngle,sweep=sign*norm((h.key==='arcStart'?end-angle:angle-start)*sign);if(Math.abs(sweep)>1e-8)after={...clone(o),startAngle:start,sweep};}else if(root.cadEllipse?.is(o)&&h.kind==='ellipseEnd')after=root.cadEllipseOperations.dynamicLengthen(o,h.point,target)?.after[0];else if(root.cadFittedOperations?.is(o)&&h.kind==='vertex')after=root.cadFittedOperations.dynamicLengthen(o,h.point,target)?.after[0];return after?{before:[o],after:[after],copy}:null;}
     const delta={x:target.x-base.x,y:target.y-base.y};let matrix=null;
     if(mode==='move')matrix=root.cadTransformOperations.translate(delta.x,delta.y);
     if(mode==='rotate')matrix=root.cadTransformOperations.rotate(base,value??Math.atan2(delta.y,delta.x)*180/Math.PI);

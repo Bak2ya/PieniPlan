@@ -6,19 +6,19 @@
   const show=()=>p.prompt('A',d.phase,d),key=e=>String(e.type==='keyword'?e.value:e.text||'').trim().toUpperCase();
   const base=()=>['centerEnd','centerAngle','centerChord'].includes(d.phase)?d.center:d.start||d.center;
   const point=e=>e.type==='point'?p.resolvePoint(e.point,{base:base(),shift:!!e.shift}).point:e.type==='text'?p.parsePoint(e.text,{base:base(),direction:base()&&d.pointer?{x:d.pointer.x-base().x,y:d.pointer.y-base().y}:null})?.point:null;
-  const number=e=>e.type==='text'&&String(e.text).trim()!==''?Number(e.text):NaN;
+  const number=e=>e.type==='text'&&String(e.text).trim()!==''?(M.cadUnits?.parseAngle?M.cadUnits.parseAngle(e.text).degrees:Number(e.text)):NaN;
   function geometry(e){const q=point(e),n=number(e);
    if(d.phase==='end')return q&&G().arc3(d.start,q,d.through);
    if(d.phase==='centerEnd'){const g=q&&G().arcCenter(d.start,d.center,q);return g&&p.clockwise?.()?{...g,sweep:g.sweep-360}:g;}
-   if(d.phase==='centerAngle'){let angle=Number.isFinite(n)?n:q?((pointAngle(d.center,q)-pointAngle(d.center,d.start))%360+360)%360:NaN;if(!Number.isFinite(n)&&p.clockwise?.()&&angle>0)angle-=360;return G().arcCenter(d.start,d.center,null,angle);}
+   if(d.phase==='centerAngle'){let angle=Number.isFinite(n)?n*(p.angleSign?.()??1):q?((pointAngle(d.center,q)-pointAngle(d.center,d.start))%360+360)%360:NaN;if(!Number.isFinite(n)&&p.clockwise?.()&&angle>0)angle-=360;return G().arcCenter(d.start,d.center,null,angle);}
    if(d.phase==='centerChord'){const g=G().arcCenterChord(d.start,d.center,e.type==='text'?p.parseLength(e.text)?.mm:q?Math.hypot(q.x-d.start.x,q.y-d.start.y):NaN);return g&&p.clockwise?.()?{...g,sweep:-g.sweep}:g;}
    if(d.phase==='endCenter'||d.phase==='endMethod'){if(!q)return null;const g=G().arcCenter(d.start,q,d.end);return g&&p.clockwise?.()?{...g,sweep:g.sweep-360}:g;}
-   if(d.phase==='endAngle'){let angle=Number.isFinite(n)?n:q?pointAngle(d.start,q):NaN;if(!Number.isFinite(n)&&p.clockwise?.())angle=-Math.abs(angle);return G().arcEndAngle(d.start,d.end,angle);}
+   if(d.phase==='endAngle'){let angle=Number.isFinite(n)?n*(p.angleSign?.()??1):q?(p.angleFromWorld?.(pointAngle(d.start,q))??pointAngle(d.start,q))*(p.angleSign?.()??1):NaN;if(!Number.isFinite(n)&&p.clockwise?.())angle=-Math.abs(angle);return G().arcEndAngle(d.start,d.end,angle);}
    if(d.phase==='endRadius'){const g=G().arcEndRadius(d.start,d.end,e.type==='text'?p.parseLength(e.text)?.mm:q?Math.hypot(q.x-d.start.x,q.y-d.start.y):NaN);return g&&p.clockwise?.()?G().arcEndAngle(d.start,d.end,-Math.abs(g.sweep)):g;}
-   if(d.phase==='endDirection')return G().arcTangent(d.start,d.end,Number.isFinite(n)?n:q?pointAngle(d.start,q)+(p.clockwise?.()?180:0):NaN);
-   if(d.phase==='tangentEnd')return q&&G().arcTangent(d.start,q,d.tangent+(p.clockwise?.()?180:0));return null;
+   if(d.phase==='endDirection')return G().arcTangent(d.start,d.end,Number.isFinite(n)?(p.angleToWorld?.(n)??n):q?pointAngle(d.start,q)+((p.tangentReverse?.()??p.clockwise?.())?180:0):NaN);
+   if(d.phase==='tangentEnd')return q&&G().arcTangent(d.start,q,d.tangent+((p.tangentReverse?.()??p.clockwise?.())?180:0));return null;
   }
-  show();return{view:()=>d,describe:()=>({phase:d.phase,input:['point','coordinate','length','angle','keyword'],actions:d.phase==='start'?[{id:'C',labelKey:'cad87.center'}]:d.phase==='through'?[{id:'C',labelKey:'cad87.center'},{id:'E',labelKey:'cad91.end'}]:d.phase==='centerEnd'?[{id:'A',labelKey:'context.angle'},{id:'L',labelKey:'cad91.chord'}]:d.phase==='endMethod'?[{id:'C',labelKey:'cad87.center'},{id:'A',labelKey:'context.angle'},{id:'D',labelKey:'cad91.direction'},{id:'R',labelKey:'cadDraw.radius'}]:[]}),
+  show();return{view:()=>d,describe:()=>({phase:d.phase,pointBase:['start','through','centerPick','centerStart','end','endPick','endMethod','endCenter','centerEnd','tangentEnd'].includes(d.phase)?base():undefined,input:['point','coordinate','length','angle','keyword'],actions:d.phase==='start'?[{id:'C',labelKey:'cad87.center'}]:d.phase==='through'?[{id:'C',labelKey:'cad87.center'},{id:'E',labelKey:'cad91.end'}]:d.phase==='centerEnd'?[{id:'A',labelKey:'context.angle'},{id:'L',labelKey:'cad91.chord'}]:d.phase==='endMethod'?[{id:'C',labelKey:'cad87.center'},{id:'A',labelKey:'context.angle'},{id:'D',labelKey:'cad91.direction'},{id:'R',labelKey:'cadDraw.radius'}]:[]}),
    preview(e){e={...e,type:e.type||'point'};const q=point(e);if(q)d.pointer={...q};const g=geometry(e);p.preview(g?{kind:'arcGeometry',geometry:g}:d.start&&q?{kind:'arc',start:d.start,through:d.through,pointer:q}:null);return{ok:true};},
    input(e){const k=key(e);
     if(d.phase==='start'&&e.type==='enter'){const c=p.continuation?.();if(!c)return{ok:false,code:'base-required'};d.start={...c.point};d.tangent=c.tangent;d.phase='tangentEnd';show();return{ok:true};}

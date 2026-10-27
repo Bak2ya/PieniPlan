@@ -32,7 +32,7 @@
     const s=pointAt(o.vertex,radius,a1),e=pointAt(o.vertex,radius,endAngle),labelPoint=point(o.labelPoint)?{...o.labelPoint}:pointAt(o.vertex,radius*1.12,mid);
     const segments=[{a:{...o.vertex},b:s},{a:{...o.vertex},b:e}],n=Math.max(4,Math.ceil(Math.abs(sweep)/12));let prev=s;for(let i=1;i<=n;i++){const q=pointAt(o.vertex,radius,a1+sweep*i/n);segments.push({a:prev,b:q});prev=q;}return{kind:'angular',vertex:{...o.vertex},ray1:{...o.ray1},ray2:{...o.ray2},radius,startAngle:a1,sweep,value,start:s,end:e,labelPoint,segments};
   }
-  function geometry(o){const kind=o?.kind||'aligned';if(kind==='linear')return linear(o);if(kind==='radius'||kind==='diameter')return radial(o);if(kind==='angular')return angular(o);return aligned(o);}
+  function geometry(o){const kind=o?.kind||'aligned',g=kind==='arcLength'?root.cadArcLength?.geometry(o):kind==='ordinate'?root.cadOrdinate?.geometry(o):kind==='linear'?linear(o):kind==='radius'||kind==='diameter'?radial(o):kind==='angular'?angular(o):aligned(o);return root.cadDimensionText?.geometry(o,g)||g;}
   function segments(o){const g=geometry(o);if(!g)return[];return g.segments||[];}
   root.cadAnnotation2=Object.freeze({geometry,aligned,linear,radial,angular,segments,pointAt,angle,norm});
 })();

@@ -15,8 +15,8 @@
     if (Object.hasOwn(keywords, upper)) return { ok: true, kind: 'keyword', value: keywords[upper] };
     if (expect === 'keyword') return error('unknown-keyword');
     if (expect === 'angle' || expect === 'distance' || expect === 'number') {
-      if (!numeric(text)) return error('invalid-number');
-      const value = Number(text);
+      const value = expect==='angle'&&root.cadUnits?.parseAngle?root.cadUnits.parseAngle(text).degrees:numeric(text)?Number(text):NaN;
+      if (!Number.isFinite(value)) return error('invalid-number');
       if (expect === 'distance' && value < 0) return error('negative-distance');
       return { ok: true, kind: expect, value };
     }

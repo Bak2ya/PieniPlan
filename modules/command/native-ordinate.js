@@ -1,0 +1,18 @@
+/* Native DIMORDINATE point/option session. History belongs to annotation creation. */
+(() => {
+ 'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},ids=['DIMORDINATE'];
+ function keyword(id,phase,text){return id==='DIMORDINATE'&&(phase==='text'||phase==='mtext'||phase==='textAngle'||phase==='leader'&&['X','XDATUM','Y','YDATUM','T','TEXT','M','MTEXT','A','ANGLE'].includes(text));}
+ function install(registry,p){registry.register({id:'DIMORDINATE',aliases:[],available:c=>c.mode==='cad',transactional:false,historyOwner:'cad-change-set',create(){
+  const d={phase:'feature',frame:p.frame(),token:p.token(),feature:null,axis:null,anchor:null},live=()=>p.current(d.token),base=()=>d.phase==='feature'?null:d.phase==='leader'?d.feature:undefined,show=()=>p.prompt(d),read=e=>e.type==='point'?p.resolve(e.point,base()):e.type==='text'?p.parse(e.text,{base:base(),direction:d.feature&&d.pointer?{x:d.pointer.x-d.feature.x,y:d.pointer.y-d.feature.y}:null})?.point:null;
+  const data=end=>{const o={kind:'ordinate',datum:{...d.frame.origin},ordinateAngle:d.frame.angle,ordinateAxis:d.axis||M.cadOrdinate.automatic(d.frame,d.feature,end),feature:{...d.feature},leaderEnd:{...end},...(d.textOverride!=null?{textOverride:d.textOverride}:{}),...(d.textAngle!=null?{textAngle:d.textAngle}:{})},relation=M.cadDimensionPartial.relation(o,d.anchor?{feature:d.anchor}:{});if(relation)o.association=relation;return o;};
+  show();return{view:()=>d,describe:()=>({phase:d.phase,pointBase:base(),input:['point','coordinate','keyword','text'],actions:d.phase==='leader'?[{id:'XDATUM',labelKey:'cad96.ordinate.x'},{id:'YDATUM',labelKey:'cad96.ordinate.y'},{id:'TEXT',labelKey:'cad96.ordinate.text'},{id:'ANGLE',labelKey:'cad96.ordinate.angle'}]:[]}),
+   preview(e){if(!live())return{ok:false,code:'stale-context'};d.pointer=e.point;if(d.phase!=='leader'){p.preview(null);return{ok:true};}const end=read({type:'point',point:e.point}),o=end&&data(end);p.preview(o&&M.cadOrdinate.geometry(o)?o:null);return{ok:true};},
+   input(e){if(!live())return{ok:false,code:'stale-context'};const raw=String(e.type==='keyword'?e.value:e.text||'').trim(),key=raw.toUpperCase();
+    if(d.phase==='text'||d.phase==='mtext'){if(e.type!=='text'&&e.type!=='enter')return{ok:false,code:'invalid-input'};if(raw.length>100000||raw.includes('\0'))return{ok:false,code:'invalid-input'};if(e.type==='text')d.textOverride=String(e.text);d.phase='leader';show();return{ok:true};}
+    if(d.phase==='textAngle'){if(e.type==='enter'){d.phase='leader';show();return{ok:true};}const a=M.cadUnits.parseAngle(raw);if(!a.ok)return{ok:false,code:'invalid-number'};d.textAngle=d.frame.angle+d.frame.handedness*a.degrees;d.phase='leader';show();return{ok:true};}
+    if(d.phase==='leader'){if(['X','XDATUM','Y','YDATUM'].includes(key)){d.axis=key.startsWith('X')?'x':'y';p.preview(null);show();return{ok:true};}if(['T','TEXT','M','MTEXT','A','ANGLE'].includes(key)){d.phase=key==='A'||key==='ANGLE'?'textAngle':key==='M'||key==='MTEXT'?'mtext':'text';p.preview(null);show();if(d.phase==='mtext')p.editText(d.textOverride??'<>',d.pointer||d.feature,value=>{if(!live())return;if(value!=null)d.textOverride=value;d.phase='leader';show();});return{ok:true};}}
+    const q=read(e);if(!q)return{ok:false,code:'invalid-coordinate'};if(d.phase==='feature'){d.feature={...q};d.anchor=e.type==='point'?p.capture(q):null;d.phase='leader';show();return{ok:true};}const o=data(q);return M.cadOrdinate.geometry(o)?{ok:true,commit:true,value:o}:{ok:false,code:'no-valid-result'};
+   },commit(o){if(!live())throw Error('stale-context');return p.commit(o);},cancel:p.clear,finalize:p.clear};
+ }});}
+ M.nativeOrdinate=Object.freeze({ids,keyword,install});
+})();

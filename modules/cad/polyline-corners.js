@@ -1,7 +1,7 @@
 /* Native polyline corner orchestration over the existing exact LINE/ARC solver.
  * Source objects remain immutable; returned plans publish once through shared history. */
 (() => {
- 'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},clone=o=>JSON.parse(JSON.stringify(o)),distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),mid=e=>({x:(e.a.x+e.b.x)/2,y:(e.a.y+e.b.y)/2});
+ 'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},clone=o=>JSON.parse(JSON.stringify(o)),distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),mid=e=>e.type==='cadArc'?M.geometryQuery.pointAt(e,e.startAngle+e.sweep/2):({x:(e.a.x+e.b.x)/2,y:(e.a.y+e.b.y)/2});
  function prepared(o,p1,p2){const P=M.cadPolyline;if(!P.is(o)||o.curveFit)return[];const es=P.get(o).edges,h1=P.nearest(o,p1),h2=P.nearest(o,p2);if(!h1||!h2||h1.edgeId===h2.edgeId)return[];const i=es.findIndex(e=>e.edgeId===h1.edgeId),j=es.findIndex(e=>e.edgeId===h2.edgeId),n=es.length,out=[];
   for(const [a,b]of [[i,j],[j,i]]){if(a+1===b||o.closed&&(a+1)%n===b){const v=o.vertices[b];out.push({object:o,p1,p2,score:distance(p1,v)+distance(p2,v),bridged:false});}
    if(!(a+2===b||o.closed&&n>2&&(a+2)%n===b))continue;const prev=es[a],next=es[b];if(prev.type!=='cadLine'||next.type!=='cadLine')continue;
@@ -18,16 +18,57 @@
  function appearance(o){return Object.fromEntries(['cadLayer','layer','color','linetype','lineweight','linetypeScale','transparency'].filter(k=>Object.hasOwn(o,k)).map(k=>[k,o[k]]));}
  function corner(o,p1,p2,value,{kind='FILLET',distance2=value,angle=null,trim=true}={}){if(!Number.isFinite(value)||value<0||!Number.isFinite(distance2)||distance2<0)return null;const P=M.cadPolyline;
   for(const pair of prepared(o,p1,p2)){const source=pair.object;
-   if(value===0&&(kind==='FILLET'||distance2===0)){const es=P.get(source).edges,a=P.nearest(source,pair.p1),b=P.nearest(source,pair.p2);if(!a||!b||es.find(e=>e.edgeId===a.edgeId)?.type!=='cadLine'||es.find(e=>e.edgeId===b.edgeId)?.type!=='cadLine')continue;if(!trim)return{before:[],after:[],noChange:true};return pair.bridged?{before:[o],after:[source],topology:'cadPolyline',kind,sharp:true}:{before:[o],after:[o],noChange:true};}
+   if(value===0&&(kind==='FILLET'||distance2===0||kind==='CHAMFER'&&angle===0)){const es=P.get(source).edges,a=P.nearest(source,pair.p1),b=P.nearest(source,pair.p2);if(!a||!b||es.find(e=>e.edgeId===a.edgeId)?.type!=='cadLine'||es.find(e=>e.edgeId===b.edgeId)?.type!=='cadLine')continue;if(!trim)return{before:[],after:[],noChange:true};return pair.bridged?{before:[o],after:[source],topology:'cadPolyline',kind,sharp:true}:{before:[o],after:[o],noChange:true};}
    const plan=kind==='CHAMFER'?P.chamferAt(source,pair.p1,pair.p2,value,{distance2,angle}):P.filletAt(source,pair.p1,pair.p2,value);if(!plan)continue;
    if(trim)return{...plan,before:[o],bridged:pair.bridged};
    const g=kind==='FILLET'?plan.fillet:null;if(g)return{before:[],after:[{id:'__corner_new_arc__',type:'cadArc',center:{...g.center},radius:g.radius,startAngle:g.startAngle,sweep:g.sweep,...appearance(o)}],kind:'FILLET NOTRIM'};
    const after=plan.after[0],edge=P.get(after).edges.find(e=>String(e.edgeId).startsWith('__chamfer_new_'));if(!edge)continue;return{before:[],after:[{id:'__corner_new_line__',type:'cadLine',a:{...edge.a},b:{...edge.b},...appearance(o)}],kind:'CHAMFER NOTRIM'};
   }return null;
  }
- function all(o,value,options={}){const P=M.cadPolyline;if(!P.is(o)||o.curveFit)return null;const original=P.get(o).edges,n=original.length,pairs=[];for(let i=0;i<n;i++){if(original[i].type!=='cadLine')continue;const j=i+1;if(j<n||o.closed){const b=original[j%n];if(b.type==='cadLine')pairs.push([original[i].edgeId,b.edgeId]);else if(b.type==='cadArc'&&(i+2<n||o.closed)&&original[(i+2)%n].type==='cadLine')pairs.push([original[i].edgeId,original[(i+2)%n].edgeId]);}}
+ function all(o,value,options={}){const P=M.cadPolyline;if(!P.is(o)||o.curveFit)return null;const original=P.get(o).edges,n=original.length,pairs=[],modern=options.kind!=='CHAMFER'&&options.polyArc!==0;
+  // Preserve the established replacement of a single intervening arc first.
+  // Other modern LINE/ARC joints reuse the same exact pair solver afterwards.
+  for(let i=0;i<n;i++)if(original[i].type==='cadLine'&&(i+2<n||o.closed)&&original[(i+1)%n].type==='cadArc'&&original[(i+2)%n].type==='cadLine')pairs.push([original[i].edgeId,original[(i+2)%n].edgeId]);
+  for(let i=0;i<n;i++){const j=i+1;if(j>=n&&!o.closed)continue;const a=original[i],b=original[j%n];if(a.type==='cadLine'&&b.type==='cadLine'||modern&&['cadLine','cadArc'].includes(a.type)&&['cadLine','cadArc'].includes(b.type))pairs.push([a.edgeId,b.edgeId]);}
+
   let current=o,changed=0,skipped=0;const additions=[];for(const [id0,id1]of pairs){const es=P.get(current).edges,a=es.find(e=>e.edgeId===id0),b=es.find(e=>e.edgeId===id1);if(!a||!b){skipped++;continue;}const plan=corner(current,mid(a),mid(b),value,options);if(!plan||plan.noChange){skipped++;continue;}if(options.trim===false){for(const q of plan.after)additions.push({...q,id:q.id+changed});}else{current=plan.after[0];for(const v of current.vertices){if(/^__(fillet|chamfer)_new_/.test(v.id))v.id+='step'+changed;if(v.outgoing&&/^__(fillet|chamfer)_new_/.test(v.outgoing.id))v.outgoing.id+='step'+changed;}}changed++;}
   return changed?{before:options.trim===false?[]:[o],after:options.trim===false?additions:[current],topology:options.trim===false?undefined:'cadPolyline',kind:(options.kind||'FILLET')+' POLYLINE',changed,skipped}:{before:[],after:[],noChange:true,changed:0,skipped};
  }
- M.cadPolylineCorners=Object.freeze({prepared,corner,all});
+ // Different owners: virtual straight subedges go through the same exact pair
+ // solver. A trimmed chain can only be joined at a free terminal; modifying an
+ // interior junction would create a branch or reshape an unselected curve.
+ function pair(a,pa,b,pb,value,{kind='FILLET',distance2=value,angle=null,trim=true,layer=null}={}){
+  const P=M.cadPolyline,G=M.geometryQuery,J=M.cadJoin,eps=G.tolerance.model;
+  if(!a||!b||a.id===b.id||!J||!Number.isFinite(value)||value<0||!Number.isFinite(distance2)||distance2<0)return null;
+  function part(o,p){
+   if(!P.is(o))return['cadLine','cadRay','cadXline',...(!trim&&kind!=='CHAMFER'?['cadArc','cadCircle','cadEllipse']:[])].includes(o.type)?{owner:o,leaf:o,poly:false}:null;
+   if(o.curveFit)return null;const es=P.get(o).edges,hit=P.nearest(o,p),index=hit&&es.findIndex(e=>e.edgeId===hit.edgeId),e=es[index];
+   if(!e||e.type!=='cadLine'&&!(!trim&&kind!=='CHAMFER'&&e.type==='cadArc'))return null;
+   return{owner:o,poly:true,leaf:{...clone(e),...appearance(o),id:o.id},edge:e,index,terminal:!o.closed&&(index===0||index===es.length-1),canStart:index===0,canEnd:index===es.length-1};
+  }
+  try{
+   const x=part(a,pa),y=part(b,pb);if(!x||!y||!x.poly&&!y.poly)return null;
+   const solve=kind==='CHAMFER'?M.cadLinearOperations.chamfer:M.cadLinearOperations.fillet,plan=solve(x.leaf,pa,y.leaf,pb,value,{distance2,angle,trim,layer});if(!plan)return null;
+   if(!trim)return plan;
+   if([x,y].some(q=>q.poly?!q.terminal:q.owner.type!=='cadLine'))return null;
+   const connector=plan.after.find(e=>e.id!==a.id&&e.id!==b.id),contact=(q,first)=>!q?null:q.type==='cadLine'?(first?q.a:q.b):G.pointAt(q,q.startAngle+(first?0:q.sweep));
+   function project(q,point){
+    const leaf=plan.after.find(e=>e.id===q.owner.id)||q.leaf;
+    if(!q.poly)return{object:J.poly(leaf),width:0};
+    const atStart=q.canStart&&(!q.canEnd||distance(leaf.b,q.leaf.b)<=eps&&(!point||distance(point,leaf.a)<=distance(point,leaf.b))),fixed=atStart?'b':'a',free=atStart?'a':'b';if(leaf.type!=='cadLine'||distance(leaf[fixed],q.leaf[fixed])>eps)return null;
+    const o=clone(q.owner),vertex=atStart?o.vertices[0]:o.vertices.at(-1),outgoing=o.vertices[q.index].outgoing,t=G.parameter(q.edge,leaf[free]),s=q.edge.startWidth||0,e=q.edge.endWidth||0,w=s+(e-s)*t;
+    if(!Number.isFinite(w)||w<0||w>1e7)return null;vertex.x=leaf[free].x;vertex.y=leaf[free].y;
+    const key=atStart?'startWidth':'endWidth';if(w)outgoing[key]=w;else delete outgoing[key];P.validate(o);return{object:o,width:w};
+   }
+   const px=project(x,contact(connector,true)),py=project(y,contact(connector,false));if(!px?.object||!py?.object)return null;
+   let current=x.poly?px.object:py.object,other=x.poly?py.object:px.object;
+   // IDs are scoped to the old owners. Only collisions in a consumed namespace
+   // need fresh JOIN identities; the surviving chain never gets renumbered.
+   let serial=0;function disjoint(q,base){const copy=clone(q),vertices=new Set(base.vertices.map(v=>v.id)),edges=new Set(base.vertices.flatMap(v=>v.outgoing?[v.outgoing.id]:[])),reserved=new Set([...vertices,...edges,...copy.vertices.flatMap(v=>[v.id,...(v.outgoing?[v.outgoing.id]:[])])]);const fresh=type=>{let id;do{id=`__join_new_${type}_corner_${serial++}__`;}while(reserved.has(id));reserved.add(id);return id;};for(const v of copy.vertices){if(vertices.has(v.id))v.id=fresh('cadVertex');vertices.add(v.id);if(v.outgoing){if(edges.has(v.outgoing.id))v.outgoing.id=fresh('cadEdge');edges.add(v.outgoing.id);}}return P.validate(copy);}
+   if(connector){let id='__mixed_corner_connector__';while([a.id,b.id].includes(id))id+='_';let link=J.poly({...connector,id});if(!link)return null;const outgoing=link.vertices[0].outgoing;for(const [key,w]of [['startWidth',px.width],['endWidth',py.width]])if(w)outgoing[key]=w;else delete outgoing[key];link=disjoint(link,current);const joined=J.pair(current,link);if(!joined)return null;current=joined.after[0];}
+   other=disjoint(other,current);const joined=J.pair(current,other);if(!joined)return null;current=joined.after[0];P.validate(current);
+   return{before:[a,b],after:[current],topology:'cadPolyline',kind:kind+' MIXED POLYLINE',survivorOwnerId:current.id,retiredOwnerIds:[a.id,b.id].filter(id=>id!==current.id)};
+  }catch{return null;}
+ }
+ M.cadPolylineCorners=Object.freeze({prepared,corner,all,pair});
 })();

@@ -2196,3 +2196,5 @@ html, body { font-size:var(--font-body); }
 .element-catalog-card strong{font-size:var(--font-control);font-weight:500;overflow-wrap:anywhere}
 .element-catalog-card small{font-size:var(--font-micro);color:var(--text-3);overflow-wrap:anywhere}
 @media(max-width:420px){.element-catalog-grid{grid-template-columns:minmax(0,1fr)}}
+
+.cad-dynamic-input label[data-locked="true"]::after{content:"🔒";font-size:10px}.cad-dynamic-input input[data-locked]{border-color:var(--accent)}

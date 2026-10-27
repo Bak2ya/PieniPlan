@@ -5,13 +5,18 @@
   const clone = o => JSON.parse(JSON.stringify(o)), distance = (a, b) => a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity;
   function validate(o) {
     const r = o.association; if (!r) return;
-    const slots = ['p1', 'p2', 'vertex', 'ray1', 'ray2', 'radial'];
-    if (o.type !== 'cadDimension' || r.version !== 1 || !['current', 'detached'].includes(r.status) || Object.keys(r).some(k => !['version', 'status', 'anchors'].includes(k)) || !r.anchors || typeof r.anchors !== 'object' || Array.isArray(r.anchors) || !Object.keys(r.anchors).length) throw Error('invalid-dimension-association');
-    for (const [slot, a] of Object.entries(r.anchors)) {
-      if (!slots.includes(slot) || !a || typeof a.sourceId !== 'string' || !a.sourceId || a.sourceId === o.id || !['vertex', 'point', 'radial'].includes(a.kind) || Object.keys(a).some(k => !['sourceId', 'kind', 'vertexId', 'key'].includes(k)) || a.kind === 'vertex' && (typeof a.vertexId !== 'string' || !a.vertexId) || a.kind === 'point' && !['a', 'b', 'start', 'end', 'center', 'midpoint'].includes(a.key) || (slot === 'radial') !== (a.kind === 'radial') || slot === 'radial' && !['radius', 'diameter'].includes(o.kind) || ['p1', 'p2'].includes(slot) && !['linear', 'aligned'].includes(o.kind || 'aligned') || ['vertex', 'ray1', 'ray2'].includes(slot) && o.kind !== 'angular') throw Error('invalid-dimension-anchor');
+    const slots = ['arc','feature','p1', 'p2', 'vertex', 'ray1', 'ray2', 'radial'];if(r.version===2){if(o.type!=='cadDimension'||!root.cadDimensionPartial)throw Error('invalid-partial-dimension-association');root.cadDimensionPartial.validate(o);}
+    if (r.version!==2&&(o.type !== 'cadDimension' || r.version !== 1 || !['current', 'detached'].includes(r.status) || Object.keys(r).some(k => !['version', 'status', 'anchors'].includes(k)) || !r.anchors || typeof r.anchors !== 'object' || Array.isArray(r.anchors) || !Object.keys(r.anchors).length)) throw Error('invalid-dimension-association');
+    for (const [slot, a] of Object.entries({...r.anchors,...(r.version===2?r.lost:{})})) {
+      if (slot==='arc'&&o.kind!=='arcLength'||slot==='feature'&&o.kind!=='ordinate'||!slots.includes(slot) || !a || typeof a.sourceId !== 'string' || !a.sourceId || a.sourceId === o.id || (slot === 'radial') !== (a.kind === 'radial') || slot === 'radial' && !['radius', 'diameter'].includes(o.kind) || ['p1', 'p2'].includes(slot) && !['linear', 'aligned'].includes(o.kind || 'aligned') || ['vertex', 'ray1', 'ray2'].includes(slot) && o.kind !== 'angular') throw Error('invalid-dimension-anchor');
+      if(slot==='arc'){if(!root.cadArcLength||a.kind!=='arc96')throw Error('invalid-arc-dimension-anchor');root.cadArcLength.validateAnchor(a);continue;}if(a.kind==='geometry96'){if(!root.cadDimensionReferences)throw Error('unsupported-dimension-subedge');root.cadDimensionReferences.validate(a);continue;}
+      if(!['vertex','point','radial'].includes(a.kind)||Object.keys(a).some(k=>!['sourceId','kind','vertexId','key'].includes(k))||a.kind==='vertex'&&(typeof a.vertexId!=='string'||!a.vertexId)||a.kind==='point'&&!['a','b','start','end','center','midpoint'].includes(a.key))throw Error('invalid-dimension-anchor');
     }
   }
+
   function resolve(anchor, byId) {
+    if(anchor.kind==='arc96')return root.cadArcLength?.resolve(anchor,byId)||null;
+    if(anchor.kind==='geometry96')return root.cadDimensionReferences?.resolve(anchor,byId)||null;
     const o = byId(anchor.sourceId); if (!o || o.readonly || o.floorId || o.planRole || !['cadLine', 'cadArc', 'cadCircle', 'cadEllipse', 'cadPolyline'].includes(o.type)) return null;
     if (anchor.kind === 'radial') return ['cadCircle', 'cadArc'].includes(o.type) ? { center: { ...o.center }, radius: o.radius } : null;
     if (anchor.kind === 'vertex') { if (!root.cadPolyline.is(o)) return null; const v = o.vertices.find(v => v.id === anchor.vertexId); if (!v || o.curveFit && (o.closed || v !== o.vertices[0] && v !== o.vertices.at(-1))) return null; return { point: { x: v.x, y: v.y } }; }
@@ -23,20 +28,25 @@
     return null;
   }
   function capture(point, snap, byId) {
-    if (!snap?.objectId || !['endpoint', 'midpoint', 'center'].includes(snap.kind)) return null;
-    const o = byId(snap.objectId); if (!o || o.floorId || o.planRole) return null;
+    if (!snap?.objectId) return null;
+    const o = byId(snap.objectId); if (!o || o.floorId || o.planRole || o.readonly) return null;
     const anchors = [];
-    if (root.cadPolyline.is(o)) for (const v of o.vertices) anchors.push({ sourceId: o.id, kind: 'vertex', vertexId: v.id });
-    else for (const key of ['a', 'b', 'start', 'end', 'center', 'midpoint']) anchors.push({ sourceId: o.id, kind: 'point', key });
-    return anchors.find(a => distance(resolve(a, byId)?.point, point) < 1e-6) || null;
+    if(['endpoint','midpoint','center'].includes(snap.kind)){
+      if (root.cadPolyline.is(o)) {if(snap.kind==='endpoint')for(const v of o.vertices)if(!snap.vertexId||v.id===snap.vertexId)anchors.push({sourceId:o.id,kind:'vertex',vertexId:v.id});}
+      else for (const key of ['a', 'b', 'start', 'end', 'center', 'midpoint']) anchors.push({ sourceId: o.id, kind: 'point', key });
+      const legacy=anchors.find(a => distance(resolve(a, byId)?.point, point) < 1e-6);if(legacy)return legacy;
+    }
+    return root.cadDimensionReferences?.capture(point,snap,byId)||null;
   }
-  function detached(o) { return o.association ? { ...o, association: { ...clone(o.association), status: 'detached' } } : o; }
+
+  function detached(o) {if(o.association?.version===2)return root.cadDimensionPartial.release(o,Object.keys(o.association.anchors));return o.association ? { ...o, association: { ...clone(o.association), status: 'detached' } } : o; }
   function regenerate(o, byId) {
+    if(o.association?.version===2)return root.cadDimensionPartial.regenerate(o,byId);
     if (o.association?.status !== 'current') return o;
     let q = clone(o);
     for (const [slot, anchor] of Object.entries(o.association.anchors)) {
-      const value = resolve(anchor, byId); if (!value || slot !== 'radial' && !value.point) return detached(o);
-      if (slot === 'radial') Object.assign(q, value); else q[slot] = value.point;
+      const value = resolve(anchor, byId); if (!value || slot !== 'radial' && slot!=='arc' && !value.point) return detached(o);
+      if(slot==='arc')Object.assign(q,value.arc);else if (slot === 'radial') Object.assign(q, value); else q[slot] = value.point;
     }
     const g = root.cadAnnotation2.geometry(q); if (!g?.segments?.length) return detached(o);
     q.segments = g.segments; if (JSON.stringify(q) === JSON.stringify(o)) return o;
@@ -47,12 +57,12 @@
     for (const c of changes) { if (c.before) next.delete(c.before.id); if (c.after) next.set(c.after.id, c.after); }
     const result = changes.slice();
     for (const o of next.values()) {
-      if (o.type !== 'cadDimension' || o.association?.status !== 'current' || defer(o) && !touched.has(o.id)) continue;
+      if (o.type !== 'cadDimension' || (o.association?.status !== 'current'&&o.association?.version!==2) || defer(o) && !touched.has(o.id)) continue;
       const explicit = touched.get(o.id), sourceTouched = Object.values(o.association.anchors).some(a => touched.has(a.sourceId));
       let after = o;
       if (explicit && !sourceTouched) {
-        const proposed = regenerate(o, id => next.get(id)), fields = Object.keys(o.association.anchors).flatMap(slot => slot === 'radial' ? ['center', 'radius'] : [slot]);
-        if (fields.some(key => JSON.stringify(o[key]) !== JSON.stringify(proposed[key]))) after = detached(o);
+        const proposed = regenerate(o, id => next.get(id)), fields = Object.keys(o.association.anchors).flatMap(slot => slot==='arc'?['center','radius','startAngle','sweep']:slot === 'radial' ? ['center', 'radius'] : [slot]);
+        if(o.association.version===2){const released=Object.entries(o.association.anchors).filter(([slot,a])=>{const v=resolve(a,id=>next.get(id));return v&&(slot==='arc'?['center','radius','startAngle','sweep'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v.arc[k])):slot==='radial'?['center','radius'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v[k])):JSON.stringify(o[slot])!==JSON.stringify(v.point));}).map(([slot])=>slot);after=root.cadDimensionPartial.regenerate(released.length?root.cadDimensionPartial.release(o,released):o,id=>next.get(id));}else if (fields.some(key => JSON.stringify(o[key]) !== JSON.stringify(proposed[key]))) after = detached(o);
       } else if (sourceTouched) after = regenerate(o, id => next.get(id));
       if (after === o) continue;
       if (explicit) result[result.indexOf(explicit)] = { ...explicit, after };

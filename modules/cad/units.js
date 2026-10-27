@@ -4,6 +4,19 @@
   const root = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
   const num=s=>Number(String(s).trim().replace(/,/g,''));
   const finite=n=>Number.isFinite(n);
+  // Angular syntax is interpreted at the input boundary; saved geometry stays in
+  // canonical degrees/radians. No expression evaluation or implicit unit changes.
+  function parseAngle(raw,bearingAllowed=true){
+    const s=String(raw??'').trim(),bad=()=>({ok:false,code:'invalid-angle'}),good=(degrees,unit)=>finite(degrees)?{ok:true,degrees,unit}:bad();
+    if(!s)return bad();
+    const cardinal={E:0,N:90,W:180,S:270};if(Object.hasOwn(cardinal,s.toUpperCase()))return good(cardinal[s.toUpperCase()],'bearing');
+    const bearing=s.match(/^([NS])\s*(.*?)\s*([EW])$/i);
+    if(bearing){if(!bearingAllowed)return bad();const q=parseAngle(bearing[2],false);if(!q.ok||!['degree','dms'].includes(q.unit)||q.degrees<0||q.degrees>90)return bad();const n=bearing[1].toUpperCase(),e=bearing[3].toUpperCase(),v=q.degrees;return good(n==='N'?(e==='E'?90-v:90+v):(e==='E'?270+v:270-v),'bearing');}
+    const number='(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?',simple=s.match(new RegExp('^([+-]?'+number+')\\s*([dgr°]?)$','i'));
+    if(simple){const value=Number(simple[1]),unit=simple[2].toLowerCase();return good(unit==='r'?value*180/Math.PI:unit==='g'?value*.9:value,unit==='r'?'rad':unit==='g'?'grad':'degree');}
+    const dms=s.match(/^([+-]?)(\d+)\s*[d°]\s*(?:(\d+(?:\.\d+)?)\s*')?\s*(?:(\d+(?:\.\d+)?)\s*["”])?$/i);
+    if(!dms||dms[3]==null&&dms[4]==null)return bad();const minutes=Number(dms[3]||0),seconds=Number(dms[4]||0);if(minutes>=60||seconds>=60||seconds&&minutes%1)return bad();return good((dms[1]==='-'?-1:1)*(Number(dms[2])+minutes/60+seconds/3600),'dms');
+  }
   function parseMixedNumber(raw){
     const s=String(raw??'').trim();if(!s)return NaN;
     if(/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(s))return Number(s);
@@ -24,5 +37,5 @@
   function formatLength(mm,{system='metric',precision=1}={}){if(system==='imperial'){const total=Math.abs(mm)/25.4,feet=Math.floor(total/12),inches=total-feet*12,sign=mm<0?'-':'';return`${sign}${feet}'-${inches.toFixed(Math.min(3,precision+1))}"`;}return`${Number(mm).toFixed(precision)} mm`;}
   function formatArea(mm2,{system='metric',precision=2}={}){if(system==='imperial')return`${(Number(mm2)/92903.04).toFixed(precision)} ft²`;return`${(Number(mm2)/1e6).toFixed(precision)} m²`;}
   function formatAngle(deg,{precision=1}={}){return`${Number(deg).toFixed(precision)}°`;}
-  root.cadUnits=Object.freeze({parseLength,formatLength,formatArea,formatAngle});
+  root.cadUnits=Object.freeze({parseLength,parseAngle,formatLength,formatArea,formatAngle});
 })();
