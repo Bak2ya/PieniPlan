@@ -17,7 +17,14 @@
   function create({ input, status, history, suggestions, getPlanMode, readyText, bar=null, expandButton=null, pinButton=null, maxLog = 80,allowSuggestions=()=>true,getDocumentId=()=>null }) {
     const log = [],archive=[];let archiveBytes=0,archiveDropped=0;
     const journal=createJournal();
-    let expanded=false,pinned=false;
+    const read=key=>{try{return localStorage.getItem(key);}catch(_){return null;}};
+    let expanded=read('pieniplan-command-expanded')==='true',pinned=read('pieniplan-command-pinned')==='true';
+    function setLayout(patch,{persist=true}={}){
+      if(Object.hasOwn(patch,'expanded'))expanded=Boolean(patch.expanded);
+      if(Object.hasOwn(patch,'pinned')){pinned=Boolean(patch.pinned);if(pinned&&!Object.hasOwn(patch,'expanded'))expanded=true;}
+      if(persist)try{localStorage.setItem('pieniplan-command-expanded',String(expanded));localStorage.setItem('pieniplan-command-pinned',String(pinned));}catch(_){}
+      render();return{expanded,pinned};
+    }
 
     function matches() {
       return root.commandCore.matches(input?.value, { plan: Boolean(getPlanMode?.()) });
@@ -59,6 +66,7 @@
         status.textContent = current.text;
       }
       bar?.classList.toggle('log-expanded',expanded);
+      bar?.closest('.app-shell')?.classList.toggle('command-expanded',expanded);
       bar?.closest('#canvasHost')?.classList.toggle('command-log-open',expanded);
       expandButton?.setAttribute('aria-expanded',String(expanded));
       if(pinButton){pinButton.hidden=!expanded;pinButton.setAttribute('aria-pressed',String(pinned));}
@@ -87,12 +95,12 @@
     }
 
     input?.addEventListener('input', event=>{if(!event.isComposing)renderSuggestions();});
-    expandButton?.addEventListener('click',()=>{expanded=!expanded;if(!expanded)pinned=false;render();});
-    pinButton?.addEventListener('click',()=>{pinned=!pinned;expanded=true;render();});
-    document.addEventListener('pointerdown',e=>{if(expanded&&!pinned&&bar&&!bar.contains(e.target)){expanded=false;render();}});
+    expandButton?.addEventListener('click',()=>setLayout({expanded:!expanded}));
+    pinButton?.addEventListener('click',()=>setLayout({pinned:!pinned,expanded:true}));
+    document.addEventListener('pointerdown',e=>{if(expanded&&!pinned&&bar&&!bar.contains(e.target)&&!e.target.closest('.workspace-action-menu')){expanded=false;render();}});
     bar?.addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.isComposing&&expanded&&!pinned){expanded=false;render();}});
 
-    return Object.freeze({ push, render, renderSuggestions, hideSuggestions, completeFirst, journal,getLog: () => log.slice(),getHistory:()=>({rows:archive.map(r=>({...r})),dropped:archiveDropped,limit:5000,byteLimit:2*1024*1024,lineLimit:16000}), get expanded(){return expanded;}, get pinned(){return pinned;} });
+    return Object.freeze({ push, render, setLayout, renderSuggestions, hideSuggestions, completeFirst, journal,getLog: () => log.slice(),getHistory:()=>({rows:archive.map(r=>({...r})),dropped:archiveDropped,limit:5000,byteLimit:2*1024*1024,lineLimit:16000}), get expanded(){return expanded;}, get pinned(){return pinned;} });
   }
 
   root.commandConsole = Object.freeze({ create,createJournal });

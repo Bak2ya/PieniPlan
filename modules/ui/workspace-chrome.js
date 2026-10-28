@@ -38,7 +38,7 @@
     const floatingPopup = () => document.querySelector('.layer-color-popover, .floor-action-menu, .component-palette, .constraint-palette, dialog[open], .dialog-backdrop:not([hidden])');
     const busy = () => panel.contains(document.activeElement) || held || (popupOwned && floatingPopup()) || interactionBusy?.();
 
-    function panelVisible() { return pinned || open; }
+    function panelVisible() { return open; }
     function preferences() { return { openMethod, closeMethod }; }
     function setPreferences({ openMethod: nextOpen = openMethod, closeMethod: nextClose = closeMethod } = {}) {
       openMethod = preference('open', nextOpen);
@@ -50,9 +50,10 @@
       return preferences();
     }
     function paintPanel() {
+      shell.classList.toggle('inspector-collapsed', !open);
       shell.classList.toggle('inspector-autohide', !pinned);
       shell.classList.toggle('inspector-revealed', !pinned && open);
-      handle.hidden = pinned;
+      handle.hidden = pinned && open;
       handle.setAttribute('aria-expanded', String(!pinned && open));
       const handleAction = !pinned && open ? 'workspace.hidePanel' : 'workspace.showPanel';
       handle.setAttribute('aria-label', t(handleAction));
@@ -60,8 +61,8 @@
       pin.setAttribute('aria-pressed', String(pinned));
       pin.setAttribute('aria-label', t(pinned ? 'workspace.autoHide' : 'workspace.pinPanel'));
       pin.title = t(pinned ? 'workspace.autoHide' : 'workspace.pinPanel');
-      panel.inert = !pinned && !open;
-      panel.setAttribute('aria-hidden', String(!pinned && !open));
+      panel.inert = !open;
+      panel.setAttribute('aria-hidden', String(!open));
     }
     function rememberOpen(value) {
       preferredOpen = value;
@@ -71,7 +72,7 @@
       clearPanelTimer();
       if (explicit) { explicitHold = !pointerInside; transientHover = false; }
       if (persist || explicit) rememberOpen(true);
-      if (!pinned && !open) {
+      if (!open) {
         open = true;
         transientHover = transient && !explicit;
         paintPanel();
@@ -80,8 +81,8 @@
       }
       if (focus) { panel.getBoundingClientRect(); pin.focus({ preventScroll: true }); }
     }
-    function close({ persist = true, focus = false } = {}) {
-      if (pinned) return;
+    function close({ persist = true, focus = false, explicit = false } = {}) {
+      if (pinned && !explicit) return;
       clearPanelTimer();
       open = false; explicitHold = false; transientHover = false;
       if (persist) rememberOpen(false);
@@ -202,7 +203,7 @@
     });
     handle.addEventListener('pointerleave', () => { handleInside = false; scheduleClose(); });
     handle.addEventListener('click', event => {
-      if (pinned) return;
+      if (pinned) { if(!open)reveal({explicit:true,persist:true});return; }
       // Keyboard activation focuses the pin for accessibility. A pointer click
       // must not leave focus on the pin or auto-close would never run on exit.
       if (!open) { reveal({ focus: event.detail === 0, explicit: true }); return; }
@@ -263,6 +264,7 @@
     paintPanel(); paintMenu();
     return { applyToolbar, refresh: () => { paintMenu(); paintPanel(); measureTitle(); },
       setPinned, reveal, close, scheduleClose, setMenu, saveTab, restoreTab,
+      setPanelVisible(value){if(value)reveal({explicit:true,persist:true});else close({explicit:true});},
       preferences, setPreferences, panelVisible,
       status: () => ({ pinned, open, preferredOpen, explicitHold, menuOpen, menuPinned, ...preferences() }) };
   }

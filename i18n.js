@@ -3,6 +3,23 @@
 
   const messages = {
     en: {
+      "history97.edit": "Edit",
+      "history97.wall": "Draw wall",
+      "history97.undo": "Undo through selected action",
+      "history97.redo": "Redo through selected action",
+      "history97.empty": "No actions available",
+      "history97.changed": "History changed. Open the list again.",
+      "workspace97.panels": "Workspace panels",
+      "workspace97.tools": "Tool options",
+      "workspace97.top": "Top tools",
+      "workspace97.bottom": "Command area",
+      "workspace97.right": "Right panel",
+      "workspace97.expand": "Expand",
+      "workspace97.collapse": "Collapse",
+      "workspace97.pin": "Pin open",
+      "workspace97.expandAll": "Expand all panels",
+      "workspace97.collapseAll": "Collapse all panels",
+
       'cad96.dimassoc.options': '0 Exploded / 1 Non-associative / 2 Associative',
       'cad96.ordinate.phase.feature': 'Feature location / point',
       'cad96.ordinate.phase.leader': 'Leader endpoint / Xdatum / Ydatum / Text / Mtext / Angle',
@@ -1609,6 +1626,23 @@
     },
 
     ko: {
+      "history97.edit": "편집",
+      "history97.wall": "벽 작성",
+      "history97.undo": "선택한 작업까지 실행 취소",
+      "history97.redo": "선택한 작업까지 다시 실행",
+      "history97.empty": "선택할 작업이 없습니다",
+      "history97.changed": "작업 이력이 바뀌었습니다. 목록을 다시 열어 주세요.",
+      "workspace97.panels": "작업공간 패널",
+      "workspace97.tools": "도구 목록",
+      "workspace97.top": "상단 도구",
+      "workspace97.bottom": "하단 명령 영역",
+      "workspace97.right": "우측 패널",
+      "workspace97.expand": "확장",
+      "workspace97.collapse": "축소",
+      "workspace97.pin": "펼친 상태 고정",
+      "workspace97.expandAll": "모든 패널 확장",
+      "workspace97.collapseAll": "모든 패널 축소",
+
       'cad96.dimassoc.options': '0 분해 도형 / 1 비연관 치수 / 2 연관 치수',
       'cad96.ordinate.phase.feature': '측정할 점 지정',
       'cad96.ordinate.phase.leader': '지시선 끝점 / X기준 / Y기준 / 문자(T) / 여러 줄 문자(M) / 각도(A)',

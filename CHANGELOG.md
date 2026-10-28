@@ -1,3 +1,11 @@
+## v0.70.1 · Build97 (2026-10-28)
+
+- Restore uniform schematic Plan wall strokes in the canvas and Plan SVG/PDF while retaining physical thickness, openings, junction data and CAD/DXF outlines.
+- Keep wall selection and constraint summaries read-only; viewing a wall no longer adds default constraint fields.
+- Add action-range Undo/Redo lists to toolbar context menus and keyboard access, using existing history inverses and grouped user actions.
+- Complete top/command/right panel expand, collapse and pin controls; preserve independent preferences and the drawing camera.
+- Restore the existing logo and mode labels, simplify Compact command status and retain command access on narrow screens.
+
 ## v0.70.0 · Build96 (2026-10-28)
 
 - Extend nested 2D block/annotation snaps, deferred constraints and command point bases. Keep dynamic input, typed coordinates and live previews consistent across rotated and reflected planar UCS frames.

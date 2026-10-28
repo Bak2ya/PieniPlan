@@ -2198,3 +2198,28 @@ html, body { font-size:var(--font-body); }
 @media(max-width:420px){.element-catalog-grid{grid-template-columns:minmax(0,1fr)}}
 
 .cad-dynamic-input label[data-locked="true"]::after{content:"🔒";font-size:10px}.cad-dynamic-input input[data-locked]{border-color:var(--accent)}
+
+/* Workspace correction: existing logo/mode controls remain visible, while
+   Compact command chrome keeps only command input and the current prompt. */
+.app-shell .topbar .brand-home .brand-name{display:inline}
+.app-shell .topbar .toolset-switch{display:flex;flex:none}
+.app-shell .topbar .brand-home{flex:none;gap:5px}
+.app-shell:not(.command-expanded) .canvas-hud .hud-cad-only{display:none!important}
+.app-shell.inspector-collapsed .inspector{transform:translateX(100%)!important;pointer-events:none!important}
+.workspace-action-menu{position:fixed;z-index:240;min-width:220px;max-width:calc(100vw - 12px);max-height:min(70dvh,480px);overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:0 8px 24px #0003}
+.workspace-action-menu .workspace-action-heading{padding:7px 10px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)}
+.workspace-action-menu button{width:100%;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.workspace-action-menu button[aria-checked=true]::after{content:'✓';margin-inline-start:auto;padding-inline-start:12px}
+.workspace-action-menu button.history-included{background:var(--accent-soft)}
+.app-shell:not(.toolbar-expanded) .topbar-left,.app-shell.toolbar-expanded .topbar-left{flex:0 1 auto;min-width:0}
+.app-shell .topbar .toolset-switch{display:flex!important}
+.app-shell .topbar .toolset-button{width:auto;white-space:nowrap}
+.app-shell .topbar .toolset-button span{display:inline}
+.app-shell .topbar #undoBtn,.app-shell .topbar #redoBtn{display:inline-flex!important}
+.app-shell .canvas-hud .commandbar{display:grid!important}
+.app-shell .canvas-hud{display:flex!important}
+@media(max-width:720px){.app-shell .canvas-hud{flex-wrap:wrap;min-width:0;max-width:calc(100% - 20px)}.app-shell .hud-status-actions{flex-wrap:wrap;min-width:0}.app-shell .commandbar{min-width:0;max-width:100%;width:100%}}
+@media(max-width:1180px){.app-shell .topbar .toolset-button:not(.active){display:none}.app-shell .topbar .toolset-button{padding-inline:5px}}
+@media(max-width:900px){.app-shell .topbar .brand-home .brand-name{display:none}.app-shell .topbar .toolset-button{font-size:11px}}
+@media(max-width:560px){.app-shell .topbar .toolset-button{font-size:10px;padding-inline:2px}.app-shell .topbar-right{gap:2px}.app-shell .topbar-right>.icon-button{width:26px;min-width:26px;flex-basis:26px}.app-shell .topbar-left{gap:3px}.app-shell .topbar .brand-home{padding-inline:0}}
+@media(max-width:560px){.app-shell .topbar .toolset-button span{display:inline-block;max-width:4.2ch;overflow:hidden}}
