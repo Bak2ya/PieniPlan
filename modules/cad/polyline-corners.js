@@ -28,7 +28,7 @@
  function all(o,value,options={}){const P=M.cadPolyline;if(!P.is(o)||o.curveFit)return null;const original=P.get(o).edges,n=original.length,pairs=[],modern=options.kind!=='CHAMFER'&&options.polyArc!==0;
   // Preserve the established replacement of a single intervening arc first.
   // Other modern LINE/ARC joints reuse the same exact pair solver afterwards.
-  for(let i=0;i<n;i++)if(original[i].type==='cadLine'&&(i+2<n||o.closed)&&original[(i+1)%n].type==='cadArc'&&original[(i+2)%n].type==='cadLine')pairs.push([original[i].edgeId,original[(i+2)%n].edgeId]);
+  if(options.kind!=='CHAMFER')for(let i=0;i<n;i++)if(original[i].type==='cadLine'&&(i+2<n||o.closed)&&original[(i+1)%n].type==='cadArc'&&original[(i+2)%n].type==='cadLine')pairs.push([original[i].edgeId,original[(i+2)%n].edgeId]);
   for(let i=0;i<n;i++){const j=i+1;if(j>=n&&!o.closed)continue;const a=original[i],b=original[j%n];if(a.type==='cadLine'&&b.type==='cadLine'||modern&&['cadLine','cadArc'].includes(a.type)&&['cadLine','cadArc'].includes(b.type))pairs.push([a.edgeId,b.edgeId]);}
 
   let current=o,changed=0,skipped=0;const additions=[];for(const [id0,id1]of pairs){const es=P.get(current).edges,a=es.find(e=>e.edgeId===id0),b=es.find(e=>e.edgeId===id1);if(!a||!b){skipped++;continue;}const plan=corner(current,mid(a),mid(b),value,options);if(!plan||plan.noChange){skipped++;continue;}if(options.trim===false){for(const q of plan.after)additions.push({...q,id:q.id+changed});}else{current=plan.after[0];for(const v of current.vertices){if(/^__(fillet|chamfer)_new_/.test(v.id))v.id+='step'+changed;if(v.outgoing&&/^__(fillet|chamfer)_new_/.test(v.outgoing.id))v.outgoing.id+='step'+changed;}}changed++;}

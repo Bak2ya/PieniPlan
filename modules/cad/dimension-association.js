@@ -5,16 +5,17 @@
   const clone = o => JSON.parse(JSON.stringify(o)), distance = (a, b) => a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity;
   function validate(o) {
     const r = o.association; if (!r) return;
-    const slots = ['arc','feature','p1', 'p2', 'vertex', 'ray1', 'ray2', 'radial'];if(r.version===2){if(o.type!=='cadDimension'||!root.cadDimensionPartial)throw Error('invalid-partial-dimension-association');root.cadDimensionPartial.validate(o);}
+    const slots = ['jogged','arc','feature','p1', 'p2', 'vertex', 'ray1', 'ray2', 'radial'];if(r.version===2){if(o.type!=='cadDimension'||!root.cadDimensionPartial)throw Error('invalid-partial-dimension-association');root.cadDimensionPartial.validate(o);}
     if (r.version!==2&&(o.type !== 'cadDimension' || r.version !== 1 || !['current', 'detached'].includes(r.status) || Object.keys(r).some(k => !['version', 'status', 'anchors'].includes(k)) || !r.anchors || typeof r.anchors !== 'object' || Array.isArray(r.anchors) || !Object.keys(r.anchors).length)) throw Error('invalid-dimension-association');
     for (const [slot, a] of Object.entries({...r.anchors,...(r.version===2?r.lost:{})})) {
       if (slot==='arc'&&o.kind!=='arcLength'||slot==='feature'&&o.kind!=='ordinate'||!slots.includes(slot) || !a || typeof a.sourceId !== 'string' || !a.sourceId || a.sourceId === o.id || (slot === 'radial') !== (a.kind === 'radial') || slot === 'radial' && !['radius', 'diameter'].includes(o.kind) || ['p1', 'p2'].includes(slot) && !['linear', 'aligned'].includes(o.kind || 'aligned') || ['vertex', 'ray1', 'ray2'].includes(slot) && o.kind !== 'angular') throw Error('invalid-dimension-anchor');
-      if(slot==='arc'){if(!root.cadArcLength||a.kind!=='arc96')throw Error('invalid-arc-dimension-anchor');root.cadArcLength.validateAnchor(a);continue;}if(a.kind==='geometry96'){if(!root.cadDimensionReferences)throw Error('unsupported-dimension-subedge');root.cadDimensionReferences.validate(a);continue;}
+      if(slot==='jogged'){if(r.version!==2||o.kind!=='joggedRadius'||!root.cadJoggedRadius)throw Error('invalid-jogged-anchor');root.cadJoggedRadius.validateAnchor(a);continue;}if(slot==='arc'){if(!root.cadArcLength||a.kind!=='arc96')throw Error('invalid-arc-dimension-anchor');root.cadArcLength.validateAnchor(a);continue;}if(a.kind==='geometry96'){if(!root.cadDimensionReferences)throw Error('unsupported-dimension-subedge');root.cadDimensionReferences.validate(a);continue;}
       if(!['vertex','point','radial'].includes(a.kind)||Object.keys(a).some(k=>!['sourceId','kind','vertexId','key'].includes(k))||a.kind==='vertex'&&(typeof a.vertexId!=='string'||!a.vertexId)||a.kind==='point'&&!['a','b','start','end','center','midpoint'].includes(a.key))throw Error('invalid-dimension-anchor');
     }
   }
 
   function resolve(anchor, byId) {
+    if(anchor.kind==='jogged98')return root.cadJoggedRadius?.resolve(anchor,byId)||null;
     if(anchor.kind==='arc96')return root.cadArcLength?.resolve(anchor,byId)||null;
     if(anchor.kind==='geometry96')return root.cadDimensionReferences?.resolve(anchor,byId)||null;
     const o = byId(anchor.sourceId); if (!o || o.readonly || o.floorId || o.planRole || !['cadLine', 'cadArc', 'cadCircle', 'cadEllipse', 'cadPolyline'].includes(o.type)) return null;
@@ -61,8 +62,8 @@
       const explicit = touched.get(o.id), sourceTouched = Object.values(o.association.anchors).some(a => touched.has(a.sourceId));
       let after = o;
       if (explicit && !sourceTouched) {
-        const proposed = regenerate(o, id => next.get(id)), fields = Object.keys(o.association.anchors).flatMap(slot => slot==='arc'?['center','radius','startAngle','sweep']:slot === 'radial' ? ['center', 'radius'] : [slot]);
-        if(o.association.version===2){const released=Object.entries(o.association.anchors).filter(([slot,a])=>{const v=resolve(a,id=>next.get(id));return v&&(slot==='arc'?['center','radius','startAngle','sweep'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v.arc[k])):slot==='radial'?['center','radius'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v[k])):JSON.stringify(o[slot])!==JSON.stringify(v.point));}).map(([slot])=>slot);after=root.cadDimensionPartial.regenerate(released.length?root.cadDimensionPartial.release(o,released):o,id=>next.get(id));}else if (fields.some(key => JSON.stringify(o[key]) !== JSON.stringify(proposed[key]))) after = detached(o);
+        const proposed = regenerate(o, id => next.get(id)), fields = Object.keys(o.association.anchors).flatMap(slot => slot==='jogged'?['center','radius','sourceArc']:slot==='arc'?['center','radius','startAngle','sweep']:slot === 'radial' ? ['center', 'radius'] : [slot]);
+        if(o.association.version===2){const released=Object.entries(o.association.anchors).filter(([slot,a])=>{const v=resolve(a,id=>next.get(id));return v&&(slot==='jogged'?['center','radius','sourceArc'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v[k])):slot==='arc'?['center','radius','startAngle','sweep'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v.arc[k])):slot==='radial'?['center','radius'].some(k=>JSON.stringify(o[k])!==JSON.stringify(v[k])):JSON.stringify(o[slot])!==JSON.stringify(v.point));}).map(([slot])=>slot);after=root.cadDimensionPartial.regenerate(released.length?root.cadDimensionPartial.release(o,released):o,id=>next.get(id));}else if (fields.some(key => JSON.stringify(o[key]) !== JSON.stringify(proposed[key]))) after = detached(o);
       } else if (sourceTouched) after = regenerate(o, id => next.get(id));
       if (after === o) continue;
       if (explicit) result[result.indexOf(explicit)] = { ...explicit, after };

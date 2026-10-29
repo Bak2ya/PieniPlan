@@ -20,7 +20,8 @@
   function arc(o,m){const s=scaleOf(m),sign=Math.sign(det(m))||1;return{...o,center:point(m,o.center),radius:o.radius*s,startAngle:transformedAngle(m,o.startAngle||0),sweep:(o.sweep||0)*sign};}
   function dimension(o,m){
     const kind=o.kind||'aligned',s=scaleOf(m);let out={...o};
-    if(kind==='arcLength')out=root.cadArcLength.transform(o,m);
+    if(kind==='joggedRadius')out=root.cadJoggedRadius.transform(o,m);
+    else if(kind==='arcLength')out=root.cadArcLength.transform(o,m);
     else if(kind==='ordinate')out=root.cadOrdinate.transform(o,m);
     else if(kind==='linear'){const p1=point(m,o.p1),p2=point(m,o.p2),g=root.cadAnnotation2.linear(o),dimensionAngle=transformedAngle(m,o.dimensionAngle),a=dimensionAngle*Math.PI/180,d=g?point(m,g.d1):p1;out={...o,p1,p2,dimensionAngle,offset:(d.x-p1.x)*(-Math.sin(a))+(d.y-p1.y)*Math.cos(a)};}
     else if(kind==='aligned'){const p1=point(m,o.p1),p2=point(m,o.p2),dx=o.p2.x-o.p1.x,dy=o.p2.y-o.p1.y,len=Math.hypot(dx,dy);let offset=Number(o.offset)||0;if(len>EPS){const nx=-dy/len,ny=dx/len,d1={x:o.p1.x+nx*offset,y:o.p1.y+ny*offset},td1=point(m,d1),ndx=p2.x-p1.x,ndy=p2.y-p1.y,nlen=Math.hypot(ndx,ndy);if(nlen>EPS)offset=(td1.x-p1.x)*(-ndy/nlen)+(td1.y-p1.y)*(ndx/nlen);}out={...o,p1,p2,offset};}

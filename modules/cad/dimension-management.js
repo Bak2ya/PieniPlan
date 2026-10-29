@@ -1,19 +1,21 @@
 /* Explicit association edits. Existing saved anchors are never migrated on read. */
 (() => {
  'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},clone=o=>JSON.parse(JSON.stringify(o)),finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
- function slots(o){if(o?.type!=='cadDimension')return[];return o.kind==='arcLength'?['arc']:o.kind==='ordinate'?['feature']:['linear','aligned'].includes(o.kind||'aligned')?['p1','p2']:o.kind==='angular'?['vertex','ray1','ray2']:['radius','diameter'].includes(o.kind)?['radial']:[];}
+ function slots(o){if(o?.type!=='cadDimension')return[];return o.kind==='joggedRadius'?['jogged']:o.kind==='arcLength'?['arc']:o.kind==='ordinate'?['feature']:['linear','aligned'].includes(o.kind||'aligned')?['p1','p2']:o.kind==='angular'?['vertex','ray1','ray2']:['radius','diameter'].includes(o.kind)?['radial']:[];}
  function linked(o,slot,byId){const a=o.association?.anchors?.[slot];return Boolean(a&&(o.association.version===2||o.association.status==='current')&&M.cadDimensionAssociation.resolve(a,byId));}
  function assign(q,anchors,lost={}){delete q.association;const r=M.cadDimensionPartial.relation(q,anchors,lost);if(r)q.association=r;return q;}
  function prepare(o,byId){const q=clone(o),anchors={},lost=clone(o.association?.lost||{});for(const [slot,a]of Object.entries(o.association?.anchors||{}))if(linked(o,slot,byId))anchors[slot]=clone(a);else lost[slot]=clone(a);return assign(q,anchors,lost);}
- function finish(q,byId){for(const [slot,a]of Object.entries(q.association?.anchors||{})){const value=M.cadDimensionAssociation.resolve(a,byId);if(!value)throw Error('invalid-dimension-anchor');if(slot==='arc')Object.assign(q,value.arc);else if(slot==='radial')Object.assign(q,value);else q[slot]=value.point;}const g=M.cadAnnotation2.geometry(q);if(!g?.segments?.length)throw Error('no-valid-result');q.segments=g.segments;delete q.dxfPresentation;if(q.association)q=M.cadDimensionAssociation.regenerate(q,byId);M.cadDimensionAssociation.validate(q);return q;}
+ function finish(q,byId){for(const [slot,a]of Object.entries(q.association?.anchors||{})){const value=M.cadDimensionAssociation.resolve(a,byId);if(!value)throw Error('invalid-dimension-anchor');if(slot==='jogged'){const next=M.cadJoggedRadius.regenerate(q,value);if(!next)throw Error('no-valid-result');if(!next.sourceArc)delete q.sourceArc;Object.assign(q,next);}else if(slot==='arc')Object.assign(q,value.arc);else if(slot==='radial')Object.assign(q,value);else q[slot]=value.point;}const g=M.cadAnnotation2.geometry(q);if(!g?.segments?.length)throw Error('no-valid-result');q.segments=g.segments;delete q.dxfPresentation;if(q.association)q=M.cadDimensionAssociation.regenerate(q,byId);M.cadDimensionAssociation.validate(q);return q;}
  function edit(o,slot,point,anchor,byId){if(!slots(o).includes(slot))throw Error('unsupported-dimension');const q=prepare(o,byId),anchors=q.association?.anchors||{},lost=q.association?.lost||{};delete anchors[slot];delete lost[slot];
-  if(slot==='arc'){const value=anchor?.kind==='arc96'&&M.cadDimensionAssociation.resolve(anchor,byId);if(!value?.arc)throw Error('unsupported-geometry');Object.assign(q,value.arc);}
+  if(slot==='jogged'){const value=anchor?.kind==='jogged98'&&M.cadDimensionAssociation.resolve(anchor,byId),next=value&&M.cadJoggedRadius.regenerate(q,value);if(!next)throw Error('unsupported-geometry');if(!next.sourceArc)delete q.sourceArc;Object.assign(q,next);}
+  else if(slot==='arc'){const value=anchor?.kind==='arc96'&&M.cadDimensionAssociation.resolve(anchor,byId);if(!value?.arc)throw Error('unsupported-geometry');Object.assign(q,value.arc);}
   else if(slot==='radial'){const value=anchor?.kind==='radial'&&M.cadDimensionAssociation.resolve(anchor,byId);if(!value)throw Error('unsupported-geometry');Object.assign(q,value);}
   else{if(!finite(point))throw Error('invalid-coordinate');q[slot]={x:point.x,y:point.y};}
   if(anchor)anchors[slot]=clone(anchor);assign(q,anchors,lost);return finish(q,byId);
  }
  function disassociate(o){const q=clone(o);delete q.association;return q;}
  function source(o,source,pick,byId){if(!source||source.readonly||source.floorId||source.planRole)throw Error('unsupported-geometry');
+  if(o.kind==='joggedRadius'){const a=M.cadJoggedRadius.anchor(source,pick);if(!a)throw Error('unsupported-geometry');return edit(o,'jogged',null,a,byId);}
   if(o.kind==='arcLength'){const a=M.cadArcLength.anchor(source,pick);if(!a)throw Error('unsupported-geometry');return edit(o,'arc',null,a,byId);}
   if(['radius','diameter'].includes(o.kind))return edit(o,'radial',null,{kind:'radial',sourceId:source.id},byId);
   if(o.kind==='angular'){if(!['cadCircle','cadArc'].includes(source.type))throw Error('unsupported-geometry');return edit(o,'vertex',source.center,{kind:'point',sourceId:source.id,key:'center'},byId);}

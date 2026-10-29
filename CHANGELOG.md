@@ -1,5 +1,14 @@
 ## v0.70.1 · Build97 (2026-10-28)
 
+## v0.71.0 · Build98 (2026-10-30)
+
+- Expanded dimension style fitting, separate angular units/precision, native continuous/baseline dimension workflows and jogged radial dimensions.
+- Added object/layer transparency, current/hatch creation defaults, command-line layer appearance settings and per-sheet plot-transparency control.
+- Preserved curved edges when chamfering mixed polylines; added jogged dimension Node acquisition.
+- Corrected native dimension Text input so Korean text and suppression spaces survive input, history and drawing exchange.
+- Improved shared vector layout and guarded supported native DXF style/override metadata while retaining unsupported originals.
+
+
 - Restore uniform schematic Plan wall strokes in the canvas and Plan SVG/PDF while retaining physical thickness, openings, junction data and CAD/DXF outlines.
 - Keep wall selection and constraint summaries read-only; viewing a wall no longer adds default constraint fields.
 - Add action-range Undo/Redo lists to toolbar context menus and keyboard access, using existing history inverses and grouped user actions.
