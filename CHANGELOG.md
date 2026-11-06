@@ -1,3 +1,11 @@
+## v0.72.0 · Build99 (2026-10-31)
+
+- Expand native angular, linear/aligned and radial dimension source selection, placement, text options and connected dimension workflows.
+- Preserve directed arc witnesses and add explicit dimension source repair with atomic history and protected dependent-object handling.
+- Share effective dimension text angles across canvas, vector output and DXF; correct native DXF dimension rotation field placement and measured geometry.
+- Extend CAD layer wildcard filters, selected-layer group editing and global usage checks including unused nested block definitions.
+- Add reviewed PGP command-alias import/export with conflict handling, protected keyboard shortcuts and persistent personal settings.
+
 ## v0.70.1 · Build97 (2026-10-28)
 
 ## v0.71.0 · Build98 (2026-10-30)
@@ -967,3 +975,13 @@ Direct-manipulation and real-DXF reliability milestone.
 - 기존 DXF 편집 Import 및 DXF 참조 Import 경로 그대로 사용, 검증 주의 메시지, 실제 Import 성공 시 cleanup.
 - PPRJ schema7 유지. DWG2DXF 송신부는 별도 개발 요청/프로토콜 명세로 전달; 실제 양 앱 간 통합/사파리 검증은 미완료 (CONDITIONAL).
 - 세부 문서 `_AI_NOT_GITHUB/BUILD75_DXF_HANDOFF/`.
+## v0.73.0 · Build100 (2026-11-03)
+
+- Extend layer transparency filters, inverse display and nested group editing with guarded layer-list drag and one-action Apply/Undo.
+- Add SETBYLAYER selection, supported property masks and persistent settings while preserving shared block definitions and protected objects.
+- Preserve native indexed/true-color identity, ByLayer/ByBlock inheritance and POINT output across canvas, SVG, PDF, main-thread and Worker DXF paths.
+- Improve quantity input, finite coordinate validation, repeated function-key handling and circle radius/diameter input transitions.
+- Add primary dimension number/fraction formats and sparse current precision, fraction, angular, fitting and jog-angle overrides; retain unsupported native source values without changing existing owners.
+- Add TEXTEDIT/TEDIT/DDEDIT content editing with Single/Multiple mode, command-owned Undo and guarded document history.
+- Allow two-point distance acquisition for OFFSET, FILLET radius and CHAMFER distance prompts, with transient reference guides and existing snap/UCS behavior.
+

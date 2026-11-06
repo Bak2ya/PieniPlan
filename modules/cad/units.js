@@ -2,8 +2,8 @@
 (() => {
   'use strict';
   const root = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
-  const num=s=>Number(String(s).trim().replace(/,/g,''));
   const finite=n=>Number.isFinite(n);
+  const converted=(value,factor,unit)=>{const mm=value*factor;return finite(mm)?{ok:true,mm,unit}:{ok:false,code:'invalid-length'};};
   // Angular syntax is interpreted at the input boundary; saved geometry stays in
   // canonical degrees/radians. No expression evaluation or implicit unit changes.
   function parseAngle(raw,bearingAllowed=true){
@@ -18,8 +18,8 @@
     if(!dms||dms[3]==null&&dms[4]==null)return bad();const minutes=Number(dms[3]||0),seconds=Number(dms[4]||0);if(minutes>=60||seconds>=60||seconds&&minutes%1)return bad();return good((dms[1]==='-'?-1:1)*(Number(dms[2])+minutes/60+seconds/3600),'dms');
   }
   function parseMixedNumber(raw){
-    const s=String(raw??'').trim();if(!s)return NaN;
-    if(/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(s))return Number(s);
+    const s=String(raw??'').trim().replace(/^([+-]?\d+)\s*-\s*(\d+\s*\/\s*\d+)$/,'$1 $2');if(!s)return NaN;
+    if(/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(s))return Number(s);
     const m=s.match(/^([+-]?)(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/);if(!m)return NaN;
     const den=Number(m[4]);if(!den)return NaN;const value=(Number(m[2]||0)+Number(m[3])/den);return m[1]==='-'?-value:value;
   }
@@ -27,14 +27,14 @@
     const s=String(raw??'').trim();if(!s)return{ok:false,code:'empty-length'};
     // Architectural feet/inches: 4', 4'-6", 4' 6 1/2", -4'-6.5".
     const feet=s.match(/^([+-]?)(\d+(?:\.\d+)?)\s*'\s*(?:-?\s*([^"']+?)\s*(?:"|in)?)?$/i);
-    if(feet){const fv=Number(feet[2]),iv=feet[3]==null||feet[3].trim()===''?0:parseMixedNumber(feet[3]);if(!finite(fv)||!finite(iv)||iv<0)return{ok:false,code:'invalid-length'};const sign=feet[1]==='-'?-1:1;return{ok:true,mm:sign*(fv*12+iv)*25.4,unit:'ft-in'};}
+    if(feet){const fv=Number(feet[2]),iv=feet[3]==null||feet[3].trim()===''?0:parseMixedNumber(feet[3]);if(!finite(fv)||!finite(iv)||iv<0)return{ok:false,code:'invalid-length'};const sign=feet[1]==='-'?-1:1;return converted(sign*(fv*12+iv),25.4,'ft-in');}
     // Inches-only mixed fractions: 6 1/2", 1/2", 6.5in.
-    const inches=s.match(/^([+-]?(?:(?:\d+\s+)?\d+\s*\/\s*\d+|\d+\.?\d*|\.\d+))\s*(?:"|in|inch|inches)$/i);
-    if(inches){const iv=parseMixedNumber(inches[1]);if(!finite(iv))return{ok:false,code:'invalid-length'};return{ok:true,mm:iv*25.4,unit:'in'};}
-    const m=s.match(/^([+-]?(?:\d+\.?\d*|\.\d+))\s*(mm|cm|m|in|inch|inches|ft|feet|foot|')?$/i);if(!m)return{ok:false,code:'invalid-length'};
-    const v=num(m[1]);if(!finite(v))return{ok:false,code:'invalid-length'};let u=(m[2]||defaultUnit).toLowerCase();if(u==="'")u='ft';const f={mm:1,cm:10,m:1000,in:25.4,inch:25.4,inches:25.4,ft:304.8,feet:304.8,foot:304.8}[u];if(!f)return{ok:false,code:'unknown-unit'};return{ok:true,mm:v*f,unit:u};
+    const inches=s.match(/^([+-]?(?:(?:\d+(?:\s+|\s*-\s*))?\d+\s*\/\s*\d+|(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?))\s*(?:"|in|inch|inches)$/i);
+    if(inches){const iv=parseMixedNumber(inches[1]);if(!finite(iv))return{ok:false,code:'invalid-length'};return converted(iv,25.4,'in');}
+    const m=s.match(/^([+-]?(?:(?:\d+(?:\s+|\s*-\s*))?\d+\s*\/\s*\d+|(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?))\s*(mm|cm|m|in|inch|inches|ft|feet|foot|')?$/i);if(!m)return{ok:false,code:'invalid-length'};
+    const v=parseMixedNumber(m[1]);if(!finite(v))return{ok:false,code:'invalid-length'};let u=(m[2]||defaultUnit).toLowerCase();if(u==="'")u='ft';const f={mm:1,cm:10,m:1000,in:25.4,inch:25.4,inches:25.4,ft:304.8,feet:304.8,foot:304.8}[u];if(!f)return{ok:false,code:'unknown-unit'};return converted(v,f,u);
   }
-  function formatLength(mm,{system='metric',precision=1}={}){if(system==='imperial'){const total=Math.abs(mm)/25.4,feet=Math.floor(total/12),inches=total-feet*12,sign=mm<0?'-':'';return`${sign}${feet}'-${inches.toFixed(Math.min(3,precision+1))}"`;}return`${Number(mm).toFixed(precision)} mm`;}
+  function formatLength(mm,{system='metric',precision=1}={}){if(system==='imperial'){const total=Math.abs(mm)/25.4,digits=Math.min(3,precision+1),sign=mm<0?'-':'';let feet=Math.floor(total/12),inches=(total-feet*12).toFixed(digits);if(Number(inches)>=12){feet++;inches=(0).toFixed(digits);}return`${sign}${feet}'-${inches}"`;}return`${Number(mm).toFixed(precision)} mm`;}
   function formatArea(mm2,{system='metric',precision=2}={}){if(system==='imperial')return`${(Number(mm2)/92903.04).toFixed(precision)} ft²`;return`${(Number(mm2)/1e6).toFixed(precision)} m²`;}
   function formatAngle(deg,{precision=1}={}){return`${Number(deg).toFixed(precision)}°`;}
   root.cadUnits=Object.freeze({parseLength,parseAngle,formatLength,formatArea,formatAngle});

@@ -1,0 +1,21 @@
+/* Native 2D radius/diameter source, placement and text options; no early model edits. */
+(() => {
+ 'use strict';const M=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},P=M.cadRadialPlacement,ids=['DRA','DIMRADIUS','DDI','DIMDIAMETER'],options=['T','TEXT','M','MTEXT','A','ANGLE'],point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+ const keyword=(id,phase,k)=>['DRA','DDI'].includes(id)&&(['text','mtext','textAngle'].includes(phase)||phase==='location'&&options.includes(k));
+ function install(registry,p){for(const id of ['DRA','DDI'])registry.register({id,aliases:[id==='DRA'?'DIMRADIUS':'DIMDIAMETER'],available:c=>c.mode==='cad',transactional:false,historyOwner:'cad-change-set',create(){let serial=0;const d={kind:id==='DRA'?'radius':'diameter',phase:'source',token:p.token()},live=()=>!d.closed&&p.current(d.token)&&(!d.witness||p.inspect(d.witness.id)&&JSON.stringify(p.byId(d.witness.id))===d.witness.signature),stale=()=>{d.closed=true;serial++;p.preview(null);return{ok:false,code:'stale-context'};},show=()=>p.prompt(id,d),base=()=>d.phase==='location'?d.source.center:undefined,
+  read=e=>e.type==='point'?e.typed?{...e.point}:p.resolve(e.point,base()):e.type==='text'?p.parse(e.text,{base:base(),direction:d.source&&d.pointer?{x:d.pointer.x-d.source.center.x,y:d.pointer.y-d.source.center.y}:null})?.point:null;
+  function draft(location){const o=P.draft(d.kind,d.source,location,d);if(!o)return null;return p.decorate?p.decorate(o,d.anchor):o;}
+  function refresh(){if(d.phase==='location'&&point(d.pointer)){const q=read({type:'point',point:d.pointer});p.preview(q?draft(q):null);}else p.preview(null);}
+  show();return{view:()=>d,describe:()=>({phase:d.phase,pointBase:base(),input:['point','coordinate','keyword'],actions:d.phase==='location'?['TEXT','MTEXT','ANGLE'].map(id=>({id,labelKey:'cad99.linear.option.'+id.toLowerCase()})):[]}),
+   preview(e){if(!live())return stale();d.pointer={...e.point};refresh();return{ok:true};},
+   input(e){if(!live())return stale();const raw=String(e.type==='keyword'?e.value:e.text??''),k=raw.trim().toUpperCase();
+    if(d.phase==='source'){if(e.type!=='point')return{ok:false,code:'selection-required'};const o=p.pick(e.point),source=o&&p.inspect(o.id)&&P.source(o,e.point),anchor=source&&P.anchor(o,e.point);if(!source||!anchor)return{ok:false,code:'unsupported-geometry'};d.witness={id:o.id,signature:JSON.stringify(o)};d.source=source;d.anchor=anchor;d.pointer={...e.point};d.phase='location';show();refresh();return{ok:true};}
+    if(d.phase==='mtext')return{ok:false,code:'invalid-input'};
+    if(d.phase==='text'){if(!['text','enter'].includes(e.type)||String(e.text??'').length>100000||String(e.text??'').includes('\0'))return{ok:false,code:'invalid-input'};if(e.type==='text')d.textOverride=String(e.text);d.phase='location';show();refresh();return{ok:true};}
+    if(d.phase==='textAngle'){if(e.type!=='enter'){const angle=M.cadUnits.parseAngle(raw);if(!angle.ok)return{ok:false,code:'invalid-number'};d.textAngle=p.worldAngle(angle.degrees);}d.phase='location';show();refresh();return{ok:true};}
+    if(d.phase==='location'&&options.includes(k)){d.phase=['T','TEXT'].includes(k)?'text':['M','MTEXT'].includes(k)?'mtext':'textAngle';p.preview(null);show();if(d.phase==='mtext'){const ticket=++serial;try{p.editText(d.textOverride??'<>',d.pointer||d.source.center,value=>{if(!live()||ticket!==serial||d.phase!=='mtext')return;serial++;if(value!=null){if(typeof value==='string'&&value.length<=100000&&!value.includes('\0'))d.textOverride=value;else d.lastError='invalid-input';}d.phase='location';show();refresh();});}catch(error){serial++;d.phase='location';show();refresh();return{ok:false,code:error.message||'editor-unavailable'};}}return{ok:true};}
+    const location=read(e);if(!point(location))return{ok:false,code:'invalid-coordinate'};const o=draft(location);return o?{ok:true,commit:true,value:o}:{ok:false,code:'no-valid-result'};
+   },commit(o){if(!live())throw Error('stale-context');return p.commit(o);},cancel(){d.closed=true;serial++;p.preview(null);p.clear();},finalize(){d.closed=true;serial++;p.preview(null);p.clear();}};
+ }});}
+ M.nativeRadialDimension=Object.freeze({ids,keyword,install});
+})();

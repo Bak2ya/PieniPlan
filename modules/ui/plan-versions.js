@@ -1,0 +1,198 @@
+/* One focused change-drawing dialog and contextual existing-inspector content.
+ * Publication, permissions, snapshots and camera policy belong to the host. */
+(() => {
+  'use strict';
+  const M = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
+  function create(p) {
+    const V = M.planVersions, L = (ko, en) => p.language() === 'ko' ? ko : en;
+    const el = (tag, className = '', text = '') => { const node = document.createElement(tag); node.className = className; node.textContent = text; return node; };
+    const button = (text, action, cls = 'small-button') => { const b = el('button', cls, text); b.type = 'button'; b.onclick = action; return b; };
+    const label = (text, input) => { const l = el('label', 'plan-version-field'); l.append(el('span', '', text), input); return l; };
+    const status = v => ({ planned: L('예정', 'Planned'), current: L('현재 적용', 'Applied'), past: L('과거 · 읽기 전용', 'Historical / read only'), draft: L('작업 중', 'Draft') })[V.status(v)];
+    let dialog = null, closing = false, area = 'history'; const collapsed = new Set();
+    function disclosure(key, className, text) { const node = el('details', className); node.open = !collapsed.has(key); node.append(el('summary', '', text)); node.addEventListener('toggle', () => { if (node.isConnected) { if (node.open) collapsed.delete(key); else collapsed.add(key); } }); return node; }
+    function close(force = false) {
+      if (!dialog) return true;
+      if (!force && dialog.__dirty()) {
+        if (closing) return false; closing = true;
+        const pending = dialog; Promise.resolve(p.confirmDiscard(pending)).then(yes => { closing = false; if (yes && dialog === pending) close(true); }).catch(err => { closing = false; p.notice?.(p.error(err)); }); return false;
+      }
+      const previous = dialog, focus = previous.__returnFocus; dialog = null;
+      p.cancelConfirm?.(previous); previous.close(); previous.remove(); if (focus?.isConnected) focus.focus(); return true;
+    }
+    function openCreate() {
+      if (!p.enabled()) return p.activate();
+      if (dialog) return;
+      if (p.beforeOpen?.() === false) return;
+      const s = p.state(), current = V.row(s), token = p.token(); if (!current) return;
+      const choices = s.drawingModel.versions.filter(v => v.levelId === current.levelId);
+      dialog = el('dialog', 'plan-version-dialog'); const modal = dialog, returnFocus = document.activeElement;
+      modal.__returnFocus = returnFocus;
+      const title = el('h2', '', L('변경 도면 만들기', 'Create change drawing')); title.id = 'plan-version-create-title'; modal.setAttribute('aria-labelledby', title.id);
+      const form = el('form', 'plan-version-form'); form.noValidate = true;
+      const body = el('div', 'plan-version-body'), footer = el('div', 'plan-version-actions');
+      const name = el('input', 'text-input'); name.type = 'text'; name.maxLength = 255; name.required = true; name.autofocus = true;
+      name.placeholder = L('예: 2028년 증축 대안 B', 'For example: 2028 extension, alternative B');
+      const description = el('textarea', 'text-input'); description.rows = 3; description.maxLength = 100000;
+      const source = el('select', 'text-input');
+      choices.forEach((v, i) => { const option = el('option', '', `${v.name} · ${v.modifiedDate || L('기준일 미지정', 'Date unspecified')} · ${status(v)} · ${i + 1}`); option.value = v.drawingId; source.append(option); });
+      source.value = current.drawingId;
+      const inheritance = el('fieldset', 'plan-version-inheritance'), legend = el('legend', '', L('승계할 항목', 'Items to inherit'));
+      const selectActions = el('div', 'plan-version-inline-actions'), checks = el('div', 'plan-version-checks'), dependency = el('p', 'plan-version-note'); dependency.setAttribute('aria-live', 'polite');
+      const modified = el('input', 'text-input'); modified.type = 'date'; modified.required = true; modified.value = p.today();
+      const applied = el('input', 'text-input'); applied.type = 'date'; applied.setAttribute('aria-label', L('적용일', 'Application date'));
+      const planned = el('input'); planned.type = 'checkbox';
+      const dates = el('div', 'plan-version-dates'), appliedField = el('div', 'plan-version-field'), appliedHeading = el('span', 'plan-version-date-heading');
+      const plannedLabel = el('label', 'plan-version-planned'); plannedLabel.append(planned, document.createTextNode(L('예정', 'Planned')));
+      appliedHeading.append(document.createTextNode(L('적용일', 'Application date')), plannedLabel); appliedField.append(appliedHeading, applied);
+      dates.append(label(L('수정일', 'Business modification date'), modified), appliedField);
+      const error = el('p', 'plan-version-error'); error.setAttribute('role', 'alert');
+      let selected = new Set(), fingerprint = null, base = null, signature = null;
+      const cancel = button(L('취소', 'Cancel'), () => close());
+      const submit = button(L('변경 도면 만들기', 'Create change drawing'), () => {}, 'primary-button'); submit.type = 'submit'; submit.disabled = true;
+      footer.append(cancel, submit);
+      const values = () => ({ name: name.value, description: description.value, sourceDrawingId: source.value, levelId: current.levelId,
+        layerIds: [...selected].sort(), modifiedDate: modified.value, appliedDate: applied.value || null, planned: planned.checked, sourceFingerprint: fingerprint });
+      const dirty = () => signature !== null && JSON.stringify(values()) !== signature;
+      modal.__dirty = dirty;
+      function recompute() {
+        error.textContent = ''; submit.disabled = true;
+        try {
+          if (!p.current(token)) throw Error(L('문서가 바뀌었습니다. 창을 닫고 다시 열어 주세요.', 'The document changed. Reopen this dialog.'));
+          const summary = p.inheritance(source.value, [...selected]);
+          const automatic = summary.layers.filter(l => !selected.has(l.id)).map(l => l.name);
+          dependency.textContent = automatic.length ? L('참조 무결성을 위해 함께 포함: ', 'Included to preserve references: ') + automatic.join(', ') : L('승계할 실제 객체 ', 'Objects to inherit: ') + summary.objects.length;
+          for (const input of checks.querySelectorAll('input')) input.indeterminate = !selected.has(input.value) && summary.layers.some(l => l.id === input.value);
+          V.date(modified.value, true); V.date(applied.value);
+          submit.disabled = !name.value.trim() || name.value.trim().length > 255;
+        } catch (e) { error.textContent = p.error(e); }
+      }
+      function loadSource() {
+        checks.replaceChildren(); error.textContent = ''; selected = new Set();
+        try {
+          if (!p.current(token)) throw Error(L('문서가 바뀌었습니다.', 'The document changed.'));
+          base = V.row(p.state(), source.value); if (!base || base.levelId !== current.levelId) throw Error('plan-versions:source');
+          fingerprint = p.state().drawingModel.records[source.value].fingerprint;
+          const actual = p.inheritance(source.value).counts.filter(l => l.count > 0);
+          for (const item of actual) {
+            selected.add(item.id); const input = el('input'); input.type = 'checkbox'; input.value = item.id; input.checked = true;
+            const row = el('label', 'plan-version-check'); row.append(input, document.createTextNode(`${item.name} · ${item.count}`)); checks.append(row);
+            input.onchange = () => { if (input.checked) selected.add(item.id); else selected.delete(item.id); recompute(); };
+          }
+          if (!actual.length) checks.append(el('p', 'plan-version-note', L('기준 도면에 승계할 객체가 없습니다. 빈 도면으로 만들 수 있습니다.', 'There are no source objects. An empty drawing can be created.')));
+          recompute();
+        } catch (e) { submit.disabled = true; error.textContent = p.error(e); }
+      }
+      selectActions.append(button(L('전체 선택', 'Select all'), () => { for (const input of checks.querySelectorAll('input')) { selected.add(input.value); input.checked = true; } recompute(); }),
+        button(L('전체 해제', 'Clear all'), () => { selected.clear(); for (const input of checks.querySelectorAll('input')) input.checked = false; recompute(); }));
+      inheritance.append(legend, selectActions, checks, dependency);
+      body.append(label(L('도면 이름', 'Drawing name'), name), label(L('변경 내용', 'Change description'), description), label(L('기준 도면', 'Source drawing'), source), inheritance, dates, error);
+      form.append(body, footer); modal.append(title, form); document.body.append(modal);
+      source.onchange = loadSource;
+      for (const input of [name, description, modified, applied, planned]) input.addEventListener('input', recompute);
+      form.onsubmit = e => {
+        e.preventDefault(); recompute(); if (submit.disabled) return;
+        try {
+          if (!p.current(token)) throw Error('plan-versions:stale-context');
+          submit.disabled = true; p.create(values(), token); close(true);
+        } catch (err) { recompute(); error.textContent = p.error(err); }
+      };
+      modal.addEventListener('cancel', e => { e.preventDefault(); close(); });
+      modal.addEventListener('keydown', e => { e.stopPropagation(); });
+      loadSource(); signature = JSON.stringify(values()); modal.showModal(); name.focus();
+    }
+    function openLineage() {
+      if (!p.enabled() || dialog || !p.lineage || V.readonly(p.state()) || p.beforeOpen?.() === false) return;
+      const s = p.state(), v = V.row(s), token = p.token(), ancestry = [v.drawingId]; let cursor = v;
+      while (cursor.sourceDrawingId) { ancestry.push(cursor.sourceDrawingId); cursor = V.row(s, cursor.sourceDrawingId); }
+      dialog = el('dialog', 'plan-version-dialog'); const modal = dialog; modal.__returnFocus = document.activeElement;
+      const title = el('h2', '', L('공간 분할·병합 관계', 'Space split / merge relationships')); title.id = 'plan-version-lineage-title'; modal.setAttribute('aria-labelledby', title.id);
+      const form = el('form', 'plan-version-form'), body = el('div', 'plan-version-body'), footer = el('div', 'plan-version-actions');
+      const note = el('p', 'plan-version-note', L('벽과 새 공간을 먼저 작성한 뒤 연결하세요. 현재 도면의 기존 공간 표시는 종료하고 원본·공간 식별자·마지막 형상은 보존합니다. 벽을 자동으로 분할하거나 병합하지 않습니다.', 'Create the new boundaries and spaces first. Parent labels in this drawing are retired while original drawings, identities and last geometry remain. This does not automatically split or merge walls.'));
+      const kind = el('select', 'text-input'); kind.setAttribute('aria-label', L('관계 유형', 'Relationship kind'));
+      for (const [value, text] of [['split', L('분할 · 1개 → 여러 공간', 'Split / one to several')], ['merge', L('병합 · 여러 공간 → 1개', 'Merge / several to one')]]) { const option = el('option', '', text); option.value = value; kind.append(option); } kind.value = 'split';
+      const parents = new Set(), children = new Set(), error = el('p', 'plan-version-error'); error.setAttribute('role', 'alert');
+      const signature = () => JSON.stringify([kind.value, [...parents].sort(), [...children].sort()]), initial = signature(); modal.__dirty = () => signature() !== initial;
+      const submit = button(L('관계 기록', 'Record relationships'), () => {}, 'primary-button'); submit.type = 'submit'; submit.disabled = true;
+      const refresh = () => { error.textContent = ''; submit.disabled = true;
+        if (!p.current(token)) { error.textContent = L('문서가 바뀌었습니다. 다시 열어 주세요.', 'The document changed. Reopen this dialog.'); return; }
+        if ([...parents].some(id => children.has(id))) { error.textContent = L('기존 공간과 새 공간은 서로 달라야 합니다.', 'Parent and child spaces must be different.'); return; }
+        submit.disabled = !(kind.value === 'split' ? parents.size === 1 && children.size >= 2 : parents.size >= 2 && children.size === 1);
+      };
+      function choices(title, items, selected, label) {
+        const field = el('fieldset', 'plan-version-inheritance'); field.append(el('legend', '', title));
+        for (const item of items) { const input = el('input'); input.type = 'checkbox'; input.value = item.spaceUuid; input.setAttribute('aria-label', label + ': ' + item.name);
+          input.onchange = () => { if (input.checked) selected.add(item.spaceUuid); else selected.delete(item.spaceUuid); refresh(); }; const row = el('label', 'plan-version-check'); row.append(input, document.createTextNode(item.name)); field.append(row);
+        }
+        if (!items.length) field.append(el('p', 'plan-version-note', L('해당 공간이 없습니다.', 'There are no eligible spaces.'))); return field;
+      }
+      const parentOptions = Object.entries(s.drawingModel.spaceRegistry).flatMap(([uuid, entry]) => {
+        const item = ancestry.map(id => Object.values(entry.instances).find(i => i.drawingId === id)).find(Boolean); if (!item) return [];
+        return [{ spaceUuid: uuid, name: `${item.snapshot.name || uuid} · ${item.excluded ? L('종료됨', 'Retired') : item.drawingId === v.drawingId ? L('현재 도면', 'This drawing') : L('기준 이력', 'Source history')} · ${uuid}` }];
+      });
+      const childOptions = V.objects(s, v.drawingId).filter(o => o.type === 'space' && v.origins[o.id].sourceObjectId === null && V.editable(s, o)).map(o => ({ spaceUuid: o.spaceUuid, name: `${o.name || o.spaceUuid} · ${o.spaceUuid}` }));
+      body.append(note, label(L('관계 유형', 'Relationship kind'), kind), choices(L('기존 공간', 'Parent spaces'), parentOptions, parents, 'parent'), choices(L('새 공간', 'Child spaces'), childOptions, children, 'child'), error);
+      footer.append(button(L('취소', 'Cancel'), () => close()), submit); form.append(body, footer); modal.append(title, form); document.body.append(modal);
+      kind.onchange = refresh; form.onsubmit = e => { e.preventDefault(); refresh(); if (submit.disabled) return;
+        try { p.lineage({ drawingId: v.drawingId, kind: kind.value, parents: [...parents], children: [...children] }, token); close(true); } catch (err) { refresh(); error.textContent = p.error(err); }
+      };
+      modal.addEventListener('cancel', e => { e.preventDefault(); close(); }); modal.addEventListener('keydown', e => e.stopPropagation()); refresh(); modal.showModal(); kind.focus();
+    }
+    function render(controls, list) {
+      if (!p.enabled()) { controls.append(button(L('날짜별 도면 관리 시작', 'Enable dated drawings'), p.activate)); return false; }
+      const s = p.state(), v = V.row(s); if (!v) return false;
+      const toolbar = el('div', 'floor-toolbar');
+      toolbar.append(button(L('도면 이력', 'Drawing history'), () => { area = 'history'; p.refresh(); }), button(L('레이어', 'Layers'), () => { area = 'layers'; p.refresh(); }), button(L('변경 도면 만들기', 'Create change drawing'), openCreate));
+      controls.append(toolbar, el('p', 'plan-version-current', `${v.name} · ${status(v)} · ${v.modifiedDate || L('수정일 미지정', 'Modification date unspecified')} / ${v.appliedDate || L('적용일 미지정', 'Application date unspecified')}`));
+      if (p.lineage) { const lineage = button(L('공간 분할·병합 관계', 'Space relationships'), openLineage); lineage.disabled = V.readonly(s); controls.append(lineage); }
+      if (V.readonly(s)) controls.append(el('p', 'plan-version-note', L('읽기 전용 · 변경 도면을 만들어 수정할 수 있습니다.', 'Read only / Create a change drawing to edit.')));
+      if (area === 'history') {
+        if (p.addBuilding) controls.append(button(L('건물 추가', 'Add building'), () => p.addBuilding()));
+        for (const building of s.buildings) {
+          const card = disclosure('building:' + building.id, 'plan-version-building', building.name);
+          if (p.addLevel) card.append(button(L('층 추가', 'Add floor'), () => p.addLevel(building.id)));
+          for (const level of s.drawingModel.levels.filter(l => l.buildingId === building.id)) {
+            const group = disclosure('level:' + level.id, 'plan-version-level', level.name);
+            const versions = s.drawingModel.versions.filter(x => x.levelId === level.id).slice().sort((a, b) => (a.appliedDate || a.modifiedDate || '').localeCompare(b.appliedDate || b.modifiedDate || '') || a.createdAt.localeCompare(b.createdAt));
+            versions.forEach((item, i) => {
+              const entry = el('div', 'plan-version-history-entry');
+              const choose = button(`${item.name} · ${status(item)} · ${item.modifiedDate || '—'} / ${item.appliedDate || '—'} · ${i + 1}`, () => p.select(item.drawingId), 'floor-main');
+              choose.setAttribute('aria-current', String(item.drawingId === s.activeFloorId)); entry.append(choose);
+              if (!item.current) entry.append(button(L('실제 적용 확정', 'Mark as applied'), () => p.apply(item.drawingId)));
+              group.append(entry);
+              if (item.drawingId === s.activeFloorId && p.selectObject) {
+                const spaces = V.objects(s, item.drawingId).filter(o => o.type === 'space' && V.visible(s, o));
+                if (spaces.length) { const list = el('div', 'plan-version-space-list');
+                  for (const space of spaces) list.append(button(p.objectLabel?.(space) || space.name || L('공간', 'Space'), () => p.selectObject(space.id), 'floor-main'));
+                  group.append(list);
+                }
+              }
+            }); card.append(group);
+          }
+          list.append(card);
+        }
+      } else {
+        const active = v.layers.find(l => l.id === v.activeLayerId);
+        list.append(el('p', 'plan-version-note', L('현재 편집 레이어: ', 'Current editing layer: ') + (active?.name || L('도구 기본값', 'Tool default')) + (v.activeLayerExplicit ? '' : L(' · 자동', ' / automatic'))));
+        for (const group of V.groups) {
+          const block = disclosure(v.drawingId + ':group:' + group.id, 'plan-version-layer-group', L(group.ko, group.en));
+          for (const l of v.layers.filter(l => l.group === group.id)) {
+            const line = el('div', 'plan-version-layer-row'), choose = el('input'); choose.type = 'radio'; choose.name = 'plan-version-active-layer'; choose.checked = l.id === v.activeLayerId;
+            choose.disabled = V.readonly(s) || l.locked || !l.visible; choose.setAttribute('aria-label', L('편집 레이어 선택: ', 'Edit layer: ') + l.name); choose.onchange = () => p.activeLayer(l.id);
+            const count = V.objects(s, v.drawingId).filter(o => v.assignments[o.id] === l.id).length;
+            const name = el('input', 'text-input'); name.type = 'text'; name.value = l.name; name.maxLength = 255; name.disabled = V.readonly(s) || !p.renameLayer; name.setAttribute('aria-label', L('레이어 이름', 'Layer name')); name.onchange = () => p.renameLayer?.(l.id, name.value);
+            const eye = el('input'); eye.type = 'checkbox'; eye.checked = l.visible; eye.setAttribute('aria-label', L('표시: ', 'Visible: ') + l.name); eye.onchange = () => p.layer(l.id, { visible: eye.checked });
+            const lock = el('input'); lock.type = 'checkbox'; lock.checked = l.locked; lock.setAttribute('aria-label', L('잠금: ', 'Locked: ') + l.name); lock.onchange = () => p.layer(l.id, { locked: lock.checked });
+            line.append(choose, name, el('span', '', String(count)), label(L('표시', 'Visible'), eye), label(L('잠금', 'Lock'), lock));
+            if (p.assign) { const move = button(L('선택 객체 배치', 'Place selected objects'), () => p.assign(l.id)); move.disabled = V.readonly(s) || l.locked || !l.visible || !p.selectionIds?.().length; line.append(move); }
+            block.append(line);
+          }
+          const add = button(L('레이어 추가', 'Add layer'), () => p.addLayer(group.id)); add.disabled = V.readonly(s); block.append(add); list.append(block);
+        }
+      }
+      return true;
+    }
+    return Object.freeze({ render, openCreate, openLineage, close, get active() { return Boolean(dialog); } });
+  }
+  M.planVersionsUI = Object.freeze({ create });
+})();

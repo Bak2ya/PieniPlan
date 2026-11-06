@@ -17,6 +17,7 @@
     }
   }
   function toState(pkg, { receipt = false } = {}) {
+    if (pkg?.schemaVersion === 2) return root.planVersionPackage.toState(root.planVersionPackage.validate(pkg));
     const buildings = [], floors = [], objects = [];
     for (const building of pkg.buildings) {
       buildings.push(select(building, ['id', 'name', 'order']));
@@ -34,6 +35,7 @@
     return state;
   }
   function contentRevision(pkg) {
+    if (pkg?.schemaVersion === 2) return root.planVersionPackage.revision(pkg);
     // Receipt baselines, timestamps and app versions are not drawing content.
     return D.hash({ packageId: pkg.packageId, buildings: pkg.buildings, levels: pkg.drawingModel?.levels || [],
       records: Object.fromEntries(Object.entries(pkg.drawingModel?.records || {}).map(([id, r]) => [id, select(r, ['revision', 'fingerprint', 'deleted'])])),
@@ -41,6 +43,7 @@
       origins: pkg.drawingModel?.exchangeScope?.origins || {}, scope: pkg.scope, styles: pkg.planObjectStyles || {} });
   }
   function validate(pkg) {
+    if (pkg?.schemaVersion === 2) { if (!root.planVersionPackage) fail('version-codec-required'); return root.planVersionPackage.validate(pkg); }
     if (pkg?.format !== 'PieniPlanPlanPackage' || pkg.schemaVersion !== 1 || typeof pkg.packageId !== 'string' || !pkg.packageId || !Array.isArray(pkg.buildings) || !pkg.buildings.length) fail('format');
     if (!Array.isArray(pkg.requiredCapabilities || []) || (pkg.requiredCapabilities || []).some(c => ![D.capability, root.planNature?.capability,'plan.components.v2','plan.door.mechanism.v1'].includes(c))) fail('unsupported-capability');
     finiteData(pkg); root.planNature?.validateStyles(pkg.planObjectStyles);
@@ -84,6 +87,7 @@
     return pkg;
   }
   function make(state, { kind = 'full', buildingId, drawingId, discipline, buildingName, app = {}, styles = {}, now = new Date().toISOString() } = {}) {
+    if (state.drawingModel?.version === 2) return root.planVersionPackage.make(state, { kind, app, styles, now });
     if (!D.enabled(state)) fail('model-required');
     const source = { ...state, drawingModel: D.sync(state) }; D.validate(source);
     let requested = source.floors.filter(f => kind === 'full' || kind === 'building' && f.buildingId === buildingId || kind === 'drawing' && f.id === drawingId || kind === 'discipline' && f.discipline === discipline).map(f => f.id);
@@ -114,6 +118,7 @@
     pkg.packageRevision = contentRevision(pkg); return validate(pkg);
   }
   function upgrade(pkg) {
+    if (pkg?.schemaVersion === 2) return validate(clone(pkg));
     validate(pkg); if (pkg.drawingModel) return clone(pkg);
     const state = toState(pkg); state.drawingModel = D.create(pkg.packageId);
     for (const o of state.objects) if (o.type === 'space' && !o.spaceUuid) o.spaceUuid = 'space-' + D.hash([pkg.packageId, o.id]).slice(0, 32);
@@ -129,6 +134,7 @@
     }));
   }
   function merge(packages, { packageId } = {}) {
+    if (packages.some(p => p?.schemaVersion === 2)) fail('dated-history-merge-requires-explicit-import');
     if (!Array.isArray(packages) || !packages.length) fail('empty-merge');
     const inputs = packages.map(upgrade), out = { buildings: [], floors: [], objects: [], drawingModel: D.create(packageId || 'ppkg-merged-' + D.hash(inputs.map(p => p.packageId).sort()).slice(0, 24)) }, origins = {}, styles = {}, buildingOrigins = new Map(), levelOrigins = new Map();
     const occupied = new Set(), allocate = (id, pkg, kind) => {

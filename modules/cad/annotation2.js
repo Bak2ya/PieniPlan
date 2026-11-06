@@ -23,9 +23,10 @@
     if(!point(o?.center)||!Number.isFinite(o?.radius)||o.radius<=0)return null;
     const r=o.radius,label=point(o.labelPoint)?{...o.labelPoint}:pointAt(o.center,r,0),a=angle(o.center,label),edge=pointAt(o.center,r,a),diameter=o.kind==='diameter';
     const start=diameter?pointAt(o.center,r,a+180):{...o.center},end=label;
-    return{kind:diameter?'diameter':'radius',center:{...o.center},radius:r,edge,start,end,labelPoint:label,value:diameter?r*2:r,segments:[{a:start,b:end}]};
+    const g={kind:diameter?'diameter':'radius',center:{...o.center},radius:r,edge,start,end,labelPoint:label,value:diameter?r*2:r,segments:[{a:start,b:end}]};return o.radialOptions99?root.cadRadialPlacement.geometry(o,g):g;
   }
   function angular(o){
+    if(o?.angularPlacement98){const g=root.cadAngularPlacement.geometry(o);return g?{...g,segments:root.cadAngularPlacement.segments(o)}:null;}
     if(!point(o?.vertex)||!point(o?.ray1)||!point(o?.ray2))return null;
     const a1=angle(o.vertex,o.ray1),a2=angle(o.vertex,o.ray2);let sweep=norm(a2-a1);if(sweep>180)sweep-=360;const value=Math.abs(sweep);if(value<EPS)return null;
     const radius=Math.max(1,Number(o.radius)||Math.min(dist(o.vertex,o.ray1),dist(o.vertex,o.ray2))*.72||500),endAngle=a1+sweep,mid=a1+sweep/2;

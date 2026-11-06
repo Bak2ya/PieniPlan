@@ -48,7 +48,7 @@
     return h.map(v => v.toString(16).padStart(8, '0')).join('');
   }
   const hash = value => hashText(canonical(value));
-  const enabled = state => state.drawingModel?.version === 1;
+  const enabled = state => [1, 2].includes(state.drawingModel?.version);
   function create(packageId) {
     if (typeof packageId !== 'string' || !packageId) fail('package-id');
     return { version: 1, packageId, levels: [], records: {}, spaceOrigins: {}, retiredSpaceUuids: [], retiredDrawingIds: [], lineage: [], unresolvedReferenceIds: [] };
@@ -58,7 +58,8 @@
   function metadata(floor) {
     return Object.fromEntries(['id', 'buildingId', 'name', 'discipline', 'levelId', 'sourceRegionId', 'baseDrawingId', 'baseRevision', 'baseFingerprint', 'baseView', 'viewAlignment', 'sourceReferenceFingerprint', 'referenceSourcesOmitted', 'externalSourceRegionId'].filter(k => own(floor, k)).map(k => [k, floor[k]]));
   }
-  function sync(state, { initialize = false } = {}) {
+  function sync(state, { initialize = false, now = undefined } = {}) {
+    if (state.drawingModel?.version === 2) { if (!root.planVersions) fail('version-module-required'); return root.planVersions.sync(state, { now }); }
     if (!enabled(state)) return null;
     const model = copy(state.drawingModel), ids = new Set(state.floors.map(f => f.id));
     model.spaceOrigins ||= {};
@@ -85,6 +86,7 @@
     return model;
   }
   function chain(state, drawingId, { visibleOnly = false } = {}) {
+    if (state.drawingModel?.version === 2) return [];
     const list = [], seen = new Set([drawingId]); let floor = state.floors.find(f => f.id === drawingId), opacity = 1, layers = null, printable = true;
     while (floor?.baseDrawingId) {
       if (seen.has(floor.baseDrawingId)) fail('reference-cycle');
@@ -107,6 +109,7 @@
     return chain(state, floor.id).some(({ floor: item }) => item.baseDrawingId && (!state.floors.some(f => f.id === item.baseDrawingId) || record(state, item.baseDrawingId)?.revision !== item.baseRevision || record(state, item.baseDrawingId)?.fingerprint !== item.baseFingerprint)) ? 'changed' : 'current';
   }
   function validate(state) {
+    if (state.drawingModel?.version === 2) { if (!root.planVersions) fail('version-module-required'); return root.planVersions.validate(state); }
     if (state.drawingModel != null && state.drawingModel.version !== 1) fail('unsupported-version');
     if (!enabled(state)) return state;
     const m = state.drawingModel;
@@ -162,6 +165,7 @@
     return state;
   }
   function derive(state, baseId, { id, name, discipline = 'fire', levelId = undefined, baseView = {} }) {
+    if (state.drawingModel?.version === 2) fail('use-dated-drawing-creation');
     if (!enabled(state)) fail('not-enabled');
     const base = state.floors.find(f => f.id === baseId), rev = record(state, baseId);
     if (!base || !rev || !id || state.floors.some(f => f.id === id) || !name?.trim()) fail('derive');
@@ -188,6 +192,7 @@
     requestedIds.forEach(add); return [...set];
   }
   function recordLineage(state, { drawingId, kind, parents, children }) {
+    if (state.drawingModel?.version === 2) return root.planVersions.recordLineage(state, { drawingId, kind, parents, children });
     if (!enabled(state) || !['split', 'merge'].includes(kind) || !state.floors.some(f => f.id === drawingId)) fail('lineage-request');
     const spaces = state.objects.filter(o => o.type === 'space' && o.floorId === drawingId), current = new Set(spaces.map(o => o.spaceUuid));
     if (children.some(id => !current.has(id)) || parents.some(id => !current.has(id) && (!state.drawingModel.retiredSpaceUuids.includes(id) || state.drawingModel.spaceOrigins?.[id] !== drawingId))) fail('lineage-owner');
@@ -197,5 +202,5 @@
     if (next.drawingModel.lineage.some(x => canonical({ ...x, revision: 0 }) === canonical({ ...item, revision: 0 }))) fail('duplicate-lineage');
     next.drawingModel.lineage.push(item); validate(next); return { objects, drawingModel: next.drawingModel };
   }
-  root.planDrawings = Object.freeze({ capability, canonical, hashText, hash, elementHash, projectElement, nonDrawing, enabled, create, record, owned, metadata, sync, chain, referenceStatus, validate, derive, acknowledge, dependencyClosure, recordLineage });
+  root.planDrawings = Object.freeze({ capability, canonical, hashText, hash, elementHash, projectElement, nonDrawing, cleanTechnical, enabled, create, record, owned, metadata, sync, chain, referenceStatus, validate, derive, acknowledge, dependencyClosure, recordLineage });
 })();

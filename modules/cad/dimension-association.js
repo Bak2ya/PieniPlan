@@ -4,17 +4,22 @@
   const root = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {}, capability = 'cad.dimension.association.v1';
   const clone = o => JSON.parse(JSON.stringify(o)), distance = (a, b) => a && b ? Math.hypot(a.x - b.x, a.y - b.y) : Infinity;
   function validate(o) {
+    if(root.cadAngularAssociation?.grouped(o))return root.cadAngularAssociation.validate(o);
     const r = o.association; if (!r) return;
     const slots = ['jogged','arc','feature','p1', 'p2', 'vertex', 'ray1', 'ray2', 'radial'];if(r.version===2){if(o.type!=='cadDimension'||!root.cadDimensionPartial)throw Error('invalid-partial-dimension-association');root.cadDimensionPartial.validate(o);}
     if (r.version!==2&&(o.type !== 'cadDimension' || r.version !== 1 || !['current', 'detached'].includes(r.status) || Object.keys(r).some(k => !['version', 'status', 'anchors'].includes(k)) || !r.anchors || typeof r.anchors !== 'object' || Array.isArray(r.anchors) || !Object.keys(r.anchors).length)) throw Error('invalid-dimension-association');
     for (const [slot, a] of Object.entries({...r.anchors,...(r.version===2?r.lost:{})})) {
       if (slot==='arc'&&o.kind!=='arcLength'||slot==='feature'&&o.kind!=='ordinate'||!slots.includes(slot) || !a || typeof a.sourceId !== 'string' || !a.sourceId || a.sourceId === o.id || (slot === 'radial') !== (a.kind === 'radial') || slot === 'radial' && !['radius', 'diameter'].includes(o.kind) || ['p1', 'p2'].includes(slot) && !['linear', 'aligned'].includes(o.kind || 'aligned') || ['vertex', 'ray1', 'ray2'].includes(slot) && o.kind !== 'angular') throw Error('invalid-dimension-anchor');
-      if(slot==='jogged'){if(r.version!==2||o.kind!=='joggedRadius'||!root.cadJoggedRadius)throw Error('invalid-jogged-anchor');root.cadJoggedRadius.validateAnchor(a);continue;}if(slot==='arc'){if(!root.cadArcLength||a.kind!=='arc96')throw Error('invalid-arc-dimension-anchor');root.cadArcLength.validateAnchor(a);continue;}if(a.kind==='geometry96'){if(!root.cadDimensionReferences)throw Error('unsupported-dimension-subedge');root.cadDimensionReferences.validate(a);continue;}
+      if(root.cadRadialPlacement?.extended(a)){if(r.version!==2||!o.radialOptions99||slot!=='radial')throw Error('invalid-radial-source-owner');root.cadRadialPlacement.validateOwner(o);root.cadRadialPlacement.validateAnchor(a);continue;}if(slot==='jogged'){if(r.version!==2||o.kind!=='joggedRadius'||!root.cadJoggedRadius)throw Error('invalid-jogged-anchor');root.cadJoggedRadius.validateAnchor(a);continue;}if(slot==='arc'){if(!root.cadArcLength||a.kind!=='arc96')throw Error('invalid-arc-dimension-anchor');root.cadArcLength.validateAnchor(a);continue;}if(a.kind==='geometry96'){if(!root.cadDimensionReferences)throw Error('unsupported-dimension-subedge');root.cadDimensionReferences.validate(a);continue;}
+      if(a.kind==='angularPoint99'){if(r.version!==2||o.kind!=='angular'||o.angularPlacement98?.method!=='points')throw Error('invalid-angular-point-owner');root.cadAngularSource.validatePoint(a);if(root.cadAngularSource.pointDependencies(a).includes(o.id))throw Error('invalid-angular-point-self-reference');continue;}
       if(!['vertex','point','radial'].includes(a.kind)||Object.keys(a).some(k=>!['sourceId','kind','vertexId','key'].includes(k))||a.kind==='vertex'&&(typeof a.vertexId!=='string'||!a.vertexId)||a.kind==='point'&&!['a','b','start','end','center','midpoint'].includes(a.key))throw Error('invalid-dimension-anchor');
     }
   }
 
   function resolve(anchor, byId) {
+    if(root.cadRadialPlacement?.extended(anchor))return root.cadRadialPlacement.resolve(anchor,byId);
+    if(anchor.kind==='angularPoint99')return root.cadAngularSource.pointValue(anchor,byId);
+    if(anchor.kind==='angular98')return root.cadAngularSource.value(anchor,byId);
     if(anchor.kind==='jogged98')return root.cadJoggedRadius?.resolve(anchor,byId)||null;
     if(anchor.kind==='arc96')return root.cadArcLength?.resolve(anchor,byId)||null;
     if(anchor.kind==='geometry96')return root.cadDimensionReferences?.resolve(anchor,byId)||null;
@@ -47,7 +52,7 @@
     let q = clone(o);
     for (const [slot, anchor] of Object.entries(o.association.anchors)) {
       const value = resolve(anchor, byId); if (!value || slot !== 'radial' && slot!=='arc' && !value.point) return detached(o);
-      if(slot==='arc')Object.assign(q,value.arc);else if (slot === 'radial') Object.assign(q, value); else q[slot] = value.point;
+      if(slot==='arc')Object.assign(q,value.arc);else if (slot === 'radial') Object.assign(q,q.radialOptions99?root.cadRadialPlacement.merge(q,value):value); else q[slot] = value.point;
     }
     const g = root.cadAnnotation2.geometry(q); if (!g?.segments?.length) return detached(o);
     q.segments = g.segments; if (JSON.stringify(q) === JSON.stringify(o)) return o;
@@ -57,9 +62,12 @@
     const touched = new Map(changes.map(c => [(c.before || c.after).id, c])), next = new Map(objects.map(o => [o.id, o]));
     for (const c of changes) { if (c.before) next.delete(c.before.id); if (c.after) next.set(c.after.id, c.after); }
     const result = changes.slice();
+    // Only new, explicitly transformed selected-circle dimensions reparameterize their
+    // jointly edited source. Legacy owners and source-only edits keep existing rules.
+    for(let i=0;i<result.length;i++){const c=result[i],o=c.after;if(!o?.linearOptions99?.circleSource)continue;const after=root.cadLinearPlacement.circleTransform(o,touched,id=>next.get(id));if(after!==o){const adjusted={...c,after};result[i]=adjusted;touched.set(o.id,adjusted);next.set(o.id,after);}}
     for (const o of next.values()) {
-      if (o.type !== 'cadDimension' || (o.association?.status !== 'current'&&o.association?.version!==2) || defer(o) && !touched.has(o.id)) continue;
-      const explicit = touched.get(o.id), sourceTouched = Object.values(o.association.anchors).some(a => touched.has(a.sourceId));
+      if (root.cadAngularAssociation?.grouped(o)||o.type !== 'cadDimension' || (o.association?.status !== 'current'&&o.association?.version!==2) || defer(o) && !touched.has(o.id)) continue;
+      const explicit = touched.get(o.id), sourceTouched = sourceIds(o).some(id=>touched.has(id));
       let after = o;
       if (explicit && !sourceTouched) {
         const proposed = regenerate(o, id => next.get(id)), fields = Object.keys(o.association.anchors).flatMap(slot => slot==='jogged'?['center','radius','sourceArc']:slot==='arc'?['center','radius','startAngle','sweep']:slot === 'radial' ? ['center', 'radius'] : [slot]);
@@ -69,7 +77,8 @@
       if (explicit) result[result.indexOf(explicit)] = { ...explicit, after };
       else result.push({ before: o, after, index: objects.indexOf(o) });
     }
-    return result;
+    return root.cadAngularAssociation?root.cadAngularAssociation.augment(objects,result,{defer}):result;
   }
-  root.cadDimensionAssociation = Object.freeze({ capability, validate, capture, resolve, regenerate, augment, detached });
+  const dependencies=a=>a.kind==='angularPoint99'?root.cadAngularSource.pointDependencies(a):a.kind==='angular98'?root.cadAngularSource.dependencies(a):[a.sourceId],sourceIds=(o,{lost=false}={})=>[...new Set(Object.values({...o.association?.anchors,...(lost?o.association?.lost:{})}).flatMap(dependencies))];
+  root.cadDimensionAssociation = Object.freeze({ capability, validate, capture, resolve, regenerate, augment, detached, dependencies, sourceIds });
 })();

@@ -386,7 +386,7 @@
 <div class="controls-tabs" role="tablist"><button class="small-button active" data-control-tab="keyboard" role="tab" data-i18n="controls.keyboard">Keyboard</button><button class="small-button" data-control-tab="mouse" role="tab" data-i18n="controls.mouse">Mouse and context menu</button></div>
 <div class="controls-scope" role="group" data-i18n-aria="controls.scope" aria-label="Scope"><button class="small-button" data-control-scope="common" data-i18n="controls.common" aria-pressed="true">Common</button><button class="small-button" data-control-scope="plan" aria-pressed="false">Plan Mode</button><button class="small-button" data-control-scope="cad" aria-pressed="false">CAD Mode</button><select id="settingsCommandScope" hidden aria-hidden="true" tabindex="-1"><option value="common">Common</option><option value="plan">Plan</option><option value="cad">CAD</option></select></div><p id="controlsScopeDescription" class="settings-page-copy" data-i18n="settings87.scopeCopy">Common bindings apply in both modes; canonical commands and explicit personal overrides take precedence. Mode-specific functions are listed under their mode.</p>
 <div id="keyboardSettings"><div class="settings-section-copy" data-i18n="controls.copy">Aliases run in the command line. Shortcuts run directly. Personal preferences.</div><p class="settings-section-copy" data-i18n="controls.fixed">Fixed: Ctrl/Cmd+S · Ctrl/Cmd+Z · Ctrl/Cmd+Shift+Z · Enter · Esc · Delete · Space.</p><input id="settingsCommandSearch" class="text-input" type="search" data-i18n-placeholder="controls.search" placeholder="Find a function"/>
-<div class="command-bindings-head"><span data-i18n="controls.function">Function</span><span data-i18n="controls.alias">Command aliases</span><span data-i18n="controls.chord">Keyboard shortcut</span></div><div id="settingsCommandList"></div><p id="settingsCommandFeedback" role="status" class="settings-section-copy"></p><button class="small-button" id="settingsCommandReset" data-i18n="controls.reset">Restore defaults for this scope</button><p class="settings-section-copy" data-i18n="controls.protected">Use Alt+Shift+letter/number or an available function key. Text entry, IME, browser keys and native editing keys are protected.</p></div>
+<div class="command-bindings-head"><span data-i18n="controls.function">Function</span><span data-i18n="controls.alias">Command aliases</span><span data-i18n="controls.chord">Keyboard shortcut</span></div><div id="settingsCommandList"></div><p id="settingsCommandFeedback" role="status" class="settings-section-copy"></p><button class="small-button" id="settingsCommandReset" data-i18n="controls.reset">Restore defaults for this scope</button><div class="text-style-actions"><button class="small-button" id="settingsCommandPgpImport" data-i18n="controls.pgpImport">Import CAD aliases (PGP)</button><button class="small-button" id="settingsCommandPgpExport" data-i18n="controls.pgpExport">Export CAD aliases (PGP)</button></div><p class="settings-section-copy" data-i18n="controls.protected">Use Alt+Shift+letter/number or an available function key. Text entry, IME, browser keys and native editing keys are protected.</p></div>
 <div id="mouseSettings" hidden><p class="settings-section-copy" data-i18n="controls.mouseCopy">Existing right-click behavior is retained. Visibility never bypasses selection or mode requirements. Reset affects only this scope.</p><p id="mouseCommonCopy" class="settings-section-copy" data-i18n="controls.mouseCommon">Right-click menus differ by CAD / Plan. Select a mode to edit its menu.</p><div data-mouse-mode="plan"><div class="settings-section settings-context-section"><div class="settings-section-title" data-i18n="settings.contextMenu">Context menu</div><div class="settings-section-copy" data-i18n="settings.contextMenuCopy">Visibility and priority of menu commands.</div><div aria-hidden="true" class="settings-context-head"><span></span><span data-i18n="settings.contextVisibility">Visibility</span><span data-i18n="settings.contextPriority">Priority</span></div><div class="settings-context-list" id="settingsContextMenuListPlan"></div><button class="small-button settings-context-reset" data-i18n="settings.contextReset" id="settingsContextResetPlan" type="button">Reset context menu settings</button></div></div><div data-mouse-mode="cad"><div class="settings-section settings-context-section"><div class="settings-section-title" data-i18n="settings.contextMenu">Context menu</div><div class="settings-section-copy" data-i18n="settings.contextMenuCopy">Visibility and priority of menu commands.</div><div aria-hidden="true" class="settings-context-head"><span></span><span data-i18n="settings.contextVisibility">Visibility</span><span data-i18n="settings.contextPriority">Priority</span></div><div class="settings-context-list" id="settingsContextMenuListCad"></div><button class="small-button settings-context-reset" data-i18n="settings.contextReset" id="settingsContextResetCad" type="button">Reset context menu settings</button></div></div></div></section><section class="settings-page" data-settings-panel="cad" hidden></section></div>
 </div>
 <div class="dialog-actions settings-dialog-actions">
@@ -629,10 +629,12 @@
   <script src="modules/cad/units.js"></script>
   <script src="modules/cad/region-transform.js"></script>
   <script src="modules/command/core.js"></script>
+  <script src="modules/command/pgp-aliases.js"></script>
   <script src="modules/command/preferences.js"></script>
   <script src="modules/plan-nature.js"></script>
   <script src="modules/cad/transparency.js"></script>
 <script src="modules/cad/creation-appearance.js"></script>
+  <script src="modules/cad/native-color.js"></script>
   <script src="modules/cad/properties.js"></script>
   <script src="modules/cad/stroke.js"></script>
   <script src="modules/cad/spatial-tree.js"></script>
@@ -660,8 +662,14 @@
   <script src="modules/command/foundation.js"></script>
   <script src="modules/command/build25-adapters.js"></script>
   <script src="modules/cad/property-workflows.js"></script>
+  <script src="modules/cad/layer-filter-draft.js"></script>
+  <script src="modules/cad/set-by-layer.js"></script>
   <script src="modules/ui/cad-property-tools.js"></script>
+  <script src="modules/ui/command-pgp.js"></script>
   <script src="modules/command/native-matchprop.js"></script>
+  <script src="modules/command/native-text-edit.js"></script>
+  <script src="modules/command/native-dimension-text-edit.js"></script>
+  <script src="modules/command/native-set-by-layer.js"></script>
   <script src="modules/command/native-line.js"></script>
   <script src="modules/command/native-cad-polyline.js"></script>
   <script src="modules/command/native-polyline.js"></script>
@@ -690,10 +698,17 @@
   <script src="modules/cad/jogged-radius.js"></script>
   <script src="modules/cad/arc-length-dimension.js"></script>
   <script src="modules/cad/ordinate.js"></script>
+<script src="modules/cad/angular-placement.js"></script>
+<script src="modules/cad/linear-placement.js"></script>
+<script src="modules/cad/radial-placement.js"></script>
+<script src="modules/cad/angular-source.js"></script>
   <script src="modules/cad/annotation2.js"></script>
   <script src="modules/cad/dimension-text.js"></script>
+  <script src="modules/cad/dimension-text-edit.js"></script>
   <script src="modules/cad/dimension-angular.js"></script>
+  <script src="modules/cad/dimension-current.js"></script>
   <script src="modules/cad/dimension-notation.js"></script>
+  <script src="modules/cad/primary-units.js"></script>
   <script src="modules/cad/dimension-fit.js"></script>
   <script src="modules/cad/dimension-chains.js"></script>
   <script src="modules/cad/dimension-styles.js"></script>
@@ -701,10 +716,14 @@
 <script src="modules/cad/dimension-partial.js"></script>
 <script src="modules/cad/dimension-association.js"></script>
 <script src="modules/cad/dimension-management.js"></script>
+<script src="modules/cad/angular-association.js"></script>
 <script src="modules/cad/dimension-creation.js"></script>
 <script src="modules/command/native-arc-dimension.js"></script>
 <script src="modules/command/native-jogged-dimension.js"></script>
 <script src="modules/command/native-creation-appearance.js"></script>
+<script src="modules/command/native-angular-dimension.js"></script>
+<script src="modules/command/native-linear-dimension.js"></script>
+<script src="modules/command/native-radial-dimension.js"></script>
 <script src="modules/command/native-dimension-angular.js"></script>
 <script src="modules/command/native-ordinate.js"></script>
   <script src="modules/command/native-dimension-chains.js"></script>
@@ -763,8 +782,12 @@
 <script src="modules/ui/workspace-actions.js"></script>
 <script src="modules/view/viewport-fit.js"></script>
 <script src="modules/plan/drawing-model.js"></script>
+<script src="modules/plan/versions.js"></script>
+<script src="modules/plan/version-session.js"></script>
+<script src="modules/plan/version-package.js"></script>
 <script src="modules/plan/package-exchange.js"></script>
 <script src="modules/ui/plan-drawings.js"></script>
+<script src="modules/ui/plan-versions.js"></script>
 <script src="modules/ui/settings.js"></script>
   <script src="modules/cad/dynamic-input.js"></script>
   <script src="modules/cad/ucs.js"></script>
