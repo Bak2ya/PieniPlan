@@ -42,7 +42,7 @@
       id: f.id, name: f.name, order: f.order || 0, ...(f.viewAlignment ? { viewAlignment: clone(f.viewAlignment) } : {}),
       objects: M.planVersions.objects(s, f.id).map(o => M.planDrawings.projectElement(o))
     })) }));
-    const drawingModel = clone(s.drawingModel);
+    const drawingModel = clone({ ...s.drawingModel, backgrounds: undefined });
     // Original authoring reference/RAW archives remain in PPRJ. Public Plan
     // exchange contains the actual semantic geometry and version relationships.
     delete drawingModel.legacy;

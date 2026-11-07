@@ -985,3 +985,12 @@ Direct-manipulation and real-DXF reliability milestone.
 - Add TEXTEDIT/TEDIT/DDEDIT content editing with Single/Multiple mode, command-owned Undo and guarded document history.
 - Allow two-point distance acquisition for OFFSET, FILLET radius and CHAMFER distance prompts, with transient reference guides and existing snap/UCS behavior.
 
+## v0.74.0 · Build101 (2026-11-07)
+
+- Add independent dated Plan drawings under buildings and physical floors, semantic layer groups, selective inheritance and protected history.
+- Add a single change-drawing dialog, explicit application status, space lineage records and read-only overlay/side-by-side comparison.
+- Preserve per-version CAD/PDF/image reference backgrounds with PPRJ9; exchange dated semantic drawings with PPKG2 and retain legacy readers.
+- Materialize compatible legacy derived drawings through explicit conversion while preserving original data and identifiers.
+- Extend connected CAD dimension notation, text layout, property transfer, arrays and transform input workflows; correct dimension keyword/input ownership.
+- Repair modal keyboard boundaries and small-screen comparison scrolling.
+

@@ -3,23 +3,23 @@
 (() => {
   'use strict';
   const M = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
-  const keys = ['objects', 'floors', 'buildings', 'drawingModel', 'activeFloorId', 'activeBuildingId'];
+  const keys = ['objects', 'floors', 'buildings', 'drawingModel', 'activeFloorId', 'activeBuildingId', 'references'];
   const copy = x => JSON.parse(JSON.stringify(x));
   class EditDenied extends Error { constructor(code) { super('plan-versions:' + code); this.name = 'PlanVersionEditDenied'; } }
   function create(p) {
     const V = M.planVersions, D = M.planDrawings;
     let accepted = null, pending = null, publishing = false;
-    const capture = s => ({ projectId: s.projectId, objects: s.objects.map(o => o.floorId ? copy(o) : o), floors: copy(s.floors), buildings: copy(s.buildings), drawingModel: copy(s.drawingModel), activeFloorId: s.activeFloorId, activeBuildingId: s.activeBuildingId });
-    const write = value => { const s = p.state(); for (const k of keys) s[k] = value[k]; };
+    const capture = s => ({ projectId: s.projectId, objects: s.objects.map(o => o.floorId ? copy(o) : o), floors: copy(s.floors), buildings: copy(s.buildings), drawingModel: M.planBackgrounds ? M.planBackgrounds.copyModel(s.drawingModel) : copy(s.drawingModel), activeFloorId: s.activeFloorId, activeBuildingId: s.activeBuildingId, ...(s.references ? { references: M.planBackgrounds ? s.references.map(M.planBackgrounds.copyReference) : s.references } : {}) });
+    const write = value => { const s = p.state(); for (const k of keys) if (Object.hasOwn(value, k)) s[k] = value[k]; };
     function adopt() {
       const s = p.state(); if (V.enabled(s)) { V.validate(s); accepted = capture(s); } else accepted = null;
       pending = null;
     }
     function token() {
-      const s = p.state(); return { projectId: s.projectId, drawingId: s.activeFloorId, model: D.hash(s.drawingModel), epoch: p.epoch() };
+      const s = p.state(); return { projectId: s.projectId, drawingId: s.activeFloorId, model: D.hash(M.planBackgrounds ? M.planBackgrounds.tokenModel(s.drawingModel) : s.drawingModel), epoch: p.epoch() };
     }
     function current(t) {
-      const s = p.state(); return Boolean(t && t.projectId === s.projectId && t.drawingId === s.activeFloorId && t.epoch === p.epoch() && t.model === D.hash(s.drawingModel));
+      const s = p.state(); return Boolean(t && t.projectId === s.projectId && t.drawingId === s.activeFloorId && t.epoch === p.epoch() && t.model === D.hash(M.planBackgrounds ? M.planBackgrounds.tokenModel(s.drawingModel) : s.drawingModel));
     }
     function reason(ids = [], { creation = false } = {}) {
       const s = p.state(); if (!V.enabled(s)) return null;
@@ -51,6 +51,10 @@
         const version = V.row(s, v.drawingId);
         if (!version) throw new EditDenied('historical-drawing-removal');
         if (version.sealedFingerprint !== v.sealedFingerprint || V.content(s, version) !== v.sealedFingerprint) throw new EditDenied('historical-model-change');
+      }
+      if (M.planBackgrounds?.enabled(accepted)) for (const [drawingId, b] of Object.entries(accepted.drawingModel.backgrounds.bindings)) if (b.sealedFingerprint) {
+        const next = M.planBackgrounds.binding(s, drawingId);
+        if (!next || next.sealedFingerprint !== b.sealedFingerprint || M.planBackgrounds.fingerprint(s, next) !== b.sealedFingerprint) throw new EditDenied('historical-reference-change');
       }
     }
     function synchronize() {

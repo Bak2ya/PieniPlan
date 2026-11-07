@@ -10,6 +10,14 @@
     const label = (text, input) => { const l = el('label', 'plan-version-field'); l.append(el('span', '', text), input); return l; };
     const status = v => ({ planned: L('예정', 'Planned'), current: L('현재 적용', 'Applied'), past: L('과거 · 읽기 전용', 'Historical / read only'), draft: L('작업 중', 'Draft') })[V.status(v)];
     let dialog = null, closing = false, area = 'history'; const collapsed = new Set();
+    function modalKeys(modal,e) {
+      e.stopPropagation();
+      if(e.key!=='Tab'||e.ctrlKey||e.metaKey||e.altKey||e.isComposing)return;
+      const controls=[...modal.querySelectorAll('button,input,select,textarea,a[href],summary,[tabindex]')].filter(n=>!n.disabled&&n.tabIndex>=0&&!n.closest('[inert]')&&n.getClientRects().length);
+      if(!controls.length){e.preventDefault();modal.focus();return;}
+      const first=controls[0],last=controls.at(-1),current=document.activeElement;
+      if(!modal.contains(current)||e.shiftKey&&current===first||!e.shiftKey&&current===last){e.preventDefault();(e.shiftKey?last:first).focus();}
+    }
     function disclosure(key, className, text) { const node = el('details', className); node.open = !collapsed.has(key); node.append(el('summary', '', text)); node.addEventListener('toggle', () => { if (node.isConnected) { if (node.open) collapsed.delete(key); else collapsed.add(key); } }); return node; }
     function close(force = false) {
       if (!dialog) return true;
@@ -49,7 +57,7 @@
       const error = el('p', 'plan-version-error'); error.setAttribute('role', 'alert');
       let selected = new Set(), fingerprint = null, base = null, signature = null;
       const cancel = button(L('취소', 'Cancel'), () => close());
-      const submit = button(L('변경 도면 만들기', 'Create change drawing'), () => {}, 'primary-button'); submit.type = 'submit'; submit.disabled = true;
+      const submit = button(L('변경 도면 만들기', 'Create change drawing'), () => {}, 'toolbar-button primary'); submit.type = 'submit'; submit.disabled = true;
       footer.append(cancel, submit);
       const values = () => ({ name: name.value, description: description.value, sourceDrawingId: source.value, levelId: current.levelId,
         layerIds: [...selected].sort(), modifiedDate: modified.value, appliedDate: applied.value || null, planned: planned.checked, sourceFingerprint: fingerprint });
@@ -98,7 +106,7 @@
         } catch (err) { recompute(); error.textContent = p.error(err); }
       };
       modal.addEventListener('cancel', e => { e.preventDefault(); close(); });
-      modal.addEventListener('keydown', e => { e.stopPropagation(); });
+      modal.addEventListener('keydown', e => modalKeys(modal,e));
       loadSource(); signature = JSON.stringify(values()); modal.showModal(); name.focus();
     }
     function openLineage() {
@@ -113,7 +121,7 @@
       for (const [value, text] of [['split', L('분할 · 1개 → 여러 공간', 'Split / one to several')], ['merge', L('병합 · 여러 공간 → 1개', 'Merge / several to one')]]) { const option = el('option', '', text); option.value = value; kind.append(option); } kind.value = 'split';
       const parents = new Set(), children = new Set(), error = el('p', 'plan-version-error'); error.setAttribute('role', 'alert');
       const signature = () => JSON.stringify([kind.value, [...parents].sort(), [...children].sort()]), initial = signature(); modal.__dirty = () => signature() !== initial;
-      const submit = button(L('관계 기록', 'Record relationships'), () => {}, 'primary-button'); submit.type = 'submit'; submit.disabled = true;
+      const submit = button(L('관계 기록', 'Record relationships'), () => {}, 'toolbar-button primary'); submit.type = 'submit'; submit.disabled = true;
       const refresh = () => { error.textContent = ''; submit.disabled = true;
         if (!p.current(token)) { error.textContent = L('문서가 바뀌었습니다. 다시 열어 주세요.', 'The document changed. Reopen this dialog.'); return; }
         if ([...parents].some(id => children.has(id))) { error.textContent = L('기존 공간과 새 공간은 서로 달라야 합니다.', 'Parent and child spaces must be different.'); return; }
@@ -136,7 +144,47 @@
       kind.onchange = refresh; form.onsubmit = e => { e.preventDefault(); refresh(); if (submit.disabled) return;
         try { p.lineage({ drawingId: v.drawingId, kind: kind.value, parents: [...parents], children: [...children] }, token); close(true); } catch (err) { refresh(); error.textContent = p.error(err); }
       };
-      modal.addEventListener('cancel', e => { e.preventDefault(); close(); }); modal.addEventListener('keydown', e => e.stopPropagation()); refresh(); modal.showModal(); kind.focus();
+      modal.addEventListener('cancel', e => { e.preventDefault(); close(); }); modal.addEventListener('keydown', e => modalKeys(modal,e)); refresh(); modal.showModal(); kind.focus();
+    }
+    function openCompare() {
+      if (!p.enabled() || dialog || !p.compare || !p.comparisonView || p.beforeOpen?.() === false) return;
+      const s = p.state(), current = V.row(s), choices = s.drawingModel.versions.filter(v => v.levelId === current.levelId), token = p.token();
+      if (choices.length < 2) return;
+      dialog = el('dialog','plan-version-dialog plan-comparison-dialog'); const modal = dialog; modal.__returnFocus = document.activeElement; modal.__dirty = () => false;
+      const title = el('h2','',L('도면 버전 비교 · 읽기 전용','Compare drawing versions / read only')); title.id = 'plan-version-comparison-title'; modal.setAttribute('aria-labelledby',title.id);
+      const body = el('div','plan-version-body'), controls = el('div','plan-version-dates'), before = el('select','text-input'), after = el('select','text-input'), mode = el('select','text-input');
+      const labelVersion = v => `${v.name} · ${v.modifiedDate || '—'} / ${v.appliedDate || '—'} · ${status(v)}`;
+      for (const v of choices) for (const select of [before,after]) { const option = el('option','',labelVersion(v)); option.value = v.drawingId; select.append(option); }
+      before.value = current.sourceDrawingId || choices.find(v => v.drawingId !== current.drawingId).drawingId; after.value = current.drawingId;
+      for (const [value,text] of [['overlay',L('중첩 비교','Overlay')],['split',L('좌우 비교','Side by side')]]) { const option = el('option','',text); option.value = value; mode.append(option); } mode.value = 'overlay';
+      controls.append(label(L('기준 도면','Before'),before),label(L('비교 도면','After'),after));
+      const layers = el('fieldset','plan-version-inheritance'), checks = el('div','plan-version-compare-layers'), note = el('p','plan-version-note',L('공간·도면 객체를 같은 좌표로 비교합니다. 객체 계보와 정규화된 형상 입력을 구분하며, 기하 위상 동일성·물리적 충돌 판정은 하지 않습니다. CAD·PDF 배경은 원본 데이터 일치 여부를 별도로 표시합니다.','Drawing objects share a common coordinate view. Root identity and normalized geometry inputs are compared separately; this is not topological equality or physical collision detection. CAD/PDF source-data equality is reported separately.'));
+      layers.append(el('legend','',L('비교할 레이어','Comparison layers')),checks);
+      const summary = el('p','plan-version-note'), error = el('p','plan-version-error'); error.setAttribute('role','alert'); const preview = el('div','plan-version-comparison-preview'), details = el('details','plan-version-comparison-details'); details.append(el('summary','',L('객체별 비교 결과','Object comparison details')));
+      const items = el('div'); details.append(items); let selected = new Set();
+      const names = {added:L('추가','Added'),removed:L('제외','Removed'),modified:L('변경','Modified'),same:L('동일 기술 데이터','Same technical data'),unverified:L('형상 판정 보류','Geometry unverified')};
+      function refresh(reset = false) {
+        error.textContent = ''; preview.replaceChildren(); items.replaceChildren(); summary.textContent = '';
+        try {
+          if (!p.current(token)) throw Error(L('문서가 바뀌었습니다. 창을 다시 열어 주세요.','The document changed. Reopen this dialog.'));
+          const result = p.compare(before.value,after.value,null);
+          if (reset) { selected = new Set(result.layers.map(l => l.id)); checks.replaceChildren();
+            for (const layer of result.layers) { const input = el('input'); input.type = 'checkbox'; input.checked = true; input.value = layer.id; input.onchange = () => { if (input.checked) selected.add(layer.id); else selected.delete(layer.id); refresh(); }; const row = el('label','plan-version-check'); row.append(input,document.createTextNode(layer.name)); checks.append(row); }
+          }
+          const compared = p.compare(before.value,after.value,[...selected]), measured = [p.comparisonView(before.value,[...selected],{measureOnly:true}),p.comparisonView(after.value,[...selected],{measureOnly:true})], ranges = measured.map(v => v.bounds).filter(Boolean);
+          const commonScale=ranges.length?Math.max(1,Math.max(...ranges.map(b=>b.maxx))-Math.min(...ranges.map(b=>b.minx)),Math.max(...ranges.map(b=>b.maxy))-Math.min(...ranges.map(b=>b.miny)))/200:1,views=[p.comparisonView(before.value,[...selected],{scale:commonScale}),p.comparisonView(after.value,[...selected],{scale:commonScale})];
+          summary.textContent = Object.entries(compared.counts).map(([k,n])=>`${names[k]} ${n}`).join(' · ') + ' / ' + L('배경: ','Background: ') + ({'same-source-data':L('동일 원본 데이터','Same source data'),'different-source-data':L('원본 데이터 다름','Different source data'),unverified:L('미확인','Unverified')})[compared.background];
+          if (views.some(v => v.objectCount !== v.boundedCount)) summary.textContent += L(' · 일부 객체의 표시 범위를 계산하지 못했습니다.',' / Some object bounds could not be evaluated.');
+          const minx = ranges.length ? Math.min(...ranges.map(b=>b.minx)) : 0, maxx = ranges.length ? Math.max(...ranges.map(b=>b.maxx)) : 1000, miny = ranges.length ? Math.min(...ranges.map(b=>b.miny)) : 0, maxy = ranges.length ? Math.max(...ranges.map(b=>b.maxy)) : 1000, pad = Math.max(50,maxx-minx,maxy-miny)*.06, viewBox = [minx-pad,-maxy-pad,Math.max(1,maxx-minx)+2*pad,Math.max(1,maxy-miny)+2*pad].join(' ');
+          const groups = views.map((v,i)=>{const group = el('div','plan-comparison-pane'); group.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="${viewBox}">${v.markup}</svg>`; const svg = group.querySelectorAll('svg')[0]; if(svg)svg.setAttribute('aria-label',i?L('비교 도면','After drawing'):L('기준 도면','Before drawing'));
+            const byId = new Map(compared.items.map(item => [i?item.afterId:item.beforeId,item])); for(const node of group.querySelectorAll('g')) { const item = byId.get(node.getAttribute('data-object-id')); if(item) {node.setAttribute('data-comparison-status',item.status);node.setAttribute('data-comparison-side',i?'after':'before');} } return group; });
+          preview.className = 'plan-version-comparison-preview ' + (mode.value === 'split'?'is-split':'is-overlay'); preview.append(...groups);
+          for(const item of compared.items){const text = `${names[item.status]} · ${item.rootObjectId} · ${item.geometry === 'same-representation'?L('동일 형상 입력','Same geometry inputs'):item.geometry === 'different-representation'?L('형상 입력 다름','Different geometry inputs'):item.geometry === 'not-paired'?L('대응 객체 없음','No paired object'):L('정확한 형상 비교 미확인','Exact shape comparison unverified')}`;items.append(el('p','plan-version-note',text));}
+        } catch(e) { error.textContent = p.error(e); }
+      }
+      before.onchange = after.onchange = () => refresh(true); mode.onchange = () => refresh();
+      const footer = el('div','plan-version-actions'); footer.append(button(L('닫기','Close'),()=>close())); body.append(controls,label(L('표시 방식','Display mode'),mode),layers,note,summary,error,preview,details); modal.append(title,body,footer);document.body.append(modal);
+      modal.addEventListener('cancel',e=>{e.preventDefault();close();});modal.addEventListener('keydown',e=>modalKeys(modal,e));refresh(true);modal.showModal();before.focus();
     }
     function render(controls, list) {
       if (!p.enabled()) { controls.append(button(L('날짜별 도면 관리 시작', 'Enable dated drawings'), p.activate)); return false; }
@@ -144,6 +192,12 @@
       const toolbar = el('div', 'floor-toolbar');
       toolbar.append(button(L('도면 이력', 'Drawing history'), () => { area = 'history'; p.refresh(); }), button(L('레이어', 'Layers'), () => { area = 'layers'; p.refresh(); }), button(L('변경 도면 만들기', 'Create change drawing'), openCreate));
       controls.append(toolbar, el('p', 'plan-version-current', `${v.name} · ${status(v)} · ${v.modifiedDate || L('수정일 미지정', 'Modification date unspecified')} / ${v.appliedDate || L('적용일 미지정', 'Application date unspecified')}`));
+      if(p.compare && p.comparisonView){const compare=button(L('도면 비교','Compare drawings'),openCompare);compare.disabled=s.drawingModel.versions.filter(x=>x.levelId===v.levelId).length<2;controls.append(compare);}
+      if (p.enableBackgrounds) {
+        const fixed = p.backgroundsEnabled?.(), background = button(fixed ? L('CAD 배경 갱신', 'Refresh CAD background') : L('도면별 참조 배경 고정', 'Preserve version backgrounds'), () => fixed ? p.refreshBackground() : p.enableBackgrounds());
+        background.disabled = Boolean(fixed && V.readonly(s)); controls.append(background);
+        controls.append(el('p', 'plan-version-note', fixed ? L('참조 배경은 도면별로 보존됩니다.', 'Background sources are preserved per drawing.') : L('이 파일의 배경은 아직 공유 상태입니다. 도면별 고정이 필요합니다.', 'This file still uses shared backgrounds. Capture per-drawing sources.')));
+      }
       if (p.lineage) { const lineage = button(L('공간 분할·병합 관계', 'Space relationships'), openLineage); lineage.disabled = V.readonly(s); controls.append(lineage); }
       if (V.readonly(s)) controls.append(el('p', 'plan-version-note', L('읽기 전용 · 변경 도면을 만들어 수정할 수 있습니다.', 'Read only / Create a change drawing to edit.')));
       if (area === 'history') {
@@ -156,14 +210,14 @@
             const versions = s.drawingModel.versions.filter(x => x.levelId === level.id).slice().sort((a, b) => (a.appliedDate || a.modifiedDate || '').localeCompare(b.appliedDate || b.modifiedDate || '') || a.createdAt.localeCompare(b.createdAt));
             versions.forEach((item, i) => {
               const entry = el('div', 'plan-version-history-entry');
-              const choose = button(`${item.name} · ${status(item)} · ${item.modifiedDate || '—'} / ${item.appliedDate || '—'} · ${i + 1}`, () => p.select(item.drawingId), 'floor-main');
+              const choose = button(`${item.name} · ${status(item)} · ${item.modifiedDate || '—'} / ${item.appliedDate || '—'} · ${i + 1}`, () => p.select(item.drawingId), 'floor-main small-button');
               choose.setAttribute('aria-current', String(item.drawingId === s.activeFloorId)); entry.append(choose);
               if (!item.current) entry.append(button(L('실제 적용 확정', 'Mark as applied'), () => p.apply(item.drawingId)));
               group.append(entry);
               if (item.drawingId === s.activeFloorId && p.selectObject) {
                 const spaces = V.objects(s, item.drawingId).filter(o => o.type === 'space' && V.visible(s, o));
                 if (spaces.length) { const list = el('div', 'plan-version-space-list');
-                  for (const space of spaces) list.append(button(p.objectLabel?.(space) || space.name || L('공간', 'Space'), () => p.selectObject(space.id), 'floor-main'));
+                  for (const space of spaces) list.append(button(p.objectLabel?.(space) || space.name || L('공간', 'Space'), () => p.selectObject(space.id), 'floor-main small-button'));
                   group.append(list);
                 }
               }
@@ -192,7 +246,7 @@
       }
       return true;
     }
-    return Object.freeze({ render, openCreate, openLineage, close, get active() { return Boolean(dialog); } });
+    return Object.freeze({ render, openCreate, openLineage, openCompare, close, get active() { return Boolean(dialog); } });
   }
   M.planVersionsUI = Object.freeze({ create });
 })();
