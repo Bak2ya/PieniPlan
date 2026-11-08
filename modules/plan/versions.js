@@ -3,7 +3,8 @@
 (() => {
   'use strict';
   const M = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {};
-  const capability = 'plan.versions.v1', schema = 8, copy = x => JSON.parse(JSON.stringify(x));
+  const capability = 'plan.versions.v1', historyCapability = 'plan.history.application.v1', schema = 8, copy = x => JSON.parse(JSON.stringify(x));
+  const historyRequired = s => Object.hasOwn(s?.drawingModel || {}, 'applicationHistory102');
   const modelCopy = m => M.planBackgrounds?.copyModel(m) || copy(m);
   const domainCopy = s => ({ ...s, objects: (s.objects || []).map(o => o.floorId ? copy(o) : o), floors: copy(s.floors || []), buildings: copy(s.buildings || []), drawingModel: s.drawingModel ? modelCopy(s.drawingModel) : null, ...(s.references ? { references: M.planBackgrounds ? s.references.map(M.planBackgrounds.copyReference) : s.references } : {}) });
   const fail = code => { throw Error('plan-versions:' + code); };
@@ -170,6 +171,11 @@
   }
   function apply(s, drawingId, { now = new Date().toISOString() } = {}) {
     validate(s); const next = domainCopy(s), v = row(next, drawingId); if (!v || !timestamp(now)) fail('apply');
+    const journal = next.drawingModel.applicationHistory102 ||= [];
+    // Snapshot what the old file explicitly declared current before changing
+    // flags. Unknown application dates/times remain unknown, never migration time.
+    for (const previous of next.drawingModel.versions.filter(x => x.levelId === v.levelId && x.current && !x.planned)) if (!journal.some(e => e.drawingId === previous.drawingId)) journal.push({ drawingId: previous.drawingId, appliedDate: previous.appliedDate, recordedAt: null, evidence: 'legacy-current' });
+    journal.push({ drawingId, appliedDate: v.appliedDate, recordedAt: now, evidence: 'explicit' });
     for (const other of next.drawingModel.versions.filter(x => x.levelId === v.levelId)) { other.current = false; if (other.drawingId !== drawingId) other.sealedFingerprint ||= content(next, other); }
     v.current = true; v.planned = false; v.sealedFingerprint ||= content(next, v); v.updatedAt = now;
     next.drawingModel = sync(next, { now }); validate(next); return next;
@@ -213,6 +219,31 @@
   function renameLayer(s, drawingId, layerId, name) {
     validate(s); if (readonly(s, drawingId)) fail('readonly'); const next = domainCopy(s), l = row(next, drawingId)?.layers.find(l => l.id === layerId);
     if (!l || typeof name !== 'string' || !name.trim() || name.length > 255) fail('layer-name'); l.name = name.trim(); next.drawingModel = sync(next); validate(next); return next;
+  }
+  function renameContainer(s, kind, containerId, name) {
+    validate(s); const next = domainCopy(s), items = kind === 'building' ? next.buildings : kind === 'level' ? next.drawingModel.levels : null;
+    const item = items?.find(x => x.id === containerId), value = typeof name === 'string' ? name.trim() : '';
+    if (!item || !value || value.length > 255 || /[\x00-\x1f]/.test(value)) fail('container-name');
+    if (items.some(x => x.id !== item.id && (kind === 'building' || x.buildingId === item.buildingId) && x.name.toLocaleLowerCase() === value.toLocaleLowerCase())) fail('container-name-duplicate');
+    item.name = value; validate(next); return next;
+  }
+  function moveContainer(s, kind, containerId, direction) {
+    validate(s); if (![1, -1].includes(direction)) fail('container-order');
+    const next = domainCopy(s), all = kind === 'building' ? next.buildings : kind === 'level' ? next.drawingModel.levels : null, item = all?.find(x => x.id === containerId);
+    if (!item) fail('container-order');
+    const items = all.filter(x => kind === 'building' || x.buildingId === item.buildingId).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const from = items.indexOf(item), to = from + direction; if (to < 0 || to >= items.length) return s;
+    [items[from], items[to]] = [items[to], items[from]]; items.forEach((x, i) => { x.order = i; });
+    validate(next); return next;
+  }
+  function updateMetadata(s, drawingId, patch, { now = new Date().toISOString() } = {}) {
+    validate(s); if (readonly(s, drawingId)) fail('readonly');
+    if (!patch || Object.keys(patch).some(k => !['name', 'description', 'modifiedDate', 'appliedDate', 'planned'].includes(k)) || !timestamp(now)) fail('metadata');
+    const next = domainCopy(s), v = row(next, drawingId); if (!v) fail('metadata');
+    Object.assign(v, copy(patch)); if (typeof v.name === 'string') v.name = v.name.trim();
+    date(v.modifiedDate); date(v.appliedDate); v.updatedAt = now;
+    const f = next.floors.find(f => f.id === drawingId); f.name = v.name;
+    next.drawingModel = sync(next, { now }); validate(next); return next;
   }
   function recordLineage(s, { drawingId, kind, parents, children }, { now = new Date().toISOString() } = {}) {
     validate(s); const v = row(s, drawingId); if (!v || readonly(s, drawingId)) fail('readonly');
@@ -272,13 +303,21 @@
   }
   function validate(s) {
     if (!enabled(s)) fail('version'); const m = s.drawingModel;
-    if (Object.keys(m).some(k => !['version', 'packageId', 'levels', 'versions', 'records', 'lineage', 'spaceRegistry', 'legacy', 'backgrounds'].includes(k))) fail('model-fields');
+    if (Object.keys(m).some(k => !['version', 'packageId', 'levels', 'versions', 'records', 'lineage', 'spaceRegistry', 'legacy', 'backgrounds', 'applicationHistory102'].includes(k))) fail('model-fields');
     if (!id(m.packageId) || !Array.isArray(m.levels) || !Array.isArray(m.versions) || !Array.isArray(m.lineage) || !m.records || typeof m.records !== 'object') fail('model');
     const unique = (list, key) => { const set = new Set(); for (const o of list) { if (!id(o[key]) || set.has(o[key])) fail('duplicate-' + key); set.add(o[key]); } return set; };
     const buildings = unique(s.buildings || [], 'id'), floors = unique(s.floors || [], 'id'), levels = unique(m.levels, 'id'), instances = unique(s.objects || [], 'id'), drawings = unique(m.versions, 'drawingId');
     if (floors.size !== drawings.size || [...floors].some(f => !drawings.has(f))) fail('drawing-coverage');
     for (const level of m.levels) if (!buildings.has(level.buildingId) || typeof level.name !== 'string' || !level.name.trim()) fail('level');
     const persistent = new Map();
+    if (historyRequired(s)) {
+      if (!Array.isArray(m.applicationHistory102) || m.applicationHistory102.length > 100000) fail('application-history');
+      for (const e of m.applicationHistory102) {
+        const applied = row(s, e?.drawingId);
+        if (!e || Object.keys(e).some(k => !['drawingId', 'appliedDate', 'recordedAt', 'evidence'].includes(k)) || !applied || applied.planned || !['legacy-current', 'explicit'].includes(e.evidence) || e.appliedDate !== applied.appliedDate || (e.evidence === 'explicit' ? !timestamp(e.recordedAt) : e.recordedAt !== null)) fail('application-history');
+        date(e.appliedDate);
+      }
+    }
     for (const v of m.versions) {
       if (Object.keys(v).some(k => !['drawingId', 'levelId', 'name', 'description', 'modifiedDate', 'appliedDate', 'planned', 'current', 'sourceDrawingId', 'sourceFingerprint', 'createdAt', 'updatedAt', 'layers', 'assignments', 'origins', 'excluded', 'activeLayerId', 'activeLayerExplicit', 'sealedFingerprint'].includes(k))) fail('version-field');
       const floor = s.floors.find(f => f.id === v.drawingId), level = m.levels.find(l => l.id === v.levelId);
@@ -325,5 +364,5 @@
     if (m.backgrounds) { if (!M.planBackgrounds) fail('background-module-required'); M.planBackgrounds.validate(s); }
     return s;
   }
-  M.planVersions = Object.freeze({ capability, schema, groups, enabled, row, objects, date, status, readonly, layerId, layer, visible, editable, references, content, upgrade, sync, inheritance, fork, apply, setLayer, addLayer, setActiveLayer, assign, addLevel, addBuilding, renameLayer, recordLineage, validate, initialRow:initializeRow, remapOwner:remap });
+  M.planVersions = Object.freeze({ capability, historyCapability, historyRequired, schema, groups, enabled, row, objects, date, status, readonly, layerId, layer, visible, editable, references, content, upgrade, sync, inheritance, fork, apply, setLayer, addLayer, setActiveLayer, assign, addLevel, addBuilding, renameLayer, renameContainer, moveContainer, updateMetadata, recordLineage, validate, initialRow:initializeRow, remapOwner:remap });
 })();

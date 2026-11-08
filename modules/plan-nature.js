@@ -52,7 +52,7 @@
     return{kind:'polygon',points:polygon(points,tolerance)};
   }
   const categories=['wall','door','fireDoor','fireShutter','window','column'];
-  function category(o){return isColumn(o)?'column':o?.type==='door'?(o.doorType==='fireShutter'||o.fireProtection==='fireShutter'?'fireShutter':o.doorType==='fireDoor'||o.fireProtection==='fireDoor'?'fireDoor':'door'):['wall','window'].includes(o?.type)?o.type:null;}
+  function category(o){const fire=o?.doorType==='fireShutter'?'fireShutter':o?.doorType==='fireDoor'?'fireDoor':o?.fireProtection;return isColumn(o)?'column':o?.type==='door'?(fire==='fireShutter'?'fireShutter':fire==='fireDoor'?'fireDoor':'door'):['wall','window'].includes(o?.type)?o.type:null;}
   function validateStyles(raw){
     if(raw==null)return;
     if(typeof raw!=='object'||Array.isArray(raw))fail('styles');

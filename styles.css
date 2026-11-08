@@ -471,6 +471,8 @@ button:disabled { opacity:.42; cursor:default; }
 .icon-window { --icon-url:url('vendor/tabler/window.svg'); }
 .icon-space { --icon-url:url('vendor/tabler/polygon.svg'); }
 .icon-layer { --icon-url:url('vendor/tabler/layers.svg'); }
+.icon-history { --icon-url:url('vendor/tabler/history.svg'); }
+.icon-dots { --icon-url:url('vendor/tabler/dots.svg'); }
 .icon-terminal { --icon-url:url('vendor/tabler/terminal.svg'); }
 .icon-import { --icon-url:url('vendor/tabler/file-import.svg'); }
 .icon-export { --icon-url:url('vendor/tabler/file-export.svg'); }
@@ -513,7 +515,7 @@ button:disabled { opacity:.42; cursor:default; }
   .statusbar { grid-row:3; }
   .contextbar, .tool-rail, .inspector, .commandbar { display:none !important; }
   .topbar { gap:6px; padding:0 7px; overflow:hidden; }
-  .topbar .toolset-switch, .topbar .topbar-actions-left > :not(#fitBtn), .topbar #undoBtn, .topbar #redoBtn, .topbar #exportDxfBtn { display:none !important; }
+  .topbar .topbar-actions-left > :not(#fitBtn), .topbar #undoBtn, .topbar #redoBtn, .topbar #exportDxfBtn { display:none !important; }
   .topbar-actions-left { margin-left:auto; }
   .topbar-spacer { display:none; }
   .brand-block { min-width:0; flex:1; }
@@ -1830,10 +1832,13 @@ html, body { font-size:var(--font-body); }
 .component-card polyline { vector-effect:non-scaling-stroke; }
 .component-card strong { font-size:var(--font-control); }
 .component-card small { font-size:11px; color:var(--text-2); }
-.inspector-tabs { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
-.inspector-tabs:has([data-tab="components"][hidden]) { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
-.plan-tools .inspector-tabs { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
-.plan-tools .inspector-tabs:has([data-tab="components"][hidden]) { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+.app-shell .inspector-tabs { grid-template-columns:repeat(var(--inspector-tab-count,3),minmax(0,1fr)) !important; }
+.inspector-task-tab{display:flex;align-items:stretch;min-width:0;border-bottom:2px solid transparent}
+.inspector-task-tab.active{border-bottom-color:var(--accent);background:var(--surface-2)}
+.inspector-task-tab>.inspector-tab{flex:1;min-width:0;border-bottom:0;padding-inline:4px;white-space:nowrap}
+.inspector-task-close{flex:none;align-self:center;display:grid;place-items:center;width:24px;height:28px;padding:0;border:0;border-radius:4px;background:transparent;color:var(--text-3);cursor:pointer;font-size:16px}
+.inspector-task-close:hover{background:var(--surface-3);color:var(--text)}
+.inspector-task-close:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 @media(max-width:800px){ .output-grid { grid-template-columns:1fr; } .paper-previews { max-height:32vh; } .paper-preview > div > svg { max-height:calc(32vh - 60px); } }
 
 /* Command output belongs to the input panel; expanding grows upward inside the HUD. */
@@ -2196,7 +2201,7 @@ html, body { font-size:var(--font-body); }
 .app-shell.toolbar-expanded .topbar{display:flex;gap:8px;padding-inline:8px}
 .app-shell.toolbar-expanded .topbar-left{flex:0 0 auto;min-width:0;gap:6px}
 .app-shell.toolbar-expanded .brand-home{padding-inline:2px}
-.app-shell.toolbar-expanded .brand-name,.app-shell.toolbar-expanded .toolset-switch{display:none}
+.app-shell:not(.toolbar-expanded) .brand-name,.app-shell:not(.toolbar-expanded) .toolset-switch{display:none}
 .app-shell.toolbar-expanded .topbar-document{flex:1 1 0;min-width:0;max-width:none;width:auto;justify-content:center;overflow:hidden}
 .app-shell.toolbar-expanded .project-title-control{flex:0 1 auto;max-width:100%;min-width:0;justify-content:center}
 .app-shell.toolbar-expanded .project-name-edit{width:100%}
@@ -2220,7 +2225,7 @@ html, body { font-size:var(--font-body); }
    The expanded ribbon remains an overlay; no drawing viewport layout changes. */
 .app-shell .topbar{display:flex!important;gap:8px;padding-inline:8px}
 .app-shell .topbar-left{display:flex;flex:0 1 auto;min-width:0;gap:6px}
-.app-shell .brand-home .brand-name,.app-shell .topbar .toolset-switch{display:none}
+.app-shell:not(.toolbar-expanded) .brand-home .brand-name,.app-shell:not(.toolbar-expanded) .topbar .toolset-switch{display:none}
 .app-shell .topbar-document{flex:1 0 45px;min-width:45px;max-width:none;width:auto}
 .app-shell .topbar-right{display:flex;gap:4px;margin:0;flex:0 0 auto}
 .app-shell .topbar-right>.icon-button{width:30px;min-width:30px;flex:0 0 30px;margin:0;padding:0}
@@ -2230,18 +2235,14 @@ html, body { font-size:var(--font-body); }
 @media(max-width:720px){.app-shell .topbar{gap:4px;padding-inline:5px}.app-shell .topbar-document{min-width:28px;flex-basis:28px}.app-shell .tool-category .tool-text{width:3.2em}}
 
 /* Transient element browsing reuses the inspector without a new persistent tab. */
-.inspector.catalog-open .inspector-panel{display:none!important}
-.element-catalog[hidden]{display:none!important}
-.element-catalog{display:flex;flex-direction:column;gap:9px;padding:10px;min-width:0}
-.element-catalog header{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.element-catalog header strong{flex:1;font-size:var(--font-control)}
+.element-catalog.inspector-panel.active{display:flex;flex-direction:column;gap:9px;padding:10px;min-width:0}
 .element-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;align-items:start}
 .element-catalog-card{appearance:none;display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:0;padding:8px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--text);cursor:pointer;text-align:left;box-shadow:none}
 .element-catalog-card:hover{background:var(--surface-3)}
 .element-catalog-card[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent)}
 .element-catalog-card:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.element-catalog-preview{display:grid;place-items:center;height:83px;min-width:0;color:var(--text-2)}
-.element-catalog-preview svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.3;overflow:visible}
+.element-catalog-preview{position:relative;display:block;flex:none;height:83px;min-width:0;color:var(--text-2)}
+.element-catalog-preview svg{position:absolute;inset:0;display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.3;overflow:visible}
 .element-catalog-preview svg :is(polyline,path,line){vector-effect:non-scaling-stroke}
 .element-catalog-card strong{font-size:var(--font-control);font-weight:500;overflow-wrap:anywhere}
 .element-catalog-card small{font-size:var(--font-micro);color:var(--text-3);overflow-wrap:anywhere}
@@ -2249,10 +2250,12 @@ html, body { font-size:var(--font-body); }
 
 .cad-dynamic-input label[data-locked="true"]::after{content:"🔒";font-size:10px}.cad-dynamic-input input[data-locked]{border-color:var(--accent)}
 
-/* Workspace correction: existing logo/mode controls remain visible, while
-   Compact command chrome keeps only command input and the current prompt. */
-.app-shell .topbar .brand-home .brand-name{display:inline}
-.app-shell .topbar .toolset-switch{display:flex;flex:none}
+/* Expanded owns direct Home/mode controls; Compact owns the logo menu.
+   Keep this state rule shared across modes instead of later blanket overrides. */
+.app-shell.toolbar-expanded .topbar .brand-home .brand-name{display:inline}
+.app-shell.toolbar-expanded .topbar .toolset-switch{display:flex;flex:none}
+.app-shell:not(.toolbar-expanded) .topbar .brand-home .brand-name,
+.app-shell:not(.toolbar-expanded) .topbar .toolset-switch{display:none}
 .app-shell .topbar .brand-home{flex:none;gap:5px}
 .app-shell:not(.command-expanded) .canvas-hud .hud-cad-only{display:none!important}
 .app-shell.inspector-collapsed .inspector{transform:translateX(100%)!important;pointer-events:none!important}
@@ -2262,15 +2265,15 @@ html, body { font-size:var(--font-body); }
 .workspace-action-menu button[aria-checked=true]::after{content:'✓';margin-inline-start:auto;padding-inline-start:12px}
 .workspace-action-menu button.history-included{background:var(--accent-soft)}
 .app-shell:not(.toolbar-expanded) .topbar-left,.app-shell.toolbar-expanded .topbar-left{flex:0 1 auto;min-width:0}
-.app-shell .topbar .toolset-switch{display:flex!important}
+.app-shell.toolbar-expanded .topbar .toolset-switch{display:flex}
 .app-shell .topbar .toolset-button{width:auto;white-space:nowrap}
 .app-shell .topbar .toolset-button span{display:inline}
 .app-shell .topbar #undoBtn,.app-shell .topbar #redoBtn{display:inline-flex!important}
 .app-shell .canvas-hud .commandbar{display:grid!important}
 .app-shell .canvas-hud{display:flex!important}
 @media(max-width:720px){.app-shell .canvas-hud{flex-wrap:wrap;min-width:0;max-width:calc(100% - 20px)}.app-shell .hud-status-actions{flex-wrap:wrap;min-width:0}.app-shell .commandbar{min-width:0;max-width:100%;width:100%}}
-@media(max-width:1180px){.app-shell .topbar .toolset-button:not(.active){display:none}.app-shell .topbar .toolset-button{padding-inline:5px}}
-@media(max-width:900px){.app-shell .topbar .brand-home .brand-name{display:none}.app-shell .topbar .toolset-button{font-size:11px}}
+@media(max-width:1180px){.app-shell .topbar .toolset-button{padding-inline:5px}}
+@media(max-width:900px){.app-shell .topbar .toolset-button{font-size:11px}}
 @media(max-width:560px){.app-shell .topbar .toolset-button{font-size:10px;padding-inline:2px}.app-shell .topbar-right{gap:2px}.app-shell .topbar-right>.icon-button{width:26px;min-width:26px;flex-basis:26px}.app-shell .topbar-left{gap:3px}.app-shell .topbar .brand-home{padding-inline:0}}
 @media(max-width:560px){.app-shell .topbar .toolset-button span{display:inline-block;max-width:4.2ch;overflow:hidden}}
 .cad-filter-workspace{display:grid;grid-template-columns:minmax(9rem,1fr) minmax(12rem,1.5fr);gap:12px;margin:12px 0;padding:10px;border:1px solid var(--border);border-radius:8px}
@@ -2281,3 +2284,44 @@ html, body { font-size:var(--font-body); }
 @media(max-width:600px){.cad-filter-workspace{grid-template-columns:1fr}.cad-filter-tree{max-height:120px}}
 
 .cad-filter-caret{display:inline-block;width:12px;height:12px;margin-right:4px}.cad-filter-caret-collapsed{transform:rotate(-90deg)}
+
+/* Plan section navigation: one row grid, shared history and content-sized menus. */
+.plan-tree-branch{min-width:0;border:0;background:none;margin:0;padding:0}
+.plan-tree-children{margin:0 0 3px 12px;padding:0 0 0 8px;border-left:1px solid var(--border)}
+.plan-tree-children[hidden]{display:none}
+.plan-tree-row{display:grid;grid-template-columns:24px minmax(0,1fr) 28px 28px;align-items:center;gap:2px;min-height:32px;padding:1px 0}
+.plan-tree-row>button,.plan-tree-drawing>button{margin:0;min-width:0;border:0;box-shadow:none;background:transparent;color:var(--text);border-radius:5px}
+.plan-tree-row .plan-tree-name,.plan-tree-drawing .plan-tree-name{font:inherit;font-size:var(--font-body);text-align:left;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-tree-building>.plan-tree-row>.plan-tree-name{font-weight:600}
+.plan-tree-row .plan-tree-icon,.plan-tree-row .plan-tree-toggle,.plan-tree-drawing .plan-tree-icon{display:flex;align-items:center;justify-content:center;width:28px;height:30px;padding:5px}
+.plan-tree-row .plan-tree-toggle{width:24px;padding:5px 3px}
+.plan-tree-icon .icon,.plan-tree-toggle .icon{width:18px;height:18px;flex:none}
+.plan-tree-toggle .icon{width:7px;height:7px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(-45deg);margin-right:3px}
+.plan-tree-toggle[aria-expanded=true] .icon{transform:rotate(45deg);margin-right:0;margin-top:-3px}
+.plan-tree-row>button:hover,.plan-tree-drawing>button:hover{background:var(--surface-3)}
+.plan-tree-row>button:focus-visible,.plan-tree-drawing>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.plan-tree-drawing{display:grid;grid-template-columns:minmax(0,1fr) 28px;align-items:center;gap:2px}
+.plan-tree-drawing [aria-current=true]{background:var(--accent-soft);color:var(--accent)}
+.plan-tree-state{margin:0 4px 5px;font-size:var(--font-secondary);color:var(--text-2)}
+.plan-tree-menu{position:fixed;z-index:10000;display:grid;width:max-content;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;padding:4px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-shadow:0 8px 28px #0004}
+.plan-tree-menu .plan-tree-menu-item{width:auto;min-width:0;min-height:30px;max-width:100%;margin:0;padding:5px 10px;border:0;border-radius:4px;background:transparent;text-align:left;font:inherit;font-size:var(--font-body);line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+.plan-tree-menu-item:hover,.plan-tree-menu-item:focus-visible{background:var(--surface-3);outline:none}
+.plan-tree-menu-item:disabled{color:var(--text-3);cursor:default}
+.plan-history-list{display:grid;gap:0}
+.plan-history-entry{display:grid;gap:5px;padding:12px 0;border-top:1px solid var(--border);font-size:var(--font-body);overflow-wrap:anywhere}
+.plan-history-date,.plan-history-state{color:var(--text-2);font-size:var(--font-secondary)}
+.plan-history-description{white-space:pre-wrap;margin:0;line-height:1.5}
+.plan-history-actions{display:flex;flex-wrap:wrap;gap:5px}
+.plan-history-asof{padding:8px 10px;background:var(--surface-2);border-radius:6px}
+.plan-tools .primary-controls>.floor-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+.plan-failure-details{margin:0;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;font-size:var(--font-secondary)}
+/* Legacy projects keep their reader/actions while sharing the compact row grammar. */
+.plan-section-list .building-card{border:0;background:transparent;border-radius:0;margin:0;padding:0}
+.plan-section-list .building-header,.plan-section-list .floor-row{display:grid;grid-template-columns:24px minmax(0,1fr) 28px 28px;align-items:center;gap:2px;min-height:32px;padding:1px 0;border:0;border-radius:5px}
+.plan-section-list .building-main,.plan-section-list .floor-main{min-width:0;padding:5px 4px}
+.plan-section-list .building-name,.plan-section-list .floor-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-section-list .building-header>.mini-action,.plan-section-list .floor-row>.mini-action{display:flex;align-items:center;justify-content:center;width:28px;height:30px;margin:0;padding:5px;border:0;background:transparent;border-radius:5px}
+.plan-section-list .mini-action .ui-icon{width:18px;height:18px}
+.plan-section-list .mini-action:hover{background:var(--surface-3)}
+.plan-section-list .mini-action:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}

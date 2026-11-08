@@ -45,7 +45,7 @@
   function validate(pkg) {
     if (pkg?.schemaVersion === 2) { if (!root.planVersionPackage) fail('version-codec-required'); return root.planVersionPackage.validate(pkg); }
     if (pkg?.format !== 'PieniPlanPlanPackage' || pkg.schemaVersion !== 1 || typeof pkg.packageId !== 'string' || !pkg.packageId || !Array.isArray(pkg.buildings) || !pkg.buildings.length) fail('format');
-    if (!Array.isArray(pkg.requiredCapabilities || []) || (pkg.requiredCapabilities || []).some(c => ![D.capability, root.planNature?.capability,'plan.components.v2','plan.door.mechanism.v1'].includes(c))) fail('unsupported-capability');
+    if (!Array.isArray(pkg.requiredCapabilities || []) || (pkg.requiredCapabilities || []).some(c => ![D.capability, root.planNature?.capability,'plan.components.v2','plan.door.mechanism.v1','plan.door.shutter.v1','plan.stair.direction.v1'].includes(c))) fail('unsupported-capability');
     finiteData(pkg); root.planNature?.validateStyles(pkg.planObjectStyles);
     const extended = pkg.requiredCapabilities?.includes(D.capability);
     if (Boolean(pkg.drawingModel) !== Boolean(extended) || !extended && (pkg.scope || pkg.packageRevision)) fail('missing-capability');
@@ -61,6 +61,8 @@
         for (const o of f.objects) {
           add('elements', o.id); if (!isPlan(o) || o.floorId && o.floorId !== f.id) fail('element-owner');
           if (extended && D.canonical(D.projectElement(o)) !== D.canonical(o)) fail('authoring-field');
+          if(Object.hasOwn(o,'direction102')){if(!pkg.requiredCapabilities?.includes('plan.stair.direction.v1')||!root.planStair)fail('stair-direction-capability');root.planStair.validate(o);}
+          if(o.type==='door'&&o.doorType==='shutter'&&(!pkg.requiredCapabilities?.includes('plan.door.shutter.v1')||o.fireProtection!=null&&o.fireProtection!=='fireShutter'))fail('shutter-capability-required');
           if(o.componentDefinition&&!pkg.requiredCapabilities?.includes('plan.components.v2')||o.doorModel93&&!pkg.requiredCapabilities?.includes('plan.door.mechanism.v1'))fail('missing-element-capability');
           if (o.type === 'space' && o.spaceUuid) add('spaces', o.spaceUuid);
           if (o.planNature || root.planNature?.isGeometry(o)) {
@@ -115,6 +117,8 @@
     if (objects.some(o => root.planNature?.isGeometry(o)) || Object.keys(styles).length) { pkg.requiredCapabilities.push(root.planNature.capability); pkg.planObjectStyles = clone(styles); }
     if(objects.some(o=>o.componentDefinition))pkg.requiredCapabilities.push('plan.components.v2');
     if(objects.some(o=>o.doorModel93))pkg.requiredCapabilities.push('plan.door.mechanism.v1');
+    if(objects.some(o=>o.type==='door'&&o.doorType==='shutter'))pkg.requiredCapabilities.push('plan.door.shutter.v1');
+    if(objects.some(o=>Object.hasOwn(o,'direction102')))pkg.requiredCapabilities.push('plan.stair.direction.v1');
     pkg.packageRevision = contentRevision(pkg); return validate(pkg);
   }
   function upgrade(pkg) {

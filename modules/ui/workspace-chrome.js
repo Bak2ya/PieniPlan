@@ -35,7 +35,7 @@
     const hover = matchMedia('(hover: hover)');
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const clearPanelTimer = () => { clearTimeout(panelTimer); panelTimer = 0; };
-    const floatingPopup = () => document.querySelector('.layer-color-popover, .floor-action-menu, .component-palette, .constraint-palette, dialog[open], .dialog-backdrop:not([hidden])');
+    const floatingPopup = () => document.querySelector('.layer-color-popover, .floor-action-menu, .plan-tree-menu, .component-palette, .constraint-palette, dialog[open], .dialog-backdrop:not([hidden])');
     const busy = () => panel.contains(document.activeElement) || held || (popupOwned && floatingPopup()) || interactionBusy?.();
 
     function panelVisible() { return open; }
@@ -110,8 +110,11 @@
       if (!wasVisible && panelVisible()) panel.dispatchEvent(new CustomEvent('pieniplan:inspector-shown'));
     }
     function paintMenu() {
-      logo.setAttribute('aria-label', t('workspace.appMenu'));
-      logo.title = t('workspace.appMenu');
+      const expanded = shell.classList.contains('toolbar-expanded');
+      logo.setAttribute('aria-label', t(expanded ? 'action.home' : 'workspace.appMenu'));
+      logo.title = t(expanded ? 'action.home' : 'workspace.appMenu');
+      if (expanded) { logo.removeAttribute('aria-haspopup'); logo.removeAttribute('aria-controls'); }
+      else { logo.setAttribute('aria-haspopup', 'menu'); logo.setAttribute('aria-controls', 'brandMenu'); }
       for (const item of menu.querySelectorAll('[data-workspace-destination]')) {
         const selected = item.dataset.workspaceDestination === mode();
         if (item.getAttribute('role') === 'menuitemradio') item.setAttribute('aria-checked', String(selected));
@@ -119,7 +122,7 @@
     }
     function setMenu(value, { focus = false, restore = false, pinned = false } = {}) {
       clearTimeout(menuTimer); clearTimeout(hoverTimer); clearTimeout(menuFocusTimer);
-      menuOpen = Boolean(value); menuPinned=menuOpen&&pinned;
+      menuOpen = Boolean(value) && !shell.classList.contains('toolbar-expanded'); menuPinned=menuOpen&&pinned;
       anchor.dataset.menuState=menuOpen?(menuPinned?'pinned':'hover'):'closed';
       if (menuOpen) { closeOtherMenus?.(); paintMenu(); }
       anchor.classList.toggle('menu-open', menuOpen);
@@ -131,13 +134,16 @@
     function scheduleMenuClose() {
       clearTimeout(hoverTimer); clearTimeout(menuTimer);
       menuTimer = setTimeout(() => {
-        if (!menuPinned && !anchor.matches(':hover') && !anchor.contains(document.activeElement)) setMenu(false);
+        if (!anchor.matches(':hover')) setMenu(false);
       }, 240);
     }
-    logo.addEventListener('click', () => setMenu(!menuPinned, {pinned:!menuPinned}));
+    logo.addEventListener('click', () => {
+      if (shell.classList.contains('toolbar-expanded')) { setMenu(false); navigate('home'); return; }
+      setMenu(!menuOpen, {pinned:!menuOpen});
+    });
     anchor.addEventListener('pointerenter', event => {
       clearTimeout(menuTimer);
-      if (hover.matches && event.pointerType !== 'touch' && !menuOpen) hoverTimer = setTimeout(() => setMenu(true), 150);
+      if (!shell.classList.contains('toolbar-expanded') && hover.matches && event.pointerType !== 'touch' && !menuOpen) hoverTimer = setTimeout(() => setMenu(true), 150);
     });
     anchor.addEventListener('pointerleave', scheduleMenuClose);
     anchor.addEventListener('focusout', event => {
@@ -153,12 +159,13 @@
     });
     // Capture so menu keys never become CAD commands or cancel a live drawing.
     anchor.addEventListener('keydown', event => {
+      if (shell.classList.contains('toolbar-expanded')) return;
       if (!['Enter', ' ', 'Escape', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Tab'].includes(event.key)) return;
       if (event.key === 'Tab') { setMenu(false); return; }
       event.stopPropagation();
       if (event.key === 'Escape') { event.preventDefault(); setMenu(false, { restore: true }); return; }
       if (event.target === logo && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
-        event.preventDefault(); setMenu(true, { focus: true, pinned: true }); return;
+        event.preventDefault(); const next = ['ArrowDown','ArrowUp'].includes(event.key) || !menuOpen; setMenu(next, { focus: next, pinned: next }); return;
       }
       const items = [...menu.querySelectorAll('button')];
       if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
@@ -246,6 +253,7 @@
         if (focus && document.contains(focus) && document.activeElement !== focus) focus.focus({ preventScroll: true });
       }
       shell.classList.toggle('toolbar-expanded', expanded);
+      setMenu(false);
       rail.hidden = expanded; rail.inert = expanded;
       expandedRail.hidden = !expanded;
       if (animate && !reduced.matches) {

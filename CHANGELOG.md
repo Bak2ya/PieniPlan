@@ -1,3 +1,11 @@
+## v0.75.0 · Build102 (2026-11-08)
+
+- Restore Compact P-only navigation and Expanded Home/mode controls with consistent keyboard and pointer ownership.
+- Organize building/floor drawing history and management menus without changing legacy source identities; preserve explicit application history through capability-guarded exchange.
+- Keep the element catalog in a reusable temporary task tab, fit complete vector previews and separate door mechanism from fire performance.
+- Add independent stair rotation, progression, UP/DN display and precise candidate snapping, with matching previews, reversible edits and vector output.
+- Retain the preceding CAD input/PEDIT stroke, width, signed-arc preview and native linetype-generation work; preserve PPRJ/PPKG readers and protected source data.
+
 ## v0.72.0 · Build99 (2026-10-31)
 
 - Expand native angular, linear/aligned and radial dimension source selection, placement, text options and connected dimension workflows.
