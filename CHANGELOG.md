@@ -1,3 +1,20 @@
+## v0.77.0 · Build104 (in development)
+
+- Share CAD command menus between Compact and Expanded, with availability labels and concise support details for partial features.
+- Keep long CAD menus below the toolbar and above the floating inspector, scrolling their contents so the first command stays visible in short windows.
+- Reopen CAD menus at their first command after scrolling or keyboard navigation.
+- Synchronize a pending CAD canvas resize before explicit view fitting, preserving the current drawing command and navigation history.
+- Connect dimension editing, arrays, layers, blocks and drawing settings to their existing command owners; show unavailable future options as disabled entries.
+- Use current personal aliases and key combinations in menu details. Resolve idle CAD aliases consistently and honor removed aliases before opening command dialogs or settings.
+- Extend supported dimension text rotation and preserve the earlier CAD geometry, association and editing work.
+- Show the first-point snap when placing linear or aligned dimensions, retaining exact typed input and independent source association.
+
+## v0.76.0 · Build103 (2026-11-08)
+
+- Preview PEDIT Join by hover or typed tolerance. Join independent selected chains in one action and restore their selection when undoing the join.
+- Edit PEDIT vertex tangents by angle or point with an on-canvas direction marker and a preview of the fitted curve.
+- Preview PEDIT vertex break and straighten ranges while stepping through vertices.
+
 ## v0.75.0 · Build102 (2026-11-08)
 
 - Restore Compact P-only navigation and Expanded Home/mode controls with consistent keyboard and pointer ownership.

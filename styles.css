@@ -1782,6 +1782,22 @@ html, body { font-size:var(--font-body); }
 .menu-row-icon .ui-icon, .tool-item .ui-icon { width:20px; height:20px; flex:0 0 20px; }
 .tool-item { display:flex; align-items:center; gap:10px !important; }
 .tool-item-note { margin-left:auto; text-align:right; }
+
+/* CAD availability disclosure only; approved rails and Plan geometry stay intact. */
+.tool-popover.cad-feature-menu { z-index:80; box-sizing:border-box; width:max-content; max-width:min(380px,calc(100vw - 16px)); max-height:var(--cad-feature-menu-height,calc(100dvh - 24px)); overflow:auto; overscroll-behavior:contain; }
+.cad-feature-menu .cad-feature-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; }
+.cad-feature-menu .cad-feature-command { min-width:0!important; justify-content:flex-start; gap:8px!important; }
+.cad-feature-menu .cad-feature-name { flex:1; overflow-wrap:anywhere; }
+.cad-feature-menu .cad-feature-state { flex-shrink:0; color:var(--text-2); font-size:var(--font-micro); }
+.cad-feature-menu .cad-feature-state.verifying { color:color-mix(in srgb,var(--dimension) 80%,var(--text) 20%); }
+.cad-feature-menu .cad-feature-shortcut { flex-shrink:0; max-width:7em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cad-feature-menu .cad-feature-command:disabled { opacity:.55; cursor:default; }
+.cad-feature-menu .cad-feature-info { align-self:stretch; border:0; border-radius:5px; background:transparent; color:var(--text-3); min-width:30px; padding:4px 6px; }
+.cad-feature-menu .cad-feature-info:hover { background:var(--surface-3,var(--surface-2)); color:var(--text); }
+.cad-feature-menu .cad-feature-description { grid-column:1 / -1; padding:4px 10px 9px; white-space:pre-line; overflow-wrap:anywhere; color:var(--text-2); font-size:var(--font-caption,var(--font-body)); max-width:340px; }
+.cad-feature-menu .cad-feature-description[hidden] { display:none; }
+.cad-feature-menu .cad-feature-variables > summary { cursor:pointer; padding:8px 10px; color:var(--text-2); font-size:var(--font-body); }
+.cad-feature-menu button:focus-visible,.cad-feature-menu summary:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
 .icon-file { --icon-url:url('vendor/tabler/file.svg'); }
 .icon-save { --icon-url:url('vendor/tabler/file-export.svg'); }
 .icon-download { --icon-url:url('vendor/tabler/file-export.svg'); }

@@ -2,10 +2,27 @@
 (() => {
  const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},G=root.geometryQuery,E=G.tolerance.model;
  const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),unit=(a,b)=>{const n=d(a,b);return n>E?{x:(b.x-a.x)/n,y:(b.y-a.y)/n}:null;},add=(p,u,n)=>({x:p.x+u.x*n,y:p.y+u.y*n});
- function offset(e,distance,side){
-  if(!(distance>E))return null;
-  if(e.type==='cadLine'){const u=unit(e.a,e.b);if(!u)return null;const q=G.projectNearest({...e,mode:'line'},side).point,v={x:-u.y,y:u.x},sign=(side.x-q.x)*v.x+(side.y-q.y)*v.y;if(Math.abs(sign)<=E)return null;const n=Math.sign(sign)*distance;return{before:[],after:[{...e,a:add(e.a,v,n),b:add(e.b,v,n)}]};}
-  if(e.type==='cadCircle'||e.type==='cadArc'){const sign=d(side,e.center)-e.radius;if(Math.abs(sign)<=E)return null;const radius=e.radius+Math.sign(sign)*distance;if(radius<=E)return null;return{before:[],after:[{...e,radius}]};}return null;
+ const linearOffset=e=>e.type==='cadLine'||e.type==='cadRay'||e.type==='cadXline';
+ function offsetDistance(e,point){
+  if(linearOffset(e)){
+   const u=unit(e.a,e.b);
+   return u?(point.y-e.a.y)*u.x-(point.x-e.a.x)*u.y:NaN;
+  }
+  if(e.type==='cadArc'||e.type==='cadCircle')return d(point,e.center)-e.radius;
+  return NaN;
+ }
+ function offset(e,distance,side,{through=false}={}){
+  const signed=offsetDistance(e,side);
+  if(through)distance=Math.abs(signed);
+  if(!Number.isFinite(distance)||!(distance>E&&Math.abs(signed)>E))return null;
+  const n=Math.sign(signed)*distance;
+  if(linearOffset(e)){
+   const u=unit(e.a,e.b),v={x:-u.y,y:u.x};
+   return {before:[],after:[{...e,a:add(e.a,v,n),b:add(e.b,v,n)}]};
+  }
+  const radius=e.radius+n;
+  if(radius<=E)return null;
+  return {before:[],after:[{...e,radius}]};
  }
  function breakLine(e,p1,p2){if(e.type!=='cadLine')return null;const t1=G.projectNearest(e,p1).t,t2=G.projectNearest(e,p2).t,lo=Math.min(t1,t2),hi=Math.max(t1,t2);if((hi-lo)*d(e.a,e.b)<=E){if(lo<=0||lo>=1)return null;const point=G.projectNearest(e,p1).point;return{before:[e],after:[{...e,b:{...point}},{...e,a:{...point}}],removed:[]};}const a=G.projectNearest(e,p1).point,b=G.projectNearest(e,p2).point,from=t1<t2?a:b,to=t1<t2?b:a,after=[];if(lo>0)after.push({...e,b:from});if(hi<1)after.push({...e,a:to});return{before:[e],after,removed:[{type:'cadLine',a:from,b:to}]};}
  function join(a,b){
@@ -37,12 +54,12 @@
  function parallelFillet(a,pa,b,pb,{trim,layer}){const u=unit(a.a,a.b),v=unit(b.a,b.b);if(!u||!v||Math.abs(u.x*v.y-u.y*v.x)>1e-10)return null;const contactA=d(a.a,pa)<d(a.b,pa)?a.a:a.b,contactB=G.projectNearest({...b,mode:'line'},contactA)?.point,radius=contactB&&d(contactA,contactB)/2;if(!(radius>E))return null;const center={x:(contactA.x+contactB.x)/2,y:(contactA.y+contactB.y)/2},sourceB=trim?filletTrim(b,contactB,pb):b;if(!sourceB)return null;const arc=filletSweep(center,contactA,contactB,a,trim?sourceB:null);if(!arc)return null;
   return{before:trim&&sourceB!==b?[b]:[],after:[...(trim&&sourceB!==b?[sourceB]:[]),{type:'cadArc',cadLayer:(a.cadLayer||'0')===(b.cadLayer||'0')?(a.cadLayer||'0'):(layer||a.cadLayer||'0'),color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center,radius,...arc}]};
  }
- function fillet(a,pa,b,pb,radius,{trim=true,layer=null}={}){
+ function fillet(a,pa,b,pb,radius,{trim=true,layer=null,extendArcs=true}={}){
   if(!Number.isFinite(radius)||radius<0||a.id===b.id)return null;
   if(root.cadSplineFillet?.is(a)||root.cadSplineFillet?.is(b))return root.cadSplineFillet.fillet(a,pa,b,pb,radius,{trim,layer});
   if([a,b].some(o=>['cadRay','cadXline'].includes(o.type)))return root.cadConstructionCorners?.fillet(a,pa,b,pb,radius,{trim,layer})||null;
   if(a.type!=='cadLine'||b.type!=='cadLine'){
-   if(![a,b].every(o=>['cadLine','cadArc','cadCircle','cadEllipse'].includes(o.type)))return null;if(radius<=E)return sharpCurves(a,pa,b,pb,{trim});const candidates=root.cadEllipse?.is(a)||root.cadEllipse?.is(b)?root.cadConicFillet?.candidates(a,b,radius,pa,pb,{extend:trim})||[]:root.cadCreation?.tangentPair(a,b,radius,pa,pb,{extendArcs:true,all:true})||[];
+   if(![a,b].every(o=>['cadLine','cadArc','cadCircle','cadEllipse'].includes(o.type)))return null;if(radius<=E)return sharpCurves(a,pa,b,pb,{trim});const candidates=root.cadEllipse?.is(a)||root.cadEllipse?.is(b)?root.cadConicFillet?.candidates(a,b,radius,pa,pb,{extend:trim})||[]:root.cadCreation?.tangentPair(a,b,radius,pa,pb,{extendArcs,all:true})||[];
    for(const q of candidates){const sourceA=trim?filletTrim(a,q.tangentA,pa):a,sourceB=trim?filletTrim(b,q.tangentB,pb):b;if(!sourceA||!sourceB)continue;const arc=filletSweep(q.center,q.tangentA,q.tangentB,trim?sourceA:null,trim?sourceB:null);if(!arc)continue;const before=[],after=[];if(trim)for(const[o,result]of [[a,sourceA],[b,sourceB]])if(result!==o){before.push(o);after.push(result);}
     after.push({type:'cadArc',cadLayer:(a.cadLayer||'0')===(b.cadLayer||'0')?(a.cadLayer||'0'):(layer||a.cadLayer||'0'),color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,center:q.center,radius,...arc});return{before,after};
    }return null;
@@ -68,5 +85,5 @@
   const p=add(origin,x.u,distance),q=add(origin,y.u,distance2);if(d(p,q)<=E)return !trim||d(a[x.move],p)<=E&&d(b[y.move],q)<=E?{before:[],after:[],noChange:true}:{before:[a,b],after:[{...a,[x.move]:p},{...b,[y.move]:q}]};
   return{before:trim?[a,b]:[],after:[...(trim?[{...a,[x.move]:p},{...b,[y.move]:q}]:[]),{type:'cadLine',cadLayer:(a.cadLayer||'0')===(b.cadLayer||'0')?(a.cadLayer||'0'):(layer||a.cadLayer||'0'),color:a.color??null,linetype:a.linetype??null,lineweight:a.lineweight??null,drawOrder:a.drawOrder??null,a:p,b:q}]};
  }
- root.cadLinearOperations=Object.freeze({offset,breakLine,join,fillet,chamfer,trimAtContact:filletTrim,sweepAtContacts:filletSweep});
+ root.cadLinearOperations=Object.freeze({offset,offsetDistance,breakLine,join,fillet,chamfer,trimAtContact:filletTrim,sweepAtContacts:filletSweep});
 })();

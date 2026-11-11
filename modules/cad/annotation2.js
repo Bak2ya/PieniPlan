@@ -8,16 +8,24 @@
   const angle=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
   const norm=a=>(a%360+360)%360;
   const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+  const obliqueKey='oblique104',obliqueCapability='cad.dimension.oblique.v1';
+  const obliqueBase=o=>(o.kind||'aligned')==='linear'?o.dimensionAngle:angle(o.p1,o.p2);
+  function obliqueRelative(value){if(!Number.isFinite(value))throw Error('invalid-dimension-oblique-angle');const n=(value%180+180)%180;return n===0||Math.abs(n-90)<1e-10?90:n;}
+  function validateOblique(o){if(o?.type!=='cadDimension'||!['linear','aligned'].includes(o.kind||'aligned')||!point(o.p1)||!point(o.p2)||!Number.isFinite(o.offset))throw Error('invalid-dimension-oblique-owner');const v=o[obliqueKey];if(!v||v.version!==1||Object.keys(v).some(k=>!['version','angle'].includes(k))||!Number.isFinite(v.angle)||v.angle<=0||v.angle>=180)throw Error('invalid-dimension-oblique');return true;}
+  function obliqueGeometry(o,g){if(!Object.hasOwn(o,obliqueKey))return g;try{validateOblique(o.type==null?{...o,type:'cadDimension'}:o);}catch{return null;}if(!g)return null;const a=obliqueBase(o)*Math.PI/180,b=(obliqueBase(o)+o[obliqueKey].angle)*Math.PI/180,n={x:-Math.sin(a),y:Math.cos(a)},v={x:Math.cos(b),y:Math.sin(b)},den=v.x*n.x+v.y*n.y;if(Math.abs(den)<EPS)return null;const parameter=p=>(o.offset-(p.x-o.p1.x)*n.x-(p.y-o.p1.y)*n.y)/den,project=p=>{const t=parameter(p);return{x:p.x+v.x*t,y:p.y+v.y*t};},d1=project(o.p1),d2=project(o.p2);if(!point(d1)||!point(d2)||dist(d1,d2)<EPS)return null;return{...g,d1,d2,extensionDirections:[o.p1,o.p2].map(p=>{const sign=Math.sign(parameter(p))||Math.sign(o.offset)||1;return{x:v.x*sign,y:v.y*sign};}),labelPoint:{x:(d1.x+d2.x)/2,y:(d1.y+d2.y)/2},segments:[{a:{...o.p1},b:d1},{a:{...o.p2},b:d2},{a:d1,b:d2}]};}
+  function nativeObliqueNeedsOverride(o){const values=(o.dxf?.raw||[]).filter(p=>p[0]===52);return values.length>1||values.some(p=>String(p[1]).trim()===''||!Number.isFinite(Number(p[1]))||obliqueRelative(Number(p[1]))!==90);}
+  function setOblique(o,worldAngle){if(!['linear','aligned'].includes(o?.kind||'aligned')||o.type!=='cadDimension'||o.floorId||o.planRole||!Number.isFinite(worldAngle)||!Number.isFinite(obliqueBase(o)))throw Error('unsupported-dimension-oblique');const value=obliqueRelative(worldAngle-obliqueBase(o)),nativeReset=nativeObliqueNeedsOverride(o);if(value===90&&!Object.hasOwn(o,obliqueKey)&&!nativeReset||o[obliqueKey]?.angle===value)return o;const q=JSON.parse(JSON.stringify(o));if(value===90&&!nativeReset)delete q[obliqueKey];else q[obliqueKey]={version:1,angle:value};delete q.dxfPresentation;return q;}
+  const transformOblique=(o,m)=>{if(!Object.hasOwn(o,obliqueKey))return o;validateOblique(o);return m.a*m.d-m.b*m.c<0?{...o,[obliqueKey]:{version:1,angle:180-o[obliqueKey].angle}}:o;};
   function aligned(o){
     if(!point(o?.p1)||!point(o?.p2)||!Number.isFinite(o?.offset))return null;
     const dx=o.p2.x-o.p1.x,dy=o.p2.y-o.p1.y,len=Math.hypot(dx,dy);if(len<EPS)return null;
     const nx=-dy/len,ny=dx/len,d1={x:o.p1.x+nx*o.offset,y:o.p1.y+ny*o.offset},d2={x:o.p2.x+nx*o.offset,y:o.p2.y+ny*o.offset};
-    return{kind:'aligned',p1:{...o.p1},p2:{...o.p2},d1,d2,len,labelPoint:{x:(d1.x+d2.x)/2,y:(d1.y+d2.y)/2},segments:[{a:{...o.p1},b:d1},{a:{...o.p2},b:d2},{a:d1,b:d2}]};
+    return obliqueGeometry(o,{kind:'aligned',p1:{...o.p1},p2:{...o.p2},d1,d2,len,labelPoint:{x:(d1.x+d2.x)/2,y:(d1.y+d2.y)/2},segments:[{a:{...o.p1},b:d1},{a:{...o.p2},b:d2},{a:d1,b:d2}]});
   }
   function linear(o){
     if(!point(o?.p1)||!point(o?.p2)||!Number.isFinite(o.offset)||!Number.isFinite(o.dimensionAngle))return null;
     const a=o.dimensionAngle*Math.PI/180,u={x:Math.cos(a),y:Math.sin(a)},n={x:-u.y,y:u.x},q={x:o.p1.x+n.x*o.offset,y:o.p1.y+n.y*o.offset},project=p=>{const t=(p.x-q.x)*u.x+(p.y-q.y)*u.y;return{x:q.x+u.x*t,y:q.y+u.y*t};},d1=project(o.p1),d2=project(o.p2),len=dist(d1,d2);if(len<EPS)return null;
-    return{kind:'linear',p1:{...o.p1},p2:{...o.p2},d1,d2,len,labelPoint:{x:(d1.x+d2.x)/2,y:(d1.y+d2.y)/2},segments:[{a:{...o.p1},b:d1},{a:{...o.p2},b:d2},{a:d1,b:d2}]};
+    return obliqueGeometry(o,{kind:'linear',p1:{...o.p1},p2:{...o.p2},d1,d2,len,labelPoint:{x:(d1.x+d2.x)/2,y:(d1.y+d2.y)/2},segments:[{a:{...o.p1},b:d1},{a:{...o.p2},b:d2},{a:d1,b:d2}]});
   }
   function radial(o){
     if(!point(o?.center)||!Number.isFinite(o?.radius)||o.radius<=0)return null;
@@ -36,4 +44,5 @@
   function geometry(o){const kind=o?.kind||'aligned',g=kind==='joggedRadius'?root.cadJoggedRadius?.geometry(o):kind==='arcLength'?root.cadArcLength?.geometry(o):kind==='ordinate'?root.cadOrdinate?.geometry(o):kind==='linear'?linear(o):kind==='radius'||kind==='diameter'?radial(o):kind==='angular'?angular(o):aligned(o);return root.cadDimensionText?.geometry(o,g)||g;}
   function segments(o){const g=geometry(o);if(!g)return[];return g.segments||[];}
   root.cadAnnotation2=Object.freeze({geometry,aligned,linear,radial,angular,segments,pointAt,angle,norm});
+  root.cadDimensionOblique=Object.freeze({key:obliqueKey,capability:obliqueCapability,baseAngle:obliqueBase,relative:obliqueRelative,validateOwner:validateOblique,set:setOblique,transform:transformOblique,unmodeledNative:o=>!Object.hasOwn(o,obliqueKey)&&nativeObliqueNeedsOverride(o),required:objects=>objects.some(o=>Object.hasOwn(o,obliqueKey))});
 })();

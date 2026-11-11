@@ -3,15 +3,115 @@
  'use strict';const root=globalThis.PieniPlanModules=globalThis.PieniPlanModules||{},ops=root.cadLinearOperations;
  const definitions=[['O','OFFSET'],['F','FILLET'],['CH','CHAMFER'],['BR','BREAK'],['J','JOIN']];
  const keys=['T','THROUGH','D','DISTANCE','R','RADIUS','M','MULTIPLE','U','UNDO','F','FIRST','TRIM','NOTRIM','N','NO','Y','YES','L','LAYER','E','ERASE','S','SOURCE','C','CURRENT','A','ANGLE','P','POLYLINE','METHOD','CLOSE','EXIT'];
+ function createJoin(port){
+  const join=root.cadJoin;
+  const draft={phase:'source',token:port.token(),source:null,targets:new Map(),history:[],plan:null};
+  const eligible=o=>join.canJoin(o)&&port.allowed(o.id);
+  const prompt=()=>port.prompt('J',draft.phase,draft);
+  function show(plan){
+   draft.plan=plan;
+   port.preview(plan);
+  }
+  function reset(){
+   draft.phase='source';draft.source=null;draft.targets.clear();
+   port.source(null);show(null);prompt();
+  }
+  function selectSource(source){
+   draft.source=source;draft.phase='second';
+   port.source(source.id);
+  }
+  function stage(owners,remove=false){
+   if(!draft.source){
+    if(remove)return {ok:false,code:'selection-required'};
+    const first=owners.find(eligible);
+    if(!first)return {ok:false,code:'unsupported-geometry'};
+    selectSource(first);
+    if(owners.length===1){prompt();return {ok:true};}
+   }
+   draft.phase='joinTargets';
+   for(const o of owners){
+    if(!o||o.id===draft.source.id)continue;
+    if(remove)draft.targets.delete(o.id);
+    else if(eligible(o))draft.targets.set(o.id,o);
+   }
+   show(join.batch(draft.source,draft.targets.values()));
+   prompt();
+   return {ok:true};
+  }
+  function apply(plan){
+   if(!plan)return {ok:false,code:'no-valid-result'};
+   if(!plan.before.every(eligible))return {ok:false,code:'target-not-modifiable'};
+   if(!port.commit('J',plan))return {ok:false,code:'no-valid-result'};
+   draft.history.push(port.historyMark());
+   draft.token=port.token();
+   reset();
+   return {ok:true,code:'applied-repeat'};
+  }
+  const selected=(port.joinSelection?.()||[]).filter(eligible);
+  if(selected.length)stage(selected);else prompt();
+  return {
+   view:()=>draft,
+   describe:()=>({
+    phase:draft.phase,
+    actions:[
+     ...(draft.source&&!draft.targets.size&&['cadArc','cadEllipse'].includes(draft.source.type)?[{id:'C',labelKey:'cadEdit.close'}]:[]),
+     {id:'U',labelKey:'cadEdit.undo',enabled:draft.history.length>0}
+    ]
+   }),
+   preview(e){
+    if(!port.current(draft.token)){show(null);return {ok:false,code:'stale-context'};}
+    if(draft.phase==='second'){
+     const target=e.point&&port.pick(e.point);
+     show(eligible(target)&&eligible(draft.source)?join.pair(draft.source,target):null);
+    }
+    return {ok:true};
+   },
+   input(e){
+    if(!port.current(draft.token)){show(null);return {ok:false,code:'stale-context'};}
+    const key=String(e.type==='keyword'?e.value:e.text??'').trim().toUpperCase();
+    if(key==='U'||key==='UNDO'){
+     const mark=draft.history.at(-1);
+     if(!mark||!port.undoOwn(mark))return {ok:false,code:'nothing-to-back'};
+     draft.history.pop();draft.token=port.token();reset();return {ok:true};
+    }
+    if(key==='EXIT'){port.finish();return {ok:true};}
+    if((key==='C'||key==='CLOSE')&&draft.source&&!draft.targets.size)return apply(join.close(draft.source));
+    if(e.type==='selection'){
+     const owners=(e.ids||[]).map(id=>port.byId?.(id)).filter(Boolean);
+     return owners.length?stage(owners,e.remove):{ok:false,code:'selection-required'};
+    }
+    if(e.type==='enter'){
+     if(draft.phase==='second'){draft.phase='joinTargets';show(null);prompt();return {ok:true};}
+     if(draft.targets.size)return apply(draft.plan);
+     port.finish();return {ok:true};
+    }
+    if(e.type!=='point')return {ok:false,code:'invalid-keyword'};
+    const target=port.pick(e.point);
+    if(!eligible(target)){if(draft.phase==='second')show(null);return {ok:false,code:'target-not-modifiable'};}
+    if(draft.phase!=='second')return stage([target],e.shift);
+    const plan=join.pair(draft.source,target);
+    show(plan);
+    return apply(plan);
+   },
+   commit:apply,cancel:()=>port.clear(),finalize:()=>port.clear()
+  };
+ }
  function install(registry,port){
   let settings={offset:100,fillet:0,chamfer:0,chamfer2:0,chamferAngle:45,chamferMethod:'distance',trim:true,offsetLayer:'source',offsetErase:false,polyArc:1};try{Object.assign(settings,JSON.parse(localStorage.getItem('pieniplan-cad-modify-settings-v1')||'{}'));}catch{}
   if(![0,1].includes(settings.polyArc))settings.polyArc=1;
   const save=()=>{try{localStorage.setItem('pieniplan-cad-modify-settings-v1',JSON.stringify(settings));}catch{}};
   registry.register({id:'FILLETPOLYARC',aliases:[],available:c=>c.mode==='cad',transactional:false,historyOwner:'personal-settings',create(){const value=settings.polyArc;port.prompt('FILLETPOLYARC','polyArc',{value});return{view:()=>({phase:'polyArc',value}),describe:()=>({phase:'polyArc',input:['integer']}),input(e){const n=e.type==='enter'?value:e.type==='text'&&/^[01]$/.test(e.text.trim())?Number(e.text):NaN;return[0,1].includes(n)?{ok:true,commit:true,value:n}:{ok:false,code:'invalid-number'};},commit(n){settings.polyArc=n;save();return true;},cancel:()=>port.clear(),finalize:()=>port.clear()};}});
   for(const [id,alias] of definitions)registry.register({id,aliases:[alias],available:c=>c.mode==='cad',transactional:false,historyOwner:'cad-change-set',create(){
+   if(id==='J'&&root.cadJoin)return createJoin(port);
    const draft={token:port.token(),phase:id==='O'?'distance':'source',distance:id==='O'?settings.offset:id==='F'?settings.fillet:settings.chamfer,distance2:settings.chamfer2,angle:settings.chamferMethod==='angle'?settings.chamferAngle:null,trim:settings.trim,through:false,offsetLayer:settings.offsetLayer,offsetErase:Boolean(settings.offsetErase),multiple:false,source:null,sourcePoint:null,first:null,lastPointer:null,plan:null,history:[]};
    const prompt=()=>port.prompt(id,draft.phase,draft),clearPreview=()=>{draft.plan=null;port.preview(null);};
    const sourceReset=()=>{delete draft.measureStart;draft.source=null;draft.sourcePoint=null;draft.first=null;draft.optionReturn=null;draft.phase='source';port.source(null);clearPreview();prompt();};
+   function resumeOffset(id,point){
+    const source=id&&port.byId?.(id);
+    if(!source||!port.allowed(id))return sourceReset();
+    draft.source=source;draft.sourcePoint=point;draft.phase='result';
+    port.source(id);clearPreview();prompt();
+   }
    function beginOption(phase){delete draft.measureStart;clearPreview();if(['source','second','result','polyline'].includes(draft.phase)||id==='O'&&draft.phase==='distance'&&draft.optionReturn==null&&['offsetLayer','offsetErase'].includes(phase))draft.optionReturn=draft.phase;draft.phase=phase;}
    function finishOption(){const phase=draft.optionReturn;draft.optionReturn=null;if(phase==='polyline'||phase==='distance'){draft.phase=phase;clearPreview();prompt();return;}if(['second','result'].includes(phase)&&draft.source&&port.allowed(draft.source.id)){draft.phase=phase;clearPreview();port.source(draft.source.id);prompt();return;}sourceReset();}
    const getPoint=e=>{if(e.type==='point')return port.resolve(e.point,draft.first||draft.sourcePoint);if(e.type==='text'){const p=port.parsePoint(e.text,{base:draft.first||draft.sourcePoint,direction:draft.lastPointer&&draft.first?{x:draft.lastPointer.x-draft.first.x,y:draft.lastPointer.y-draft.first.y}:null});return p.ok?p.point:null;}return null;};
@@ -20,7 +120,16 @@
    function distanceInput(e,fallback){if(e.type==='enter')return draft.measureStart?{ok:false}:{ok:true,mm:fallback};if(e.type==='text'&&!/[,<]/.test(e.text||''))return port.parseLength(e.text);const p=referencePoint(e);if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))return{ok:false};if(!draft.measureStart){draft.measureStart={...p};clearPreview();prompt();return{ok:true,pending:true};}return{ok:true,mm:Math.hypot(p.x-draft.measureStart.x,p.y-draft.measureStart.y)};}
    function acceptedDistance(){delete draft.measureStart;clearPreview();}
    function compute(e){draft.failure=null;const p=getPoint(e),source=draft.source;if(!p||!source)return null;
-    if(id==='O'){const n=draft.through?(root.cadPolyline?.is(source)?root.cadPolyline.nearest(source,p):root.geometryQuery.projectNearest(source,p)):null,distance=draft.through?n?.distance:draft.distance;const plan=root.cadPolyline?.is(source)?root.cadPolyline.offset(source,distance,p):ops.offset(source,distance,p);if(plan){if(draft.offsetLayer==='current')for(const o of plan.after)o.cadLayer=port.layer();if(draft.offsetErase){plan.before=[source];for(const o of plan.after)o.id='__offset_new_owner__';}}return plan;}
+    if(id==='O'){
+     if(!port.allowed(source.id)){draft.failure='target-not-modifiable';return null;}
+     const options={through:draft.through},plan=root.cadPolyline?.is(source)?root.cadPolyline.offset(source,draft.distance,p,options):ops.offset(source,draft.distance,p,options);
+     if(plan){
+      plan.offsetPoint=p;
+      if(draft.offsetLayer==='current')for(const o of plan.after)o.cadLayer=port.layer();
+      if(draft.offsetErase){plan.before=[source];for(const o of plan.after)o.id='__offset_new_owner__';}
+     }
+     return plan;
+    }
     if(id==='BR')return root.cadPolyline?.is(source)?root.cadPolyline.breakBetween(source,draft.first,p):['cadCircle','cadArc','cadEllipse'].includes(source.type)?root.cadCurveOperations.breakBetween(source,draft.first,p):ops.breakLine(source,draft.first,p);
     const target=port.pick(e.point||p);if(!target||!port.allowed(target.id))return null;
     if(id==='J')return root.cadJoin?root.cadJoin.pair(source,target):root.cadPolyline?.is(source)?root.cadPolyline.joinOpen(source,target):['cadArc','cadEllipse'].includes(source.type)?root.cadCurveOperations.join(source,target):ops.join(source,target);
@@ -30,19 +139,57 @@
 
     return id==='CH'?e.shift?ops.fillet(source,draft.sourcePoint,target,e.point||p,0,{trim:draft.trim,layer:port.layer()}):ops.chamfer(source,draft.sourcePoint,target,e.point||p,draft.distance,{distance2:e.shift?0:draft.distance2,angle:draft.angle,trim:draft.trim,layer:port.layer()}):ops.fillet(source,draft.sourcePoint,target,e.point||p,e.shift?0:draft.distance,{trim:draft.trim,layer:port.layer()});
    }
-   function apply(plan){if(plan?.noChange){if(draft.multiple)sourceReset();else port.finish();return{ok:true,code:'no-change'};}if(!plan)return{ok:false,code:'no-valid-result'};if(id==='O'||id==='J'||draft.multiple){if(!port.commit(id,plan))return{ok:false,code:'no-valid-result'};draft.history.push(port.historyMark());draft.token=port.token();sourceReset();return{ok:true,code:'applied-repeat'};}return{ok:true,commit:true,value:plan};}
-   prompt();return{view:()=>draft,describe:()=>({phase:draft.phase,pointBase:parameter()?draft.measureStart||null:['result','first','second'].includes(draft.phase)?draft.first||draft.sourcePoint||null:undefined,...(parameter()?{pointInputRole:id+':'+draft.phase+':'+(draft.measureStart?'referenceEnd':'referenceStart')}:{}),actions:[...(id==='O'?[['T','through'],['D','distance'],['L','layer'],['E','erase']]:id==='F'?[['R','radius'],['P','polyline'],['TRIM','trim'],['M','multiple']]:id==='CH'?[['D','distance'],['A','angle'],['E','method'],['P','polyline'],['TRIM','trim'],['M','multiple']]:id==='BR'?[['F','first']]:id==='J'&&draft.source&&['cadArc','cadEllipse'].includes(draft.source.type)?[['C','close']]:[]),['U','undo']].map(([value,key])=>({id:value,labelKey:'cadEdit.'+key,active:value==='M'&&draft.multiple||value==='TRIM'&&draft.trim,enabled:value==='U'?draft.history.length>0:value==='F'?Boolean(draft.source):true}))}),
-    preview(e){draft.lastPointer=e.point;if(!port.current(draft.token)){clearPreview();return{ok:false,code:'stale-context'};}if(parameter()){const p=referencePoint({...e,type:'point'});port.preview(draft.measureStart&&p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(Math.hypot(p.x-draft.measureStart.x,p.y-draft.measureStart.y))?{before:[],after:[{id:'__distance_reference100__',type:'cadLine',cadLayer:port.layer(),a:{...draft.measureStart},b:{...p}}]}:null);return{ok:true};}if(draft.phase==='polyline'){const o=port.pick(e.point);draft.plan=o&&port.allowed(o.id)&&root.cadPolyline.is(o)?root.cadPolylineCorners.all(o,draft.distance,{kind:id==='CH'?'CHAMFER':'FILLET',distance2:draft.distance2,angle:draft.angle,trim:draft.trim,polyArc:settings.polyArc}):null;}else draft.plan=['result','second'].includes(draft.phase)?compute({...e,type:'point'}):null;port.preview(draft.plan);return{ok:true};},
+   function apply(plan){
+    if(plan?.noChange){if(draft.multiple)sourceReset();else port.finish();return{ok:true,code:'no-change'};}
+    if(!plan)return {ok:false,code:'no-valid-result'};
+    if(id==='O'||id==='J'||draft.multiple){
+     if(!port.commit(id,plan))return {ok:false,code:'no-valid-result'};
+     const mark=port.historyMark();
+     draft.history.push({mark,sourceId:draft.source?.id,sourcePoint:draft.sourcePoint});
+     draft.token=port.token();
+     if(id==='O'&&draft.multiple){
+      const created=mark?.ops?.find(op=>!op.before&&op.after);
+      resumeOffset(created?.id,plan.offsetPoint);
+     }else sourceReset();
+     return {ok:true,code:'applied-repeat'};
+    }
+    return {ok:true,commit:true,value:plan};
+   }
+   prompt();return{view:()=>draft,describe:()=>({phase:draft.phase,pointBase:parameter()?draft.measureStart||null:['result','first','second'].includes(draft.phase)?draft.first||draft.sourcePoint||null:undefined,...(parameter()?{pointInputRole:id+':'+draft.phase+':'+(draft.measureStart?'referenceEnd':'referenceStart')}:{}),actions:[...(id==='O'?[['T','through'],['D','distance'],['L','layer'],['E','erase'],...(draft.phase==='result'?[['M','multiple']]:[])]:id==='F'?[['R','radius'],['P','polyline'],['TRIM','trim'],['M','multiple']]:id==='CH'?[['D','distance'],['A','angle'],['E','method'],['P','polyline'],['TRIM','trim'],['M','multiple']]:id==='BR'?[['F','first']]:id==='J'&&draft.source&&['cadArc','cadEllipse'].includes(draft.source.type)?[['C','close']]:[]),['U','undo']].map(([value,key])=>({id:value,labelKey:'cadEdit.'+key,active:value==='M'&&draft.multiple||value==='TRIM'&&draft.trim,enabled:value==='U'?draft.history.length>0:value==='F'?Boolean(draft.source):true}))}),
+    preview(e){
+     if(e.point)draft.lastPointer=e.point;
+     if(!port.current(draft.token)){clearPreview();return {ok:false,code:'stale-context'};}
+     if(parameter()){
+      const p=referencePoint({...e,type:'point'});
+      port.preview(draft.measureStart&&p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(Math.hypot(p.x-draft.measureStart.x,p.y-draft.measureStart.y))?{before:[],after:[{id:'__distance_reference100__',type:'cadLine',cadLayer:port.layer(),a:{...draft.measureStart},b:{...p}}]}:null);
+      return {ok:true};
+     }
+     if(draft.phase==='polyline'){
+      const o=port.pick(e.point);
+      draft.plan=o&&port.allowed(o.id)&&root.cadPolyline.is(o)?root.cadPolylineCorners.all(o,draft.distance,{kind:id==='CH'?'CHAMFER':'FILLET',distance2:draft.distance2,angle:draft.angle,trim:draft.trim,polyArc:settings.polyArc}):null;
+     }else{
+      const type=id==='O'&&draft.phase==='result'&&e.type==='text'?'text':'point';
+      draft.plan=['result','second'].includes(draft.phase)?compute({...e,type}):null;
+     }
+     port.preview(draft.plan);return {ok:true};
+    },
     input(e){if(!port.current(draft.token)){clearPreview();return{ok:false,code:'stale-context'};}
      const key=e.type==='keyword'?String(e.value).toUpperCase():e.type==='text'?String(e.text).trim().toUpperCase():'';
-     if(id==='O'&&key==='EXIT'){port.finish();return{ok:true};}if(['U','UNDO'].includes(key)){const h=draft.history.at(-1);if(!h||!port.undoOwn(h))return{ok:false,code:'nothing-to-back'};draft.history.pop();draft.token=port.token();sourceReset();return{ok:true};}
+     if(id==='O'&&key==='EXIT'){port.finish();return{ok:true};}
+     if(['U','UNDO'].includes(key)){
+      const h=draft.history.at(-1);
+      if(!h?.mark||!port.undoOwn(h.mark))return {ok:false,code:'nothing-to-back'};
+      draft.history.pop();draft.token=port.token();
+      if(id==='O'&&draft.multiple)resumeOffset(h.sourceId,h.sourcePoint);else sourceReset();
+      return {ok:true};
+     }
      if(id==='J'&&draft.source&&['C','CLOSE'].includes(key))return apply(root.cadJoin?.close(draft.source));
      if(e.type==='enter'&&!['distance','distance2','angleDistance','angleValue','trimChoice','methodChoice','offsetLayer','offsetErase'].includes(draft.phase)){port.finish();return{ok:true};}
      if(id==='O'&&draft.phase==='offsetLayer'){const choice=e.type==='enter'?draft.offsetLayer.toUpperCase():key;if(!['S','SOURCE','C','CURRENT'].includes(choice))return{ok:false,code:'invalid-keyword'};draft.offsetLayer=['C','CURRENT'].includes(choice)?'current':'source';settings.offsetLayer=draft.offsetLayer;save();finishOption();return{ok:true};}
      if(id==='O'&&draft.phase==='offsetErase'){const choice=e.type==='enter'?(draft.offsetErase?'Y':'N'):key;if(!['Y','YES','N','NO'].includes(choice))return{ok:false,code:'invalid-keyword'};draft.offsetErase=['Y','YES'].includes(choice);settings.offsetErase=draft.offsetErase;save();finishOption();return{ok:true};}
      if(id==='O'&&['L','LAYER','E','ERASE'].includes(key)){beginOption(key.startsWith('L')?'offsetLayer':'offsetErase');prompt();return{ok:true};}
      if(id==='O'&&['T','THROUGH'].includes(key)){draft.through=true;sourceReset();return{ok:true};}
-     if(['M','MULTIPLE'].includes(key)&&['F','CH'].includes(id)){draft.multiple=!draft.multiple;prompt();return{ok:true};}
+     if(['M','MULTIPLE'].includes(key)&&(['F','CH'].includes(id)||id==='O'&&draft.phase==='result')){draft.multiple=!draft.multiple;prompt();return{ok:true};}
      if(draft.phase==='trimChoice'){const choice=e.type==='enter'?(draft.trim?'T':'N'):key;if(!['T','TRIM','Y','YES','N','NO','NOTRIM'].includes(choice))return{ok:false,code:'invalid-keyword'};draft.trim=['T','TRIM','Y','YES'].includes(choice);settings.trim=draft.trim;save();finishOption();return{ok:true};}
      if(['TRIM','T'].includes(key)&&['F','CH'].includes(id)){beginOption('trimChoice');prompt();return{ok:true};}
      if(id==='CH'&&draft.phase==='methodChoice'){const choice=e.type==='enter'?(settings.chamferMethod==='angle'?'A':'D'):key;if(!['D','DISTANCE','A','ANGLE'].includes(choice))return{ok:false,code:'invalid-keyword'};settings.chamferMethod=choice.startsWith('A')?'angle':'distance';draft.angle=choice.startsWith('A')?settings.chamferAngle:null;save();finishOption();return{ok:true};}if(id==='CH'&&['E','METHOD'].includes(key)){beginOption('methodChoice');prompt();return{ok:true};}
@@ -60,7 +207,7 @@
       if(draft.phase!=='source')return{ok:false,code:'invalid-distance'};
      }
      if(draft.phase==='source'){const obj=e.type==='point'?port.pick(e.point):null;if(!obj||!port.allowed(obj.id))return{ok:false,code:'target-not-modifiable'};
-      const supported=id==='O'?(['cadLine','cadCircle','cadArc'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='BR'?(['cadLine','cadCircle','cadArc','cadEllipse'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='J'?(['cadLine','cadArc','cadEllipse'].includes(obj.type)||root.cadPolyline?.is(obj)&&!obj.closed):(['cadLine','cadRay','cadXline'].includes(obj.type)||root.cadPolyline?.is(obj)||id==='F'&&['cadCircle','cadArc','cadEllipse'].includes(obj.type));
+      const supported=id==='O'?(['cadLine','cadRay','cadXline','cadCircle','cadArc'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='BR'?(['cadLine','cadCircle','cadArc','cadEllipse'].includes(obj.type)||root.cadPolyline?.is(obj)):id==='J'?(['cadLine','cadArc','cadEllipse'].includes(obj.type)||root.cadPolyline?.is(obj)&&!obj.closed):(['cadLine','cadRay','cadXline'].includes(obj.type)||root.cadPolyline?.is(obj)||id==='F'&&['cadCircle','cadArc','cadEllipse'].includes(obj.type));
       if(!supported)return{ok:false,code:'unsupported-geometry'};draft.source=obj;draft.sourcePoint=e.point;port.source(obj.id);draft.phase=['J','F','CH'].includes(id)?'second':'result';if(id==='BR')draft.first=(root.cadPolyline?.is(obj)?root.cadPolyline.nearest(obj,e.point):root.geometryQuery.projectNearest(obj,e.point))?.point;prompt();return{ok:true};}
      if(draft.phase==='first'){const p=getPoint(e);if(!p)return{ok:false,code:'invalid-coordinate'};draft.first=(root.cadPolyline?.is(draft.source)?root.cadPolyline.nearest(draft.source,p):root.geometryQuery.projectNearest(draft.source,p))?.point;if(!draft.first)return{ok:false,code:'no-valid-result'};draft.phase='result';prompt();return{ok:true};}
      if(id==='BR'&&key==='@')return apply(root.cadPolyline?.is(draft.source)?root.cadPolyline.breakBetween(draft.source,draft.first,draft.first):['cadCircle','cadArc','cadEllipse'].includes(draft.source?.type)?root.cadCurveOperations.breakBetween(draft.source,draft.first,draft.first):ops.breakLine(draft.source,draft.first,draft.first));

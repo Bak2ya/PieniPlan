@@ -1,13 +1,13 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.75.0';
-  const BUILD = 102;
+  const VERSION = '0.77.0';
+  const BUILD = 104;
   let activeImportJob=null;
   let stairOptions102={rotation:null,upDirection:null,direction:{version:1,arrowSense:'up',showLabel:true}};
   const INTERNAL_UNIT = 'mm';
   const PROJECT_SCHEMA = 7;
-  const PROJECT_CAPABILITIES = (objects=state.objects,definitions=state.blockDefinitions||[],styles=state.dimensionStyles||[])=>[...(objects.some(o=>Object.hasOwn(o,'direction102'))?['plan.stair.direction.v1']:[]),...(modules.planVersions?.historyRequired(state)?[modules.planVersions.historyCapability]:[]),...(objects.some(o=>o.type==='door'&&o.doorType==='shutter')?['plan.door.shutter.v1']:[]),...(modules.planBackgrounds?.enabled(state)?[modules.planBackgrounds.capability]:[]),...(modules.cadDimensionCurrent.sizeRequired(state.toolSettings.cadDimensionOverrides100)?[modules.cadDimensionCurrent.sizeCapability]:[]),...(modules.cadDimensionCurrent.notationRequired(state.toolSettings.cadDimensionOverrides100)?[modules.cadDimensionCurrent.notationCapability]:[]),...(state.toolSettings.cadDimensionOverrides100!=null?[modules.cadDimensionCurrent.capability]:[]),...(modules.cadPrimaryUnits.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadPrimaryUnits.capability]:[]),...(modules.cadNativeColor.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadNativeColor.capability]:[]),...(modules.cadPropertyWorkflows.requiresFilterAppearance(state.toolSettings.cadLayerFilters92)?[modules.cadPropertyWorkflows.filterAppearanceCapability]:[]),...(modules.cadRadialPlacement.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadRadialPlacement.capability]:[]),...(modules.cadLinearPlacement.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadLinearPlacement.capability]:[]),...(modules.cadArcLength.referenceRequired([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadArcLength.referenceCapability]:[]),...(modules.cadAngularPlacement.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadAngularPlacement.capability]:[]),...(modules.cadDimensionAngular.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadDimensionAngular.capability]:[]),...(modules.plotTransparency.required(state.sheets||[])?[modules.plotTransparency.capability]:[]),...(modules.cadCreationAppearance.required(state.toolSettings)?[modules.cadCreationAppearance.capability]:[]),...(modules.cadJoggedRadius.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadJoggedRadius.capability]:[]),...(modules.cadTransparency.required([...objects,...definitions.flatMap(d=>d.objects)],state.cadLayerDefinitions)?[modules.cadTransparency.capability]:[]),...(modules.cadDimensionChains.required([...objects,...definitions.flatMap(d=>d.objects)],styles,state.toolSettings)?[modules.cadDimensionChains.capability]:[]),...(modules.cadDimensionFit.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadDimensionFit.capability]:[]),...(modules.cadDimensionNotation.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?['cad.dimension.notation.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.kind==='arcLength')?['cad.dimension.arclength.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.kind==='ordinate')?['cad.dimension.ordinate.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.association?.version===2)?['cad.dimension.partial.v1']:[]),...(state.toolSettings?.cadDimassoc96!=null?['cad.dimension.creation.v1']:[]),...(state.toolSettings?.cadUcs96?['cad.ucs.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>Object.values({...o.association?.anchors,...o.association?.lost}).some(a=>a.kind==='geometry96'))?[modules.cadDimensionReferences.capability]:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.dimText96)?['cad.dimension.text.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.boundarySourceGroups95||o.boundaryCurves?.some(q=>q.type==='cadBoundaryLoop'))?['cad.hatch.groups.v1']:[]),...(definitions.some(d=>d.insertionUnits95)?['cad.block.units.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.hatchDefinition94)?['cad.hatch.definition.v1']:[]),...(modules.cadPolylineFit.requiresKnots([...objects,...definitions.flatMap(d=>d.objects)])?['cad.polyline.knots.v1']:[]),...(objects.some(o=>o.componentDefinition)?['plan.components.v2']:[]),...(objects.some(o=>o.doorModel93)?['plan.door.mechanism.v1']:[]),...(modules.cadLayers.requiresFreeze(state.cadLayerDefinitions,state.toolSettings.cadLayerFilters92)?['cad.layer.freeze.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.patternSource93==='dxf')?['cad.hatch.pattern.v1']:[]),...(state.toolSettings.cadLayerFilters92?.some(f=>f.parentId)?['cad.layerFilter.tree.v1']:[]),...(modules.cadStroke.currentRequired(state.toolSettings)?[modules.cadStroke.currentCapability]:[]),...(modules.cadStroke.required([...objects,...definitions.flatMap(d=>d.objects)],state.toolSettings)?['cad.stroke.v1']:[]),...(modules.cadPolyline.requiresClosed2(definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects)?['cad.polyline.closed2.v1']:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>o.association)?[modules.cadDimensionAssociation.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadHatchCurves.multipleSplines(o))?[modules.cadHatchCurves.multiSplineCapability]:[]),...(modules.planDrawings?.enabled(state)?[modules.planVersions?.enabled(state)?modules.planVersions.capability:modules.planDrawings.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadHatchCurves.is(o))?[modules.cadHatchCurves.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>o.textOverrides)?[modules.cadTextStyles.overrideCapability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadPolylineFit.has(o))?[modules.cadPolylineFit.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadPolylineWidth.requires(o))?[modules.cadPolylineWidth.capability]:[]),...(state.textStyles?.length?[modules.cadTextStyles.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>o.type==='cadEllipse')?[modules.cadEllipse.capability]:[]),...((objects.some(o=>modules.planNature.isGeometry(o))||Object.keys(state.toolSettings?.planObjectStyles||{}).length)?[modules.planNature.capability]:[]),...(objects.some(o=>o.recognitionExactBaseline)?['plan.recognition.review.v1']:[]),...(state.buildings?.some(b=>b.structuralReferences?.length)?['building.structure.v1']:[]),modules.cadPolyline.capability,'cad.annotation.v2','reference.pdf.v1',...(state.sheets?.some(s=>s.titleBlock||s.drawingNumber!=null||s.revision!=null)?['sheet.architectural.v1']:[]),...(state.dimensionStyles?.length||objects.some(o=>o.type==='cadDimension'&&(o.styleName||o.kind==='linear'))?['cad.dimstyle.v1']:[]),...(state.dxfArchive||objects.some(o=>o.type==='cadDxfRecord'||o.type==='cadPoint')||definitions.some(d=>d.objects.some(o=>o.type==='cadDxfRecord'||o.type==='cadPoint'))?['cad.dxf.roundtrip.v1']:[]),...(definitions.length||objects.some(o=>o.type==='cadInsert')?['cad.block.v1']:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>['cadXline','cadRay'].includes(o.type))?['cad.construction.v1']:[])];
+  const PROJECT_CAPABILITIES = (objects=state.objects,definitions=state.blockDefinitions||[],styles=state.dimensionStyles||[])=>[...(modules.cadDimensionOblique.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadDimensionOblique.capability]:[]),...(state.dxfArchive?.dimensionAssociations104?.nearestSources?[modules.cadDimensionAssociation.nativeDxf.nearestCapability]:[]),...(modules.cadDimensionAssociation.pointSourcesRequired([...objects,...definitions.flatMap(d=>d.objects)],state.dxfArchive)?[modules.cadDimensionAssociation.pointCapability]:[]),...(state.dxfArchive?.dimensionAssociations104?[modules.cadDimensionAssociation.nativeDxf.capability]:[]),...(objects.some(o=>o.array104?.replacement||o.array104?.recipe.sources)?[modules.cadTransformOperations.arrayReplacementCapability]:[]),...(objects.some(o=>Object.hasOwn(o,'array104'))?[modules.cadTransformOperations.arrayCapability]:[]),...(objects.some(o=>Object.hasOwn(o,'direction102'))?['plan.stair.direction.v1']:[]),...(modules.planVersions?.historyRequired(state)?[modules.planVersions.historyCapability]:[]),...(objects.some(o=>o.type==='door'&&o.doorType==='shutter')?['plan.door.shutter.v1']:[]),...(modules.planBackgrounds?.enabled(state)?[modules.planBackgrounds.capability]:[]),...(modules.cadDimensionCurrent.sizeRequired(state.toolSettings.cadDimensionOverrides100)?[modules.cadDimensionCurrent.sizeCapability]:[]),...(modules.cadDimensionCurrent.notationRequired(state.toolSettings.cadDimensionOverrides100)?[modules.cadDimensionCurrent.notationCapability]:[]),...(state.toolSettings.cadDimensionOverrides100!=null?[modules.cadDimensionCurrent.capability]:[]),...(modules.cadPrimaryUnits.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadPrimaryUnits.capability]:[]),...(modules.cadNativeColor.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadNativeColor.capability]:[]),...(modules.cadPropertyWorkflows.requiresFilterAppearance(state.toolSettings.cadLayerFilters92)?[modules.cadPropertyWorkflows.filterAppearanceCapability]:[]),...(modules.cadRadialPlacement.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadRadialPlacement.capability]:[]),...(modules.cadLinearPlacement.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadLinearPlacement.capability]:[]),...(modules.cadArcLength.referenceRequired([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadArcLength.referenceCapability]:[]),...(modules.cadAngularPlacement.required([...objects,...definitions.flatMap(d=>d.objects)])?[modules.cadAngularPlacement.capability]:[]),...(modules.cadDimensionAngular.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadDimensionAngular.capability]:[]),...(modules.plotTransparency.required(state.sheets||[])?[modules.plotTransparency.capability]:[]),...(modules.cadCreationAppearance.required(state.toolSettings)?[modules.cadCreationAppearance.capability]:[]),...(modules.cadJoggedRadius.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadJoggedRadius.capability]:[]),...(modules.cadTransparency.required([...objects,...definitions.flatMap(d=>d.objects)],state.cadLayerDefinitions)?[modules.cadTransparency.capability]:[]),...(modules.cadDimensionChains.required([...objects,...definitions.flatMap(d=>d.objects)],styles,state.toolSettings)?[modules.cadDimensionChains.capability]:[]),...(modules.cadDimensionFit.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?[modules.cadDimensionFit.capability]:[]),...(modules.cadDimensionNotation.required([...objects,...definitions.flatMap(d=>d.objects)],styles)?['cad.dimension.notation.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.kind==='arcLength')?['cad.dimension.arclength.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.kind==='ordinate')?['cad.dimension.ordinate.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.association?.version===2)?['cad.dimension.partial.v1']:[]),...(state.toolSettings?.cadDimassoc96!=null?['cad.dimension.creation.v1']:[]),...(state.toolSettings?.cadUcs96?['cad.ucs.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>Object.values({...o.association?.anchors,...o.association?.lost}).some(a=>a.kind==='geometry96'))?[modules.cadDimensionReferences.capability]:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.dimText96)?['cad.dimension.text.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.boundarySourceGroups95||o.boundaryCurves?.some(q=>q.type==='cadBoundaryLoop'))?['cad.hatch.groups.v1']:[]),...(definitions.some(d=>d.insertionUnits95)?['cad.block.units.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.hatchDefinition94)?['cad.hatch.definition.v1']:[]),...(modules.cadPolylineFit.requiresKnots([...objects,...definitions.flatMap(d=>d.objects)])?['cad.polyline.knots.v1']:[]),...(objects.some(o=>o.componentDefinition)?['plan.components.v2']:[]),...(objects.some(o=>o.doorModel93)?['plan.door.mechanism.v1']:[]),...(modules.cadLayers.requiresFreeze(state.cadLayerDefinitions,state.toolSettings.cadLayerFilters92)?['cad.layer.freeze.v1']:[]),...([...objects,...definitions.flatMap(d=>d.objects)].some(o=>o.patternSource93==='dxf')?['cad.hatch.pattern.v1']:[]),...(state.toolSettings.cadLayerFilters92?.some(f=>f.parentId)?['cad.layerFilter.tree.v1']:[]),...(modules.cadStroke.currentRequired(state.toolSettings)?[modules.cadStroke.currentCapability]:[]),...(modules.cadStroke.required([...objects,...definitions.flatMap(d=>d.objects)],state.toolSettings)?['cad.stroke.v1']:[]),...(modules.cadPolyline.requiresClosed2(definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects)?['cad.polyline.closed2.v1']:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>o.association)?[modules.cadDimensionAssociation.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadHatchCurves.multipleSplines(o))?[modules.cadHatchCurves.multiSplineCapability]:[]),...(modules.planDrawings?.enabled(state)?[modules.planVersions?.enabled(state)?modules.planVersions.capability:modules.planDrawings.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadHatchCurves.is(o))?[modules.cadHatchCurves.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>o.textOverrides)?[modules.cadTextStyles.overrideCapability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadPolylineFit.has(o))?[modules.cadPolylineFit.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>modules.cadPolylineWidth.requires(o))?[modules.cadPolylineWidth.capability]:[]),...(state.textStyles?.length?[modules.cadTextStyles.capability]:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>o.type==='cadEllipse')?[modules.cadEllipse.capability]:[]),...((objects.some(o=>modules.planNature.isGeometry(o))||Object.keys(state.toolSettings?.planObjectStyles||{}).length)?[modules.planNature.capability]:[]),...(objects.some(o=>o.recognitionExactBaseline)?['plan.recognition.review.v1']:[]),...(state.buildings?.some(b=>b.structuralReferences?.length)?['building.structure.v1']:[]),modules.cadPolyline.capability,'cad.annotation.v2','reference.pdf.v1',...(state.sheets?.some(s=>s.titleBlock||s.drawingNumber!=null||s.revision!=null)?['sheet.architectural.v1']:[]),...(state.dimensionStyles?.length||objects.some(o=>o.type==='cadDimension'&&(o.styleName||o.kind==='linear'))?['cad.dimstyle.v1']:[]),...(state.dxfArchive||objects.some(o=>o.type==='cadDxfRecord'||o.type==='cadPoint')||definitions.some(d=>d.objects.some(o=>o.type==='cadDxfRecord'||o.type==='cadPoint'))?['cad.dxf.roundtrip.v1']:[]),...(definitions.length||objects.some(o=>o.type==='cadInsert')?['cad.block.v1']:[]),...((definitions.length?[...objects,...definitions.flatMap(d=>d.objects)]:objects).some(o=>['cadXline','cadRay'].includes(o.type))?['cad.construction.v1']:[])];
   const i18n = window.PieniPlanI18n;
   const t = (key, vars) => i18n.t(key, vars);
   const modules = window.PieniPlanModules || {};
@@ -242,6 +242,12 @@
   planToolCatalog.draw.push({id:'mtext',labelKey:'tool.text',ready:true,note:'MT'});
   cadToolCatalog.draw.push(...cadToolCatalog.annotation.filter(x=>['text','mtext'].includes(x.id)));
   cadToolCatalog.annotation=cadToolCatalog.annotation.filter(x=>!['text','mtext'].includes(x.id));
+  const cadFeatureUI=modules.cadFeatureStatus.create({catalog:cadToolCatalog,commands:commandCore.catalog,extraCommands:[...modules.cadStroke.settingIds,...modules.nativeDimensionAngular.ids],mapping:modules.cadFeatureMap});
+
+  function cadFeatureBinding104(row){const names=[row.command,...(row.equivalentCommands||[])],definitions=names.map(name=>commandCore.catalog.find(c=>c.name===name)).filter(Boolean),shortcuts=[...new Set(definitions.map(definition=>commandPreferences.shortcut(definition)).filter(Boolean))];return{aliases:definitions.length?definitions.flatMap(definition=>[definition.name,...commandPreferences.aliases(definition,'cad')]):row.aliases||[],shortcut:shortcuts[0]||'',shortcuts};}
+  function cadFeatureTooltip104(item){const f=cadFeatureUI.forTool(item?.id);if(!f||f.status==='normal')return'';return ' · '+modules.cadFeatureStatus.text(modules.cadFeatureStatus.states[f.status],i18n.language)+'\n'+modules.cadFeatureStatus.text(f.support,i18n.language)+'\n'+modules.cadFeatureStatus.text(f.limits,i18n.language);}
+  function activateCadFeature104(row,anchor){if(state.toolset!=='cad'||!row.executable)return false;if(row.tool){activateRepresentative((cadToolCatalog[row.category]||[]).find(x=>x.id===row.tool),row.category,anchor);return true;}const selected=[...selectionIds()];setTool('select','select');setSelectionIds(selected.filter(id=>cadContext.getById(id)));return runCommand(row.command);}
+  function openCadFeatureMenu104(category,anchor){modules.cadFeatureMenu.render({container:dom.toolPopover,features:cadFeatureUI,category,language:i18n.language,t,activeTool:state.activeTool,bindingFor:cadFeatureBinding104,iconFor:row=>toolIconFallback[row.tool]||cadCategories.find(c=>c.id===category)?.icon,activate:row=>activateCadFeature104(row,anchor),restoreFocus:()=>anchor?.querySelector?.('button')?.focus({preventScroll:true})||anchor?.focus?.({preventScroll:true}),position:()=>positionToolPopover(anchor)});positionToolPopover(anchor);dom.toolPopover.scrollTop=0;dom.toolPopover.querySelector('button:not([disabled])')?.focus({preventScroll:true});}
 
 
   let featureFill=null,textEditor=null,projectionFloorOverride=null,elementCatalog=null,inspectorTasks=null;
@@ -1043,7 +1049,7 @@
     modules.nativeDimensionTextEdit.install(registry,{token:cadContextToken,current:cadContextTokenCurrent,byId:id=>cadContext.getById(id),selected:()=>selectionIds(),index:id=>state.objects.findIndex(o=>o.id===id),allowed:id=>cadSourceKind(cadContext.getById(id))==='cad-source'&&cadPolicy(id,'modify').allowed,pick:hitObject,select:ids=>{setSelectionIds(new Set(ids));renderProperties();render();},resolve:(point,base)=>resolveCadPoint(point,{base}).point,parse:parseCadPointText,worldAngle:cadUcsWorldAngle96,commit:commitCadChanges,
       openNew:callbacks=>textEditor.open({purpose:'dimedit101',textOnly:true,multiline:true,editingId:'__dimedit_template101__',object:{id:'__dimedit_template101__',type:'cadText',point:state.cursorWorld||{x:state.camera.cx,y:state.camera.cy},height:200,width:0,rotation:0,alignment:'left',text:'<>'},commit:d=>callbacks.accept(d.object.text)?.ok===true,end:reason=>{if(reason!=='commit')callbacks.cancel();queueMicrotask(()=>{if(cadCommandSession?.activeId==='DIMEDIT'&&cadCommandSession.describe().phase!=='editing')dom.commandInput.focus();});}}),
       deliver:e=>{if(cadCommandSession?.activeId!=='DIMEDIT')return{ok:false,code:'stale-context'};const result=reportCadCommand(cadCommands().dispatch(e));updateContextBar();render();return result;},closeNew:()=>{if(textEditor?.draft?.purpose==='dimedit101')textEditor.cancel({notify:false});},
-      preview:plan=>{cadOperationPreview=plan?{...plan,token:cadContextToken()}:null;render();},prompt:(id,d)=>{setCommandStatus(id+' · '+t((id==='DIMEDIT'?'cad101.dimedit.':'cad101.dimtext.')+(id==='DIMEDIT'&&d.phase==='select'&&d.option==='NEW'?'selectNew':d.phase))+(id==='DIMEDIT'&&d.phase==='select'?' · '+d.pending.size:''),'strong');if(d.phase!=='editing')queueMicrotask(()=>dom.commandInput.focus());},clear:()=>{cadOperationPreview=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}
+      preview:plan=>{cadOperationPreview=plan?{...plan,token:cadContextToken()}:null;render();},prompt:(id,d)=>{setCommandStatus(id+' · '+t((id==='DIMEDIT'?'cad101.dimedit.':'cad101.dimtext.')+(id==='DIMEDIT'&&d.option==='OBLIQUE'&&d.phase==='angle'?'obliqueAngle':id==='DIMEDIT'&&d.phase==='select'&&d.option==='NEW'?'selectNew':d.phase))+(id==='DIMEDIT'&&d.phase==='select'?' · '+d.pending.size:''),'strong');if(d.phase!=='editing')queueMicrotask(()=>dom.commandInput.focus());},clear:()=>{cadOperationPreview=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}
     });
     modules.nativeTextEdit.install(registry,{token:cadContextToken,current:cadContextTokenCurrent,mode:()=>cadTextEditPreferences100.get(),setMode:value=>cadTextEditPreferences100.set(value),byId:id=>cadContext.getById(id),selected:()=>selectionIds(),history:()=>state.history.at(-1)||null,
       allowed:id=>cadSourceKind(cadContext.getById(id))==='cad-source'&&cadPolicy(id,'modify').allowed,pick:hitObject,select:ids=>{setSelectionIds(new Set(ids));renderProperties();render();},
@@ -1064,19 +1070,21 @@
     modules.nativeEditCommands.install(registry,{angleToWorld:cadUcsWorldAngle96,angleSign:()=>cadUcsFrame96().handedness,resolve:(point,base)=>resolveCadPoint(point,{base}).point,parsePoint:parseCadPointText,token:cadContextToken,current:cadContextTokenCurrent,byId:id=>cadContext.getById(id),allowed:id=>cadPolicy(id,'modify').allowed,pick:hitObject,uid,
       parseLength:text=>cadUnitsModule.parseLength(text,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),commit:commitCadOperation,preview:plan=>{cadOperationPreview=plan?{...plan,token:cadContextToken()}:null;render();},select:ids=>{setSelectionIds(new Set(ids));renderProperties();renderCadScopeControl();render();},
       measure:(length,angle)=>setCommandStatus('LEN · '+cadLengthText(length,{precision:3})+(angle===null?'':' · '+formatNumber(angle,3)+'°'),'strong'),historyMark:()=>state.history.at(-1),undoOwn:mark=>state.history.at(-1)===mark&&performUndo(),finish:finishActiveCommand,gripHint:()=>setCommandStatus(t('cadAdvanced.vertexHint'),'strong'),
-      prompt:(id,phase,d)=>{setCommandStatus(id+' · '+t(d?.messageKey||'cadAdvanced.phase.'+phase)+(d?.phase==='vertex'?' · '+(d.vertex+1):'')+(id==='LEN'&&phase==='value'&&Number.isFinite(d?.defaultValue)?' <'+(d.angle||d.mode==='percent'?formatNumber(d.defaultValue,3):cadLengthText(d.defaultValue,{precision:3}))+'>':''),'strong');updateContextBar();},
+      prompt:(id,phase,d)=>{setCommandStatus(id+' · '+t(d?.messageKey||'cadAdvanced.phase.'+phase)+(d?.phase==='vertex'?' · '+(d.vertex+1):'')+(id==='PE'&&phase==='joinFuzz'?' · '+t('cad89.'+d.jointype):'')+(id==='LEN'&&phase==='value'&&Number.isFinite(d?.defaultValue)?' <'+(d.angle||d.mode==='percent'?formatNumber(d.defaultValue,3):cadLengthText(d.defaultValue,{precision:3}))+'>':''),'strong');updateContextBar();},
       clear:()=>{cadOperationPreview=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}});
     modules.nativeModifyCommands.install(registry,{layer:()=>state.activeCadLayer||'0',
       token:cadContextToken,current:cadContextTokenCurrent,allowed:id=>cadPolicy(id,'modify').allowed,
+      byId:id=>cadContext.getById(id),joinSelection:()=>[...selectionIds()].map(id=>cadContext.getById(id)),
       pick:hitObject,resolve:(point,base)=>resolveCadPoint(point,{base}).point,
       parsePoint:parseCadPointText,parseLength:text=>cadUnitsModule.parseLength(text,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),
-      prompt:(id,phase,draft)=>{setCommandStatus(id+' · '+t('cadEdit.phase.'+phase)+(['distance','distance2','angleDistance'].includes(phase)?' · '+t(draft?.measureStart?'cad100.distance.second':'cad100.distance.first'):'')+(id==='FILLETPOLYARC'?' <'+draft.value+'>':'')+(draft&&['O','F','CH'].includes(id)?' · '+cadLengthText(draft.distance,{precision:2}):''),'strong');updateContextBar();},
+      prompt:(id,phase,draft)=>{setCommandStatus(id+' · '+t('cadEdit.phase.'+(id==='J'&&phase!=='joinTargets'?'join'+(phase==='source'?'Source':'Second'):phase))+(['distance','distance2','angleDistance'].includes(phase)?' · '+t(draft?.measureStart?'cad100.distance.second':'cad100.distance.first'):'')+(id==='FILLETPOLYARC'?' <'+draft.value+'>':'')+(draft&&['O','F','CH'].includes(id)?' · '+cadLengthText(draft.distance,{precision:2}):''),'strong');updateContextBar();},
       preview:plan=>{cadOperationPreview=plan?{...plan,token:cadContextToken()}:null;render();},commit:commitCadOperation,
       historyMark:()=>state.history.at(-1),undoOwn:mark=>state.history.at(-1)===mark&&performUndo(),finish:()=>finishActiveCommand(),
       source:id=>{cadModifySourceId=id||null;render();},
       clear:()=>{cadOperationPreview=null;cadModifySourceId=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}
     });
     modules.nativeTransformCommands.install(registry,{
+      frame:cadUcsFrame96,arrayKey:id=>cadContext.getById(id)?.array104?.id,arrayMembers:cadEditableArrayMembers,arraySources:cadEditableArraySources,planArrayRevision:planCadArrayRevision,
       arrayVector:v=>modules.cadUcs.localVector(cadUcsFrame96(),v),axisAngle:()=>cadUcsWorldAngle96(0),angleToWorld:cadUcsWorldAngle96,angleSign:()=>cadUcsFrame96().handedness,origin:()=>({...cadUcsFrame96().origin}),parseDisplacement:parseCadDisplacement101,
       copyMode:()=>state.toolSettings.cadCopyMode||'multiple',setCopyMode:mode=>{state.toolSettings.cadCopyMode=mode;markDirty(true);},
       token:cadContextToken,current:cadContextTokenCurrent,
@@ -1084,7 +1092,13 @@
       preselected:()=>[...selectionIds()],pick:hitObject,resolve:(point,base)=>resolveCadPoint(point,{base}).point,parsePoint:parseCadPointText,
       parseLength:text=>cadUnitsModule.parseLength(text,{defaultUnit:state.unitSystem==='imperial'?'in':'mm'}),historyMark:()=>state.history.at(-1),undoOwn:mark=>state.history.at(-1)===mark&&performUndo(),finish:finishActiveCommand,
       rect:rectFromPoints,selectionShape:startCadSelectionShape,stretchCandidates:cadStretchCandidates,planMatrix:planCadMatrix,planArray:planCadArray,planPolarArray:planCadPolarArray,planStretch:planCadStretch,
-      prompt:(id,phase,count)=>{setCommandStatus(`${id} · ${t('cadTransform.'+phase,{count})}`,'strong');updateContextBar();},
+      pathAllowed:id=>{const o=cadContext.getById(id);return cadObjectInWorkScope(o)&&cadPolicy(id,'inspect').allowed;},
+      planPathArray:planCadPathArray,
+      prompt:(id,phase,count,draft)=>{
+        const key=phase==='arrayEditOption'?phase+'.'+draft.recipe.type:phase;
+        const message=t('cadTransform.'+key,{count,field:draft?.field||''});
+        setCommandStatus(`${id} · ${message}${phase==='arrayType'&&draft?.editable?' · '+t('cadTransform.editableArray'):''}`,'strong');updateContextBar();
+      },
       select:ids=>{setSelectionIds(new Set(ids));render();},preview:plan=>{cadOperationPreview=plan?{...plan,token:cadContextToken()}:null;render();},
       focus:()=>queueMicrotask(()=>{if([...modules.cadStroke.settingIds,...modules.nativeDimensionTextEdit.ids,...modules.nativeTextEdit.ids,...modules.nativeSetByLayer.ids,...modules.nativeDimensionChains.ids,...modules.nativeRadialDimension.ids,...modules.nativeLinearDimension.ids,...modules.nativeAngularDimension.ids,...modules.nativeArcDimension.ids,...modules.nativeJoggedDimension.ids,...modules.nativeCreationAppearance.ids,...modules.plotTransparency.ids,...modules.nativeDimensionAngular.ids,...modules.nativeOrdinate.ids,...modules.nativeDimensionAssociation.ids,...modules.nativeTransformCommands.ids,...modules.nativeArchitecturalCommands.ids,...modules.nativeEditCommands.ids].includes(cadCommandSession?.activeId)){dom.commandInput.focus();commandConsole.hideSuggestions();}}),
       commit:(id,plan)=>commitCadTransformPlan(id,plan),
@@ -1103,7 +1117,10 @@
       constraint:()=>state.snapIndicator?.constraint||null,
       pick:hitObject,select:ids=>{setSelectionIds(ids);render();},layer:()=>state.activeCadLayer||'0',definition:name=>modules.cadBlocks.get(name),
       instance:(name,p,r,sx,sy,preview)=>cadNewAppearance98({id:preview?'__insert_preview__':uid('cadInsert'),type:'cadInsert',blockName:modules.cadBlocks.get(name)?.name||name,matrix:modules.cadBlocks.insertionMatrix(modules.cadBlocks.get(name),p,cadUcsWorldAngle96(r),sx,sy*cadUcsFrame96().handedness,blockInsertionOptions95()),cadLayer:state.activeCadLayer||'0'}),
-      explodePreview:ids=>[...ids].flatMap(id=>{const o=cadContext.getById(id);if(o?.type==='cadDimension'){let n=0;return modules.cadDimensionCreation.explode(o,()=>'__explode_preview_'+id+'_'+n++);}if(!modules.cadBlocks.is(o))throw Error('select-block-instances');return modules.cadBlocks.expand(o,{approximate:false});}),
+      canExplode:id=>cadCanExplode(cadContext.getById(id)),
+      explodePreview:(ids,all)=>[...ids].flatMap(id=>{let n=0;return cadExplosionMembers(cadContext.getById(id),()=>'__explode_preview_'+id+'_'+n++,all);}),
+      explosionFault:code=>setCommandStatus(code==='sheared-insert-cannot-export'
+        ?t('block.explodeSheared'):cadFaultMessage(code),'error'),
       preview:after=>{cadOperationPreview={after,removed:[],token:cadContextToken()};render();},commit:commitArchitecturalCommand,
       clear:()=>{cadOperationPreview=null;state.activeCommand=null;state.activeTool='select';host.dataset.tool='select';updateAll();}
     });
@@ -1826,7 +1843,7 @@
     drawTrimPreview();
     drawCadOperationPreview();
     if(['fence','crossing'].includes(cadTrimState?.phase)&&cadTrimState.fencePoints.length){const ps=[...cadTrimState.fencePoints,...(state.cursorWorld?[state.cursorWorld]:[])].map(toScreenCss);ctx.save();ctx.strokeStyle='#f3c75f';ctx.lineWidth=1;ctx.setLineDash([5,4]);ctx.beginPath();ps.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.restore();}
-    if(cadCommandSession?.activeId==='PE'){const d=cadCommandSession.view,v=d?.phase==='vertex'||['moveVertex','insertVertex','prependVertex94','arcMidVertex94','segmentWidth','widthEnd','bulge','tangent'].includes(d?.phase)?d.source?.vertices[d.vertex]:null;if(v){const q=toScreenCss(v);ctx.save();ctx.strokeStyle='#f3c75f';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(q.x-6,q.y-6);ctx.lineTo(q.x+6,q.y+6);ctx.moveTo(q.x-6,q.y+6);ctx.lineTo(q.x+6,q.y-6);ctx.stroke();ctx.restore();}}
+    if(cadCommandSession?.activeId==='PE')drawPeditVertexMarker();
     drawCalibrationPreview();
     drawReferenceClipPreview();
     drawViewportWindow();
@@ -2100,7 +2117,15 @@
   function cadLayerFilters(){try{return modules.cadPropertyWorkflows.validateFilters(state.toolSettings.cadLayerFilters92||[]);}catch{return [];}}
   function activeCadLayerFilter(){return cadLayerFilters().find(f=>f.id===state.cadLayerFilter92)||null;}
   function cadUsedLayers99(){return modules.cadPropertyWorkflows.usedLayers(state.objects,state.blockDefinitions,cadSourceObject,cadLayerForObject);}
-  function cadSelectionPrompt(){const d=cadCommandSession?.describe();return d?.phase==='select'||d?.id==='MA'&&['source','targets'].includes(d.phase)||d?.id==='PE'&&['source','multiple','join'].includes(d.phase);}
+  function cadSelectionPrompt(){const d=cadCommandSession?.describe();return d?.phase==='select'||d?.id==='J'||d?.id==='MA'&&['source','targets'].includes(d.phase)||d?.id==='PE'&&['source','multiple','join'].includes(d.phase)||d?.id==='ARRAYEDIT'&&['arrayEditPick','arrayEditItems','arrayReplaceObjects'].includes(d.phase);}
+  function cadCommandWindowSelection(){
+    if(state.toolset!=='cad')return false;
+    const id=cadCommandSession?.activeId,phase=cadCommandSession?.view?.phase;
+    if(id==='J')return true;
+    if(id==='ARRAYEDIT')return ['arrayEditPick','arrayEditItems','arrayReplaceObjects'].includes(phase);
+    if(id==='PE')return phase==='multiple'||phase==='join';
+    return phase==='select'&&(id==='DIMEDIT'||id==='EXPLODE'||modules.nativeDimensionAssociation.ids.includes(id)||modules.nativeSetByLayer.ids.includes(id));
+  }
   function reassignCadObjects(ids,targetLayer){
     if(!cadLayerStore)initializeCadServices();const layer=validCadLayerName(targetLayer);if(!layer||!cadLayerStore.has(layer))return false;
     const objects=[...ids].map(id=>cadContext.getById(id));if(!objects.length||objects.some(o=>!o))return false;
@@ -2627,6 +2652,36 @@
   }
 
   function drawCadDimensionLinkMarker96(){if(state.toolset!=='cad'||cadCommandSession?.activeId!=='DIMREASSOCIATE')return;const v=cadCommandSession.view;if(!v?.marker||!['anchor','source','angularSecond'].includes(v.phase))return;const q=toScreenCss(v.marker);ctx.save();ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(q.x-5,q.y-5);ctx.lineTo(q.x+5,q.y+5);ctx.moveTo(q.x-5,q.y+5);ctx.lineTo(q.x+5,q.y-5);if(v.boxed)ctx.rect(q.x-8,q.y-8,16,16);ctx.stroke();ctx.restore();}
+  function drawPeditVertexMarker(){
+    const draft=cadCommandSession.view;
+    const range=['breakVertices','straightenVertices'].includes(draft?.phase);
+    if(!range&&!['vertex','moveVertex','insertVertex','prependVertex94','arcMidVertex94','segmentWidth','widthEnd','bulge','tangent'].includes(draft?.phase))return;
+    const vertex=draft.source?.vertices[draft.vertex];
+    if(!vertex)return;
+    const origin=toScreenCss(vertex);
+    ctx.save();
+    ctx.strokeStyle='#f3c75f';ctx.lineWidth=1.5;ctx.beginPath();
+    ctx.moveTo(origin.x-6,origin.y-6);ctx.lineTo(origin.x+6,origin.y+6);
+    ctx.moveTo(origin.x-6,origin.y+6);ctx.lineTo(origin.x+6,origin.y-6);
+    if(range){
+      const mark=toScreenCss(draft.source.vertices[draft.markVertex]);
+      ctx.moveTo(mark.x+8,mark.y);ctx.arc(mark.x,mark.y,8,0,Math.PI*2);
+    }
+    if(['vertex','tangent'].includes(draft.phase)){
+      const preview=cadOperationPreview&&cadContextTokenCurrent(cadOperationPreview.token)?cadOperationPreview.after[0]:null;
+      const angle=preview?.vertices?.[draft.vertex]?.tangent??vertex.tangent;
+      if(Number.isFinite(angle)){
+        const step=34/state.camera.zoom;
+        const tip=toScreenCss({x:vertex.x+step*Math.cos(rad(angle)),y:vertex.y+step*Math.sin(rad(angle))});
+        const heading=Math.atan2(tip.y-origin.y,tip.x-origin.x);
+        ctx.moveTo(origin.x,origin.y);ctx.lineTo(tip.x,tip.y);
+        for(const wing of [-.52,.52]){
+          ctx.moveTo(tip.x,tip.y);ctx.lineTo(tip.x-8*Math.cos(heading+wing),tip.y-8*Math.sin(heading+wing));
+        }
+      }
+    }
+    ctx.stroke();ctx.restore();
+  }
   function drawCadOperationPreview(){
     if(state.toolset!=='cad'||!cadOperationPreview)return;if(!cadContextTokenCurrent(cadOperationPreview.token)){cadOperationPreview=null;return;}
     const styles=getComputedStyle(document.documentElement);ctx.save();ctx.globalAlpha=.7;ctx.setLineDash([6,4]);
@@ -2644,24 +2699,124 @@
   }
   function freshenCadObjectIds(obj){
     obj=modules.cadDimensionAssociation.detached(obj);const copy=modules.cadChangeSet.clone(obj);copy.id=uid(copy.type||'cadObject');
+    delete copy.array104;
     if(modules.cadPolyline.is(copy)){copy.id=uid('cadPolyline');copy.vertices=copy.vertices.map(v=>({...v,id:uid('cadVertex'),x:v.x,y:v.y,...(v.outgoing?{outgoing:{...v.outgoing,id:uid('cadEdge')}}:{})}));modules.cadPolyline.validate(copy);}
     if(copy.type==='cadHatch'){copy.sourceBoundaryId=null;delete copy.sourceBoundaryIds;delete copy.boundarySourceGroups95;}return copy;
   }
   function cadTransformSelectedObjects(ids){return [...ids].map(id=>cadContext?.getById(id)||state.objects.find(o=>o.id===id)).filter(o=>o&&cadSourceKind(o)==='cad-source'&&cadPolicy(o.id,'modify').allowed&&modules.cadTransformOperations.supports(o));}
   function planCadMatrix(ids,matrix,{copy=false}={}){if(!modules.cadTransformOperations.validMatrix(matrix))return null;const before=cadTransformSelectedObjects(ids);if(!before.length)return null;const after=before.map(o=>modules.cadTransformOperations.transform(modules.cadChangeSet.clone(o),matrix)).filter(Boolean);if(after.length!==before.length)return null;return{kind:copy?'COPY':'TRANSFORM',before,after,copy:Boolean(copy),matrix};}
-  function planCadArray(ids,{columns=1,rows=1,dx=0,dy=0}={}){if(!Number.isSafeInteger(columns)||columns<1||columns>100000||!Number.isSafeInteger(rows)||rows<1||rows>100000)return null;if(columns*rows<=1||!Number.isFinite(dx)||!Number.isFinite(dy)||(columns>1&&Math.abs(dx)<1e-9)||(rows>1&&Math.abs(dy)<1e-9))return null;const sources=cadTransformSelectedObjects(ids);if(!sources.length||sources.length*(columns*rows-1)>100000)return null;const after=[];for(let r=0;r<rows;r++)for(let c=0;c<columns;c++){if(r===0&&c===0)continue;const v=modules.cadUcs.vector(cadUcsFrame96(),{x:c*dx,y:r*dy}),m=modules.cadTransformOperations.translate(v.x,v.y);for(const o of sources){const q=modules.cadTransformOperations.transform(modules.cadChangeSet.clone(o),m);if(q)after.push(q);}}return after.length?{kind:'ARRAY',before:sources,after,copy:true,array:{columns,rows,dx,dy}}:null;}
-  function planCadPolarArray(ids,{center=null,items=2,angle=360}={}){if(!Number.isSafeInteger(items)||items<2||items>100000)return null;angle=Number(angle);if(!modules.commandFoundation.finitePoint(center)||!Number.isFinite(angle)||Math.abs(angle)<1e-9)return null;const sources=cadTransformSelectedObjects(ids);if(!sources.length||sources.length*(items-1)>100000)return null;const full=Math.abs(angle)>=360-1e-7,step=full?angle/items:angle/(items-1),after=[];for(let i=1;i<items;i++){const m=modules.cadTransformOperations.rotate(center,step*i);for(const o of sources){const q=modules.cadTransformOperations.transform(modules.cadChangeSet.clone(o),m);if(q)after.push(q);}}return after.length?{kind:'ARRAY',before:sources,after,copy:true,array:{type:'polar',center:{...center},items,angle}}:null;}
+  function planCadArray(ids,{columns=1,rows=1,dx=0,dy=0}={}){return modules.cadTransformOperations.planRectangularArray(cadTransformSelectedObjects(ids),cadUcsFrame96(),{columns,rows,dx,dy});}
+  function planCadPolarArray(ids,options){return modules.cadTransformOperations.planPolarArray(cadTransformSelectedObjects(ids),options);}
+  function planCadPathArray(ids,path,options){
+    const sources=cadTransformSelectedObjects(ids);
+    return sources.length===ids.size?modules.cadTransformOperations.planPathArray(sources,path,options):null;
+  }
   const cadPointInRect=(p,r)=>Boolean(p&&r&&p.x>=r.minx&&p.x<=r.maxx&&p.y>=r.miny&&p.y<=r.maxy);
   function cadStretchCandidates(region,options={}){return modules.cadStretch.candidates(cadTransformSelectedObjects(new Set(cadWorkObjects().map(o=>o.id))),region,{geometry:cadGeometry,...options});}
   function planCadStretch(selection,delta){const ids=selection?.wholeIds?new Set([...selection.wholeIds,...selection.regions.flatMap(r=>r.ids)]):new Set(cadStretchCandidates(selection));return modules.cadStretch.plan(cadTransformSelectedObjects(ids),selection,delta);}
-  function commitCadTransformPlan(label,plan){if(!plan?.after?.length)return false;const changes=[],resultIds=[];
-    if(plan.copy){for(const candidate of plan.after){const after=freshenCadObjectIds(candidate);changes.push({before:null,after,index:state.objects.length+changes.length});resultIds.push(after.id);}}
-    else{for(let i=0;i<plan.after.length;i++){const before=plan.before[i],after=plan.after[i];changes.push({before,after,index:state.objects.indexOf(before)});resultIds.push(after.id);}}
-    // Whole-boundary transforms/copies preserve relation ownership within the
-    // transformed set. A hatch-only move or ambiguous array copy stays detached.
-    const copies=new Map(),duplicates=new Set();for(let i=0;i<plan.after.length;i++){const id=plan.after[i].id;if(copies.has(id))duplicates.add(id);copies.set(id,changes[i]?.after?.id);}
-    for(let i=0;i<changes.length;i++){const q=changes[i].after,original=plan.before.find(o=>o.id===plan.after[i].id);if(!modules.cadHatchCurves.is(q)||!original)continue;const groups=modules.cadHatchBoundaries.groups(original);if(!groups||groups.flat().some(id=>!copies.has(id)||duplicates.has(id)))continue;const mapped=groups.map(ids=>ids.map(id=>copies.get(id)));if(original.boundarySourceGroups95)q.boundarySourceGroups95=mapped;else q.sourceBoundaryIds=mapped.map(ids=>ids[0]);q.sourceBoundaryId=mapped[0][0];}
-    const changed=commitCadChanges(label,changes);if(changed){setSelectionIds(new Set(resultIds));recordEdit('cad-transform',{command:label,count:resultIds.length,copy:Boolean(plan.copy)});updateAll();}return changed;
+  function cadTransformPlanChanges(plan,groupId=null){
+    const changes=[];
+    if(plan.copy){for(const [i,candidate] of plan.after.entries()){
+      const after=freshenCadObjectIds(candidate);
+      if(groupId){
+        const {slot,matrix}=plan.placements[Math.floor(i/plan.copyGroupSize)];
+        const source=plan.before[i%plan.copyGroupSize];
+        after.array104=modules.cadTransformOperations.arrayMembership(source,{id:groupId,slot,matrix,recipe:plan.editableArray});
+        if(plan.replacement){after.array104.follow=false;after.array104.replacement=true;delete after.array104.lineage;}
+      }
+      changes.push({before:null,after,index:state.objects.length+changes.length});
+    }}else for(let i=0;i<plan.after.length;i++){
+      const before=plan.before[i],after=plan.after[i];changes.push({before,after,index:state.objects.indexOf(before)});
+    }
+    // A copied hatch may only point to boundary copies in the same placement.
+    if(changes.some(c=>modules.cadHatchCurves.is(c.after)||plan.copy&&c.after?.type==='cadDimension')){
+      const originals=new Map(plan.before.map(o=>[o.id,o]));
+      const size=plan.copyGroupSize||changes.length;
+      for(let start=0;start<changes.length;start+=size){
+        const end=Math.min(start+size,changes.length),copies=new Map(),duplicates=new Set();
+        for(let i=start;i<end;i++){
+          const id=plan.after[i].id;
+          if(copies.has(id))duplicates.add(id);
+          copies.set(id,changes[i].after);
+        }
+        for(let i=start;i<end;i++){
+          const q=changes[i].after,original=originals.get(plan.after[i].id);
+          if(plan.copy||modules.cadHatchCurves.is(q)){
+            changes[i].after=modules.cadTransformOperations.restoreArrayLinks(original,q,id=>{
+              const before=originals.get(id),after=copies.get(id);
+              return before&&after&&!duplicates.has(id)?{before,after}:null;
+            });
+          }
+        }
+      }
+    }
+    if(plan.copy){
+      if(groupId)return changes;
+      const T=modules.cadTransformOperations;
+      if(plan.copyPlacements)return plan.copyPlacements.flatMap((matrix,i)=>T.copyArrayGroups(state.objects,plan.before,changes.slice(i*plan.copyGroupSize,(i+1)*plan.copyGroupSize),matrix,uid));
+      return T.copyArrayGroups(state.objects,plan.before,changes,plan.matrix,uid);
+    }
+    return modules.cadTransformOperations.transformArrayGroups(state.objects,changes,plan.matrix);
+  }
+  function cadEditableArrayMembers(id){
+    const member=cadContext.getById(id),key=member?.array104?.id;
+    if(!key)return [];
+    const members=state.objects.filter(o=>o.array104?.id===key);
+    return members.every(o=>cadPolicy(o.id,'modify').allowed)?members:[];
+  }
+  function cadEditableArraySources(id){
+    const members=cadEditableArrayMembers(id),ids=new Set(members[0]?.array104.recipe.sources||members.map(o=>o.array104.sourceId));
+    const sources=cadTransformSelectedObjects(ids);
+    return sources.length===ids.size?sources:[];
+  }
+  function planCadArrayRevision(id,recipe,{detach=false,items=null,action=null,allocate=null,replacement=null}={}){
+    const members=cadEditableArrayMembers(id);
+    if(!members.length)return null;
+    const current=members[0].array104;
+    if(detach){
+      const after=members.map(({array104,...o})=>o);
+      return {kind:'ARRAYEDIT',before:members,after,edits:members.map((before,i)=>({before,after:after[i]}))};
+    }
+    const T=modules.cadTransformOperations;
+    if(action==='separate'||action==='remove')return T.separateArrayMembers(members,items||[],{remove:action==='remove'});
+    if(members.some(o=>JSON.stringify(o.array104.recipe)!==JSON.stringify(current.recipe)))return null;
+    const sources=cadEditableArraySources(id);
+    if(!sources.length)return null;
+    if(action==='replace'){
+      const templates=cadTransformSelectedObjects(new Set(replacement?.ids||[]));
+      if(!templates.length||templates.length!==replacement.ids.length)return null;
+      const memberIds=new Set(members.map(o=>o.id));
+      if(templates.some(o=>memberIds.has(o.id)))return null;
+      return T.planArrayReplacement(members,sources,templates,replacement.base,replacement.target,items||[]);
+    }
+    if(action==='reset'){
+      let serial=0;
+      const plan=T.resetArrayMembers(members,sources,items||[],allocate||(()=> '__array_reset_preview_'+serial++));
+      return plan?{...plan,reset:{id,recipe,items:[...(items||[])]}}:null;
+    }
+    const guide=recipe.type==='path'?cadContext.getById(recipe.guideId):null;
+    if(guide&&(!cadObjectInWorkScope(guide)||!cadPolicy(guide.id,'inspect').allowed))return null;
+    return modules.cadTransformOperations.planArrayRevision(members,sources,recipe,guide);
+  }
+  function commitCadTransformPlan(label,plan){
+    if(!plan?.after?.length&&!(plan?.kind==='ARRAYEDIT'&&plan.edits?.length))return false;
+    if(plan.reset){
+      const {id,recipe,items}=plan.reset;
+      plan=planCadArrayRevision(id,recipe,{action:'reset',items,allocate:uid});
+      if(!plan)return false;
+    }
+    let changes;
+    if(plan.kind==='ARRAYEDIT'){
+      const groupId=plan.before[0].array104.id,positions=new Map(state.objects.map((o,i)=>[o.id,i]));
+      let insertIndex=state.objects.length;
+      changes=plan.edits.map(c=>({...c,index:c.before?positions.get(c.before.id):insertIndex++}));
+      if(plan.additions)changes.push(...cadTransformPlanChanges(plan.additions,groupId));
+    }else{
+      if(plan.editableArray&&(!plan.placements?.length||plan.after.length>modules.cadTransformOperations.arrayLimit))return false;
+      changes=cadTransformPlanChanges(plan,plan.editableArray?uid('cadArray'):null);
+    }
+    const resultIds=changes.flatMap(c=>c.after?[c.after.id]:[]),changed=commitCadChanges(label,changes,{arrayMembership:Boolean(plan.editableArray||plan.kind==='ARRAYEDIT'||plan.copy&&changes.some(c=>c.after?.array104))});
+    if(changed){setSelectionIds(new Set(resultIds));recordEdit('cad-transform',{command:label,count:resultIds.length,copy:Boolean(plan.copy)});updateAll();}return changed;
   }
   let connectedCadCache=null;
   function selectCadConnected(seedId=state.selectedObjectId){
@@ -2717,7 +2872,7 @@
     if(state.toolset==='cad'&&[...modules.cadStroke.settingIds,...modules.nativeDimensionTextEdit.ids,...modules.nativeTextEdit.ids,...modules.nativeSetByLayer.ids,...modules.nativeDimensionChains.ids,...modules.nativeRadialDimension.ids,...modules.nativeLinearDimension.ids,...modules.nativeAngularDimension.ids,...modules.nativeArcDimension.ids,...modules.nativeJoggedDimension.ids,...modules.nativeCreationAppearance.ids,...modules.plotTransparency.ids,...modules.nativeDimensionAngular.ids,...modules.nativeOrdinate.ids].includes(cadCommandSession?.activeId)){const desc=cadCommandSession.describe();for(const action of desc.actions||[]){const b=document.createElement('button');b.type='button';b.className='context-choice';b.textContent=t(action.labelKey);b.onclick=()=>dispatchActiveCadCommandAction(action.id);dom.contextFields.append(b);}dom.contextHint.textContent=modules.nativeDimensionTextEdit.ids.includes(cadCommandSession.activeId)?t((cadCommandSession.activeId==='DIMEDIT'?'cad101.dimedit.':'cad101.dimtext.')+desc.phase):modules.nativeTextEdit.ids.includes(cadCommandSession.activeId)?t(cadCommandSession.activeId==='TEXTEDITMODE'?'cad100.textedit.preference':'cad100.textedit.'+desc.phase):modules.cadDimensionCurrent.sizeVariable(cadCommandSession.activeId)?t('cad101.dimension.size'):cadCommandSession.activeId==='DIMSCALE'?t('cad101.dimension.scale'):modules.cadDimensionCurrent.notationTextVariable(cadCommandSession.activeId)?t(cadCommandSession.activeId==='DIMDSEP'?'cad101.dimension.separator':'cad101.dimension.post'):modules.cadDimensionCurrent.notationRealVariable(cadCommandSession.activeId)?t('cad101.dimension.factor'):modules.cadDimensionCurrent.notationSwitchVariable(cadCommandSession.activeId)?t('cad100.dimension.switch'):modules.cadDimensionCurrent.notationVariable(cadCommandSession.activeId)?t('cad101.dimension.notation'):cadCommandSession.activeId==='DIMDEC'?t('cad100.dimension.precision'):cadCommandSession.activeId==='DIMFRAC'?t('cad100.dimension.fraction'):modules.nativeRadialDimension.ids.includes(cadCommandSession.activeId)?t('cad99.radial.phase.'+desc.phase):modules.nativeLinearDimension.ids.includes(cadCommandSession.activeId)?t('cad99.linear.phase.'+desc.phase):modules.nativeAngularDimension.ids.includes(cadCommandSession.activeId)?t('cad99.angular.phase.'+desc.phase):modules.nativeDimensionChains.ids.includes(cadCommandSession.activeId)?t('cad98.chain.phase.'+desc.phase):t((modules.nativeDimensionAngular.ids.includes(cadCommandSession.activeId)?'cad98.angular.':modules.plotTransparency.ids.includes(cadCommandSession.activeId)?'cad98.plot.':modules.nativeCreationAppearance.ids.includes(cadCommandSession.activeId)?'cad98.appearance.':modules.nativeJoggedDimension.ids.includes(cadCommandSession.activeId)?'cad98.jog.phase.':cadCommandSession.activeId==='DIMARC'?'cad96.arcDim.phase.':'cad96.ordinate.phase.')+desc.phase);return;}
     if(state.toolset==='cad'&&modules.nativeDimensionAssociation.ids.includes(cadCommandSession?.activeId)){const desc=cadCommandSession.describe();for(const a of desc.actions||[]){const b=document.createElement('button');b.type='button';b.className='context-choice';b.textContent=t(a.labelKey);b.onclick=()=>dispatchActiveCadCommandAction(a.id);dom.contextFields.append(b);}dom.contextHint.textContent=t('cad96.dimLink.'+(desc.phase==='select'?'select':desc.phase==='source'?'sourcePrompt':cadCommandSession.view?.slot));return;}
     if(state.toolset==='cad'&&modules.nativeEditCommands.ids.includes(cadCommandSession?.activeId)){const desc=cadCommandSession.describe();for(const a of desc.actions||[]){const b=document.createElement('button');b.type='button';b.className='context-choice';b.textContent=t(a.labelKey);b.disabled=a.enabled===false;b.onclick=()=>dispatchActiveCadCommandAction(a.id);dom.contextFields.append(b);}dom.contextHint.textContent=t(cadCommandSession?.activeId==='PE'?'cad89.pe.'+desc.phase:'cadAdvanced.phase.'+desc.phase);return;}
-    if(state.toolset==='cad'&&modules.nativeModifyCommands.ids.includes(cadCommandSession?.activeId)){const desc=cadCommandSession.describe();for(const a of desc.actions||[]){const b=document.createElement('button');b.type='button';b.className='context-choice'+(a.active?' active':'');b.disabled=a.enabled===false;b.textContent=t(a.labelKey);b.onclick=()=>{const r=dispatchActiveCadCommandAction(a.id);updateContextBar();return r;};dom.contextFields.append(b);}dom.contextHint.textContent=t('cadEdit.phase.'+desc.phase);return;}
+    if(state.toolset==='cad'&&modules.nativeModifyCommands.ids.includes(cadCommandSession?.activeId)){const desc=cadCommandSession.describe();for(const a of desc.actions||[]){const b=document.createElement('button');b.type='button';b.className='context-choice'+(a.active?' active':'');b.disabled=a.enabled===false;b.textContent=t(a.labelKey);b.onclick=()=>{const r=dispatchActiveCadCommandAction(a.id);updateContextBar();return r;};dom.contextFields.append(b);}dom.contextHint.textContent=t('cadEdit.phase.'+(desc.id==='J'&&desc.phase!=='joinTargets'?'join'+(desc.phase==='source'?'Source':'Second'):desc.phase));return;}
     if(state.toolset==='cad'&&cadTrimState&&['trim','extend'].includes(state.activeTool)){for(const [label,option]of [['quick','Q'],['standard','S'],['edge','E'],['project','P'],['fence','F'],['crossing','C'],['undo','U']]){const b=document.createElement('button');b.type='button';b.className='context-choice';b.textContent=t('cadEdit.'+label);b.onclick=()=>cadTrimOption(option);dom.contextFields.append(b);}dom.contextHint.textContent=t(cadTrimState.phase==='boundaries'?'cadEdit.boundaries':'cadEdit.targets');return;}
     if(state.toolset==='cad'&&modules.nativeDrawCommands.ids.includes(cadCommandSession?.activeId)){for(const a of cadCommandSession.describe()?.actions||[]){const b=document.createElement('button');b.type='button';b.className='context-choice'+(a.active?' active':'');b.textContent=t(a.labelKey);b.onclick=()=>dispatchActiveCadCommandAction(a.id);dom.contextFields.append(b);}dom.contextHint.textContent=t('cadDraw.hint');return;}
     if(cadGripDraft){for(const mode of modules.cadGrips.modes){const b=document.createElement('button');b.type='button';b.className='context-choice'+(cadGripDraft.mode===mode?' active':'');b.textContent=t('cadGrip.'+mode);b.onclick=()=>cadGripMode(mode);dom.contextFields.append(b);}const copy=document.createElement('button');copy.type='button';copy.className='context-choice'+(cadGripDraft.copy?' active':'');copy.textContent=t('tool.copy');copy.onclick=()=>cadGripText('COPY');dom.contextFields.append(copy);dom.contextHint.textContent=t('cadGrip.hint');return;}
@@ -2785,7 +2940,22 @@
   function categoryRepresentative(cat,catalog){const items=(catalog[cat.id]||[]).filter(x=>x.ready);if(!items.length)return null;const active=items.find(x=>x.id===state.activeTool);if(active){toolCategoryMemory[state.toolset][cat.id]=active.id;return active;}return items.find(x=>x.id===toolCategoryMemory[state.toolset][cat.id])||items[0];}
   function activatePlanDrawing(id,category){const tool=id==='displayLine'?'line':id==='displayArc'?'wall':id;if(tool==='wall')state.toolSettings.wallType='arc';if(id.startsWith('display'))state.toolSettings.planDisplayStyle='dashed';setTool(tool,category);renderToolRail();updateContextBar();return true;}
   function activateRepresentative(item,category,button){if(!item?.ready)return;if(state.toolset==='plan'&&['line','wall','displayLine','displayArc'].includes(item.id)){activatePlanDrawing(item.id,category);return;}if(item.id==='component'){openComponentPalette(button);return;}if(item.id==='door'){openPlanDoorPalette(button);return;}if(state.toolset==='plan'&&item.id==='constraint'){openPlanConstraintPalette(button);return;}if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);return;}setTool(item.id,category);}
-  function positionToolPopover(anchor){if(!anchor||!dom.toolPopover)return;dom.toolPopover.hidden=false;const anchorRect=anchor.getBoundingClientRect(),menuRect=dom.toolPopover.getBoundingClientRect(),margin=8,gap=5;let left=anchorRect.left;left=Math.max(margin,Math.min(window.innerWidth-menuRect.width-margin,left));let top=anchorRect.bottom+gap;if(top+menuRect.height>window.innerHeight-margin)top=Math.max(margin,anchorRect.top-menuRect.height-gap);dom.toolPopover.style.left=`${Math.round(left)}px`;dom.toolPopover.style.top=`${Math.round(top)}px`;}
+  function positionToolPopover(anchor){
+    if(!anchor||!dom.toolPopover)return;
+    const menu=dom.toolPopover,anchorRect=anchor.getBoundingClientRect(),margin=8,gap=5,cadMenu=menu.classList.contains('cad-feature-menu');
+    menu.hidden=false;
+    let top=anchorRect.bottom+gap;
+    if(cadMenu){
+      // Long CAD menus scroll below the toolbar instead of flipping behind it.
+      const toolbarBottom=anchor.closest('header')?.getBoundingClientRect().bottom??anchorRect.bottom;
+      top=Math.min(Math.max(margin,top,toolbarBottom+gap),Math.max(margin,window.innerHeight-margin-1));
+      menu.style.setProperty('--cad-feature-menu-height',`${Math.max(1,Math.floor(window.innerHeight-margin-top))}px`);
+    }
+    const menuRect=menu.getBoundingClientRect();
+    let left=Math.max(margin,Math.min(window.innerWidth-menuRect.width-margin,anchorRect.left));
+    if(!cadMenu&&top+menuRect.height>window.innerHeight-margin)top=Math.max(margin,anchorRect.top-menuRect.height-gap);
+    menu.style.left=`${Math.round(left)}px`;menu.style.top=`${Math.round(top)}px`;
+  }
   function renderToolRail(){
     dom.appShell.classList.toggle('toolbar-expanded',toolbarExpanded);
     workspaceChrome?.applyToolbar(toolbarExpanded);
@@ -2794,7 +2964,7 @@
     for(const cat of categories){
       const items=catalog[cat.id]||[],active=items.some(x=>x.id===state.activeTool),rep=categoryRepresentative(cat,catalog),icon=(state.toolset==='plan'&&rep?.id==='wall')?'arc':(toolIconFallback[rep?.id]||cat.icon),label=t(cat.labelKey);
       const split=document.createElement('div');split.className=`tool-category-split ${active?'active':''}`;split.dataset.category=cat.id;split.dataset.categoryKey=cat.labelKey;split.dataset.representative=rep?.id||'';
-      const main=document.createElement('button');main.type='button';main.className=`tool-category ${active?'active':''}`;main.innerHTML=`<span class="tool-icon ui-icon icon-${icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(label)}</span>`;main.setAttribute('aria-label',label);main.dataset.tooltipTitle=label+(rep?' · '+t(rep.labelKey):'');if(rep){main.dataset.shortcut=commandHint(rep.id);}main.addEventListener('click',()=>activateRepresentative(rep,cat.id,split));
+      const main=document.createElement('button');main.type='button';main.className=`tool-category ${active?'active':''}`;main.innerHTML=`<span class="tool-icon ui-icon icon-${icon}" aria-hidden="true"></span><span class="tool-text">${escapeHtml(label)}</span>`;main.setAttribute('aria-label',label);main.dataset.tooltipTitle=label+(rep?' · '+t(rep.labelKey):'')+(state.toolset==='cad'?cadFeatureTooltip104(rep):'');if(rep){main.dataset.shortcut=commandHint(rep.id);}main.addEventListener('click',()=>activateRepresentative(rep,cat.id,split));
       const menu=document.createElement('button');menu.type='button';menu.className='tool-category-menu';menu.innerHTML='<span class="ui-icon icon-caret-down-filled tool-caret" data-icon="PieniPlanFilledCaretDown" aria-hidden="true"></span>';menu.setAttribute('aria-label',`${t(cat.labelKey)} · ${t('action.more')}`);menu.addEventListener('click',e=>{e.stopPropagation();openToolCategory(cat.id,split,catalog);});
       split.addEventListener('contextmenu',e=>{e.preventDefault();openToolCategory(cat.id,split,catalog);});split.append(main,menu);dom.toolRail.appendChild(split);
     }
@@ -2810,7 +2980,7 @@
       const title=document.createElement('div');title.className='expanded-tool-title';title.textContent=t(cat.labelKey);
       const list=document.createElement('div');list.className='expanded-tool-list';
       for(const item of items){const b=document.createElement('button');b.type='button';b.className='expanded-tool'+(state.activeTool===item.id?' active':'');b.dataset.tool=item.id;b.setAttribute('aria-pressed',String(state.activeTool===item.id));const icon=state.toolset==='plan'&&item.id==='wall'?'arc':toolIconFallback[item.id]||cat.icon;
-        b.innerHTML=`<span class="ui-icon icon-${icon}" aria-hidden="true"></span><span>${escapeHtml(t(item.labelKey))}</span>`;b.dataset.bindingTool=item.id;b.dataset.shortcut=commandHint(item.id);b.title=t(item.labelKey)+(commandHint(item.id)?' · '+commandHint(item.id):'');
+        b.innerHTML=`<span class="ui-icon icon-${icon}" aria-hidden="true"></span><span>${escapeHtml(t(item.labelKey))}</span>`;b.dataset.bindingTool=item.id;b.dataset.shortcut=commandHint(item.id);b.title=t(item.labelKey)+(commandHint(item.id)?' · '+commandHint(item.id):'')+(state.toolset==='cad'?cadFeatureTooltip104(item):'');
         b.addEventListener('click',()=>activateRepresentative(item,cat.id,b));list.append(b);
       }
       // Keep subtype menus available without adding a second command implementation.
@@ -2840,7 +3010,7 @@
   }
   function openComponentPalette(anchor){elementCatalog?.open('all');dom.toolPopover.hidden=true;}
 
-  function openToolCategory(category,anchor,catalog){state.activeCategory=category;const items=catalog[category]||[];dom.toolPopover.innerHTML='';for(const item of items){const b=document.createElement('button');const displayItem=item.id==='displayLine'||item.id==='displayArc',activePlanDrawing=state.toolset==='plan'&&category==='draw'&&['line','wall','displayLine','displayArc'].includes(item.id);b.className=`tool-item ${activePlanDrawing?(state.activeTool===(item.id==='displayLine'?'line':item.id==='displayArc'?'wall':item.id)&&(!displayItem||Boolean(state.toolSettings.planDisplayMode))?'active':''):(state.activeTool===item.id?'active':'')}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span class="ui-icon icon-${state.toolset==='plan'&&item.id==='wall'?'arc':toolIconFallback[item.id]||'draw'}" aria-hidden="true"></span><span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;if(item.ready){b.dataset.bindingTool=item.id;b.dataset.shortcut=commandHint(item.id);}b.addEventListener('click',()=>{if(!item.ready)return;if(item.id==='component')openComponentPalette(anchor);else if(state.toolset==='plan'&&['line','wall','displayLine','displayArc'].includes(item.id))activatePlanDrawing(item.id,category);else if(state.toolset==='plan'&&item.id==='constraint')openPlanConstraintPalette(anchor);else if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);}else if(state.toolset==='plan'&&item.id==='door')openPlanDoorPalette(anchor);else setTool(item.id,category);});dom.toolPopover.appendChild(b);}if(state.toolset==='cad'&&category==='annotation'){for(const [label,run]of [[t('toolbar.blocks'),()=>cadBlockUI.open()],[t('toolbar.dimStyles'),()=>dimensionStyleUI.open()],[t('cadPrecision.settings'),()=>runCommand('OSNAP')]]){const b=document.createElement('button');b.type='button';b.className='tool-item';b.textContent=label;b.addEventListener('click',()=>{dom.toolPopover.hidden=true;run();});dom.toolPopover.append(b);}}positionToolPopover(anchor);}
+  function openToolCategory(category,anchor,catalog){state.activeCategory=category;if(state.toolset==='cad')return openCadFeatureMenu104(category,anchor);modules.cadFeatureMenu.clear(dom.toolPopover);const items=catalog[category]||[];dom.toolPopover.innerHTML='';for(const item of items){const b=document.createElement('button');const displayItem=item.id==='displayLine'||item.id==='displayArc',activePlanDrawing=state.toolset==='plan'&&category==='draw'&&['line','wall','displayLine','displayArc'].includes(item.id);b.className=`tool-item ${activePlanDrawing?(state.activeTool===(item.id==='displayLine'?'line':item.id==='displayArc'?'wall':item.id)&&(!displayItem||Boolean(state.toolSettings.planDisplayMode))?'active':''):(state.activeTool===item.id?'active':'')}`;b.disabled=!item.ready;const note=item.ready?(item.note||''):t('tool.planned');b.innerHTML=`<span class="ui-icon icon-${state.toolset==='plan'&&item.id==='wall'?'arc':toolIconFallback[item.id]||'draw'}" aria-hidden="true"></span><span>${escapeHtml(t(item.labelKey))}</span><span class="tool-item-note">${escapeHtml(note)}</span>`;if(item.ready){b.dataset.bindingTool=item.id;b.dataset.shortcut=commandHint(item.id);}b.addEventListener('click',()=>{if(!item.ready)return;if(item.id==='component')openComponentPalette(anchor);else if(state.toolset==='plan'&&['line','wall','displayLine','displayArc'].includes(item.id))activatePlanDrawing(item.id,category);else if(state.toolset==='plan'&&item.id==='constraint')openPlanConstraintPalette(anchor);else if(state.toolset==='plan'&&item.id==='wall'){state.toolSettings.wallType='arc';setTool('wall',category);}else if(state.toolset==='plan'&&item.id==='door')openPlanDoorPalette(anchor);else setTool(item.id,category);});dom.toolPopover.appendChild(b);}if(state.toolset==='cad'&&category==='annotation'){for(const [label,run]of [[t('toolbar.blocks'),()=>cadBlockUI.open()],[t('toolbar.dimStyles'),()=>dimensionStyleUI.open()],[t('cadPrecision.settings'),()=>runCommand('OSNAP')]]){const b=document.createElement('button');b.type='button';b.className='tool-item';b.textContent=label;b.addEventListener('click',()=>{dom.toolPopover.hidden=true;run();});dom.toolPopover.append(b);}}positionToolPopover(anchor);}
 
   function openPlanTypePalette(anchor,catalog,selected,onPick,title){dom.toolPopover.innerHTML='';let lastGroup=null;for(const item of catalog){if(catalog===doorTypeCatalog&&item.group!==lastGroup){lastGroup=item.group;const h=document.createElement('div');h.className='tool-popover-heading';h.textContent=t(`doorGroup.${item.group}`);dom.toolPopover.appendChild(h);}const b=document.createElement('button');b.className=`tool-item ${selected===item.id?'active':''}`;b.innerHTML=`<span class="ui-icon icon-${catalog===doorTypeCatalog?'door':item.id==='arc'?'arc':'line'}" aria-hidden="true"></span><span>${escapeHtml(t(item.labelKey))}</span>`;b.addEventListener('click',()=>{onPick(item.id);dom.toolPopover.hidden=true;});dom.toolPopover.appendChild(b);}positionToolPopover(anchor);}
   function openPlanWallPalette(button){openPlanTypePalette(button,wallTypeCatalog,state.toolSettings.wallType,id=>{state.toolSettings.wallType=id;setTool('wall','plan');},t('tool.wall'));}
@@ -3055,7 +3225,7 @@
     if(!['cad','plan'].includes(state.toolset)||state.activeTool!=='polyline')return false;const session=cadCommands();if(session.activeId==='PL')return true;return Boolean(reportCadCommand(session.start('PL'))?.ok);
   }
   function cloneCadPolylineWithFreshIds(obj,{dx=0,dy=0}={}){
-    modules.cadPolyline.validate(obj);const copy=modules.cadChangeSet.clone(obj);copy.id=uid('cadPolyline');copy.vertices=obj.vertices.map(v=>({...v,id:uid('cadVertex'),x:v.x+dx,y:v.y+dy,...(v.outgoing?{outgoing:{...v.outgoing,id:uid('cadEdge')}}:{})}));return modules.cadPolyline.validate(copy);
+    modules.cadPolyline.validate(obj);const copy=modules.cadChangeSet.clone(obj);copy.id=uid('cadPolyline');delete copy.array104;copy.vertices=obj.vertices.map(v=>({...v,id:uid('cadVertex'),x:v.x+dx,y:v.y+dy,...(v.outgoing?{outgoing:{...v.outgoing,id:uid('cadEdge')}}:{})}));return modules.cadPolyline.validate(copy);
   }
   function transformCadPolylineOwner(obj,kind){
     if(!modules.cadPolyline.is(obj)||state.toolset!=='cad'||!cadPolicy(obj.id,'modify').allowed)return false;
@@ -3243,7 +3413,7 @@
     if(next!==state.toolset){endTransparentNavigation95({resume:false});clearSpaceGesture94();textEditor?.cancel({notify:false});cadPropertyTools?.close();}
     if(next!==state.toolset&&activeImportJob&&!activeImportJob.committing)cancelImportJob();
     if(next==='cad'&&!skipMapping&&hasSemanticObjects()&&!state.cadMapping&&!state.sourceDxfName&&!state.objects.some(isCadObject)){openMappingDialog('switch-cad');return;}
-    if(next!==state.toolset){cadCommandSession?.cancel('mode-change');state.curveReconstruction=null;}
+    if(next!==state.toolset){cadCommandSession?.cancel('mode-change');state.curveReconstruction=null;modules.cadFeatureMenu.clear(dom.toolPopover);}
     const previous=state.toolset,sameWorkspace=next===state.toolset&&state.view==='workspace';
     const changed=next!==state.toolset;
     if(next==='cad'){if(regionId!==undefined)state.cadWorkRegionId=state.drawingRegions.some(r=>r.id===regionId)?regionId:null;else if(state.cadWorkRegionId&&!activeCadWorkRegion())state.cadWorkRegionId=null;state.selectedRegionId=state.cadWorkRegionId;state.cadPlanOverlay=false;}
@@ -3302,13 +3472,37 @@
   let blockUnitPrefs95=null;
   function blockUnitPreferences95(){return blockUnitPrefs95||(blockUnitPrefs95=modules.cadBlocks.unitPreferences());}
   function blockInsertionOptions95(){return{targetUnit:state.dxfArchive?.unitCode??4,targetCoordinateFactor:state.dxfArchive?.unitFactor||1,...blockUnitPreferences95().get()};}
+  function cadCanExplode(o){
+    return Boolean(modules.cadBlocks.is(o)||o?.type==='cadDimension'||modules.cadPolyline.is(o)&&o.curveFit?.kind!=='spline');
+  }
+  function cadExplosionMembers(o,idFactory,all=false){
+    if(modules.cadBlocks.is(o))return modules.cadBlocks.explode(o,idFactory,{oneLevel:!all});
+    if(o?.type==='cadDimension')return modules.cadDimensionCreation.explode(o,idFactory);
+    if(modules.cadPolyline.is(o))return modules.cadPolyline.explode(o,idFactory);
+    throw Error('unsupported-geometry');
+  }
   function commitArchitecturalCommand(id,d){
     if(id==='BLOCK'){const objects=[...d.ids].map(id=>cadContext.getById(id));if(!objects.length||objects.some(o=>!o||cadSourceKind(o)!=='cad-source'||!cadPolicy(o.id,'modify').allowed))throw Error('target-not-modifiable');const frame=cadUcsFrame96(),matrix=modules.cadBlocks.matrix(d.base,frame.angle,1,frame.handedness),inverse=modules.cadBlocks.inverse(matrix),local=objects.map(o=>modules.cadBlocks.transformLeaf(modules.cadChangeSet.clone(o),inverse,{approximate:false})),definition=modules.cadBlocks.definition(d.name,local,{x:0,y:0}),instance={id:uid('cadInsert'),type:'cadInsert',blockName:definition.name,matrix,cadLayer:state.activeCadLayer||'0'};const changes=objects.map(o=>({before:o,after:null,index:state.objects.indexOf(o)}));changes.push({before:null,after:instance,index:Math.min(...changes.map(c=>c.index))});if(d.unitCode!=null)definition.insertionUnits95={version:1,unitCode:d.unitCode,coordinateFactor:1};const result=commitCadLibrary('BLOCK',null,definition,changes);setSelectionIds([instance.id]);return result;}
     if(id==='INSERT'){const o={id:uid('cadInsert'),type:'cadInsert',blockName:modules.cadBlocks.get(d.name).name,matrix:modules.cadBlocks.insertionMatrix(modules.cadBlocks.get(d.name),d.base,cadUcsWorldAngle96(d.rotation),d.scaleX,d.scaleY*cadUcsFrame96().handedness,blockInsertionOptions95()),cadLayer:state.activeCadLayer||'0'};modules.cadBlocks.previewBudget(o);modules.cadBlocks.expand(o);return commitCadCreation98(id,[{before:null,after:o,index:state.objects.length}]);}
-    if(id==='EXPLODE'){const originals=[...d.ids].map(id=>cadContext.getById(id));if(!originals.length||originals.some(o=>!modules.cadBlocks.is(o)&&o?.type!=='cadDimension'))throw Error('select-block-instances');const changes=[];for(const o of originals){if(!cadPolicy(o.id,'modify').allowed)throw Error('target-not-modifiable');changes.push({before:o,after:null,index:state.objects.indexOf(o)});for(const q of (o.type==='cadDimension'?modules.cadDimensionCreation.explode(o,uid):modules.cadBlocks.explode(o,uid)))changes.push({before:null,after:q,index:state.objects.length+changes.length});}return commitCadChanges(id,changes);}
+    if(id==='EXPLODE'){
+      const originals=[...d.ids].map(id=>cadContext.getById(id));
+      if(!originals.length||originals.some(o=>!cadCanExplode(o)))throw Error('unsupported-geometry');
+      if(originals.some(o=>cadSourceKind(o)!=='cad-source'||!cadPolicy(o.id,'modify').allowed))throw Error('target-not-modifiable');
+      const changes=[];
+      for(const o of originals){
+        changes.push({before:o,after:null,index:state.objects.indexOf(o)});
+        for(const member of cadExplosionMembers(o,uid,d.explodeAll))changes.push({before:null,after:member,index:state.objects.length+changes.length});
+      }
+      return commitCadChanges(id,changes);
+    }
     const o={id:uid(id==='XLINE'?'cadXline':'cadRay'),type:id==='XLINE'?'cadXline':'cadRay',a:d.base,b:d.pointer,mode:id==='XLINE'?'line':'ray',cadLayer:state.activeCadLayer||'0'};return commitCadCreation98(id,[{before:null,after:o,index:state.objects.length}]);
   }
-  function commitCadChanges(label,changes,options={}){const regen={defer:o=>cadLayerFrozen(cadLayerForObject(o))};changes=modules.cadDimensionAssociation.augment(state.objects,modules.cadHatchCurves.augment(state.objects,changes,regen),regen);
+  function commitCadChanges(label,changes,options={}){
+    if(!options.arrayMembership)changes=changes.map(c=>{
+      if(c.before||!c.after?.array104)return c;
+      const {array104,...after}=c.after;return {...c,after};
+    });
+    changes=augmentCadOwnedChanges(state.objects,changes,options);
     if(state.toolset!=='cad')throw new Error('cad-mode-required');
     for(const c of changes){if(c.before&&!cadPolicy(c.before.id,'modify').allowed)throw new Error('target-not-modifiable');if(c.after&&cadSourceKind(c.after)!=='cad-source'&&!(label==='OOPS'&&c.after.type==='component'))throw new Error('target-not-modifiable');}
     const afterObjects=changes.filter(c=>c.after).map(c=>c.after);for(const o of afterObjects)if(modules.cadBlocks.is(o)){modules.cadBlocks.previewBudget(o);modules.cadBlocks.expand(o);}modules.projectStaging.validate({format:'PieniPlan',schemaVersion:PROJECT_SCHEMA,requiredCapabilities:PROJECT_CAPABILITIES(afterObjects),drawing:{objects:afterObjects,blockDefinitions:state.blockDefinitions,dimensionStyles:state.dimensionStyles}});
@@ -3319,13 +3513,54 @@
     
     const previous=state.objects,next=modules.cadChangeSet.apply(entry,state.objects);
     // Validate the proposed document before publication when topology identity is involved.
-    if(changes.some(c=>modules.cadPolyline.is(c.before)||modules.cadPolyline.is(c.after)))modules.projectStaging.validate({format:'PieniPlan',schemaVersion:PROJECT_SCHEMA,requiredCapabilities:PROJECT_CAPABILITIES(next),drawing:{objects:next,blockDefinitions:state.blockDefinitions,dimensionStyles:state.dimensionStyles}});
+    if(changes.some(c=>modules.cadPolyline.is(c.before)||modules.cadPolyline.is(c.after)||c.before?.array104||c.after?.array104))modules.projectStaging.validate({format:'PieniPlan',schemaVersion:PROJECT_SCHEMA,requiredCapabilities:PROJECT_CAPABILITIES(next),drawing:{objects:next,blockDefinitions:state.blockDefinitions,dimensionStyles:state.dimensionStyles}});
     state.objects=next;
     try{rebuildObjectSnapIndex();}catch(error){state.objects=previous;rebuildObjectSnapIndex({touch:false});throw error;}
     if(group){state.history.pop();if(published.ops.length)state.history.push(published);state.future=[];trimHistoryRetention();updateUndoRedo();}else appendHistoryEntry(entry);
     if(options?.historyResult)options.historyResult.entry=published.ops.length?published:null;
     if(label==='ERASE'||label==='WBLOCK')rememberCadErase95(entry,previous);const created=changes.filter(c=>!c.before&&c.after).map(c=>c.after.id);if(created.length)state.lastCadObjectId=created.at(-1);
     markDirty(true);return true;
+  }
+  function augmentCadOwnedChanges(objects,changes,{arrayMembership=false}={}){
+    const T=modules.cadTransformOperations;
+    const dependent=(edits,automatic=false)=>{
+      const regen={defer:o=>cadLayerFrozen(cadLayerForObject(o))||automatic&&!cadPolicy(o.id,'modify').allowed};
+      return modules.cadDimensionAssociation.augment(objects,modules.cadHatchCurves.augment(objects,edits,regen),regen);
+    };
+    const base=dependent(arrayMembership?changes:T.markArrayOverrides(changes));
+    const next=T.augmentArraySources(objects,base,{allowed:o=>cadPolicy(o.id,'modify').allowed,uid});
+    const related=next===base?base:dependent(next,true);
+    if(arrayMembership)return related;
+    const paths=augmentCadArrayPaths(objects,related);
+    return paths===related?related:dependent(paths,true);
+  }
+  function augmentCadArrayPaths(objects,changes){
+    const changed=new Map(changes.map(c=>[(c.before||c.after).id,c])),groups=new Map();
+    for(const o of objects){
+      const m=o.array104,recipe=m?.recipe;
+      if(recipe?.type!=='path'||!changed.get(recipe.guideId)?.after)continue;
+      if(!groups.has(m.id))groups.set(m.id,[]);
+      groups.get(m.id).push(o);
+    }
+    if(!groups.size)return changes;
+    const current=new Map(objects.map(o=>[o.id,o])),positions=new Map(objects.map((o,i)=>[o.id,i]));
+    for(const [id,c] of changed){if(c.after)current.set(id,c.after);else current.delete(id);}
+    const result=changes.slice();let added=0;
+    for(const members of groups.values()){
+      if(members.some(o=>changed.has(o.id)||!cadPolicy(o.id,'modify').allowed))continue;
+      const recipe=members[0].array104.recipe,edit=changed.get(recipe.guideId);
+      if(!edit.before||JSON.stringify(edit.before)===JSON.stringify(edit.after))continue;
+      if(!cadObjectInWorkScope(edit.after)||!cadPolicy(edit.after.id,'inspect').allowed)continue;
+      const ids=[...new Set(members[0].array104.recipe.sources||members.map(o=>o.array104.sourceId))],sources=ids.map(id=>current.get(id));
+      if(sources.some(o=>!o||!modules.cadTransformOperations.supports(o)))continue;
+      const plan=modules.cadTransformOperations.planArrayRevision(members,sources,recipe,edit.after);
+      if(!plan)continue;
+      result.push(...plan.edits.map(c=>({...c,index:positions.get(c.before.id)})));
+      const additions=cadTransformPlanChanges(plan.additions,members[0].array104.id);
+      for(const c of additions)c.index+=added;
+      added+=additions.length;result.push(...additions);
+    }
+    return result.length===changes.length?changes:result;
   }
   function editCadObject(obj,patch,label='properties'){
     if(!obj||!cadPolicy(obj.id,'modify').allowed)return false;
@@ -3703,7 +3938,7 @@
     hideContextMenu();for(const kind of [...cadPrecision.kinds,'none'])addContextMenuItem(t('snap.'+kind),()=>{cadPrecision.arm(kind);host.focus();setCommandStatus(t('cadPrecision.once')+' · '+t('snap.'+kind),'strong');});
     addContextMenuDivider();addContextMenuItem(t('cadPrecision.settings'),()=>cadPrecisionUI.open());contextMenu.hidden=false;contextMenu.style.left=Math.max(8,Math.min(e.clientX,window.innerWidth-240))+'px';contextMenu.style.top=Math.max(8,Math.min(e.clientY,window.innerHeight-440))+'px';
   }
-  function arrayInputPreview101(point,shift=false){const text=String(dom.commandInput.value??''),acceptsText=state.toolset==='cad'&&((cadCommandSession?.activeId==='AR'&&['rowSpacing','polarAngle','arrayCellCorner'].includes(cadCommandSession.view?.phase))||(['M','CO','S'].includes(cadCommandSession?.activeId)&&['displacement','target','copyArrayTarget'].includes(cadCommandSession.view?.phase))||(['RO','SC'].includes(cadCommandSession?.activeId)&&cadCommandSession.view?.phase==='target')||(cadCommandSession?.activeId==='SC'&&cadCommandSession.view?.phase==='newLength2')||(cadCommandSession?.activeId==='MI'&&cadCommandSession.view?.phase==='axis2')||(cadCommandSession?.activeId==='PE'&&['moveVertex','insertVertex','prependVertex94','arcMidVertex94','width','widthEnd','bulge'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='LEN'&&cadCommandSession.view?.phase==='dynamicEnd'))&&!state.commandComposing;return acceptsText&&text.trim()?{type:'text',text}:{point,shift,acceptsText};}
+  function arrayInputPreview101(point,shift=false){const text=String(dom.commandInput.value??''),acceptsText=state.toolset==='cad'&&((cadCommandSession?.activeId==='DAN'&&['vertex','ray1','ray2','quadrant','location'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='DIMORDINATE'&&['feature','leader'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='DIMARC'&&['partialStart','partialEnd','location'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='DIMJOGGED'&&['origin','location','jog'].includes(cadCommandSession.view?.phase))||(['DLI','DIMLINEAR'].includes(cadCommandSession?.activeId)&&['p2','offset'].includes(cadCommandSession.view?.phase))||(['DRA','DDI'].includes(cadCommandSession?.activeId)&&cadCommandSession.view?.phase==='location')||(['DCO','DBA'].includes(cadCommandSession?.activeId)&&cadCommandSession.view?.phase==='endpoint')||(cadCommandSession?.activeId==='DIMTEDIT'&&['location','angle'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='DIMEDIT'&&cadCommandSession.view?.phase==='angle')||(cadCommandSession?.activeId==='DIMREASSOCIATE'&&cadCommandSession.view?.phase==='anchor'&&['p1','p2','feature','vertex','ray1','ray2'].includes(cadCommandSession.view?.slot))||(cadCommandSession?.activeId==='AR'&&['rowSpacing','polarAngle','polarStep','arrayCellCorner','pathSpacing'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='ARRAYEDIT'&&['arrayEditValue','arrayReplaceTarget'].includes(cadCommandSession.view?.phase))||(['M','CO','S'].includes(cadCommandSession?.activeId)&&['displacement','target','copyArrayTarget'].includes(cadCommandSession.view?.phase))||(['RO','SC'].includes(cadCommandSession?.activeId)&&cadCommandSession.view?.phase==='target')||(cadCommandSession?.activeId==='SC'&&cadCommandSession.view?.phase==='newLength2')||(cadCommandSession?.activeId==='MI'&&cadCommandSession.view?.phase==='axis2')||(cadCommandSession?.activeId==='PE'&&['moveVertex','insertVertex','prependVertex94','arcMidVertex94','width','widthEnd','bulge','joinFuzz','tangent'].includes(cadCommandSession.view?.phase))||(cadCommandSession?.activeId==='LEN'&&cadCommandSession.view?.phase==='dynamicEnd')||(cadCommandSession?.activeId==='O'&&cadCommandSession.view?.phase==='result'))&&!state.commandComposing;return acceptsText&&text.trim()?{type:'text',text,...(['DIMREASSOCIATE','DIMTEDIT','DLI','DIMLINEAR','DRA','DDI','DCO','DBA','DAN','DIMORDINATE','DIMARC','DIMJOGGED'].includes(cadCommandSession?.activeId)?{pointer:point}:{})}:{point,shift,acceptsText};}
   function refreshTypedCadCommandPreview102(){const event=arrayInputPreview101(state.cursorWorld??{x:0,y:0},state.shiftDown);if(event.type==='text'||event.acceptsText){cadCommands().preview(event);render();}}
   function refreshCadPreview(){if(state.toolset!=='cad'||!state.cursorWorld)return;if(cadGripDraft){cadGripPreview(state.cursorWorld);return;}if(cadCommandSession?.activeId)cadCommands().preview(arrayInputPreview101(state.cursorWorld,state.shiftDown));else if(['trim','extend'].includes(state.activeTool))updateTrimPreview(state.cursorWorld);}
   function cycleCadSnap(){if(!cadSnapCandidates.length||!cadSnapPointer)return false;cadSnapCycle=(cadSnapCycle+1)%cadSnapCandidates.length;const point=nearestSnap(cadSnapPointer,null,state.toolset==='plan'?state.stairDraft:cadPointInputBase());if(state.toolset==='plan'&&state.activeTool==='stair')state.previewEnd=point;else refreshCadPreview();render();return true;}
@@ -3798,11 +4033,20 @@
   }
 
   function captureDragCancelState(){return{workspace:historySnapshot(),history:[...state.history],future:[...state.future],selectionIds:[...state.selectedObjectIds],selectedObjectId:state.selectedObjectId,selectedReferenceId:state.selectedReferenceId,selectedRegionId:state.selectedRegionId};}
+  function finishCadArrayDrag(drag,object){
+    const objects=JSON.parse(drag.cancelState.workspace).objects,index=objects.findIndex(o=>o.id===object.id);
+    if(index<0)throw Error('stale-array-drag');
+    const changes=augmentCadOwnedChanges(objects,[{before:objects[index],after:object,index}]);
+    const next=modules.cadChangeSet.apply(modules.cadChangeSet.create('CAD GRIP',changes),objects);
+    modules.projectStaging.validate({format:'PieniPlan',schemaVersion:PROJECT_SCHEMA,requiredCapabilities:PROJECT_CAPABILITIES(next),drawing:{objects:next,blockDefinitions:state.blockDefinitions,dimensionStyles:state.dimensionStyles}});
+    state.objects=next;
+    rebuildObjectSnapIndex();
+  }
   function beginObjectDrag(e,p,obj,forcedMode=null){
     if(obj?.type==='space')return false;if(state.toolset==='plan'&&!allowPlanVersionEdit([obj.id]))return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const handle=hitHandle(p,obj),mode=forcedMode||handle||'body',cancelState=captureDragCancelState();state.dragEdit={pointerId:e.pointerId,objectId:obj.id,mode,start:{...p},snapshot:JSON.parse(JSON.stringify(obj)),historyPushed:false,cancelState};canvas.setPointerCapture?.(e.pointerId);host.dataset.drag='true';return true;
   }
   function beginCopyDrag(e,p,obj){
-    if(!obj||obj.type==='space')return false;if(state.toolset==='plan'&&!allowPlanVersionEdit([obj.id],{creation:true}))return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const cancelState=captureDragCancelState();if(modules.cadPolyline.is(obj)){pushHistory();const copy=cloneCadPolylineWithFreshIds(obj);state.objects.push(copy);setSelectionIds(new Set([copy.id]));state.dragEdit={pointerId:e.pointerId,objectId:copy.id,mode:'body',start:{...p},snapshot:JSON.parse(JSON.stringify(copy)),historyPushed:true,copyCreated:true,cancelState};canvas.setPointerCapture?.(e.pointerId);host.dataset.drag='true';markDirty(true);rebuildObjectSnapIndex();renderPrimaryPanel();renderProperties();render();return true;}pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionExactBaseline;delete copy.recognitionDetached;if(copy.type==='wall')copy.attachments={};state.objects.push(copy);setSelectionIds(new Set([copy.id]));state.dragEdit={pointerId:e.pointerId,objectId:copy.id,mode:(copy.type==='door'||copy.type==='window')?'center':'body',start:{...p},snapshot:JSON.parse(JSON.stringify(copy)),historyPushed:true,copyCreated:true,cancelState};canvas.setPointerCapture?.(e.pointerId);host.dataset.drag='true';markDirty(true);rebuildObjectSnapIndex();renderPrimaryPanel();renderProperties();render();return true;
+    if(!obj||obj.type==='space')return false;if(state.toolset==='plan'&&!allowPlanVersionEdit([obj.id],{creation:true}))return false;if(state.toolset==='cad'&&!cadObjectModifiable(obj))return false;const cancelState=captureDragCancelState();if(modules.cadPolyline.is(obj)){pushHistory();const copy=cloneCadPolylineWithFreshIds(obj);state.objects.push(copy);setSelectionIds(new Set([copy.id]));state.dragEdit={pointerId:e.pointerId,objectId:copy.id,mode:'body',start:{...p},snapshot:JSON.parse(JSON.stringify(copy)),historyPushed:true,copyCreated:true,cancelState};canvas.setPointerCapture?.(e.pointerId);host.dataset.drag='true';markDirty(true);rebuildObjectSnapIndex();renderPrimaryPanel();renderProperties();render();return true;}pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.array104;delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionExactBaseline;delete copy.recognitionDetached;if(copy.type==='wall')copy.attachments={};state.objects.push(copy);setSelectionIds(new Set([copy.id]));state.dragEdit={pointerId:e.pointerId,objectId:copy.id,mode:(copy.type==='door'||copy.type==='window')?'center':'body',start:{...p},snapshot:JSON.parse(JSON.stringify(copy)),historyPushed:true,copyCreated:true,cancelState};canvas.setPointerCapture?.(e.pointerId);host.dataset.drag='true';markDirty(true);rebuildObjectSnapIndex();renderPrimaryPanel();renderProperties();render();return true;
   }
   function ensureDragHistory(){if(state.dragEdit&&!state.dragEdit.historyPushed){pushHistory();state.dragEdit.historyPushed=true;}}
   function moveChildrenWithWall(wallId,dx,dy){/* openings are parametric on the wall and move with it automatically */}
@@ -3891,7 +4135,7 @@
     if(cadCommandSession?.activeId==='PL'){reportCadCommand(cadCommands().preview({point:p,shift:Boolean(e.shiftKey)}));updateContextBar();render();return;}
     if(modules.nativeDrawCommands.ids.includes(cadCommandSession?.activeId)){reportCadCommand(cadCommands().preview({point:p,shift:Boolean(e.shiftKey)}));render();return;}
     if(state.toolset==='cad'&&[...modules.cadStroke.settingIds,...modules.nativeDimensionTextEdit.ids,...modules.nativeTextEdit.ids,...modules.nativeSetByLayer.ids,...modules.nativeDimensionChains.ids,...modules.nativeRadialDimension.ids,...modules.nativeLinearDimension.ids,...modules.nativeAngularDimension.ids,...modules.nativeArcDimension.ids,...modules.nativeJoggedDimension.ids,...modules.nativeCreationAppearance.ids,...modules.plotTransparency.ids,...modules.nativeDimensionAngular.ids,...modules.nativeOrdinate.ids,...modules.nativeDimensionAssociation.ids,...modules.nativeTransformCommands.ids,...modules.nativeArchitecturalCommands.ids,...modules.nativeEditCommands.ids].includes(cadCommandSession?.activeId)){reportCadCommand(cadCommands().preview(arrayInputPreview101(p,Boolean(e.shiftKey))));render();return;}
-    if(state.toolset==='cad'&&modules.nativeModifyCommands.ids.includes(cadCommandSession?.activeId)){reportCadCommand(cadCommands().preview({point:p,shift:Boolean(e.shiftKey)}));render();return;}
+    if(state.toolset==='cad'&&modules.nativeModifyCommands.ids.includes(cadCommandSession?.activeId)){reportCadCommand(cadCommands().preview(arrayInputPreview101(p,Boolean(e.shiftKey))));render();return;}
     if(state.activeTool==='reconstruct'&&state.curveReconstruction){const obj=hitObject(p);state.curveReconstruction.hoverId=curveReconstructionEligibleObject(obj)?obj.id:null;state.hoveredObjectId=null;render();return;}
     if(state.activeTool==='constraint')updateConstraintHover(p);else updateHover(p);
     if(state.activeTool==='space')updateSpaceHoverPreview(p);else state.spaceHoverPreview=null;
@@ -3927,7 +4171,7 @@
     if(state.activeTool==='region'&&state.toolset==='cad'){state.regionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw}};canvas.setPointerCapture?.(e.pointerId);render();return;}
     if(cadCommandSession?.activeId==='PL'){const result=reportCadCommand(dispatchCadPoint({type:'point',point:raw,shift:Boolean(e.shiftKey)}));updateContextBar();render();return result;}
     if(modules.nativeDrawCommands.ids.includes(cadCommandSession?.activeId)){const result=reportCadCommand(dispatchCadPoint({type:'point',point:raw,shift:Boolean(e.shiftKey)}));if(result?.ok&&String(result.code||'').startsWith('committed')){setTool('select','select');setCommandStatus(t('command.finished'),'strong');}else render();return result;}
-    if(state.toolset==='cad'&&(cadCommandSession?.activeId==='DIMEDIT'||modules.nativeDimensionAssociation.ids.includes(cadCommandSession?.activeId)||modules.nativeSetByLayer.ids.includes(cadCommandSession?.activeId))&&cadCommandSession.view?.phase==='select'&&!hitObject(raw)){state.selectionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw},mode:e.shiftKey?'remove':'add',previewIds:new Set()};canvas.setPointerCapture?.(e.pointerId);render();return;}
+    if(cadCommandWindowSelection()&&!hitObject(raw)){state.selectionDrag={pointerId:e.pointerId,start:{...raw},current:{...raw},mode:e.shiftKey?'remove':'add',previewIds:new Set()};canvas.setPointerCapture?.(e.pointerId);render();return;}
     // TEXTEDIT opens a focused textarea during pointerdown. Suppress only this
     // selection click's later canvas focus default, which would instantly finish it.
     if(state.toolset==='cad'&&cadCommandSession?.activeId==='TEXTEDIT'){e.preventDefault();const result=reportCadCommand(dispatchCadPoint({type:'point',point:raw,shift:Boolean(e.shiftKey)}));updateContextBar();render();return result;}
@@ -3964,7 +4208,19 @@
     state.shiftGuide=null;state.smartGuides=[];state.snapIndicator=null;if(status)setCommandStatus(t('command.cancelled'));updateAll();return true;
   }
   function onPointerCancel(e){if(featureFill?.selection.current){featureFill.cancelSelection();return;}if(state.dragEdit&&state.dragEdit.pointerId===e.pointerId){cancelDirectDrag();return;}onPointerUp(e);}
-  function onPointerUp(e){if(transparentNavigationUp95(e))return;if(featureFill?.pointerUp(e))return;if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){const drag=state.selectionDrag,candidates=[...(drag.previewIds||new Set())];state.selectionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(state.toolset==='cad'&&(cadCommandSession?.activeId==='DIMEDIT'||modules.nativeDimensionAssociation.ids.includes(cadCommandSession?.activeId)||modules.nativeSetByLayer.ids.includes(cadCommandSession?.activeId))&&cadCommandSession.view?.phase==='select')reportCadCommand(cadCommands().dispatch({type:'selection',ids:candidates,remove:drag.mode==='remove'}));else applySelectionSet(candidates,drag.mode);renderPrimaryPanel();renderProperties();render();return;}if(state.dragEdit){const drag=state.dragEdit,hadChange=drag.historyPushed,obj=state.objects.find(o=>o.id===drag.objectId);state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(hadChange&&obj?.type==='wall'){if(drag.mode!=='body')syncDependentsOfWall(obj.id);refreshSpaces();}if(hadChange){recordEdit('drag',{objectId:obj?.id||drag.objectId,mode:drag.mode,tool:state.activeTool});rebuildObjectSnapIndex();updateAll();}state.shiftGuide=null;return;}if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(state.toolset==='cad'&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY))onPointerMove({...viewportPointer95(e),buttons:0,preventDefault(){}}); }
+  function onPointerUp(e){if(transparentNavigationUp95(e))return;if(featureFill?.pointerUp(e))return;if(isCompactViewer()&&state.viewerPointers.has(e.pointerId)){endViewerPointer(e);return;}if(state.regionDrag&&state.regionDrag.pointerId===e.pointerId){const drag=state.regionDrag;state.regionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}const r=rectFromPoints(drag.start,drag.current);if((r.maxx-r.minx)>20&&(r.maxy-r.miny)>20){const name=prompt(t('region.namePrompt'),t('region.defaultName',{n:state.drawingRegions.length+1}));if(name!==null){pushHistory();const region={id:uid('region'),name:(name||t('region.defaultName',{n:state.drawingRegions.length+1})).trim(),...r};state.drawingRegions.push(region);state.selectedRegionId=region.id;markDirty(true);updateAll();}}setTool('select','select');return;}if(state.selectionDrag&&state.selectionDrag.pointerId===e.pointerId){const drag=state.selectionDrag,candidates=[...(drag.previewIds||new Set())];state.selectionDrag=null;try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(cadCommandWindowSelection())reportCadCommand(cadCommands().dispatch({type:'selection',ids:candidates,remove:drag.mode==='remove'}));else applySelectionSet(candidates,drag.mode);renderPrimaryPanel();renderProperties();render();return;}if(state.dragEdit){
+    const drag=state.dragEdit,hadChange=drag.historyPushed,obj=state.objects.find(o=>o.id===drag.objectId);
+    const arrayDrag=hadChange&&state.toolset==='cad'&&!drag.copyCreated&&obj&&(obj.array104?.follow===true
+      ||state.objects.some(o=>o.array104?.follow===true&&o.array104.sourceId===obj.id
+        ||o.array104?.recipe.type==='path'&&o.array104.recipe.guideId===obj.id));
+    if(arrayDrag)try{finishCadArrayDrag(drag,obj);}catch(error){
+      cancelDirectDrag({status:false});setCommandStatus(cadFaultMessage(error.message),'error');return;
+    }
+    state.dragEdit=null;host.dataset.drag='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}
+    if(hadChange&&obj?.type==='wall'){if(drag.mode!=='body')syncDependentsOfWall(obj.id);refreshSpaces();}
+    if(hadChange){recordEdit('drag',{objectId:obj?.id||drag.objectId,mode:drag.mode,tool:state.activeTool});if(!arrayDrag)rebuildObjectSnapIndex();updateAll();}
+    state.shiftGuide=null;return;
+  }if(!state.pan)return;state.pan=null;host.dataset.pan='false';try{canvas.releasePointerCapture?.(e.pointerId);}catch(_){}if(state.toolset==='cad'&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY))onPointerMove({...viewportPointer95(e),buttons:0,preventDefault(){}}); }
   function onWheel(e){e.preventDefault();if(featureFill?.selection.current)return;viewportFit?.manual('wheel');const s=fromPointerEvent(e),before=screenCssToWorld(s),factor=Math.exp(-e.deltaY*.0014);state.camera.zoom=clamp(state.camera.zoom*factor,.002,8);const after=screenCssToWorld(s);state.camera.cx+=before.x-after.x;state.camera.cy+=before.y-after.y;render();}
 
   function planDeletionAxis96(){return{wallId:state.baseAxisWallId||null,angle:state.baseAxisAngle||0};}
@@ -4026,6 +4282,12 @@
     if(mode==='window'){target.range=options.range||lastFitWindow;if(!target.range)return beginViewportWindow();}
     if(mode==='work'){target.regionId=options.regionId||drawingRegionForFit()?.id;if(!target.regionId)return false;}
     if(mode==='main'){target.floorId=state.toolset==='plan'?state.activeFloorId:null;target.regionId=drawingRegionForFit()?.id||null;}
+    if(state.toolset==='cad'){
+      const box=host.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);
+      if(box.width>0&&box.height>0&&(canvas.width!==Math.max(1,Math.round(box.width*dpr))||canvas.height!==Math.max(1,Math.round(box.height*dpr))||Number(canvas.dataset.dpr||0)!==dpr)){
+        cancelAnimationFrame(canvasResizeRaf);canvasResizeRaf=0;resizeCanvas();
+      }
+    }
     const result=viewportFit.fit(mode,target);
     if(result&&options.manual)viewportFit.manual('command-zoom',{record:false});
     updateViewMenuActions();return result;
@@ -5380,6 +5642,9 @@
     let command=String(raw||'').trim(),upper=command.toUpperCase();
     if(transparentNavigation95)return transparentNavigationInput95(command);
     if(/^'(?:_?\.?)(?:ZOOM|Z|PAN|P)$/i.test(command))return startTransparentNavigation95(/(?:ZOOM|Z)$/i.test(command)?'ZOOM':'PAN',previousPrompt95);
+    // Resolve an idle CAD command before early dialog/settings branches. Drafts
+    // and active prompts retain ownership of their option, name and point text.
+    if(state.toolset==='cad'&&!cadCommandSession?.activeId&&!state.commandPending&&!state.annotationDraft&&!cadSelectionShape&&!cadGripDraft&&!cadTrimState&&upper){const resolved=commandPreferences.resolve(upper,'cad');if(resolved)command=upper=resolved.name;else if(commandCore.catalog.some(c=>c.aliases.includes(upper))){setCommandStatus(t('command.unknown',{command:upper}),'error');return false;}}
     if(state.toolset==='cad'&&!cadCommandSession?.activeId){const pref=commandPreferences.resolve(upper,'cad')?.id;if([...modules.cadInteraction.ids,'LOGFILEON','LOGFILEOFF'].includes(pref)){command=upper=pref;}}
     if(state.toolset==='cad'&&cadCommandSession?.activeId==='-LAYER')return reportCadCommand(dispatchCadPoint(command?{type:'text',text:command}:{type:'enter'}));
     // Active dimension options/value prompts own their input before global
@@ -5431,6 +5696,7 @@
     if(state.toolset==='cad'&&[...modules.cadStroke.settingIds,...modules.nativeDimensionTextEdit.ids,...modules.nativeTextEdit.ids,...modules.nativeSetByLayer.ids,...modules.nativeDimensionChains.ids,...modules.nativeRadialDimension.ids,...modules.nativeLinearDimension.ids,...modules.nativeAngularDimension.ids,...modules.nativeArcDimension.ids,...modules.nativeJoggedDimension.ids,...modules.nativeCreationAppearance.ids,...modules.plotTransparency.ids,...modules.nativeDimensionAngular.ids,...modules.nativeOrdinate.ids].includes(upper)){setTool('select','select');state.lastCommand=upper;state.activeCommand=upper;const r=reportCadCommand(cadCommands().start(upper));updateContextBar();render();return r;}
     if(state.toolset==='cad'&&modules.nativeDimensionAssociation.ids.includes(cadCommandSession?.activeId)){const r=reportCadCommand(dispatchCadPoint(command?{type:'text',text:command}:{type:'enter'}));updateContextBar();render();return r;}
     if(state.toolset==='cad'&&modules.nativeDimensionAssociation.ids.includes(upper)){setTool('select','select');state.lastCommand=upper;state.activeCommand=upper;const r=reportCadCommand(cadCommands().start(upper));updateContextBar();render();return r;}
+    if(state.toolset==='cad'&&upper==='ARRAYEDIT'){setTool('select','select');state.lastCommand=upper;state.activeCommand=upper;const r=reportCadCommand(cadCommands().start(upper));updateContextBar();render();return r;}
     if(state.toolset==='cad'&&cadCommandSession?.activeId==='PL'){const r=reportCadCommand(dispatchCadPoint(command?{type:'text',text:command}:{type:'enter'}));if(r?.ok&&String(r.code||'').startsWith('committed')){setTool('select','select');setCommandStatus(t('command.finished'),'strong');}updateContextBar();render();return r;}
     if(state.toolset==='cad'&&upper==='PROPERTIES'){openInspector('properties');return{ok:true};}
     if(state.toolset==='cad'&&upper==='OSNAP'){cadPrecisionUI.open();return{ok:true};}
@@ -5451,7 +5717,7 @@
     if(modules.nativeDrawCommands.ids.includes(cadCommandSession?.activeId)&&command){const result=reportCadCommand(dispatchCadPoint({type:'text',text:command}));if(result?.ok&&String(result.code||'').startsWith('committed')){setTool('select','select');setCommandStatus(t('command.finished'),'strong');dom.commandInput.blur();host.focus();}return result;}
     if(state.toolset==='cad'&&[...modules.cadStroke.settingIds,...modules.nativeDimensionTextEdit.ids,...modules.nativeTextEdit.ids,...modules.nativeSetByLayer.ids,...modules.nativeDimensionChains.ids,...modules.nativeRadialDimension.ids,...modules.nativeLinearDimension.ids,...modules.nativeAngularDimension.ids,...modules.nativeArcDimension.ids,...modules.nativeJoggedDimension.ids,...modules.nativeCreationAppearance.ids,...modules.plotTransparency.ids,...modules.nativeDimensionAngular.ids,...modules.nativeOrdinate.ids,...modules.nativeDimensionAssociation.ids,...modules.nativeTransformCommands.ids,...modules.nativeArchitecturalCommands.ids,...modules.nativeEditCommands.ids].includes(cadCommandSession?.activeId)){const result=reportCadCommand(dispatchCadPoint(command?{type:'text',text:command}:{type:'enter'}));return result;}
     if(state.toolset==='cad'&&modules.nativeModifyCommands.ids.includes(cadCommandSession?.activeId)){const before=cadCommandSession.describe();const result=reportCadCommand(dispatchCadPoint(command?{type:'text',text:command}:{type:'enter'}));const after=cadCommandSession.describe();if(before.phase==='distance'){if(result?.ok&&after.phase!=='distance'){dom.commandInput.blur();host.focus();}else focusCadModifyDistanceInput(before.id);}return result;}
-    if(state.toolset==='cad'&&modules.nativeModifyCommands.resolve(upper)){const id=modules.nativeModifyCommands.resolve(upper);clearMultiSelection();state.lastCommand=id;if(['BR','J','O','F','CH'].includes(id)){if(!['O','F','CH'].includes(id)){dom.commandInput.blur();host.focus();}const tool=id==='BR'?'break':id==='J'?'join':id==='O'?'offset':id==='CH'?'chamfer':'fillet',activated=setTool(tool,'modify');if(['O','F','CH'].includes(id)&&activated!==false&&state.activeTool===tool)focusCadModifyDistanceInput(id);return{ok:activated!==false&&state.activeTool===tool,code:activated!==false?'started':'unavailable'};}setTool('select','select');state.activeCommand=id;const started=reportCadCommand(cadCommands().start(id));if(started?.ok&&cadCommands().describe()?.phase==='distance')focusCadModifyDistanceInput(id);else{dom.commandInput.blur();host.focus();}return started;}
+    if(state.toolset==='cad'&&modules.nativeModifyCommands.resolve(upper)){const id=modules.nativeModifyCommands.resolve(upper);if(id!=='J')clearMultiSelection();state.lastCommand=id;if(['BR','J','O','F','CH'].includes(id)){if(!['O','F','CH'].includes(id)){dom.commandInput.blur();host.focus();}const tool=id==='BR'?'break':id==='J'?'join':id==='O'?'offset':id==='CH'?'chamfer':'fillet',activated=setTool(tool,'modify');if(['O','F','CH'].includes(id)&&activated!==false&&state.activeTool===tool)focusCadModifyDistanceInput(id);return{ok:activated!==false&&state.activeTool===tool,code:activated!==false?'started':'unavailable'};}setTool('select','select');state.activeCommand=id;const started=reportCadCommand(cadCommands().start(id));if(started?.ok&&cadCommands().describe()?.phase==='distance')focusCadModifyDistanceInput(id);else{dom.commandInput.blur();host.focus();}return started;}
     if(state.toolset==='cad'&&['MA','SIMILAR'].includes(cadCommandSession?.activeId))return reportCadCommand(dispatchCadPoint({type:'text',text:command}));
     if(state.toolset==='cad'&&['MA','MATCHPROP'].includes(upper)){setTool('select','select');clearMultiSelection();state.lastCommand='MA';state.activeCommand='MA';dom.commandInput.blur();host.focus();return reportCadCommand(cadCommands().start('MA'));}
     if(state.toolset==='cad'&&modules.nativeEditCommands.resolve(upper)){const id=modules.nativeEditCommands.resolve(upper);state.lastCommand=id;setTool(id==='LEN'?'lengthen':'pedit','modify');return{ok:true};}
@@ -5707,7 +5973,7 @@
       try{if(!commitCadChanges('DUPLICATE',[{before:null,after:copy,index:state.objects.length}]))return false;}catch(error){setCommandStatus(cadFaultMessage(error.message),'error');return false;}
       setSelectionIds(new Set([copy.id]));updateAll();return true;
     }
-    pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionExactBaseline;delete copy.recognitionDetached;if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if((isArcWall(copy)||isPlanDisplayArc(copy))&&copy.center)copy.center.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;else if(copy.polygon)copy.polygon=copy.polygon.map(q=>({x:q.x+200,y:q.y}));state.objects.push(copy);if(copy.type==='stair')selectOnly(copy.id);else state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
+    pushHistory();const copy=JSON.parse(JSON.stringify(obj));copy.id=uid(obj.type);delete copy.array104;delete copy.recognizedFromCad;delete copy.sourceRegionId;delete copy.recognitionSourceIds;delete copy.recognitionConfidence;delete copy.recognitionBaselineSignature;delete copy.recognitionExactBaseline;delete copy.recognitionDetached;if(copy.type==='door'||copy.type==='window'){copy.t=clamp((copy.t??.5)+.08,0,1);}else if(copy.type==='dimension'){copy.offset=(copy.offset||0)+120;}else if(copy.a&&copy.b){copy.a.x+=200;copy.b.x+=200;if((isArcWall(copy)||isPlanDisplayArc(copy))&&copy.center)copy.center.x+=200;if(copy.type==='wall')copy.attachments={};}else if(copy.type==='cadCircle')copy.center.x+=200;else if(copy.point)copy.point.x+=200;else if(copy.polygon)copy.polygon=copy.polygon.map(q=>({x:q.x+200,y:q.y}));state.objects.push(copy);if(copy.type==='stair')selectOnly(copy.id);else state.selectedObjectId=copy.id;markDirty(true);rebuildObjectSnapIndex();updateAll();}
   function toolCatalogFor(mode){return mode==='plan'?planToolCatalog:cadToolCatalog;}
   function toolCategoriesFor(mode){return mode==='plan'?planCategories:cadCategories;}
   function activeCategoryForTool(mode,tool){const catalog=toolCatalogFor(mode);for(const [group,items] of Object.entries(catalog))if(items.some(item=>item.id===tool))return group;return'select';}

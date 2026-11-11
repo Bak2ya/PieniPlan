@@ -140,11 +140,46 @@
   if(e.type==='cadArc'){const sign=Math.sign(e.sweep)||1,radius=e.radius-sign*signedDistance;if(!(radius>OFFSET_EPS))return null;const start=root.geometryQuery.pointAt({center:e.center,radius},e.startAngle),end=root.geometryQuery.pointAt({center:e.center,radius},e.startAngle+e.sweep);return{kind:'arc',source:e,support:{type:'cadCircle',center:{...e.center},radius},start,end};}return null;}
  function offsetJoinPoint(prev,next,original){const a=prev.end,b=next.start,tol=Math.max(OFFSET_EPS,1e-7);if(pointDistance(a,b)<=tol*8)return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};const hits=root.geometryQuery.intersections(prev.support,next.support,tol);if(!hits.length)return null;hits.sort((p,q)=>pointDistance(p,original)-pointDistance(q,original));return{x:hits[0].x,y:hits[0].y};}
  function offsetArcBulge(source,support,a,b){const sa=Math.atan2(a.y-support.support.center.y,a.x-support.support.center.x)*180/Math.PI,ea=Math.atan2(b.y-support.support.center.y,b.x-support.support.center.x)*180/Math.PI,sign=Math.sign(source.sweep)||1,delta=sign>0?offsetNorm(ea-sa):offsetNorm(sa-ea);if(!(delta>OFFSET_ANGLE_EPS&&delta<360-OFFSET_ANGLE_EPS))return null;const sweep=sign*delta,bulge=Math.tan(sweep*Math.PI/180/4);return Number.isFinite(bulge)?bulge:null;}
- function offset(o,distance,sidePoint){if(o.curveFit)return null;if(!is(o)||!(Number(distance)>OFFSET_EPS)||!sidePoint||![sidePoint.x,sidePoint.y].every(finite))return null;validate(o);const edges=get(o).edges;if(!edges.length)return null;const hit=nearest(o,sidePoint);if(!hit)return null;const clicked=edges.find(e=>e.edgeId===hit.edgeId);if(!clicked)return null;const sideSign=offsetEdgeSideSign(clicked,sidePoint);if(!sideSign)return null;const signedDistance=sideSign*Number(distance),supports=edges.map(e=>offsetSupport(e,signedDistance));if(supports.some(x=>!x))return null;const points=[];
-  if(o.closed){for(let i=0;i<o.vertices.length;i++){const p=offsetJoinPoint(supports[(i-1+supports.length)%supports.length],supports[i],o.vertices[i]);if(!p)return null;points.push(p);}}
-  else{points.push({...supports[0].start});for(let i=1;i<o.vertices.length-1;i++){const p=offsetJoinPoint(supports[i-1],supports[i],o.vertices[i]);if(!p)return null;points.push(p);}points.push({...supports.at(-1).end});}
-  const fresh=offsetFreshFactory(),vertices=points.map(p=>({id:fresh('cadVertex'),x:p.x,y:p.y})),edgeCount=edges.length;for(let i=0;i<edgeCount;i++){const a=points[i],b=points[(i+1)%points.length];if(pointDistance(a,b)<=OFFSET_EPS)return null;let bulge=0;if(edges[i].type==='cadArc'){bulge=offsetArcBulge(edges[i],supports[i],a,b);if(bulge===null)return null;}vertices[i].outgoing={...o.vertices[i].outgoing,id:fresh('cadEdge'),bulge};}
-  if(!o.closed)delete vertices.at(-1).outgoing;const out=clone(o);out.id=fresh('cadPolyline');out.vertices=vertices;validate(out);return{kind:'OFFSET',topology:'cadPolyline',before:[],after:[out],sourceId:o.id,distance:Number(distance),side:sideSign>0?'left':'right'};}
+ function offset(o,distance,sidePoint,{through=false}={}){
+  if(!is(o)||o.curveFit?.kind==='spline'||!sidePoint||![sidePoint.x,sidePoint.y].every(finite))return null;
+  const edges=get(o).edges,hit=nearest(o,sidePoint);
+  const clicked=hit&&edges.find(e=>e.edgeId===hit.edgeId);
+  if(!clicked)return null;
+  let signedDistance;
+  if(through){
+   signedDistance=root.cadLinearOperations.offsetDistance(clicked,sidePoint);
+   if(clicked.type==='cadArc')signedDistance*=-Math.sign(clicked.sweep);
+  }else signedDistance=offsetEdgeSideSign(clicked,sidePoint)*Number(distance);
+  if(!finite(signedDistance)||Math.abs(signedDistance)<=OFFSET_EPS||!through&&!(Number(distance)>OFFSET_EPS))return null;
+  const sideSign=Math.sign(signedDistance),supports=edges.map(e=>offsetSupport(e,signedDistance));
+  if(supports.some(x=>!x))return null;
+  const points=o.closed?[]:[{...supports[0].start}];
+  for(let i=o.closed?0:1;i<edges.length;i++){
+   const original=o.curveFit?edgePoint(edges[i],0):o.vertices[i];
+   const p=offsetJoinPoint(supports[(i-1+edges.length)%edges.length],supports[i],original);
+   if(!p)return null;
+   points.push(p);
+  }
+  if(!o.closed)points.push({...supports.at(-1).end});
+  const fresh=offsetFreshFactory(),vertices=points.map(p=>({id:fresh('cadVertex'),x:p.x,y:p.y}));
+  for(let i=0;i<edges.length;i++){
+   const a=points[i],b=points[(i+1)%points.length],edge=edges[i];
+   if(pointDistance(a,b)<=OFFSET_EPS)return null;
+   if(edge.type==='cadLine'){
+    const along=((b.x-a.x)*(edge.b.x-edge.a.x)+(b.y-a.y)*(edge.b.y-edge.a.y))/edgeLength(edge);
+    if(along<=OFFSET_EPS)return null;
+   }
+   const bulge=edge.type==='cadArc'?offsetArcBulge(edge,supports[i],a,b):0;
+   if(bulge===null)return null;
+   const widths=o.curveFit?widthData(edge.startWidth,edge.endWidth):o.vertices[i].outgoing;
+   vertices[i].outgoing={...widths,id:fresh('cadEdge'),bulge};
+  }
+  const out={...clone(o),id:fresh('cadPolyline'),vertices};
+  delete out.curveFit;
+  validate(out);
+  return {kind:'OFFSET',topology:'cadPolyline',before:[],after:[out],sourceId:o.id,
+   distance:Math.abs(signedDistance),side:sideSign>0?'left':'right'};
+ }
 
  // P3.6/P3.7 FILLET topology policy:
  // - FILLET operates on two adjacent analytic edges of the same cadPolyline owner. Primitive LINE↔LINE FILLET remains owned by cadLinearOperations;
@@ -157,6 +192,12 @@
  const filletFreshFactory=()=>{let n=0;return kind=>`__fillet_new_${kind}_${n++}__`;};
  function filletPair(o,p1,p2){const edges=get(o).edges,h1=nearest(o,p1),h2=nearest(o,p2);if(!h1||!h2||h1.edgeId===h2.edgeId)return null;const i=edges.findIndex(e=>e.edgeId===h1.edgeId),j=edges.findIndex(e=>e.edgeId===h2.edgeId);if(i<0||j<0)return null;const N=edges.length;if(!N)return null;
   if(!o.closed){if(i+1===j)return{prevIndex:i,nextIndex:j,cornerIndex:j,prev:edges[i],next:edges[j]};if(j+1===i)return{prevIndex:j,nextIndex:i,cornerIndex:i,prev:edges[j],next:edges[i]};return null;}
+  // A two-edge loop shares both vertices. Keep the corner near the two
+  // picks, using traversal order only for equal distances (Polyline mode).
+  if(N===2){
+   const pickDistance=k=>pointDistance(h1.point,o.vertices[k])+pointDistance(h2.point,o.vertices[k]);
+   if(pickDistance(i)+FILLET_EPS<pickDistance(j))return{prevIndex:j,nextIndex:i,cornerIndex:i,prev:edges[j],next:edges[i]};
+  }
   if((i+1)%N===j)return{prevIndex:i,nextIndex:j,cornerIndex:j,prev:edges[i],next:edges[j]};if((j+1)%N===i)return{prevIndex:j,nextIndex:i,cornerIndex:i,prev:edges[j],next:edges[i]};return null;}
  const edgeLength=e=>e.type==='cadLine'?pointDistance(e.a,e.b):Math.abs(e.sweep)*Math.PI/180*e.radius;
  function filletOffsetLoci(e,r){if(e.type==='cadLine'){const dx=e.b.x-e.a.x,dy=e.b.y-e.a.y,len=Math.hypot(dx,dy);if(!(len>FILLET_EPS))return[];const nx=-dy/len,ny=dx/len;return[-1,1].map(sign=>({type:'cadLine',mode:'line',a:{x:e.a.x+nx*r*sign,y:e.a.y+ny*r*sign},b:{x:e.b.x+nx*r*sign,y:e.b.y+ny*r*sign}}));}
@@ -205,5 +246,31 @@
  function segment(o,index,bulge){if(!is(o)||o.curveFit||!o.vertices[index]?.outgoing||!finite(bulge))return null;const out=clone(o);out.vertices[index].outgoing.bulge=bulge;try{validate(out);}catch{return null;}return{before:[o],after:[out],topology:'cadPolyline',kind:'PEDIT SEGMENT'};}
  function insertVertex(o,index,p,{reshape=false}={}){if(!is(o)||!Number.isInteger(index)||!o.vertices[index]||!p||![p.x,p.y].every(finite))return null;const v=o.vertices[index];if(v.outgoing?.bulge&&!o.curveFit){const hit=root.geometryQuery.projectNearest(get(o).edges[index],p);if(hit?.distance<1e-7)return insertVertexAt(o,p);if(!reshape)return null;const e=get(o).edges[index],q=insertVertexAt(o,root.geometryQuery.pointAt(e,e.startAngle+e.sweep/2));const moved=q&&moveVertex(q.after[0],index+1,p);return moved?{...moved,before:[o]}:null;}const out=clone(o),fresh=vertexEditFreshFactory(),old=out.vertices[index].outgoing,w=old?.endWidth||out.vertices.at(-2)?.outgoing?.endWidth||0;out.vertices[index].outgoing={...(old||{}),id:old?.id||fresh('cadEdge'),bulge:0};out.vertices.splice(index+1,0,{id:fresh('cadVertex'),x:p.x,y:p.y,...(old?{outgoing:{id:fresh('cadEdge'),bulge:0,...widthData(w,w)}}:{})});try{if(out.curveFit?.knots)delete out.curveFit.knots;validate(out);if(out.curveFit)root.cadPolylineFit.derive(out);}catch{return null;}return{before:[o],after:[out],topology:'cadPolyline',kind:'PEDIT INSERT VERTEX'};}
  function chamferAll(o,distance,options={}){if(!is(o)||o.curveFit)return null;let current=o,changed=0,skipped=0;const corners=o.vertices.slice(o.closed?0:1,o.closed?undefined:-1).map(v=>v.id);for(const id of corners){const i=current.vertices.findIndex(v=>v.id===id),es=get(current).edges,n=es.length,prev=es[(i-1+n)%n],next=es[i%n];if(!prev||!next||prev.type!=='cadLine'||next.type!=='cadLine'){skipped++;continue;}const pa={x:(prev.a.x+prev.b.x)/2,y:(prev.a.y+prev.b.y)/2},pb={x:(next.a.x+next.b.x)/2,y:(next.a.y+next.b.y)/2},q=chamferAt(current,pa,pb,distance,options);if(!q){skipped++;continue;}current=q.after[0];for(const v of current.vertices){if(/^__chamfer_new_/.test(v.id))v.id+='step'+changed;if(v.outgoing&&/^__chamfer_new_/.test(v.outgoing.id))v.outgoing.id+='step'+changed;}changed++;}return changed?{before:[o],after:[current],topology:'cadPolyline',kind:'CHAMFER POLYLINE',changed,skipped}:null;}
- root.cadPolyline=Object.freeze({is,capability,requiresClosed2:objects=>objects.some(o=>is(o)&&o.closed&&o.vertices.length===2||o.type==='cadHatch'&&(o.boundaryCurves||[]).some(q=>is(q)&&q.closed&&q.vertices.length===2)),validate,get,candidates,nearest,parameter,reverse,transform,deriveEdge,extensionSupport,extendTerminal,breakBetween,breakVertices,straighten,trimAt,joinOpen,offset,filletAt,chamferAt,chamferAll,setClosed,insertVertexAt,deleteVertex,moveVertex,segment,insertVertex,invalidate,clear,retain,snapPoints,get stats(){return{decodes,revisions:serial,owners:byId.size};}});
+ function strokeAppearance(o){
+  const style={};
+  for(const key of ['cadLayer','layer','color','colorIndex','adaptiveColor','linetype','linetypeScale','lineweight','transparency','transparency98']){
+   if(o[key]!==undefined)style[key]=o[key];
+  }
+  if(o.colorSource100){
+   style.colorSource100={...o.colorSource100};
+  }else if(root.cadNativeColor?.rgb(o.color)!=null&&(o.dxf?.raw?.length||o.colorIndex!=null)){
+   const native=root.cadNativeColor.snapshot(o);
+   if(native?.kind==='aci'||native?.name){
+    const {type,...appearance}=root.cadNativeColor.assign({type:o.type,...style},native);
+    return appearance;
+   }
+  }
+  return style;
+ }
+ function explode(o,uid){
+  if(!is(o)||o.readonly||o.curveFit?.kind==='spline')throw Error('unsupported-geometry');
+  const style=strokeAppearance(o);
+  return get(o).edges.map(edge=>{
+   const {type}=edge;
+   const geometry=type==='cadLine'?{a:{...edge.a},b:{...edge.b}}
+    :{center:{...edge.center},radius:edge.radius,startAngle:edge.startAngle,sweep:edge.sweep};
+   return {id:uid(type),type,...style,...(style.colorSource100?{colorSource100:{...style.colorSource100}}:{}),...geometry};
+  });
+ }
+ root.cadPolyline=Object.freeze({is,capability,requiresClosed2:objects=>objects.some(o=>is(o)&&o.closed&&o.vertices.length===2||o.type==='cadHatch'&&(o.boundaryCurves||[]).some(q=>is(q)&&q.closed&&q.vertices.length===2)),validate,get,candidates,nearest,parameter,reverse,transform,deriveEdge,extensionSupport,extendTerminal,breakBetween,breakVertices,straighten,trimAt,joinOpen,offset,filletAt,chamferAt,chamferAll,setClosed,insertVertexAt,deleteVertex,moveVertex,segment,insertVertex,strokeAppearance,explode,invalidate,clear,retain,snapPoints,get stats(){return{decodes,revisions:serial,owners:byId.size};}});
 })();

@@ -47,11 +47,60 @@
   if(o.type==='cadText'){const h=Math.hypot(m.c,m.d),r=Math.atan2(m.b,m.a)*180/Math.PI;return{...o,point:point(m,o.point),height:o.height*h,width:(o.width||0)*Math.hypot(m.a,m.b),rotation:(o.rotation||0)+r,affine:{matrix:m,original:o},approximation:'nonuniform-text'};}
   throw Error('unsupported-block-geometry:'+o.type);
  }
- function expand(instance,{approximate=true}={}){store();const styleSource=layerSource();const sig=JSON.stringify([instance.matrix,instance.cadLayer,instance.color,instance.colorSource100,instance.colorIndex,instance.adaptiveColor,instance.linetype,instance.lineweight,instance.transparency98,instance.__dimensionTransparency98,instance.dxfInvisible,approximate]);const dimSource=root.cadDimensionStyles?.library?.(),known=cache.get(instance);if(known&&known.source===source&&known.styleSource===styleSource&&known.dimSource===dimSource&&known.sig===sig)return known.items;
-  const out=[],seen=[];function walk(o,m,parent,path,ancestors=[],invisible=false,forcedTransparency98=undefined){if(out.length>100000)throw Error('block-expansion-budget');const props={...appearance(o,parent),...(forcedTransparency98!=null?{transparency98:forcedTransparency98}:{})},referenceLayers=[...ancestors,props.cadLayer],hidden=invisible||Boolean(o.dxfInvisible);if(is(o)){const d=store().get(String(o.blockName).toUpperCase());if(!d)throw Error('missing-block-definition:'+o.blockName);if(seen.includes(o.blockName)||seen.length>=32)throw Error('cyclic-or-deep-block');seen.push(o.blockName);const combined=mul(m,o.matrix);for(const child of d.objects)walk(child,combined,props,path+'/'+child.id,referenceLayers,hidden,forcedTransparency98);seen.pop();}else if(o.type==='cadDimension'&&root.cadDimensionStyles){const picture=root.cadDimensionStyles.presentation(o),scene=picture?[picture]:root.cadDimensionStyles.scene(o,{force:true});for(const child of scene||[])walk(child,m,props,path+'/'+child.id,referenceLayers,hidden,props.transparency98);}else{let q={...transformLeaf(o,m,{approximate}),...props,id:path,blockOwnerId:instance.blockOwnerId||instance.id};if(props.colorSource100)q=root.cadNativeColor.assign(q,props.colorSource100);if(root.cadPolyline?.is(q))q.vertices=q.vertices.map(v=>({...v,id:path+'/'+v.id,...(v.outgoing?{outgoing:{...v.outgoing,id:path+'/'+v.outgoing.id}}:{})}));root.cadBlockReferences?.note(q,referenceLayers,hidden);out.push(q);}}
+ function expand(instance,{approximate=true,oneLevel=false}={}){store();const styleSource=layerSource();const sig=JSON.stringify([instance.matrix,instance.cadLayer,instance.color,instance.colorSource100,instance.colorIndex,instance.adaptiveColor,instance.linetype,instance.lineweight,instance.transparency98,instance.__dimensionTransparency98,instance.dxfInvisible,approximate]);const dimSource=root.cadDimensionStyles?.library?.(),known=cache.get(instance);if(!oneLevel&&known&&known.source===source&&known.styleSource===styleSource&&known.dimSource===dimSource&&known.sig===sig)return known.items;
+  const out=[],seen=[];
+  function walk(o,m,parent,path,ancestors=[],invisible=false,forcedTransparency98,retainInsert=false){
+   if(out.length>=100000)throw Error('block-expansion-budget');
+   const props={...appearance(o,parent),...(forcedTransparency98!=null?{transparency98:forcedTransparency98}:{})};
+   const referenceLayers=[...ancestors,props.cadLayer],hidden=invisible||Boolean(o.dxfInvisible);
+   if(is(o)){
+    const name=String(o.blockName).toUpperCase(),d=store().get(name);
+    if(!d)throw Error('missing-block-definition:'+o.blockName);
+    if(seen.includes(name)||seen.length>=32)throw Error('cyclic-or-deep-block');
+    const combined=mul(m,o.matrix);
+    if(retainInsert){
+     const {a,b,c,d}=combined;
+     if(!matrixValid(combined)||Math.abs(a*c+b*d)>1e-8*Math.abs(a*d-b*c))throw Error('sheared-insert-cannot-export');
+    }else{
+     seen.push(name);
+     for(const child of d.objects)walk(child,combined,props,path+'/'+child.id,referenceLayers,hidden,forcedTransparency98,oneLevel&&seen.length===1);
+     seen.pop();
+     return;
+    }
+   }else if(o.type==='cadDimension'&&root.cadDimensionStyles){
+    const picture=root.cadDimensionStyles.presentation(o),scene=picture?[picture]:root.cadDimensionStyles.scene(o,{force:true});
+    for(const child of scene||[])walk(child,m,props,path+'/'+child.id,referenceLayers,hidden,props.transparency98);
+    return;
+   }
+   let q={...transformLeaf(o,m,{approximate}),...props,id:path,blockOwnerId:instance.blockOwnerId||instance.id};
+   if(props.colorSource100)q=root.cadNativeColor.assign(q,props.colorSource100);
+   if(root.cadPolyline?.is(q))q.vertices=q.vertices.map(v=>({...v,id:path+'/'+v.id,...(v.outgoing?{outgoing:{...v.outgoing,id:path+'/'+v.outgoing.id}}:{})}));
+   if(oneLevel&&hidden)q.dxfInvisible=true;
+   root.cadBlockReferences?.note(q,referenceLayers,hidden);out.push(q);
+  }
+  if(oneLevel){
+   walk(instance,identity(),{},instance.id,[],false,instance.__dimensionTransparency98);
+   return out;
+  }
   walk(instance,identity(),{},instance.id,[],false,instance.__dimensionTransparency98);const cost=out.reduce((n,q)=>n+memberCost(q),0);if(retained.has(instance)){retainedCost-=retained.get(instance);retained.delete(instance);}if(cost<=200000){cache.set(instance,{source,styleSource,dimSource,sig,items:out});retained.set(instance,cost);retainedCost+=cost;while(retainedCost>200000){const [owner,cost]=retained.entries().next().value;retained.delete(owner);cache.delete(owner);retainedCost-=cost;}}return out;
  }
- function definition(name,objects,base){if(String(name).startsWith('*'))throw Error('reserved-block-name');if(!base||!finite(base.x)||!finite(base.y))throw Error('invalid-block-base');const m=matrix({x:-base.x,y:-base.y});return{name,base:{x:0,y:0},objects:objects.map(o=>{if(o.floorId||o.planRole)throw Error('plan-object-cannot-be-blocked');const q=transformLeaf(clone(o),m);delete q.selected;return q;})};}
- function explode(instance,uid){const seen=new Set();function check(name){const d=store().get(String(name).toUpperCase()),k=d?.name.toUpperCase();if(!d)throw Error('missing-block-definition');if(seen.has(k))return;seen.add(k);if(d.readonly||d.objects.some(o=>o.readonly||o.type==='cadDxfRecord'))throw Error('block-content-readonly');for(const o of d.objects)if(is(o))check(o.blockName);}check(instance.blockName);const objects=expand(instance,{approximate:false});return objects.map(o=>{const q=clone(o);q.id=uid(q.type);delete q.blockOwnerId;if(root.cadPolyline?.is(q))q.vertices=q.vertices.map(v=>({...v,id:uid('cadVertex'),...(v.outgoing?{outgoing:{...v.outgoing,id:uid('cadEdge')}}:{})}));return q;});}
+ function definition(name,objects,base){if(String(name).startsWith('*'))throw Error('reserved-block-name');if(!base||!finite(base.x)||!finite(base.y))throw Error('invalid-block-base');const m=matrix({x:-base.x,y:-base.y});return{name,base:{x:0,y:0},objects:objects.map(o=>{if(o.floorId||o.planRole)throw Error('plan-object-cannot-be-blocked');const q=transformLeaf(clone(o),m);delete q.selected;delete q.array104;return q;})};}
+ function explode(instance,uid,{oneLevel=false}={}){
+  const seen=new Set();
+  function check(name){
+   const key=String(name).toUpperCase(),d=store().get(key);
+   if(!d)throw Error('missing-block-definition');
+   if(seen.has(key))return;
+   seen.add(key);
+   if(d.readonly||d.objects.some(o=>o.readonly||o.type==='cadDxfRecord'))throw Error('block-content-readonly');
+   if(!oneLevel)for(const o of d.objects)if(is(o))check(o.blockName);
+  }
+  check(instance.blockName);
+  return expand(instance,{approximate:false,oneLevel}).map(o=>{
+   const q=clone(o);q.id=uid(q.type);delete q.blockOwnerId;
+   if(root.cadPolyline?.is(q))q.vertices=q.vertices.map(v=>({...v,id:uid('cadVertex'),...(v.outgoing?{outgoing:{...v.outgoing,id:uid('cadEdge')}}:{})}));
+   return q;
+  });
+ }
  root.cadBlocks=Object.freeze({capability:'cad.block.v1',unitCapability:'cad.block.units.v1',unitPreferences,unitCode,validateUnits,insertionFactor,insertionMatrix,is,configure,validate,expand,bounds,memberCost,previewBudget,appearance,definition,explode,matrix,matrixValid,inverse,multiply:mul,point,similarity,transformLeaf,get:name=>store().get(String(name).toUpperCase())||null});
 })();

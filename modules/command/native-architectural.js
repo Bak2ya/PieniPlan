@@ -5,24 +5,60 @@
   for(const id of ids)registry.register({id,aliases:names[id],available:c=>c.mode==='cad',transactional:false,historyOwner:'cad-library-change',create(){
    if(['XLINE','RAY'].includes(id))return root.nativeConstructionLines.create(id,p);
    const selected=p.selected();if(id!=='INSERT'&&id!=='XLINE'&&id!=='RAY'&&selected.some(x=>!p.allowed(x)))throw Error('target-not-modifiable');
+   const supported=x=>id!=='EXPLODE'||!p.canExplode||p.canExplode(x);
    const repeating=id==='INSERT'&&nextRepeat&&lastInsert;nextRepeat=false;
-   const draft={id,token:p.token(),ids:new Set(selected.filter(x=>p.allowed(x))),phase:'',name:repeating?lastInsert.name:null,base:null,inputBase:lastInsert?.point||{x:0,y:0},pointer:null,rotation:lastInsert?.rotation||0,scaleX:lastInsert?.scaleX||1,scaleY:lastInsert?.scaleY||1,multiple:Boolean(repeating),preview:null};
+   const draft={id,token:p.token(),ids:new Set(selected.filter(x=>p.allowed(x)&&supported(x))),phase:'',name:repeating?lastInsert.name:null,base:null,inputBase:lastInsert?.point||{x:0,y:0},pointer:null,rotation:lastInsert?.rotation||0,scaleX:lastInsert?.scaleX||1,scaleY:lastInsert?.scaleY||1,multiple:Boolean(repeating),preview:null};
+   if(id==='EXPLODE'&&selected.length!==draft.ids.size)p.select(draft.ids);
    draft.phase=id==='BLOCK'?draft.ids.size?'name':'select':id==='INSERT'?repeating?'position':'name':id==='EXPLODE'?draft.ids.size?'confirm':'select':'base';
    const prompts={select:['객체 선택 · Enter로 확정 · Shift로 제외','Select objects; Enter to finish; Shift to remove'],name:['블록 이름 입력','Enter block name'],base:['기준점 지정','Specify base point'],position:['삽입점 지정 · R 회전 / S 축척 / M 반복 / N 이름','Specify insertion point · R rotation / S scale / M multiple / N name'],rotation:['회전 각도 입력','Enter rotation angle'],scaleX:['X 축척 입력','Enter X scale'],scaleY:['Y 축척 입력','Enter Y scale'],confirm:['분해 결과 확인 · Enter로 확정','Preview explosion; Enter to commit'],direction:['방향 지정','Specify direction']};
    prompts.units=['블록 단위 코드 0~24 · 0 단위 없음 / 1 인치 / 4 mm / 6 m','Block unit code 0–24 · 0 unitless / 1 inch / 4 mm / 6 m'];
-   const show=()=>{let [ko,en]=prompts[draft.phase];if(id==='BLOCK'&&draft.phase==='base'){ko+=' · U 단위';en+=' · U units';}if(id==='INSERT'&&draft.phase==='name'&&lastInsert){ko+=' ['+lastInsert.name+']';en+=' ['+lastInsert.name+']';}p.prompt(id,ko,en);if(['name','rotation','scaleX','scaleY','units'].includes(draft.phase))p.focus();else p.canvas?.();};
+   const show=()=>{let [ko,en]=prompts[draft.phase];if(id==='BLOCK'&&draft.phase==='base'){ko+=' · U 단위';en+=' · U units';}if(id==='INSERT'&&draft.phase==='name'&&lastInsert){ko+=' ['+lastInsert.name+']';en+=' ['+lastInsert.name+']';}if(id==='EXPLODE'&&draft.phase==='confirm'){ko+=draft.explodeAll?' · 모두 분해 · ONE 한 단계':' · 한 단계 · ALL 모두';en+=draft.explodeAll?' · All levels · ONE level':' · One level · ALL levels';}p.prompt(id,ko,en);if(['name','rotation','scaleX','scaleY','units'].includes(draft.phase))p.focus();else p.canvas?.();};
    const resolve=e=>e.type==='point'?p.resolve(e.point,id==='INSERT'?draft.inputBase:draft.base):e.type==='text'?p.parse(e.text,id==='INSERT'?draft.inputBase:draft.base,draft.pointer)?.point:null;
    const same=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<1e-8;
-   function preview(point){let objects=[];if(id==='INSERT'&&draft.phase==='position'&&point)objects=[p.instance(draft.name,point,draft.rotation,draft.scaleX,draft.scaleY,true)];else if(id==='EXPLODE'&&draft.ids.size)objects=p.explodePreview(draft.ids);else if(['XLINE','RAY'].includes(id)&&draft.base&&point&&!same(draft.base,point))objects=[{id:'__architectural_preview__',type:id==='XLINE'?'cadXline':'cadRay',a:draft.base,b:point,mode:id==='XLINE'?'line':'ray',cadLayer:p.layer()}];draft.preview=objects;p.preview(objects);}
+   function preview(point){let objects=[];if(id==='INSERT'&&draft.phase==='position'&&point)objects=[p.instance(draft.name,point,draft.rotation,draft.scaleX,draft.scaleY,true)];else if(id==='EXPLODE'){
+    if(draft.preview)return;
+    draft.previewError=null;
+    if(draft.ids.size){
+     try{objects=p.explodePreview(draft.ids,Boolean(draft.explodeAll));}
+     catch(error){draft.previewError=error.code||error.message;p.explosionFault?.(draft.previewError);}
+    }
+   }else if(['XLINE','RAY'].includes(id)&&draft.base&&point&&!same(draft.base,point))objects=[{id:'__architectural_preview__',type:id==='XLINE'?'cadXline':'cadRay',a:draft.base,b:point,mode:id==='XLINE'?'line':'ray',cadLayer:p.layer()}];draft.preview=objects;p.preview(objects);}
    show();if(draft.phase==='confirm')preview();
    return{view:()=>draft,describe:()=>({phase:draft.phase,pointBase:id==='INSERT'&&draft.phase==='position'?draft.inputBase:id==='BLOCK'&&draft.phase==='base'?draft.base:undefined,input:['point','coordinate','text','enter'],actions:id==='INSERT'&&draft.phase==='position'?[{id:'R',labelKey:'block.rotation'},{id:'S',labelKey:'block.scale'},{id:'M',labelKey:'block.multiple',active:draft.multiple},{id:'N',labelKey:'block.name'}]:[]}),preview(e){if(!p.current(draft.token))return{ok:false,code:'stale-context'};draft.pointer=e.point;preview(resolve({...e,type:e.type||'point'}));return{ok:true};},input(event){if(!p.current(draft.token))return{ok:false,code:'stale-context'};const e=event.type==='keyword'?{type:'text',text:event.value}:event;
-    if(draft.phase==='select'){if(e.type==='selection'){for(const objectId of e.ids||[]){if(!p.allowed(objectId))continue;if(e.remove)draft.ids.delete(objectId);else draft.ids.add(objectId);}p.select(draft.ids);show();return{ok:true};}if(e.type==='enter'){if(!draft.ids.size)return{ok:false,code:'selection-required'};draft.phase=id==='BLOCK'?'name':'confirm';show();if(id==='EXPLODE')preview();return{ok:true};}const o=e.type==='point'?p.pick(e.point):null;if(!o||!p.allowed(o.id))return{ok:false,code:'target-not-modifiable'};e.shift?draft.ids.delete(o.id):draft.ids.add(o.id);p.select(draft.ids);return{ok:true};}
+    if(draft.phase==='select'){
+     if(e.type==='selection'){
+      for(const objectId of e.ids||[]){
+       if(e.remove)draft.ids.delete(objectId);
+       else if(p.allowed(objectId)&&supported(objectId))draft.ids.add(objectId);
+      }
+      draft.preview=null;p.select(draft.ids);show();return{ok:true};
+     }
+     if(e.type==='enter'){
+      if(!draft.ids.size)return{ok:false,code:'selection-required'};
+      draft.phase=id==='BLOCK'?'name':'confirm';show();
+      if(id==='EXPLODE')preview();
+      return{ok:true};
+     }
+     const o=e.type==='point'?p.pick(e.point):null;
+     if(!o||!p.allowed(o.id))return{ok:false,code:'target-not-modifiable'};
+     if(!supported(o.id))return{ok:false,code:'unsupported-geometry'};
+     e.shift?draft.ids.delete(o.id):draft.ids.add(o.id);draft.preview=null;p.select(draft.ids);return{ok:true};
+    }
     if(draft.phase==='name'){const name=e.type==='enter'&&id==='INSERT'?lastInsert?.name:e.type==='text'?e.text.trim():null;if(!name)return{ok:false,code:'block-name-required'};draft.name=name;if(id==='INSERT'){if(!p.definition(name))return{ok:false,code:'missing-block-definition'};draft.phase='position';}else{if(p.definition(name))return{ok:false,code:'block-name-exists'};draft.phase='base';}show();return{ok:true};}
     if(id==='BLOCK'&&draft.phase==='base'&&e.type==='text'&&['U','UNITS'].includes(e.text.trim().toUpperCase())){draft.phase='units';show();return{ok:true};}
     if(draft.phase==='units'){const n=e.type==='enter'?draft.unitCode??4:e.type==='text'&&e.text.trim()!==''?Number(e.text):NaN;if(!root.cadBlocks.unitCode(n))return{ok:false,code:'invalid-number'};draft.unitCode=n;draft.phase='base';show();return{ok:true};}
     if(['rotation','scaleX','scaleY'].includes(draft.phase)){const n=e.type==='enter'?draft[draft.phase]:e.type==='text'&&e.text.trim()!==''?(draft.phase==='rotation'&&root.cadUnits?.parseAngle?root.cadUnits.parseAngle(e.text).degrees:Number(e.text)):NaN;if(!Number.isFinite(n)||draft.phase!=='rotation'&&Math.abs(n)<1e-9)return{ok:false,code:'invalid-number'};draft[draft.phase]=n;if(draft.phase==='scaleX'){draft.scaleY=n;draft.phase='scaleY';}else draft.phase='position';show();if(draft.pointer)preview(draft.pointer);return{ok:true};}
     if(draft.phase==='position'&&e.type==='text'){const option=e.text.trim().toUpperCase();if(['R','ROTATION','S','SCALE','M','MULTIPLE','N','NAME'].includes(option)){if(option==='R'||option==='ROTATION')draft.phase='rotation';else if(option==='S'||option==='SCALE')draft.phase='scaleX';else if(option==='N'||option==='NAME')draft.phase='name';else draft.multiple=!draft.multiple;show();return{ok:true};}}
-    if(draft.phase==='confirm'){if(e.type!=='enter')return{ok:false,code:'enter-required'};return{ok:true,commit:true,value:{...draft}};}
+    if(draft.phase==='confirm'){
+     const mode=e.type==='text'?e.text.trim().toUpperCase():'';
+     if(mode==='ALL'||mode==='ONE'){
+      draft.explodeAll=mode==='ALL';draft.preview=null;show();preview();
+      return {ok:true};
+     }
+     if(e.type!=='enter')return{ok:false,code:'enter-required'};
+     if(draft.previewError){p.explosionFault?.(draft.previewError);return {ok:false,code:draft.previewError};}
+     return {ok:true,commit:true,value:{...draft}};
+    }
     const q=resolve(e);if(!q)return{ok:false,code:'invalid-coordinate'};
     if(draft.phase==='base'){draft.base=q;if(id==='BLOCK')return{ok:true,commit:true,value:{...draft}};draft.phase='direction';show();return{ok:true};}
     if(draft.phase==='position'){draft.base=q;return{ok:true,commit:true,value:{...draft}};}
@@ -33,5 +69,5 @@
  }
  const aliases=new Map(ids.flatMap(id=>[[id,id],...names[id].map(a=>[a,id])]));
  function installUnits(registry,p){for(const id of unitIds)registry.register({id,aliases:[],available:c=>c.mode==='cad',transactional:false,historyOwner:'personal-preference',create(){const value=p.get(id);p.prompt(id,value);return{describe:()=>({phase:'value',input:['text','enter'],actions:[]}),input(e){const n=e.type==='enter'?value:e.type==='text'&&e.text.trim()!==''?Number(e.text):NaN;return root.cadBlocks.unitCode(n)?{ok:true,commit:true,value:n}:{ok:false,code:'invalid-number'};},commit:n=>p.set(id,n),cancel(){},finalize(){p.clear();}};}});}
- root.nativeArchitecturalCommands=Object.freeze({ids,unitIds,installUnits,install,resolve:s=>aliases.get(String(s).trim().toUpperCase())||null,keyword:(id,phase,text)=>root.nativeConstructionLines.keyword(id,phase,String(text).toUpperCase())||id==='BLOCK'&&phase==='base'&&['U','UNITS'].includes(String(text).toUpperCase())||id==='INSERT'&&phase==='position'&&['R','ROTATION','S','SCALE','M','MULTIPLE','N','NAME'].includes(String(text).toUpperCase())});
+ root.nativeArchitecturalCommands=Object.freeze({ids,unitIds,installUnits,install,resolve:s=>aliases.get(String(s).trim().toUpperCase())||null,keyword:(id,phase,text)=>root.nativeConstructionLines.keyword(id,phase,String(text).toUpperCase())||id==='BLOCK'&&phase==='base'&&['U','UNITS'].includes(String(text).toUpperCase())||id==='INSERT'&&phase==='position'&&['R','ROTATION','S','SCALE','M','MULTIPLE','N','NAME'].includes(String(text).toUpperCase())||id==='EXPLODE'&&phase==='confirm'&&['ALL','ONE'].includes(String(text).toUpperCase())});
 })();

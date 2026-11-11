@@ -13,7 +13,7 @@
   function back(){const old=d.history.pop();if(!old)return{ok:false,code:'nothing-to-undo'};editorSerial++;for(const k of Object.keys(d))if(!['history','token','closed'].includes(k))delete d[k];Object.assign(d,old);show();refresh();return{ok:true};}
   function capture(slot,point,e){const anchor=e.type==='point'&&!e.typed?p.capture(point):null;if(anchor){d.anchors[slot]=anchor;witness(p.byId(anchor.sourceId));}else delete d.anchors[slot];}
   show();return{view:()=>d,describe:()=>({phase:d.phase,pointBase:base(),input:['point','coordinate','keyword'],actions:d.phase==='offset'?[...['TEXT','MTEXT','ANGLE'],...(d.kind==='linear'?['HORIZONTAL','VERTICAL','ROTATED']:[])].map(id=>({id,labelKey:'cad99.linear.option.'+id.toLowerCase()})):[]}),
-   preview(e){if(!live())return stale();d.pointer={...e.point};if(d.phase==='offset'){const q=read({type:'point',point:e.point});p.preview(q?draft(q):null);}else if(d.phase==='p2'&&p.rubber){const q=read({type:'point',point:e.point});p.rubber(d.p1,q);}else p.preview(null);return{ok:true};},
+   preview(e){if(!live())return stale();const pointer=e.point||e.pointer;if(pointer)d.pointer={...pointer};const event=e.type==='text'?e:{...e,type:'point'};if(d.phase==='offset'){const q=read(event);p.preview(q?draft(q):null);}else if(d.phase==='p2'&&p.rubber){const q=read(event);p.rubber(d.p1,q);}else{p.preview(null);if(d.phase==='p1'&&event.type==='point'&&finite(event.point))read(event);}return{ok:true};},
    input(e){if(!live())return stale();const raw=String(e.type==='keyword'?e.value:e.text??''),k=raw.trim().toUpperCase();
     if(!['text','mtext','textAngle','rotation'].includes(d.phase)&&['U','UNDO'].includes(k))return back();
     if(d.phase==='mtext')return{ok:false,code:'invalid-input'};

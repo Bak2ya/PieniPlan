@@ -15,14 +15,13 @@
    const first=es[0],last=es.at(-1),hits=M.geometryQuery.intersections({...last,mode:'line'},{...first,mode:'line'});if(hits.length===1){const q=hits[0],ta=M.geometryQuery.parameter(first,q),tb=M.geometryQuery.parameter(last,q),wa=(first.startWidth||0)+((first.endWidth||0)-(first.startWidth||0))*ta,wb=(last.startWidth||0)+((last.endWidth||0)-(last.startWidth||0))*tb;if(ta<1-1e-8&&tb>1e-8&&wa>=0&&wb>=0){const closed=clone(o);closed.closed=true;closed.vertices.pop();Object.assign(closed.vertices[0],q);closed.vertices[0].outgoing.startWidth=wa;closed.vertices.at(-1).outgoing.endWidth=wb;try{P.validate(closed);const es2=P.get(closed).edges,pick0=i===0?p1:p2,pick1=i===0?p2:p1;out.push({object:closed,p1:mid(es2[0]),p2:mid(es2.at(-1)),score:distance(pick0,o.vertices[0])+distance(pick1,o.vertices.at(-1)),bridged:true,closedEndpoints:true});}catch{}}}
   }return out.sort((a,b)=>a.score-b.score);
  }
- function appearance(o){return Object.fromEntries(['cadLayer','layer','color','linetype','lineweight','linetypeScale','transparency'].filter(k=>Object.hasOwn(o,k)).map(k=>[k,o[k]]));}
  function corner(o,p1,p2,value,{kind='FILLET',distance2=value,angle=null,trim=true}={}){if(!Number.isFinite(value)||value<0||!Number.isFinite(distance2)||distance2<0)return null;const P=M.cadPolyline;
   for(const pair of prepared(o,p1,p2)){const source=pair.object;
    if(value===0&&(kind==='FILLET'||distance2===0||kind==='CHAMFER'&&angle===0)){const es=P.get(source).edges,a=P.nearest(source,pair.p1),b=P.nearest(source,pair.p2);if(!a||!b||es.find(e=>e.edgeId===a.edgeId)?.type!=='cadLine'||es.find(e=>e.edgeId===b.edgeId)?.type!=='cadLine')continue;if(!trim)return{before:[],after:[],noChange:true};return pair.bridged?{before:[o],after:[source],topology:'cadPolyline',kind,sharp:true}:{before:[o],after:[o],noChange:true};}
    const plan=kind==='CHAMFER'?P.chamferAt(source,pair.p1,pair.p2,value,{distance2,angle}):P.filletAt(source,pair.p1,pair.p2,value);if(!plan)continue;
    if(trim)return{...plan,before:[o],bridged:pair.bridged};
-   const g=kind==='FILLET'?plan.fillet:null;if(g)return{before:[],after:[{id:'__corner_new_arc__',type:'cadArc',center:{...g.center},radius:g.radius,startAngle:g.startAngle,sweep:g.sweep,...appearance(o)}],kind:'FILLET NOTRIM'};
-   const after=plan.after[0],edge=P.get(after).edges.find(e=>String(e.edgeId).startsWith('__chamfer_new_'));if(!edge)continue;return{before:[],after:[{id:'__corner_new_line__',type:'cadLine',a:{...edge.a},b:{...edge.b},...appearance(o)}],kind:'CHAMFER NOTRIM'};
+   const g=kind==='FILLET'?plan.fillet:null;if(g)return{before:[],after:[{id:'__corner_new_arc__',type:'cadArc',center:{...g.center},radius:g.radius,startAngle:g.startAngle,sweep:g.sweep,...P.strokeAppearance(o)}],kind:'FILLET NOTRIM'};
+   const after=plan.after[0],edge=P.get(after).edges.find(e=>String(e.edgeId).startsWith('__chamfer_new_'));if(!edge)continue;return{before:[],after:[{id:'__corner_new_line__',type:'cadLine',a:{...edge.a},b:{...edge.b},...P.strokeAppearance(o)}],kind:'CHAMFER NOTRIM'};
   }return null;
  }
  function all(o,value,options={}){const P=M.cadPolyline;if(!P.is(o)||o.curveFit)return null;const original=P.get(o).edges,n=original.length,pairs=[],modern=options.kind!=='CHAMFER'&&options.polyArc!==0;
@@ -41,23 +40,48 @@
   const P=M.cadPolyline,G=M.geometryQuery,J=M.cadJoin,eps=G.tolerance.model;
   if(!a||!b||a.id===b.id||!J||!Number.isFinite(value)||value<0||!Number.isFinite(distance2)||distance2<0)return null;
   function part(o,p){
-   if(!P.is(o))return['cadLine','cadRay','cadXline',...(!trim&&kind!=='CHAMFER'?['cadArc','cadCircle','cadEllipse']:[])].includes(o.type)?{owner:o,leaf:o,poly:false}:null;
-   if(o.curveFit)return null;const es=P.get(o).edges,hit=P.nearest(o,p),index=hit&&es.findIndex(e=>e.edgeId===hit.edgeId),e=es[index];
-   if(!e||e.type!=='cadLine'&&!(!trim&&kind!=='CHAMFER'&&e.type==='cadArc'))return null;
-   return{owner:o,poly:true,leaf:{...clone(e),...appearance(o),id:o.id},edge:e,index,terminal:!o.closed&&(index===0||index===es.length-1),canStart:index===0,canEnd:index===es.length-1};
+   if(!P.is(o))return['cadLine','cadRay','cadXline',...(kind!=='CHAMFER'?['cadArc']:[]),...(!trim&&kind!=='CHAMFER'?['cadCircle','cadEllipse']:[])].includes(o.type)?{owner:o,leaf:o,poly:false}:null;
+   if(o.curveFit&&(trim||o.curveFit.kind!=='arc'))return null;
+   const es=P.get(o).edges,hit=P.nearest(o,p),index=hit&&es.findIndex(e=>e.edgeId===hit.edgeId),e=es[index];
+   if(!e||e.type!=='cadLine'&&!(kind!=='CHAMFER'&&e.type==='cadArc'))return null;
+   return{owner:o,poly:true,leaf:{...clone(e),...P.strokeAppearance(o),id:o.id},edge:e,index,terminal:!o.closed&&(index===0||index===es.length-1),canStart:index===0,canEnd:index===es.length-1};
   }
   try{
    const x=part(a,pa),y=part(b,pb);if(!x||!y||!x.poly&&!y.poly)return null;
-   const solve=kind==='CHAMFER'?M.cadLinearOperations.chamfer:M.cadLinearOperations.fillet,plan=solve(x.leaf,pa,y.leaf,pb,value,{distance2,angle,trim,layer});if(!plan)return null;
-   if(!trim)return plan;
-   if([x,y].some(q=>q.poly?!q.terminal:q.owner.type!=='cadLine'))return null;
+   const fitted=[x,y].filter(q=>q.owner.curveFit);
+   const solve=kind==='CHAMFER'?M.cadLinearOperations.chamfer:M.cadLinearOperations.fillet;
+   const boundedArc=fitted.length>0||trim&&[x,y].some(q=>q.poly&&q.leaf.type==='cadArc');
+   const plan=solve(x.leaf,pa,y.leaf,pb,value,{distance2,angle,trim,layer,extendArcs:!boundedArc});
+   if(!plan)return null;
+   if(!trim){
+    const connector=plan.after[0];
+    if(connector&&fitted.length){
+     const contacts=connector.type==='cadArc'?[connector.startAngle,connector.startAngle+connector.sweep]
+      .map(angle=>G.pointAt(connector,angle)):[connector.a,connector.b];
+     if(fitted.some(q=>!contacts.some(p=>G.projectNearest(q.leaf,p)?.distance<=eps)))return null;
+    }
+    return {...plan,after:plan.after.map(o=>({...o,...P.strokeAppearance(a),cadLayer:o.cadLayer}))};
+   }
+   if([x,y].some(q=>q.poly?!q.terminal:!['cadLine','cadArc'].includes(q.owner.type)))return null;
    const connector=plan.after.find(e=>e.id!==a.id&&e.id!==b.id),contact=(q,first)=>!q?null:q.type==='cadLine'?(first?q.a:q.b):G.pointAt(q,q.startAngle+(first?0:q.sweep));
    function project(q,point){
     const leaf=plan.after.find(e=>e.id===q.owner.id)||q.leaf;
     if(!q.poly)return{object:J.poly(leaf),width:0};
-    const atStart=q.canStart&&(!q.canEnd||distance(leaf.b,q.leaf.b)<=eps&&(!point||distance(point,leaf.a)<=distance(point,leaf.b))),fixed=atStart?'b':'a',free=atStart?'a':'b';if(leaf.type!=='cadLine'||distance(leaf[fixed],q.leaf[fixed])>eps)return null;
-    const o=clone(q.owner),vertex=atStart?o.vertices[0]:o.vertices.at(-1),outgoing=o.vertices[q.index].outgoing,t=G.parameter(q.edge,leaf[free]),s=q.edge.startWidth||0,e=q.edge.endWidth||0,w=s+(e-s)*t;
-    if(!Number.isFinite(w)||w<0||w>1e7)return null;vertex.x=leaf[free].x;vertex.y=leaf[free].y;
+    const [start,end]=[contact(leaf,true),contact(leaf,false)];
+    const [originalStart,originalEnd]=[contact(q.leaf,true),contact(q.leaf,false)];
+    const keepsStart=distance(start,originalStart)<=eps,keepsEnd=distance(end,originalEnd)<=eps;
+    const atStart=q.canStart&&keepsEnd&&(!q.canEnd||!keepsStart||!point||distance(point,start)<=distance(point,end));
+    if(!atStart&&!(q.canEnd&&keepsStart))return null;
+    const free=atStart?start:end,o=clone(q.owner),vertex=atStart?o.vertices[0]:o.vertices.at(-1);
+    const outgoing=o.vertices[q.index].outgoing;
+    let t;
+    if(leaf.type==='cadArc'){
+     if(!G.onArc(q.edge,free,eps))return null;
+     t=distance(free,originalStart)<=eps?0:distance(free,originalEnd)<=eps?1:P.parameter(q.edge,free);
+     outgoing.bulge=Math.tan(leaf.sweep*Math.PI/720);
+    }else t=G.parameter(q.edge,free);
+    const s=q.edge.startWidth||0,e=q.edge.endWidth||0,w=s+(e-s)*t;
+    if(!Number.isFinite(w)||w<0||w>1e7)return null;vertex.x=free.x;vertex.y=free.y;
     const key=atStart?'startWidth':'endWidth';if(w)outgoing[key]=w;else delete outgoing[key];P.validate(o);return{object:o,width:w};
    }
    const px=project(x,contact(connector,true)),py=project(y,contact(connector,false));if(!px?.object||!py?.object)return null;

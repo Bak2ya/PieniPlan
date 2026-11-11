@@ -45,6 +45,7 @@
  }
  function augment(objects,changes,options={}){
   const touched=new Map(changes.map(c=>[(c.after||c.before).id,c])),next=new Map(objects.map(o=>[o.id,o]));
+  const indexes=new Map(changes.map((c,i)=>[(c.after||c.before).id,i]));let positions=null;
   for(const c of changes){if(c.before)next.delete(c.before.id);if(c.after)next.set(c.after.id,c.after);}
   const result=changes.slice();
   const byId=id=>next.get(id);
@@ -57,7 +58,10 @@
     else if(!anchorTouched&&v&&ks.some(k=>!equal(o[k],slot==='angularSource'?v[k]:v.point)))lost.push(slot);
    }if(anchors)o={...o,association:relation(o,anchors,o.association.lost)};if(lost.length)o=release(o,lost);}
    const after=regenerate(o,byId);if(equal(after,original))continue;
-   if(explicit)result[result.indexOf(explicit)]={...explicit,after};else result.push({before:original,after,index:objects.indexOf(original)});
+   if(explicit)result[indexes.get(original.id)]={...explicit,after};else{
+    positions??=new Map(objects.map((owner,index)=>[owner.id,index]));
+    result.push({before:original,after,index:positions.get(original.id)});
+   }
   }
   return result;
  }

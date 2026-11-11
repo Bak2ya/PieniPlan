@@ -14,8 +14,43 @@
  function svgPath(o){return loops(o).map(es=>es.map((e,i)=>i?path(e).replace(/^M [^ ]+ [^ ]+ /,''):path(e)).join(' ')+' Z').join(' ');}
  function bounds(o){const bs=loops(o).flat().map(e=>root.geometryQuery.create().bounds(e));return{minx:Math.min(...bs.map(b=>b.minx)),maxx:Math.max(...bs.map(b=>b.maxx)),miny:Math.min(...bs.map(b=>b.miny)),maxy:Math.max(...bs.map(b=>b.maxy))};}
  function create(id,boundaries,data={}){const q={id,type:'cadHatch',...data,boundaryCurves:boundaries.map(snapshot),sourceBoundaryIds:boundaries.map(o=>o.id),sourceBoundaryId:boundaries[0].id};return validate(q);}
- function regenerate(h,objects){const map=new Map(objects.map(o=>[o.id,o])),groups=root.cadHatchBoundaries?.groups(h)||h.sourceBoundaryIds?.map(id=>[id]);if(!is(h)||!groups?.length)return h;const refs=groups.map((ids,i)=>{const owners=ids.map(id=>map.get(id));if(owners.some(o=>!o))return null;return h.boundarySourceGroups95?root.cadHatchBoundaries.assemble(owners,h.boundaryCurves[i].id):closed(owners[0])?snapshot(owners[0]):null;});if(refs.some(o=>!o)){const out={...h,sourceBoundaryId:null};delete out.sourceBoundaryIds;delete out.boundarySourceGroups95;return out;}const out={...h,boundaryCurves:refs};delete out.boundaryTransform;return out;}
- function augment(objects,changes,{defer=()=>false}={}){const touched=new Set(changes.map(c=>(c.before||c.after).id)),next=objects.filter(o=>!touched.has(o.id)).concat(changes.filter(c=>c.after).map(c=>c.after)),result=changes.slice();for(const o of next){if(!is(o)||defer(o)&&!touched.has(o.id))continue;const ids=o.boundarySourceGroups95?.flat()||o.sourceBoundaryIds;if(!ids?.some(id=>touched.has(id)))continue;const after=regenerate(o,next);if(JSON.stringify(after)===JSON.stringify(o))continue;const explicit=result.find(c=>c.after?.id===o.id);if(explicit)result[result.indexOf(explicit)]={...explicit,after};else result.push({before:o,after,index:objects.indexOf(o)});}return result;}
+ function regenerateFromMap(h,map){
+  const groups=root.cadHatchBoundaries?.groups(h)||h.sourceBoundaryIds?.map(id=>[id]);
+  if(!is(h)||!groups?.length)return h;
+  const refs=groups.map((ids,i)=>{
+   const owners=ids.map(id=>map.get(id));
+   if(owners.some(o=>!o))return null;
+   return h.boundarySourceGroups95?root.cadHatchBoundaries.assemble(owners,h.boundaryCurves[i].id):closed(owners[0])?snapshot(owners[0]):null;
+  });
+  if(refs.some(o=>!o)){
+   const out={...h,sourceBoundaryId:null};delete out.sourceBoundaryIds;delete out.boundarySourceGroups95;return out;
+  }
+  const out={...h,boundaryCurves:refs};delete out.boundaryTransform;return out;
+ }
+ function regenerate(h,objects){return regenerateFromMap(h,new Map(objects.map(o=>[o.id,o])));}
+ function augment(objects,changes,{defer=()=>false}={}){
+  const touched=new Set(changes.map(c=>(c.before||c.after).id)),result=changes.slice();
+  let next=null;
+  function update(o,index,explicit){
+   if(!is(o)||defer(o)&&!touched.has(o.id))return;
+   const ids=o.boundarySourceGroups95?.flat()||o.sourceBoundaryIds;
+   if(!ids?.some(id=>touched.has(id)))return;
+   if(!next){
+    next=new Map(objects.map(owner=>[owner.id,owner]));
+    for(const change of changes){
+     if(change.after)next.set(change.after.id,change.after);
+     else next.delete(change.before.id);
+    }
+   }
+   const after=regenerateFromMap(o,next);
+   if(JSON.stringify(after)===JSON.stringify(o))return;
+   if(explicit)result[index]={...result[index],after};
+   else result.push({before:o,after,index});
+  }
+  objects.forEach((o,i)=>{if(!touched.has(o.id))update(o,i,false);});
+  changes.forEach((change,i)=>{if(change.after)update(change.after,i,true);});
+  return result;
+ }
  function transform(o,m){const q={...o,boundaryTransform:root.cadBlocks.multiply(m,o.boundaryTransform||root.cadBlocks.matrix()),sourceBoundaryId:null};delete q.sourceBoundaryIds;delete q.boundarySourceGroups95;return q;}
  function dxfPaths(o,f,links=[]){const out=[];for(const [i,es]of loops(o).entries()){out.push([92,i===0?1:0],[93,es.length]);for(const e of es){if(e.type==='cadLine')out.push([72,1],[10,e.a.x/f],[20,e.a.y/f],[11,e.b.x/f],[21,e.b.y/f]);else if(root.cadBezier?.is(e)){const p=e.controls.length-1;out.push([72,4],[94,p],[73,0],[74,0],[95,2*(p+1)],[96,p+1]);for(let i=0;i<=p;i++)out.push([40,0]);for(let i=0;i<=p;i++)out.push([40,1]);for(const v of e.controls)out.push([10,v.x/f],[20,v.y/f]);out.push([97,0]);}
     else if(root.cadEllipse.is(e))out.push([72,3],[10,e.center.x/f],[20,e.center.y/f],[11,e.major.x/f],[21,e.major.y/f],[40,e.ratio],[50,e.startParam*180/Math.PI],[51,(e.startParam+e.sweepParam)*180/Math.PI],[73,e.sweepParam>0?1:0]);else out.push([72,2],[10,e.center.x/f],[20,e.center.y/f],[40,e.radius/f],[50,e.startAngle||0],[51,(e.startAngle||0)+(e.type==='cadCircle'?360:e.sweep)],[73,e.type==='cadCircle'||e.sweep>0?1:0]);}out.push([97,links[i]?.length||0],...(links[i]||[]).map(h=>[330,h]));}return out;}
