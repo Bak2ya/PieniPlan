@@ -2341,3 +2341,8 @@ html, body { font-size:var(--font-body); }
 .plan-section-list .mini-action .ui-icon{width:18px;height:18px}
 .plan-section-list .mini-action:hover{background:var(--surface-3)}
 .plan-section-list .mini-action:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* Personal tool choices reuse the existing Settings controls. */
+.personal-tools105 details{margin-block:8px}.personal-tools105 summary{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer}.personal-tools105 .settings-check-row{display:flex;gap:8px;align-items:center;margin-block:5px}.personal-tools105 .settings-check-row input{flex:none}
+
+.drive-dialog105{width:min(720px,calc(100vw - 32px));max-height:calc(100dvh - 32px);display:flex;flex-direction:column}.drive-dialog-content105{overflow:auto;min-height:0}.drive-file105{display:flex;flex-direction:column;gap:4px;width:100%;text-align:start;margin-block:5px;padding:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius,6px)}.drive-file105 small{color:var(--muted)}.drive-profile-preview105{white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto}.drive-status105{white-space:normal}.drive-dialog105 .dialog-actions{flex-wrap:wrap}.drive-dialog105 .settings-section-copy{white-space:pre-line}

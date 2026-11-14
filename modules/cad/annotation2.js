@@ -29,9 +29,9 @@
   }
   function radial(o){
     if(!point(o?.center)||!Number.isFinite(o?.radius)||o.radius<=0)return null;
-    const r=o.radius,label=point(o.labelPoint)?{...o.labelPoint}:pointAt(o.center,r,0),a=angle(o.center,label),edge=pointAt(o.center,r,a),diameter=o.kind==='diameter';
-    const start=diameter?pointAt(o.center,r,a+180):{...o.center},end=label;
-    const g={kind:diameter?'diameter':'radius',center:{...o.center},radius:r,edge,start,end,labelPoint:label,value:diameter?r*2:r,segments:[{a:start,b:end}]};return o.radialOptions99?root.cadRadialPlacement.geometry(o,g):g;
+    const r=o.radius,label=point(o.labelPoint)?{...o.labelPoint}:pointAt(o.center,r,0),a=o.radialDirection105?root.cadRadialPlacement.validateDirection(o):angle(o.center,label),edge=pointAt(o.center,r,a),diameter=o.kind==='diameter';
+    const start=diameter?pointAt(o.center,r,a+180):{...o.center},u={x:Math.cos(a*Math.PI/180),y:Math.sin(a*Math.PI/180)},projection=(label.x-o.center.x)*u.x+(label.y-o.center.y)*u.y,collinear=Math.abs((label.x-o.center.x)*u.y-(label.y-o.center.y)*u.x)<1e-8*Math.max(1,r,Math.hypot(label.x-o.center.x,label.y-o.center.y)),end=o.radialDirection105&&!(collinear&&projection>r)?edge:label;
+    const g={kind:diameter?'diameter':'radius',center:{...o.center},radius:r,edge,start,end,labelPoint:label,value:diameter?r*2:r,segments:[{a:start,b:end}]};if(o.radialDirection105&&!diameter){const projected=(label.x-o.center.x)*Math.cos(a*Math.PI/180)+(label.y-o.center.y)*Math.sin(a*Math.PI/180);g.arrowMarkers=[[edge,pointAt(edge,1,a+(projected>r?0:180))]];}return o.radialOptions99?root.cadRadialPlacement.geometry(o,g):g;
   }
   function angular(o){
     if(o?.angularPlacement98){const g=root.cadAngularPlacement.geometry(o);return g?{...g,segments:root.cadAngularPlacement.segments(o)}:null;}

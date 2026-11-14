@@ -61,7 +61,15 @@
     }
     function applyPgp(report){const ticket=pgpTickets.get(report);if(!ticket||ticket.revision!==revision||ticket.before!==JSON.stringify(values))throw Error('stale-pgp-preview');pgpTickets.delete(report);if(ticket.blocked)throw Error('pgp-conflict');if(!ticket.changed)return{changed:0};if(!storage?.setItem)throw Error('pgp-storage-unavailable');storage.setItem(key,JSON.stringify(ticket.after));values=ticket.after;revision++;return{changed:ticket.changed};}
     function exportPgp(){const rows=[];for(const c of entries)if(!toggles.includes(c)&&scope(c)!=='plan')for(const alias of aliases(c,'cad'))if(alias!==c.name&&resolve(alias,'cad')?.id===c.id)rows.push({alias,command:c.name});return root.commandPgp.stringify(rows);}
-    load();return Object.freeze({entries,scope,aliases,shortcut,set,validate,reset,resolve,match,forEvent,load,key,preparePgp,applyPgp,exportPgp});
+    function exportProfile(){return{version:1,commands:JSON.parse(JSON.stringify(values))};}
+    function prepareProfile(profile,{aliases:useAliases=true,shortcuts:useShortcuts=true}={}){
+      if(!profile||profile.version!==1||Object.keys(profile).some(k=>!['version','commands'].includes(k))||!profile.commands||Array.isArray(profile.commands))throw Error('binding-profile-version');
+      const previous=values,before=JSON.stringify(values),next=JSON.parse(before);for(const value of Object.values(next)){if(useAliases)delete value.aliases;if(useShortcuts)delete value.shortcut;}
+      values=next;try{for(const[id,v]of Object.entries(profile.commands)){if(!byId.has(id)||!v||Object.keys(v).some(k=>!['aliases','shortcut'].includes(k))||Object.hasOwn(v,'aliases')&&(!Array.isArray(v.aliases)||v.aliases.some(a=>typeof a!=='string'))||Object.hasOwn(v,'shortcut')&&typeof v.shortcut!=='string')throw Error('binding-profile-version');const patch={};if(useAliases&&Object.hasOwn(v,'aliases'))patch.aliases=v.aliases.join(',');if(useShortcuts&&Object.hasOwn(v,'shortcut'))patch.shortcut=v.shortcut;if(Object.keys(patch).length)set(id,patch,{persist:false});}return{before,after:JSON.parse(JSON.stringify(values)),revision};}finally{values=previous;}
+    }
+    function verifyProfile(ticket){if(!ticket||ticket.revision!==revision||ticket.before!==JSON.stringify(values))throw Error('stale-binding-profile');return true;}
+    function applyProfile(ticket,{persist=true}={}){verifyProfile(ticket);if(persist){if(!storage?.setItem)throw Error('binding-storage-unavailable');storage.setItem(key,JSON.stringify(ticket.after));}values=JSON.parse(JSON.stringify(ticket.after));revision++;}
+    load();return Object.freeze({entries,scope,aliases,shortcut,set,validate,reset,resolve,match,forEvent,load,key,preparePgp,applyPgp,exportPgp,exportProfile,prepareProfile,verifyProfile,applyProfile});
   }
   root.commandPreferences=Object.freeze({create,chord,overlap});
 })();

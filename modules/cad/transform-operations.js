@@ -28,7 +28,7 @@
     else if(kind==='radius'||kind==='diameter')out={...o,center:point(m,o.center),radius:o.radius*s,labelPoint:point(m,o.labelPoint)};
     else if(kind==='angular'&&o.angularPlacement98)out=root.cadAngularPlacement.transform(o,m);
     else if(kind==='angular')out={...o,vertex:point(m,o.vertex),ray1:point(m,o.ray1),ray2:point(m,o.ray2),radius:(Number(o.radius)||1)*s,labelPoint:o.labelPoint?point(m,o.labelPoint):undefined};
-    if(!out)return null;if(out.radialOptions99){out=root.cadRadialPlacement.transform(out,m);if(!out)return null;}if(out.linearOptions99){out=root.cadLinearPlacement.transform(out,m);if(!out)return null;}if(out.oblique104)out=root.cadDimensionOblique.transform(out,m);out=root.cadDimensionText?.transform(out,m)||out;if(root.cadAnnotation2)out.segments=root.cadAnnotation2.segments(out);else if(Array.isArray(o.segments))out.segments=o.segments.map(seg=>({a:point(m,seg.a),b:point(m,seg.b)}));return out;
+    if(!out)return null;if(out.radialOptions99){out=root.cadRadialPlacement.transform(out,m);if(!out)return null;}if(out.radialDirection105)out=root.cadRadialPlacement.transformDirection(out,m);if(out.linearOptions99){out=root.cadLinearPlacement.transform(out,m);if(!out)return null;}if(out.oblique104)out=root.cadDimensionOblique.transform(out,m);out=root.cadDimensionText?.transform(out,m)||out;if(root.cadAnnotation2)out.segments=root.cadAnnotation2.segments(out);else if(Array.isArray(o.segments))out.segments=o.segments.map(seg=>({a:point(m,seg.a),b:point(m,seg.b)}));return out;
   }
   function transform(o,m){if(!validMatrix(m)||!o)return null;const s=scaleOf(m),sign=Math.sign(det(m))||1;
     if(root.cadPolyline?.is(o))return root.cadPolyline.transform(o,m);

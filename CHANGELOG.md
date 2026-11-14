@@ -1,3 +1,11 @@
+## v0.78.0 · Build105 (integration candidate)
+
+- Choose visible Expanded CAD tools by group in Settings. Hidden tools remain available through the existing menus and command input.
+- Optionally connect Google Drive to save and reopen complete PPRJ projects, keeping local work and separate remote change copies.
+- Review and selectively copy toolbar choices, command bindings and theme preferences through private Drive app data.
+- Restore angular, radius and diameter dimension text with command-specific Home behavior, preserving independent radial line directions and native exchange metadata.
+- Protect retained DXF library handles and regenerate supported dimension pictures when their source blocks are absent.
+
 ## v0.77.0 · Build104 (in development)
 
 - Share CAD command menus between Compact and Expanded, with availability labels and concise support details for partial features.
