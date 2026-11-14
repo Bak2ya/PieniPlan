@@ -1,3 +1,13 @@
+## v0.79.0 · Build106 (integration candidate)
+
+- Reflow contextual controls in usable groups, retaining readable labels, input focus and bounded selectors.
+- Show Properties after confirmed editable Plan selection and restore only automatic panel changes, respecting manual tabs and the Elements catalog.
+- Resize stairs from corners or edge grips, edit world coordinates and UP/DN text height, and align movement against wall centers and faces.
+- Guard the optional stair label-size data with an explicit capability in PPRJ and Plan packages.
+- Save local safety copies before syncing Drive-bound drawings; retain offline, authentication and conflict protection.
+- Clarify manual personal settings copies, compact Drive lists and Expanded tool group choices.
+- Align home cards and add the existing Google Drive workflow through an official Drive logo action.
+
 ## v0.78.0 · Build105 (integration candidate)
 
 - Choose visible Expanded CAD tools by group in Settings. Hidden tools remain available through the existing menus and command input.

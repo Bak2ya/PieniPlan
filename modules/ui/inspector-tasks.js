@@ -5,7 +5,7 @@
   function create(p){
     const panel=document.getElementById('workspaceInspector'),tabs=panel.querySelector('.inspector-tabs'),body=panel.querySelector('.inspector-body'),items=new Map();let lastBase=p.current()||'primary';
     function refresh(){tabs.style.setProperty('--inspector-tab-count',String([...tabs.querySelectorAll('.inspector-tab')].filter(b=>!b.hidden).length));}
-    function sync(id){if(!items.has(id))lastBase=id;for(const [key,item]of items)item.slot.classList.toggle('active',key===id);refresh();}
+    function sync(id,{automatic=false}={}){if(!automatic&&!items.has(id))lastBase=id;for(const [key,item]of items)item.slot.classList.toggle('active',key===id);refresh();}
     function close(id){const item=items.get(id);if(!item)return false;const active=p.current()===id;items.delete(id);item.slot.remove();item.node.remove();item.closed?.();refresh();if(active){const target=[...tabs.querySelectorAll('.inspector-tab')].find(b=>b.dataset.tab===lastBase&&!b.hidden)?.dataset.tab||'primary';p.select(target);}return true;}
     function open(id,{label,node,closed}={}){
       if(!/^[a-z][a-z0-9-]*$/.test(id))throw Error('invalid-inspector-task');

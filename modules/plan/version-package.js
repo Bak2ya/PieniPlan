@@ -5,7 +5,7 @@
   const M = globalThis.PieniPlanModules = globalThis.PieniPlanModules || {}, clone = v => JSON.parse(JSON.stringify(v));
   const fail = code => { throw Error('plan-version-package:' + code); };
   const schema = 2, format = 'PieniPlanPlanPackage';
-  const capabilities = ['plan.stair.direction.v1', 'plan.history.application.v1', 'plan.door.shutter.v1', 'plan.versions.v1', 'plan.nature-style.v1', 'plan.components.v2', 'plan.door.mechanism.v1', 'cad.annotation.v2'];
+  const capabilities = ['plan.stair.label-size.v1', 'plan.stair.direction.v1', 'plan.history.application.v1', 'plan.door.shutter.v1', 'plan.versions.v1', 'plan.nature-style.v1', 'plan.components.v2', 'plan.door.mechanism.v1', 'cad.annotation.v2'];
   function revision(pkg) {
     return M.planDrawings.hash({ packageId: pkg.packageId, buildings: pkg.buildings, drawingModel: pkg.drawingModel, planObjectStyles: pkg.planObjectStyles || {} });
   }
@@ -27,7 +27,7 @@
       if (!Array.isArray(b.drawings) || Object.keys(b).some(k => !['id', 'name', 'order', 'drawings'].includes(k))) fail('building');
       for (const f of b.drawings) {
         if (!Array.isArray(f.objects)) fail('objects');
-        for (const o of f.objects) { if (!M.planPackageExchange.isPlan(o)) fail('non-plan-owner'); if (Object.hasOwn(o, 'direction102')) { if (!pkg.requiredCapabilities.includes('plan.stair.direction.v1') || !M.planStair) fail('stair-direction-capability'); M.planStair.validate(o); } if (o.type === 'door' && o.doorType === 'shutter' && (!pkg.requiredCapabilities.includes('plan.door.shutter.v1') || o.fireProtection != null && o.fireProtection !== 'fireShutter')) fail('shutter-capability-required'); if (M.planDrawings.canonical(o) !== M.planDrawings.canonical(M.planDrawings.projectElement(o))) fail('non-authoring-object-field'); }
+        for (const o of f.objects) { if (!M.planPackageExchange.isPlan(o)) fail('non-plan-owner'); if (Object.hasOwn(o, 'label106')) { if (!pkg.requiredCapabilities.includes('plan.stair.label-size.v1') || !M.planStair) fail('stair-label-capability'); M.planStair.validate(o); } if (Object.hasOwn(o, 'direction102')) { if (!pkg.requiredCapabilities.includes('plan.stair.direction.v1') || !M.planStair) fail('stair-direction-capability'); M.planStair.validate(o); } if (o.type === 'door' && o.doorType === 'shutter' && (!pkg.requiredCapabilities.includes('plan.door.shutter.v1') || o.fireProtection != null && o.fireProtection !== 'fireShutter')) fail('shutter-capability-required'); if (M.planDrawings.canonical(o) !== M.planDrawings.canonical(M.planDrawings.projectElement(o))) fail('non-authoring-object-field'); }
       }
     }
     if (typeof pkg.createdAt !== 'string' || !Number.isFinite(Date.parse(pkg.createdAt))) fail('timestamp');
@@ -53,7 +53,7 @@
       // Opaque native data cannot silently be removed from a sealed content hash.
       if (M.planVersions.content(state, v) !== s.drawingModel.records[v.drawingId].fingerprint) fail('opaque-plan-owner-requires-project');
     }
-    const requiredCapabilities = ['plan.versions.v1', ...(s.objects.some(o => Object.hasOwn(o, 'direction102')) ? ['plan.stair.direction.v1'] : []), ...(M.planVersions.historyRequired(s) ? [M.planVersions.historyCapability] : []), ...(s.objects.some(o => o.type === 'door' && o.doorType === 'shutter') ? ['plan.door.shutter.v1'] : []), ...(s.objects.some(o => o.planNature || o.planGeometry) ? ['plan.nature-style.v1'] : []),
+    const requiredCapabilities = ['plan.versions.v1', ...(s.objects.some(o => Object.hasOwn(o, 'label106')) ? ['plan.stair.label-size.v1'] : []), ...(s.objects.some(o => Object.hasOwn(o, 'direction102')) ? ['plan.stair.direction.v1'] : []), ...(M.planVersions.historyRequired(s) ? [M.planVersions.historyCapability] : []), ...(s.objects.some(o => o.type === 'door' && o.doorType === 'shutter') ? ['plan.door.shutter.v1'] : []), ...(s.objects.some(o => o.planNature || o.planGeometry) ? ['plan.nature-style.v1'] : []),
       ...(s.objects.some(o => o.componentDefinition) ? ['plan.components.v2'] : []), ...(s.objects.some(o => o.doorModel93) ? ['plan.door.mechanism.v1'] : []), 'cad.annotation.v2'];
     const pkg = { format, fileType: 'pieniplan-plan-package', schemaVersion: schema, requiredCapabilities, packageId: drawingModel.packageId,
       createdAt: now, app: clone(app), buildings, drawingModel, scope: { kind: 'full', completePackage: true, authoritativeDeletion: false }, activeDrawingId: s.activeFloorId || s.floors[0]?.id || null,

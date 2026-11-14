@@ -4,7 +4,7 @@
   const module = window.PieniPlanModules = window.PieniPlanModules || {};
   module.workspaceChrome = { create };
 
-  function create({ t, mode, navigate, closeOtherMenus, interactionBusy }) {
+  function create({ t, mode, navigate, closeOtherMenus, interactionBusy, manualPanelChange=()=>{} }) {
     const $ = id => document.getElementById(id);
     const shell = $('appShell'), rail = $('toolRail'), workspace = shell.querySelector('.workspace');
     const left = shell.querySelector('.topbar-left'), anchor = $('brandAnchor'), logo = $('homeBtn'), menu = $('brandMenu');
@@ -20,7 +20,7 @@
     let closeMethod = preference('close', read(preferenceKey.close, 'auto'));
     const savedOpen = read('pieniplan-inspector-open', null);
     let preferredOpen = savedOpen === 'true' ? true : savedOpen === 'false' ? false : pinned;
-    let open = preferredOpen, explicitHold = false, transientHover = false;
+    let open = preferredOpen, explicitHold = false, transientHover = false, selectionHold = false;
     let menuOpen = false, menuPinned = false, panelTimer = 0, menuTimer = 0, menuFocusTimer = 0, hoverTimer = 0;
     let pointerInside = false, handleInside = false, held = false, popupOwned = false;
     let handleHoverOpenedAt = 0;
@@ -91,12 +91,13 @@
     }
     function scheduleClose() {
       clearPanelTimer();
-      if (pinned || explicitHold || closeMethod !== 'auto' || pointerInside || handleInside || busy()) return;
+      if (pinned || selectionHold || explicitHold || closeMethod !== 'auto' || pointerInside || handleInside || busy()) return;
       panelTimer = setTimeout(() => {
-        if (!pinned && !explicitHold && closeMethod === 'auto' && !pointerInside && !handleInside && !busy()) close({ persist: !transientHover });
+        if (!pinned && !selectionHold && !explicitHold && closeMethod === 'auto' && !pointerInside && !handleInside && !busy()) close({ persist: !transientHover });
       }, 360);
     }
     function setPinned(value) {
+      manualPanelChange();
       clearPanelTimer();
       const wasVisible = panelVisible();
       pinned = Boolean(value);
@@ -210,6 +211,7 @@
     });
     handle.addEventListener('pointerleave', () => { handleInside = false; scheduleClose(); });
     handle.addEventListener('click', event => {
+      manualPanelChange();
       if (pinned) { if(!open)reveal({explicit:true,persist:true});return; }
       // Keyboard activation focuses the pin for accessibility. A pointer click
       // must not leave focus on the pin or auto-close would never run on exit.
@@ -272,7 +274,8 @@
     paintPanel(); paintMenu();
     return { applyToolbar, refresh: () => { paintMenu(); paintPanel(); measureTitle(); },
       setPinned, reveal, close, scheduleClose, setMenu, saveTab, restoreTab,
-      setPanelVisible(value){if(value)reveal({explicit:true,persist:true});else close({explicit:true});},
+      setSelectionHold(value){selectionHold=Boolean(value);if(selectionHold)clearPanelTimer();else scheduleClose();},
+      setPanelVisible(value){manualPanelChange();if(value)reveal({explicit:true,persist:true});else close({explicit:true});},
       preferences, setPreferences, panelVisible,
       status: () => ({ pinned, open, preferredOpen, explicitHold, menuOpen, menuPinned, ...preferences() }) };
   }
